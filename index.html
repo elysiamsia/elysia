@@ -145,4 +145,586 @@ body{
 .timeline-dot{
   position:absolute;left:50%;top:0.5rem;width:14px;height:14px;
   border-radius:50%;border:2px solid var(--pink);
-  background:var(--bg-abyss);transform:translateX(-50%);z-ind
+  background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
+  box-shadow:0 0 12px rgba(255,143,163,0.4);transition:background 0.3s;
+}
+.timeline-node.visible .timeline-dot{background:var(--pink)}
+.timeline-card{
+  width:calc(50% - 2.5rem);padding:1.2rem 1.5rem;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;
+  box-shadow:0 0 20px rgba(255,143,163,0.06);
+}
+.timeline-node:nth-child(odd) .timeline-card{margin-right:auto}
+.timeline-node:nth-child(even) .timeline-card{margin-left:auto}
+.timeline-card h3{
+  font-size:1.05rem;font-weight:400;color:var(--pink-soft);margin-bottom:0.5rem;
+  letter-spacing:0.1em;
+}
+.timeline-card p{font-size:0.85rem;color:var(--text-dim);line-height:1.8;font-weight:300}
+.timeline-node .timeline-index{
+  position:absolute;left:50%;top:0.5rem;transform:translate(-50%,-50%);
+  font-size:0.6rem;color:var(--text-muted);white-space:nowrap;
+  top:-0.8rem;letter-spacing:0.05em;
+}
+
+/* ===== QUOTES ===== */
+.quotes-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:1.2rem;max-width:1000px;margin:0 auto;
+}
+.quote-card{
+  padding:1.5rem;min-height:140px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
+  box-shadow:0 0 20px rgba(255,143,163,0.05);
+  transition:transform 0.3s ease,box-shadow 0.3s ease;position:relative;overflow:hidden;
+  user-select:none;
+}
+.quote-card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 0 30px rgba(255,143,163,0.12),0 8px 30px rgba(0,0,0,0.2);
+}
+.quote-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(circle at 30% 30%,rgba(255,143,163,0.06),transparent 60%);
+  pointer-events:none;
+}
+.quote-text{
+  font-size:0.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;
+  transition:opacity 0.4s ease;
+}
+.quote-text.fading{opacity:0}
+.quote-hint{
+  position:absolute;bottom:0.6rem;right:0.8rem;font-size:0.65rem;color:var(--text-muted);opacity:0.4;
+}
+
+/* ===== ENDING ===== */
+.section-ending{
+  position:relative;z-index:2;min-height:70vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:4rem 2rem;
+  background:linear-gradient(180deg,transparent,var(--bg-abyss) 30%,var(--bg-abyss));
+}
+.ending-stars{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.ending-star{
+  position:absolute;border-radius:50%;background:#fff;
+  animation:twinkle var(--dur) ease-in-out infinite;
+  animation-delay:var(--delay);
+}
+@keyframes twinkle{0%,100%{opacity:var(--min-o)}50%{opacity:var(--max-o)}}
+.ending-quote{
+  font-size:clamp(1.1rem,3vw,1.6rem);font-weight:300;letter-spacing:0.12em;
+  color:var(--pink-mist);line-height:2;text-shadow:0 0 25px rgba(255,200,221,0.3);
+  max-width:600px;opacity:0;transform:translateY(20px);
+  transition:opacity 1.5s ease,transform 1.5s ease;
+}
+.ending-quote.visible{opacity:1;transform:translateY(0)}
+.ending-attr{
+  margin-top:2.5rem;font-size:0.85rem;color:var(--text-muted);letter-spacing:0.25em;
+  opacity:0;transition:opacity 1.5s ease 0.8s;
+}
+.ending-attr.visible{opacity:0.7}
+.ending-fade{
+  position:absolute;bottom:0;left:0;right:0;height:120px;
+  background:linear-gradient(transparent,var(--bg-abyss));pointer-events:none;
+}
+
+/* ===== RIPPLE ===== */
+.ripple-petal{
+  position:fixed;pointer-events:none;z-index:9999;
+  border-radius:50% 50% 50% 0;opacity:0.85;
+  transition:all 0.75s cubic-bezier(0.22,0.61,0.36,1);
+}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  .timeline-line{left:1.5rem}
+  .timeline-node,.timeline-node:nth-child(odd),.timeline-node:nth-child(even){flex-direction:row}
+  .timeline-dot{left:1.5rem}
+  .timeline-node .timeline-index{left:1.5rem}
+  .timeline-card,.timeline-node:nth-child(odd) .timeline-card,.timeline-node:nth-child(even) .timeline-card{
+    width:calc(100% - 3.5rem);margin-left:3.5rem;margin-right:0;
+  }
+  .quotes-grid{grid-template-columns:1fr}
+  .profile-grid{grid-template-columns:auto 1fr;gap:0.5rem 1rem;font-size:0.85rem}
+}
+@media(max-width:480px){
+  .content-section{padding:4rem 1rem}
+  .profile-card{padding:1.5rem}
+  .quote-card{min-height:120px;padding:1.2rem}
+}
+
+/* ===== MISC ANIMATIONS ===== */
+@keyframes float-gentle{
+  0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}
+}
+@keyframes glow-pulse{
+  0%,100%{box-shadow:0 0 50px rgba(255,143,163,0.1),0 0 100px rgba(155,93,229,0.08)}
+  50%{box-shadow:0 0 60px rgba(255,143,163,0.15),0 0 120px rgba(155,93,229,0.12)}
+}
+.profile-card{animation:glow-pulse 6s ease-in-out infinite}
+</style>
+</head>
+<body>
+
+<canvas id="petalCanvas"></canvas>
+
+<!-- ===== OPENING ===== -->
+<section class="section-opening" id="opening">
+  <div class="opening-content">
+    <h1 class="opening-title" id="typewriterText"></h1><span class="typing-cursor" id="typingCursor">|</span>
+    <p class="opening-subtitle" id="openingSub">欢迎来到往世乐土</p>
+  </div>
+  <div class="scroll-hint" id="scrollHint">
+    <span>向下探索</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</section>
+
+<!-- ===== ABOUT ===== -->
+<section class="content-section" id="about">
+  <div class="section-title-wrap">
+    <h2 class="section-title">
+      <span class="section-title-petal"></span>关于她<span class="section-title-petal"></span>
+    </h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="profile-card">
+    <div class="profile-card-inner">
+      <div class="profile-name">爱莉希雅</div>
+      <div class="profile-name-en">E L Y S I A</div>
+      <div class="profile-divider"></div>
+      <div class="profile-grid">
+        <span class="profile-label">名字来源</span>
+        <span class="profile-value">希伯来语，意为<span class="highlight">「乐土、净土」</span>（源自希腊神话极乐净土 Elysium）</span>
+        <span class="profile-label">出处</span>
+        <span class="profile-value">《崩坏3》第一文明纪元</span>
+        <span class="profile-label">身份</span>
+        <span class="profile-value">逐火之蛾融合战士 · 十三英桀创始人兼副首领</span>
+        <span class="profile-label">位次</span>
+        <span class="profile-value"><span class="highlight">Ⅱ</span></span>
+        <span class="profile-label">刻印</span>
+        <span class="profile-value"><span class="gold">「真我」</span></span>
+        <span class="profile-label">真实身份</span>
+        <span class="profile-value">最早诞生于世的<span class="highlight">「人之律者」</span>（始源之律者），第一位降临的律者</span>
+        <span class="profile-label">融合战士编号</span>
+        <span class="profile-value">CM-002</span>
+        <span class="profile-label">融合崩坏兽</span>
+        <span class="profile-value">末法级「大自在天」基因</span>
+        <span class="profile-label">生日</span>
+        <span class="profile-value"><span class="highlight">11月11日</span></span>
+        <span class="profile-label">身高</span>
+        <span class="profile-value">163cm</span>
+        <span class="profile-label">体重</span>
+        <span class="profile-value"><span class="highlight">54.8kg</span>（不许四舍五入♪）</span>
+        <span class="profile-label">武器</span>
+        <span class="profile-value">弓箭</span>
+        <span class="profile-label">配音</span>
+        <span class="profile-value">宴宁（汉语）/ 井上麻里奈（日语）</span>
+        <span class="profile-label">外貌</span>
+        <span class="profile-value">粉色长发紫瞳，妖精耳</span>
+      </div>
+      <div class="profile-desc">
+        凡事任凭心意而为，自由自在——只在喜欢的人上花时间，但每个人都很喜欢；只在有趣的事上花心思，但每件事都很有趣。带着真诚与热情拥抱每一天的，如飞花般绚丽的少女 <span class="emoji-heart">♥</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== JOURNEY ===== -->
+<section class="content-section" id="journey">
+  <div class="section-title-wrap">
+    <h2 class="section-title">
+      <span class="section-title-petal"></span>她的旅途<span class="section-title-petal"></span>
+    </h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="timeline">
+    <div class="timeline-line"></div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>降生</h3>
+        <p>从天而降的「小妖精」在边陲小镇沃斯托克-51的梣树下被发现，被善良的居民送至教堂旁的福利院抚养。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>命名</h3>
+        <p>生日那天收到人生第一份礼物——一本童话绘本。在月光下读完后，为自己取名「爱莉希雅」，意为无瑕的乐园、永恒的乐土。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>离开</h3>
+        <p>察觉自己与众不同，为不拖累小镇，在「母亲」瑟莉娅的祝福中离开，踏上寻找身世、同胞与乐园的旅途。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>游历</h3>
+        <p>走遍世界，见识人性的善恶美丑——教堂的善意、车站的骗局、伊甸的歌声、千劫村庄的残忍……没有找到梦想中的乐园。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>逐火</h3>
+        <p>既然找不到乐园，就自己创造一个。加入逐火之蛾成为融合战士，与凯文并肩，成为副队长。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>英桀</h3>
+        <p>「约束的惨剧」后，推动融合战士编制化，将仅存的十三位融合战士集结为「逐火十三英桀」，授予位次与刻印。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>晚宴</h3>
+        <p>为团结众人、为后世律者祈求人性，她自曝「第十三律者」身份，将讨伐自己的晚宴布置成一场盛大的宴会。十二张邀请函，最终只有凯文、伊甸、阿波尼亚、维尔薇四人赴宴。她盛装出席，第一次也是最后一次使用人之律者的权能，自我消散。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>乐土</h3>
+        <p>十三英桀的记忆构筑成「往世乐土」，她以记忆体的身份成为雷电芽衣的引路人，引导芽衣探寻前文明的真相。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>归来与谢幕</h3>
+        <p>侵蚀之律者入侵乐土、删除了她的数据；英桀们前仆后继，以四朵水晶花中封存的记忆将她重构。她以「人之律者」的形态再现，与英桀们一同消灭侵蚀之律者，盛大谢幕。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== QUOTES ===== -->
+<section class="content-section" id="quotes">
+  <div class="section-title-wrap">
+    <h2 class="section-title">
+      <span class="section-title-petal"></span>飞花寄语<span class="section-title-petal"></span>
+    </h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="quotes-grid" id="quotesGrid"></div>
+</section>
+
+<!-- ===== ENDING ===== -->
+<section class="section-ending" id="ending">
+  <div class="ending-stars" id="endingStars"></div>
+  <p class="ending-quote" id="endingQuote">此后，将有群星闪耀，<br>因为我如今来过。</p>
+  <p class="ending-attr" id="endingAttr">致爱莉希雅 · elysiad.top</p>
+  <div class="ending-fade"></div>
+</section>
+
+<script>
+(function(){
+  // ===== QUOTES DATA =====
+  const quotes = [
+    '「嗨，想我了吗？」',
+    '「此后，将有群星闪耀，因为我如今来过；此后，将有百花绽放，因为我从未离去。」',
+    '「请将我的箭、我的花、与我的爱，织成新生的种子，带向那枯萎的大地。然后，便让它开出永恒而无瑕的……人性之华吧。」',
+    '「悲剧并非终结，而是希望的起始。」',
+    '「毕竟——美丽的女孩子，什么都能做到嘛！」',
+    '「我是律者，也是人类，但……更是一位如飞花般绚丽的少女呀♪」',
+    '「如你所见，与那个凯文齐名的第二领袖，竟是一位如花朵般娇羞的少女——也就是我啦。」',
+    '「而你将走向未来。然后，就去绽放出独属于你的，无瑕而美丽的光辉吧。」',
+    '「愿你前行的道路有群星闪耀，愿你留下的足迹有百花绽放。」',
+    '「十三个人向命运发起抗争的故事，不应该随着一个时代的逝去一同消亡，它应当被铭记。」'
+  ];
+
+  // ===== BUILD QUOTE CARDS =====
+  const grid = document.getElementById('quotesGrid');
+  const cardIndices = [];
+  quotes.forEach(function(q, i) {
+    const card = document.createElement('div');
+    card.className = 'quote-card';
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('aria-label', '语录卡片，点击切换');
+    const textEl = document.createElement('div');
+    textEl.className = 'quote-text';
+    textEl.textContent = q;
+    const hint = document.createElement('span');
+    hint.className = 'quote-hint';
+    hint.textContent = '点击切换';
+    card.appendChild(textEl);
+    card.appendChild(hint);
+    cardIndices.push(i);
+    card.addEventListener('click', function() {
+      const currentIdx = cardIndices[grid.querySelectorAll('.quote-card').indexOf(card)];
+      const nextIdx = (currentIdx + 1) % quotes.length;
+      cardIndices[grid.querySelectorAll('.quote-card').indexOf(card)] = nextIdx;
+      textEl.classList.add('fading');
+      setTimeout(function() {
+        textEl.textContent = quotes[nextIdx];
+        textEl.classList.remove('fading');
+      }, 400);
+    });
+    card.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+    });
+    grid.appendChild(card);
+  });
+
+  // ===== CANVAS PARTICLE SYSTEM =====
+  const canvas = document.getElementById('petalCanvas');
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  const pinkColors = ['#ffc8dd','#ffb3c1','#ff8fa3','#ff5c8a','#f9bec7'];
+  const purpleColors = ['#c77dff','#9b5de5','#e0b0ff'];
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Petals
+  var petals = [];
+  var petalCount = Math.min(45, Math.floor(window.innerWidth / 25));
+  function createPetal() {
+    return {
+      x: Math.random() * W,
+      y: -20 - Math.random() * 120,
+      size: 5 + Math.random() * 12,
+      speedY: 0.25 + Math.random() * 0.65,
+      drift: (Math.random() - 0.5) * 0.3,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.015,
+      opacity: 0.25 + Math.random() * 0.45,
+      swayAmp: 15 + Math.random() * 35,
+      swaySpd: 0.004 + Math.random() * 0.008,
+      swayOff: Math.random() * Math.PI * 2,
+      color: pinkColors[Math.floor(Math.random() * pinkColors.length)]
+    };
+  }
+  for (var i = 0; i < petalCount; i++) {
+    var p = createPetal();
+    p.y = Math.random() * H;
+    petals.push(p);
+  }
+
+  // Stars (stardust)
+  var stars = [];
+  var starCount = Math.min(70, Math.floor(window.innerWidth / 18));
+  function createStar() {
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      size: 0.4 + Math.random() * 1.8,
+      baseOpacity: 0.2 + Math.random() * 0.6,
+      twinkleSpd: 0.008 + Math.random() * 0.025,
+      twinkleOff: Math.random() * Math.PI * 2,
+      color: Math.random() > 0.4 ? '#ffffff' : purpleColors[Math.floor(Math.random() * purpleColors.length)]
+    };
+  }
+  for (var i = 0; i < starCount; i++) stars.push(createStar());
+
+  var scrollRatio = 0;
+  window.addEventListener('scroll', function() {
+    var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    scrollRatio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+  });
+
+  function drawPetal(p) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rotation);
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    // Petal shape: an ellipse
+    ctx.ellipse(0, 0, Math.max(0.5, p.size * 0.22), Math.max(0.5, p.size * 0.5), 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawStar(s, time) {
+    var twinkle = 0.5 + 0.5 * Math.sin(time * s.twinkleSpd + s.twinkleOff);
+    ctx.save();
+    ctx.globalAlpha = s.baseOpacity * twinkle;
+    ctx.fillStyle = s.color;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, Math.max(0.2, s.size), 0, Math.PI * 2);
+    ctx.fill();
+    // Glow
+    if (s.size > 1) {
+      ctx.globalAlpha = s.baseOpacity * twinkle * 0.3;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, Math.max(0.5, s.size * 2.5), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  var time = 0;
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function animate() {
+    if (reducedMotion) return;
+    time++;
+    ctx.clearRect(0, 0, W, H);
+
+    // Fade factor: petals dim towards the end of page
+    var fadeFactor = 1 - scrollRatio * 0.7;
+
+    // Draw stars
+    for (var i = 0; i < stars.length; i++) {
+      drawStar(stars[i], time);
+    }
+
+    // Draw and update petals
+    for (var i = 0; i < petals.length; i++) {
+      var p = petals[i];
+      p.y += p.speedY;
+      p.x += p.drift + Math.sin(time * p.swaySpd + p.swayOff) * 0.35;
+      p.rotation += p.rotSpeed;
+      if (p.y > H + 30) {
+        petals[i] = createPetal();
+      }
+      var origOpacity = p.opacity;
+      p.opacity = p.opacity * fadeFactor;
+      drawPetal(p);
+      p.opacity = origOpacity;
+    }
+
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  // ===== TYPEWRITER =====
+  var typewriterEl = document.getElementById('typewriterText');
+  var cursorEl = document.getElementById('typingCursor');
+  var subEl = document.getElementById('openingSub');
+  var scrollHintEl = document.getElementById('scrollHint');
+  var typeText = '嗨，想我了吗？';
+  var charIndex = 0;
+
+  function typeNext() {
+    if (charIndex < typeText.length) {
+      typewriterEl.textContent += typeText[charIndex];
+      charIndex++;
+      setTimeout(typeNext, 160 + Math.random() * 80);
+    } else {
+      setTimeout(function() {
+        cursorEl.classList.add('hidden');
+        subEl.classList.add('visible');
+        setTimeout(function() {
+          scrollHintEl.classList.add('visible');
+        }, 1200);
+      }, 600);
+    }
+  }
+  setTimeout(typeNext, 800);
+
+  // ===== SCROLL ANIMATIONS =====
+  var observerOptions = { threshold: 0.15, rootMargin: '0px 0px -50px 0px' };
+  var scrollObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, observerOptions);
+
+  // Timeline nodes
+  document.querySelectorAll('.timeline-node').forEach(function(node) {
+    scrollObserver.observe(node);
+  });
+
+  // Ending section
+  var endingObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        document.getElementById('endingQuote').classList.add('visible');
+        document.getElementById('endingAttr').classList.add('visible');
+      }
+    });
+  }, { threshold: 0.3 });
+  endingObserver.observe(document.getElementById('ending'));
+
+  // ===== ENDING STARS =====
+  var starsContainer = document.getElementById('endingStars');
+  var endingStarCount = Math.min(80, Math.floor(window.innerWidth / 12));
+  for (var i = 0; i < endingStarCount; i++) {
+    var star = document.createElement('div');
+    star.className = 'ending-star';
+    var size = 0.5 + Math.random() * 2;
+    var minO = (0.1 + Math.random() * 0.3).toFixed(2);
+    var maxO = (0.5 + Math.random() * 0.5).toFixed(2);
+    var dur = (2 + Math.random() * 4).toFixed(1);
+    var delay = (Math.random() * 5).toFixed(1);
+    star.style.cssText =
+      'width:' + size + 'px;height:' + size + 'px;' +
+      'left:' + (Math.random() * 100) + '%;top:' + (Math.random() * 100) + '%;' +
+      '--min-o:' + minO + ';--max-o:' + maxO + ';' +
+      '--dur:' + dur + 's;--delay:' + delay + 's;' +
+      'background:' + (Math.random() > 0.3 ? '#fff' : '#c77dff') + ';';
+    starsContainer.appendChild(star);
+  }
+
+  // ===== CLICK RIPPLE =====
+  var rippleColors = ['#ffc8dd','#ffb3c1','#ff8fa3','#ff5c8a','#c77dff','#f9bec7'];
+  document.addEventListener('click', function(e) {
+    var count = 7 + Math.floor(Math.random() * 4);
+    for (var i = 0; i < count; i++) {
+      var petal = document.createElement('div');
+      petal.className = 'ripple-petal';
+      var angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.6;
+      var dist = 25 + Math.random() * 55;
+      var size = 5 + Math.random() * 7;
+      var color = rippleColors[Math.floor(Math.random() * rippleColors.length)];
+      var startRot = Math.random() * 360;
+      petal.style.cssText =
+        'left:' + e.clientX + 'px;top:' + e.clientY + 'px;' +
+        'width:' + size + 'px;height:' + (size * 1.5) + 'px;' +
+        'background:' + color + ';' +
+        'transform:translate(-50%,-50%) rotate(' + startRot + 'deg);';
+      document.body.appendChild(petal);
+      // Trigger reflow then animate
+      petal.offsetWidth;
+      var endX = Math.cos(angle) * dist;
+      var endY = Math.sin(angle) * dist;
+      petal.style.transform = 'translate(calc(-50% + ' + endX + 'px), calc(-50% + ' + endY + 'px)) rotate(' + (startRot + 120 + Math.random() * 120) + 'deg)';
+      petal.style.opacity = '0';
+      (function(el) {
+        setTimeout(function() { el.remove(); }, 800);
+      })(petal);
+    }
+  });
+
+  // ===== RESIZE HANDLER FOR PARTICLES =====
+  window.addEventListener('resize', function() {
+    // Reposition stars that are out of bounds
+    for (var i = 0; i < stars.length; i++) {
+      if (stars[i].x > W) stars[i].x = Math.random() * W;
+      if (stars[i].y > H) stars[i].y = Math.random() * H;
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
