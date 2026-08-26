@@ -724,4 +724,87 @@ body{
 })();
 </script>
 </body>
+<!-- ===== 生日倒计时彩蛋 ===== -->
+<style>
+#bdayEgg{position:fixed;right:1.2rem;bottom:1.2rem;z-index:9990;display:flex;align-items:center;gap:0.55rem;padding:0.55rem 1rem;border-radius:999px;cursor:pointer;user-select:none;background:linear-gradient(135deg,rgba(255,143,163,.16),rgba(155,93,229,.16));border:1px solid rgba(255,200,221,.25);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 0 18px rgba(255,143,163,.18);color:#ffd6e8;font-size:.8rem;letter-spacing:.08em;transition:transform .25s,box-shadow .25s;animation:bdayFloat 3.5s ease-in-out infinite}
+#bdayEgg:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 0 26px rgba(255,143,163,.3)}
+@keyframes bdayFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.bday-dot{width:8px;height:8px;border-radius:50%;background:#ff8fa3;box-shadow:0 0 10px #ff8fa3;animation:bdayPulse 1.6s ease-in-out infinite}
+@keyframes bdayPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+#bdayPanel{position:fixed;right:1.2rem;bottom:4.4rem;z-index:9990;width:min(300px,calc(100vw - 2.4rem));padding:1.4rem 1.3rem;border-radius:20px;opacity:0;pointer-events:none;transform:translateY(12px) scale(.97);transition:opacity .35s,transform .35s;background:linear-gradient(150deg,rgba(26,14,46,.92),rgba(45,27,78,.92));border:1px solid rgba(255,200,221,.22);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 40px rgba(0,0,0,.4),0 0 40px rgba(255,143,163,.12);text-align:center}
+#bdayPanel.open{opacity:1;pointer-events:auto;transform:translateY(0) scale(1)}
+.bday-cake{display:block;font-size:1.5rem;margin-bottom:.4rem}
+.bday-title{font-size:.72rem;color:#a89cc8;letter-spacing:.3em;margin-bottom:.3rem}
+.bday-date{font-size:.95rem;color:#ffc8dd;letter-spacing:.12em;margin-bottom:1rem}
+.bday-timer{display:flex;justify-content:center;gap:.6rem}
+.bday-cell{min-width:3.4rem;padding:.55rem .3rem;border-radius:12px;background:rgba(255,200,221,.07);border:1px solid rgba(255,200,221,.14)}
+.bday-num{display:block;font-size:1.35rem;font-weight:300;color:#ffd166;font-variant-numeric:tabular-nums}
+.bday-unit{display:block;font-size:.62rem;color:#7b6f99;margin-top:.2rem;letter-spacing:.15em}
+.bday-msg{margin-top:1rem;font-size:.78rem;color:#a89cc8;line-height:1.9}
+.bday-msg .pink{color:#ff8fa3}
+</style>
+<div id="bdayEgg" role="button" tabindex="0" aria-label="生日倒计时彩蛋">
+  <span class="bday-dot"></span><span id="bdayEggText"></span>
+</div>
+<div id="bdayPanel" aria-hidden="true">
+  <span class="bday-cake" id="bdayCake">🎂</span>
+  <div class="bday-title">她 的 生 日</div>
+  <div class="bday-date">11月11日</div>
+  <div class="bday-timer" id="bdayTimer">
+    <div class="bday-cell"><span class="bday-num" id="bdD">--</span><span class="bday-unit">天</span></div>
+    <div class="bday-cell"><span class="bday-num" id="bdH">--</span><span class="bday-unit">时</span></div>
+    <div class="bday-cell"><span class="bday-num" id="bdM">--</span><span class="bday-unit">分</span></div>
+    <div class="bday-cell"><span class="bday-num" id="bdS">--</span><span class="bday-unit">秒</span></div>
+  </div>
+  <div class="bday-msg" id="bdayMsg"></div>
+</div>
+<script>
+(function(){
+  var M = 10, D = 11; /* 11月11日（JS月份从0开始） */
+  var egg = document.getElementById('bdayEgg'),
+      panel = document.getElementById('bdayPanel'),
+      eggText = document.getElementById('bdayEggText'),
+      msg = document.getElementById('bdayMsg'),
+      timer = document.getElementById('bdayTimer'),
+      cake = document.getElementById('bdayCake'),
+      bd = {d: document.getElementById('bdD'), h: document.getElementById('bdH'), m: document.getElementById('bdM'), s: document.getElementById('bdS')};
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+  function isBday(t){ return t.getMonth() === M && t.getDate() === D; }
+  function nextBday(now){
+    var y = now.getFullYear(), t = new Date(y, M, D, 0, 0, 0);
+    if (now >= new Date(y, M, D + 1, 0, 0, 0)) t = new Date(y + 1, M, D, 0, 0, 0);
+    return t;
+  }
+  function render(){
+    var now = new Date();
+    if (isBday(now)){
+      eggText.textContent = '今天是她的生日！';
+      cake.textContent = '🎂✨';
+      timer.style.display = 'none';
+      msg.innerHTML = '「嗨，想我了吗？」<br>今天是属于爱莉希雅的日子——<br><span class="pink">愿每一份祝福，都如飞花般绚丽♪</span>';
+      return;
+    }
+    var diff = nextBday(now) - now;
+    var d = Math.floor(diff / 86400000),
+        h = Math.floor(diff % 86400000 / 3600000),
+        m = Math.floor(diff % 3600000 / 60000),
+        s = Math.floor(diff % 60000 / 1000);
+    eggText.textContent = '距她的生日还有 ' + d + ' 天';
+    bd.d.textContent = d; bd.h.textContent = pad(h); bd.m.textContent = pad(m); bd.s.textContent = pad(s);
+    msg.innerHTML = '「今天是我的生日哦。要一起庆祝吗？<br>就我们两个人。」';
+  }
+  function toggle(){
+    panel.classList.toggle('open');
+    panel.setAttribute('aria-hidden', panel.classList.contains('open') ? 'false' : 'true');
+  }
+  egg.addEventListener('click', toggle);
+  egg.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+  });
+  render();
+  setInterval(render, 1000);
+  if (isBday(new Date())) setTimeout(function(){ panel.classList.add('open'); }, 1500);
+})();
+</script>
+
 </html>
