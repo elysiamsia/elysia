@@ -32,14 +32,19 @@ window.TIMELINE_DATA = [
   { id: 'event-4', type: 'event', title: '她的生日',          subtitle: '11月11日',        real_date: '2025-11', version: null, ingame_time: null, desc: '愿每一份祝福都如飞花般绚丽。', detail: '每年 11 月 11 日，页面右下角有生日倒计时彩蛋。', audio: null, featured: true, order: 99 },
 ];
 
-// 语录配音映射（1~8 有配音，9、10 无配音静音切换）
+// ===== 语录配音映射（接口保留，素材待配）=====
+// 说明：原音频与语录内容对不上号，暂不提供配音文件。
+// 接口结构保留：键 1~10 对应语录顺序，值为 null 时不播放（页面点击仅切换文字）。
+// 待获得与语录一一对应的正确素材后，把值填回 'audio/xx.mp3' 即可自动恢复播放。
 window.QUOTE_AUDIO = {
-  1: 'audio/01_嗨想我了吗.mp3',
-  2: 'audio/02_此后将有群星闪耀.mp3',
-  3: 'audio/03_请将我的剑我的花.mp3',
-  4: 'audio/04_悲剧并非终结.mp3',
-  5: 'audio/05_美丽的女孩子什么都能做到.mp3',
-  6: 'audio/06_如你所见与那个凯文齐名.mp3',
-  7: 'audio/07_而你将走向未来.mp3',
-  8: 'audio/08_愿你前行的道路有群星闪耀.mp3',
+  1: null,
+  2: null,
+  3: null,
+  4: null,
+  5: null,
+  6: null,
+  7: null,
+  8: null,
+  9: null,
+  10: null,
 };
