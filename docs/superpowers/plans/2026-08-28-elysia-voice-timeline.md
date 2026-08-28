@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - 项目路径：`D:\claude-code\elysia\`，是 GitHub 仓库 **`elysiamsia/elysia`** 的工作副本（本地 `index.html` 与仓库 main 分支逐字节一致，线上 `elysiad.top` = 该仓库 GitHub Pages，main 分支根目录发布）。**仓库有 `dev` 与 `main` 两个分支；本次所有改动在本地 `dev` 分支上进行**（Task 1 `git init -b dev`，提交即落在 dev），最终由用户决定 dev → main 的合并/发布。本环境 git 直连 github 443 被拦（网页/gh api 可通），push 需用户侧执行或配代理。若用户不想要 git，跳过各任务的 commit 步骤即可，不影响其他步骤。
-- 数据必须来自已确认的 `elysia/docs/timeline-data-draft.md`，**不得编造**；真我·人之律者版本 v6.0（约 2025-08）、粉色妖精小姐♪ v5.1（2021-09）、嗨♪爱愿妖精♥ v8.5（2025-10）为用户最终确认。
+- 数据必须来自已确认的 `elysia/docs/timeline-data-draft.md`，**不得编造**；真我·人之律者版本 v6.0（2022-08）、粉色妖精小姐♪ v5.1（2021-09）、嗨♪爱愿妖精♥ v8.5（2025-10）为用户最终确认。
 - 「往事的飞花·爱之诗」是粉色妖精小姐♪ 的**专武**（非皮肤）；「嗨♪爱愿妖精♥」是**可玩装甲**（非皮肤）；皮肤共 5 套（见 Task 3）。
 - 语录 10 条，前 8 条有真人配音（`audio/01_嗨想我了吗.mp3` … `audio/08_愿你前行的道路有群星闪耀.mp3`），第 9、10 条无配音静音切换。配音映射显式写在数据文件里，不靠位次猜。
 - NodeList 没有 `indexOf`——语录修复必须用**闭包索引**，不得再调用 `querySelectorAll(...).indexOf(...)`。
@@ -281,7 +281,7 @@ git commit -m "feat: convert 8 elysia voice lines to mp3 under audio/"
 window.TIMELINE_DATA = [
   // ===== 可玩装甲（3 架）=====
   { id: 'armor-pink',     type: 'armor', title: '粉色妖精小姐♪',    subtitle: 'S级 · 异能 · 物理输出', real_date: '2021-09', version: 'v5.1',  ingame_time: '前文明纪元 · 往世乐土', desc: '初入乐土时与她相遇的那位粉色妖精。', detail: '专武：往事的飞花·爱之诗', audio: null, featured: true,  order: 11 },
-  { id: 'armor-ego',      type: 'armor', title: '真我·人之律者',     subtitle: 'S级 · 异能 · 冰伤输出',  real_date: '2025-08', version: 'v6.0',  ingame_time: '前文明纪元 · 两种律者形态', desc: '人之律者与始源之律者两种形态自由切换的她。', detail: '专武：无瑕之眷·册礼', audio: null, featured: true,  order: 12 },
+  { id: 'armor-ego',      type: 'armor', title: '真我·人之律者',     subtitle: 'S级 · 异能 · 冰伤输出',  real_date: '2022-08', version: 'v6.0',  ingame_time: '前文明纪元 · 两种律者形态', desc: '人之律者与始源之律者两种形态自由切换的她。', detail: '专武：无瑕之眷·册礼', audio: null, featured: true,  order: 12 },
   { id: 'armor-elf',      type: 'armor', title: '嗨♪爱愿妖精♥',     subtitle: 'S级 · 星尘 · 冰冻输出',  real_date: '2025-10', version: 'v8.5',  ingame_time: '黄金庭院', desc: '黄金庭院中再度起舞的妖精。', detail: '专武：澄爱挚语·馨愿', audio: null, featured: true,  order: 13 },
 
   // ===== 皮肤（5 套）=====
@@ -304,7 +304,7 @@ window.TIMELINE_DATA = [
 
   // ===== 活动与版本里程碑 =====
   { id: 'event-1', type: 'event', title: '往世乐土玩法开启', subtitle: '粉色妖精小姐♪ 实装', real_date: '2021-09', version: 'v5.1', ingame_time: null, desc: '往世乐土玩法开放，与她相逢的起始。', detail: null, audio: null, featured: true, order: 31 },
-  { id: 'event-2', type: 'event', title: '真我·人之律者实装', subtitle: '装甲上线',          real_date: '2025-08', version: 'v6.0', ingame_time: null, desc: '真我·人之律者 装甲实装。', detail: null, audio: null, featured: false, order: 32 },
+  { id: 'event-2', type: 'event', title: '真我·人之律者实装', subtitle: '装甲上线',          real_date: '2022-08', version: 'v6.0', ingame_time: null, desc: '真我·人之律者 装甲实装。', detail: null, audio: null, featured: false, order: 32 },
   { id: 'event-3', type: 'event', title: '嗨♪爱愿妖精♥ 实装', subtitle: '黄金庭院',         real_date: '2025-10', version: 'v8.5', ingame_time: null, desc: '嗨♪爱愿妖精♥ 装甲实装。', detail: null, audio: null, featured: false, order: 33 },
   { id: 'event-4', type: 'event', title: '她的生日',          subtitle: '11月11日',        real_date: '2025-11', version: null, ingame_time: null, desc: '愿每一份祝福都如飞花般绚丽。', detail: '每年 11 月 11 日，页面右下角有生日倒计时彩蛋。', audio: null, featured: true, order: 99 },
 ];
