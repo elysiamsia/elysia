@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="same-origin">
+<title>她的装甲 · 完整时间轴 — elysiad.top</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-abyss:#0a0612;--bg-deep:#12091f;--bg-purple:#1a0e2e;--bg-mid:#2d1b4e;
+  --pink-mist:#ffc8dd;--pink-soft:#ffb3c1;--pink:#ff8fa3;--pink-deep:#ff5c8a;
+  --purple-glow:#c77dff;--purple:#9b5de5;--purple-deep:#7b2cbf;
+  --gold:#ffd166;--text:#f0e6ff;--text-dim:#a89cc8;--text-muted:#7b6f99;
+  --glass-bg:rgba(255,200,221,0.06);--glass-border:rgba(255,200,221,0.12);
+  --glass-bg2:rgba(155,93,229,0.06);--glass-border2:rgba(155,93,229,0.12);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:linear-gradient(180deg,var(--bg-abyss) 0%,var(--bg-deep) 25%,var(--bg-purple) 55%,var(--bg-deep) 100%);
+  background-attachment:fixed;color:var(--text);overflow-x:hidden;line-height:1.7;
+}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-thumb{background:var(--purple-deep);border-radius:3px}
+
+.page-head{padding:4rem 1.5rem 1rem;text-align:center;position:relative;z-index:2}
+.back-link{display:inline-block;margin-bottom:1.4rem;color:var(--text-muted);font-size:.78rem;letter-spacing:.15em;text-decoration:none;padding:.4rem .9rem;border:1px solid var(--glass-border2);border-radius:999px;transition:color .3s,border-color .3s}
+.back-link:hover{color:var(--pink-soft);border-color:var(--pink)}
+.page-title{font-size:clamp(1.6rem,4.5vw,2.4rem);font-weight:300;letter-spacing:.2em;color:var(--pink-mist);text-shadow:0 0 30px rgba(255,143,163,.35)}
+.page-sub{margin-top:.8rem;font-size:clamp(.8rem,2.2vw,1rem);color:var(--text-dim);letter-spacing:.3em}
+
+/* ===== FILTER BAR ===== */
+.filter-bar{
+  position:relative;z-index:2;max-width:900px;margin:2.2rem auto 0;padding:1.1rem 1.4rem;
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:.8rem 1.4rem;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border:1px solid var(--glass-border);border-radius:18px;
+}
+.filter-chip{
+  display:inline-flex;align-items:center;gap:.4rem;padding:.32rem .85rem;border-radius:999px;
+  cursor:pointer;user-select:none;font-size:.78rem;letter-spacing:.1em;
+  border:1px solid var(--glass-border2);color:var(--text-dim);
+  transition:all .25s;
+}
+.filter-chip.on{box-shadow:0 0 12px rgba(255,143,163,.25);border-color:transparent;color:#fff}
+.filter-chip.on.armor{background:rgba(255,143,163,.45)}
+.filter-chip.on.skin{background:rgba(255,209,102,.4);color:#2b1a0a}
+.filter-chip.on.story{background:rgba(155,93,229,.5)}
+.filter-chip.on.event{background:rgba(255,200,221,.35)}
+.filter-chip .cnt{opacity:.75;font-size:.68rem}
+.filter-toggles{display:flex;align-items:center;gap:.6rem;font-size:.74rem;color:var(--text-muted)}
+.filter-toggle{cursor:pointer;padding:.3rem .6rem;border-radius:8px;border:1px solid var(--glass-border2);transition:all .25s}
+.filter-toggle.on{color:var(--gold);border-color:rgba(255,209,102,.4)}
+.clear-btn{cursor:pointer;padding:.3rem .8rem;border:none;border-radius:8px;background:rgba(255,143,163,.15);color:var(--pink-soft);font-size:.74rem;letter-spacing:.1em;transition:background .25s}
+.clear-btn:hover{background:rgba(255,143,163,.3)}
+
+/* ===== TIMELINE ===== */
+.timeline{position:relative;z-index:2;max-width:900px;margin:3.5rem auto 0;padding:1rem 1.5rem 4rem}
+.timeline-line{position:absolute;left:50%;top:0;bottom:0;width:2px;
+  background:linear-gradient(180deg,transparent,var(--purple-deep) 8%,var(--purple) 50%,var(--purple-deep) 92%,transparent);transform:translateX(-50%)}
+.timeline-node{position:relative;display:flex;align-items:flex-start;margin-bottom:2.6rem;opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+.timeline-node.visible{opacity:1;transform:translateY(0)}
+.timeline-node:nth-child(odd){flex-direction:row}
+.timeline-node:nth-child(even){flex-direction:row-reverse}
+.timeline-dot{position:absolute;left:50%;top:.6rem;width:13px;height:13px;border-radius:50%;border:2px solid var(--pink);background:var(--bg-abyss);transform:translateX(-50%);z-index:2;box-shadow:0 0 10px rgba(255,143,163,.35)}
+.timeline-node.visible .timeline-dot{background:var(--pink)}
+.timeline-card{
+  width:calc(50% - 2.4rem);padding:1.2rem 1.4rem;cursor:pointer;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;
+  box-shadow:0 0 18px rgba(255,143,163,.05);transition:transform .3s,box-shadow .3s;
+}
+.timeline-card:hover{transform:translateY(-2px);box-shadow:0 0 26px rgba(255,143,163,.14)}
+.timeline-node:nth-child(odd) .timeline-card{margin-right:auto}
+.timeline-node:nth-child(even) .timeline-card{margin-left:auto}
+.card-top{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.45rem}
+.type-badge{padding:.16rem .55rem;border-radius:999px;font-size:.66rem;letter-spacing:.1em;white-space:nowrap}
+.type-badge.armor{background:rgba(255,143,163,.18);color:var(--pink-soft);border:1px solid rgba(255,143,163,.4)}
+.type-badge.skin{background:rgba(255,209,102,.15);color:var(--gold-soft);border:1px solid rgba(255,209,102,.4)}
+.type-badge.story{background:rgba(155,93,229,.18);color:var(--purple-glow);border:1px solid rgba(155,93,229,.45)}
+.type-badge.event{background:rgba(255,200,221,.13);color:var(--text-dim);border:1px solid var(--glass-border2)}
+.card-title{font-size:1.05rem;font-weight:400;color:var(--pink-soft);letter-spacing:.08em}
+.card-sub{font-size:.74rem;color:var(--text-muted);margin-top:.15rem;letter-spacing:.05em}
+.card-meta{display:flex;gap:1rem;flex-wrap:wrap;margin-top:.6rem;font-size:.76rem;color:var(--text-dim)}
+.card-meta b{color:var(--gold);font-weight:400}
+.card-meta .v{color:var(--purple-glow)}
+.card-desc{margin-top:.55rem;font-size:.82rem;color:var(--text-dim);line-height:1.75;font-weight:300}
+.card-detail{margin-top:.6rem;max-height:0;overflow:hidden;transition:max-height .5s ease;font-size:.8rem;color:var(--text-dim);border-top:1px solid var(--glass-border);padding-top:0}
+.timeline-card.open .card-detail{max-height:180px;padding-top:.6rem}
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  .timeline-line{left:1.3rem}
+  .timeline-node,.timeline-node:nth-child(odd),.timeline-node:nth-child(even){flex-direction:row}
+  .timeline-dot{left:1.3rem}
+  .timeline-card,.timeline-node:nth-child(odd) .timeline-card,.timeline-node:nth-child(even) .timeline-card{
+    width:calc(100% - 2.8rem);margin-left:2.8rem;margin-right:0
+  }
+}
+</style>
+</head>
+<body>
+
+<header class="page-head">
+  <a class="back-link" href="index.html">← 返回 elysiad.top</a>
+  <h1 class="page-title">她的装甲 · 完整时间轴</h1>
+  <p class="page-sub">现实时间 · 游戏时间 · 游戏版本</p>
+</header>
+
+<div class="filter-bar" id="filterBar">
+  <div class="filter-chip on armor" data-type="armor">装甲 <span class="cnt"></span></div>
+  <div class="filter-chip on skin" data-type="skin">皮肤 <span class="cnt"></span></div>
+  <div class="filter-chip on story" data-type="story">剧情 <span class="cnt"></span></div>
+  <div class="filter-chip on event" data-type="event">活动 <span class="cnt"></span></div>
+  <div class="filter-toggles">
+    <span class="filter-toggle on" id="toggleDate">按现实日期排序</span>
+    <span class="filter-toggle" id="toggleStory">剧情在前</span>
+  </div>
+  <button class="clear-btn" id="clearBtn">清空筛选</button>
+</div>
+
+<div class="timeline" id="timeline"><div class="timeline-line"></div></div>
+
+<script src="data/timeline-data.js"></script>
+<script>
+(function(){
+  var DATA = window.TIMELINE_DATA || [];
+  var counts = {armor:0, skin:0, story:0, event:0};
+  DATA.forEach(function(it){ counts[it.type] = (counts[it.type]||0)+1; });
+  document.querySelectorAll('.filter-chip .cnt').forEach(function(c){
+    var type = c.parentNode.getAttribute('data-type');
+    c.textContent = counts[type]||0;
+  });
+
+  var types = {armor:true, skin:true, story:true, event:true};
+  var dateFirst = true;   // 默认按现实日期；故事类若无日期则排最后
+
+  function byOrder(a, b){
+    if (dateFirst) {
+      if (a.type !== b.type && a.type==='story' !== (b.type==='story')) {
+        // 剧情类（无现实日期）放现实类之后
+        return a.type==='story' ? 1 : -1;
+      }
+    } else {
+      if (a.type === 'story' && b.type !== 'story') return -1;
+      if (a.type !== 'story' && b.type === 'story') return 1;
+    }
+    if (a.type === 'story') return a.order - b.order;
+    var d = String(a.real_date||'9999').localeCompare(String(b.real_date||'9999'));
+    return d !== 0 ? d : a.order - b.order;
+  }
+
+  function render(){
+    var shown = DATA.filter(function(it){ return types[it.type]; });
+    shown.sort(byOrder);
+    var tl = document.getElementById('timeline');
+    // 清除旧节点（保留 .timeline-line）
+    tl.querySelectorAll('.timeline-node').forEach(function(n){ n.remove(); });
+    shown.forEach(function(it, idx){
+      var node = document.createElement('div');
+      node.className = 'timeline-node';
+      var meta = '';
+      if (it.real_date) meta += '<b>📅 ' + it.real_date + '</b>';
+      if (it.version)   meta += '<span class="v">🎮 ' + it.version + '</span>';
+      if (it.ingame_time) meta += '<span>⏳ ' + it.ingame_time + '</span>';
+      node.innerHTML =
+        '<div class="timeline-dot"></div>' +
+        '<div class="timeline-card">' +
+          '<div class="card-top"><span class="type-badge ' + it.type + '">' +
+          ({armor:'装甲',skin:'皮肤',story:'剧情',event:'活动'}[it.type]||it.type) + '</span></div>' +
+          '<div class="card-title">' + it.title + '</div>' +
+          (it.subtitle ? '<div class="card-sub">' + it.subtitle + '</div>' : '') +
+          '<div class="card-meta">' + meta + '</div>' +
+          '<div class="card-desc">' + it.desc + '</div>' +
+          (it.detail ? '<div class="card-detail">' + it.detail + '</div>' : '') +
+        '</div>';
+      var card = node.querySelector('.timeline-card');
+      card.addEventListener('click', function(){ card.classList.toggle('open'); });
+      tl.appendChild(node);
+    });
+    // 触发进场动画
+    tl.querySelectorAll('.timeline-node').forEach(function(n){
+      if (n.getBoundingClientRect().top < window.innerHeight) n.classList.add('visible');
+    });
+  }
+
+  var observer = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, {threshold:.1, rootMargin:'0px 0px -40px 0px'});
+
+  function observeNodes(){
+    document.querySelectorAll('.timeline-node').forEach(function(n){ observer.observe(n); });
+  }
+
+  document.querySelectorAll('.filter-chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      var t = chip.getAttribute('data-type');
+      types[t] = !types[t];
+      chip.classList.toggle('on', types[t]);
+      render(); observeNodes();
+    });
+  });
+  document.getElementById('toggleDate').addEventListener('click', function(){
+    dateFirst = !dateFirst;
+    this.classList.toggle('on', dateFirst);
+    document.getElementById('toggleStory').classList.toggle('on', !dateFirst);
+    render(); observeNodes();
+  });
+  document.getElementById('toggleStory').addEventListener('click', function(){
+    dateFirst = !dateFirst;
+    this.classList.toggle('on', !dateFirst);
+    document.getElementById('toggleDate').classList.toggle('on', dateFirst);
+    render(); observeNodes();
+  });
+  document.getElementById('clearBtn').addEventListener('click', function(){
+    Object.keys(types).forEach(function(k){ types[k]=true; });
+    document.querySelectorAll('.filter-chip').forEach(function(c){ c.classList.add('on'); });
+    dateFirst = true;
+    document.getElementById('toggleDate').classList.add('on');
+    document.getElementById('toggleStory').classList.remove('on');
+    render(); observeNodes();
+  });
+
+  render(); observeNodes();
+})();
+</script>
+</body>
+</html>
