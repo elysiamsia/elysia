@@ -262,6 +262,46 @@ body{
   50%{box-shadow:0 0 60px rgba(255,143,163,0.15),0 0 120px rgba(155,93,229,0.12)}
 }
 .profile-card{animation:glow-pulse 6s ease-in-out infinite}
+
+/* ===== ARMOR FEATURED (主页精简时间轴) ===== */
+.armor-featured{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:1rem}
+.armor-featured-row{
+  display:flex;align-items:flex-start;gap:1rem;padding:1.1rem 1.4rem;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;
+  transition:transform .3s ease,box-shadow .3s ease;
+}
+.armor-featured-row:hover{transform:translateY(-2px);box-shadow:0 0 24px rgba(255,143,163,.12)}
+.af-badge{
+  flex:0 0 auto;margin-top:.15rem;padding:.18rem .6rem;border-radius:999px;
+  font-size:.68rem;letter-spacing:.08em;white-space:nowrap;
+}
+.af-badge.armor{background:rgba(255,143,163,.16);color:var(--pink-soft);border:1px solid rgba(255,143,163,.35)}
+.af-badge.skin{background:rgba(255,209,102,.14);color:var(--gold-soft);border:1px solid rgba(255,209,102,.35)}
+.af-badge.story{background:rgba(155,93,229,.16);color:var(--purple-glow);border:1px solid rgba(155,93,229,.4)}
+.af-badge.event{background:rgba(255,200,221,.12);color:var(--text-dim);border:1px solid var(--glass-border2)}
+.af-main{flex:1 1 auto;min-width:0}
+.af-title{font-size:.98rem;font-weight:400;color:var(--text);letter-spacing:.06em;display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap}
+.af-title .t{color:var(--pink-soft)}
+.af-title .sub{font-size:.72rem;color:var(--text-muted);font-weight:300}
+.af-meta{display:flex;gap:1.1rem;flex-wrap:wrap;margin-top:.45rem;font-size:.75rem;color:var(--text-dim)}
+.af-meta b{color:var(--gold);font-weight:400}
+.af-meta .v{color:var(--purple-glow)}
+.af-desc{margin-top:.4rem;font-size:.82rem;color:var(--text-dim);line-height:1.7;font-weight:300}
+.armor-featured-more{
+  margin:2.2rem auto 0;display:inline-flex;align-items:center;gap:.5rem;
+  padding:.6rem 1.4rem;border-radius:999px;cursor:pointer;text-decoration:none;
+  background:linear-gradient(135deg,rgba(255,143,163,.18),rgba(155,93,229,.2));
+  border:1px solid rgba(255,200,221,.3);color:var(--pink-soft);
+  font-size:.85rem;letter-spacing:.15em;
+  box-shadow:0 0 20px rgba(255,143,163,.15);transition:transform .3s,box-shadow .3s;
+}
+.armor-featured-more:hover{transform:translateY(-2px);box-shadow:0 0 28px rgba(255,143,163,.28)}
+@media(max-width:480px){
+  .af-badge{font-size:.6rem}
+  .af-meta{gap:.8rem}
+}
 </style>
 </head>
 <body>
@@ -413,6 +453,20 @@ body{
         <p>侵蚀之律者入侵乐土、删除了她的数据；英桀们前仆后继，以四朵水晶花中封存的记忆将她重构。她以「人之律者」的形态再现，与英桀们一同消灭侵蚀之律者，盛大谢幕。</p>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- ===== ARMOR FEATURED ===== -->
+<section class="content-section" id="armor-featured">
+  <div class="section-title-wrap">
+    <h2 class="section-title">
+      <span class="section-title-petal"></span>她的装甲 · 她的芳华<span class="section-title-petal"></span>
+    </h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="armor-featured" id="armorFeatured"></div>
+  <div style="text-align:center">
+    <a class="armor-featured-more" href="armor.html">查看完整时间轴 →</a>
   </div>
 </section>
 
@@ -730,6 +784,41 @@ body{
     }
   });
 
+})();
+</script>
+<script>
+(function(){
+  var list = window.TIMELINE_DATA || [];
+  var featured = list.filter(function(it){ return it.featured; });
+  // 按剧情顺序/现实日期稳定排序：story 类排前，生日固定尾
+  featured.sort(function(a,b){
+    // 装甲在前（她的装甲·她的芳华），剧情次之，生日固定尾
+    var wa = a.type==='armor' ? 0 : (a.type==='story' ? 1 : 2);
+    var wb = b.type==='armor' ? 0 : (b.type==='story' ? 1 : 2);
+    if (wa !== wb) return wa - wb;
+    if (a.type==='story') return a.order - b.order;
+    if (a.id==='event-4') return 1; if (b.id==='event-4') return -1;
+    return String(a.real_date||'9999').localeCompare(String(b.real_date||'9999'));
+  });
+  var badge = {armor:'装甲', skin:'皮肤', story:'剧情', event:'活动'};
+  var box = document.getElementById('armorFeatured');
+  featured.forEach(function(it){
+    var row = document.createElement('div');
+    row.className = 'armor-featured-row';
+    var meta = '';
+    if (it.real_date) meta += '<b>📅 ' + it.real_date + '</b>';
+    if (it.version)   meta += '<span class="v">🎮 ' + it.version + '</span>';
+    if (it.ingame_time) meta += '<span>⏳ ' + it.ingame_time + '</span>';
+    row.innerHTML =
+      '<span class="af-badge ' + it.type + '">' + (badge[it.type]||it.type) + '</span>' +
+      '<div class="af-main">' +
+        '<div class="af-title"><span class="t">' + it.title + '</span>' +
+        (it.subtitle ? '<span class="sub">' + it.subtitle + '</span>' : '') + '</div>' +
+        '<div class="af-meta">' + meta + '</div>' +
+        '<div class="af-desc">' + it.desc + '</div>' +
+      '</div>';
+    box.appendChild(row);
+  });
 })();
 </script>
 </body>
