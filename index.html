@@ -350,8 +350,12 @@ body{
   /* 平时把「档案待补」和回忆都好好收着，点击才愿意打开心门哦 */
 }
 .hero-card.open .hero-lore{max-height:420px;overflow-y:auto;opacity:1}
-/* 呀！打开的小抽屉现在能放下完整的档案原文啦——长一点的内容，就让它慢慢往下滚，
-   像她把一生缓缓说给你听，一字一句都不舍得漏掉呢 ♪ */
+/* 呀！档案开头的英桀名标题行呀——那是官方截图里档案扉页的真实标题，
+   点开后用稍大一点的字把它温柔地标出来，像烫金的签名，与正文悄悄拉开层次呢♥ */
+.hero-lore-title{
+  font-size:.82rem;color:var(--pink-soft);font-weight:400;letter-spacing:.14em;
+  margin-bottom:.5rem;text-shadow:0 0 12px rgba(255,143,163,.3);
+}
 /* 寄语区：星与花下，一句收束——还能点击切换的两句寄语呢 */
 .epilogue{
   position:relative;z-index:3;max-width:620px;margin:0 auto 2rem;cursor:pointer;
@@ -898,12 +902,26 @@ body{
     card.className = 'hero-card';
     // 每张名片错峰微飘：用随机延迟让星域像呼吸一样起伏，谁也不撞谁的笑声呀
     card.style.setProperty('--float-delay', (Math.random() * 3).toFixed(2) + 's');
+    // 呀！档案正文里，有些英桀的第一行正是自己名字的「扉页签名」（凯文、维尔薇、梅比乌斯都是这样），
+    // 我就把这行单独拎出来，用标题样式温柔标出——保留真实内容，又让名字先跃入眼帘♥
+    var loreTitle = null, loreBody = h.lore || '档案待补，静候回响…';
+    if (h.lore) {
+      var firstLine = String(h.lore).split('\n')[0] || '';
+      // 只有「第一行恰好等于名字」才算标题（帕朵菲莉丝那行带了逗号正文，爱莉希雅从「少女一如」起笔，都不会误伤）
+      if (firstLine.trim() === h.name) {
+        loreTitle = firstLine.trim();   // 呀！标题行去掉收尾空白再拆出来，避免 OCR 留下的尾空格染在烫金签名上呢
+        loreBody = String(h.lore).split('\n').slice(1).join('\n') || '『档案正文，静候补录…』';
+      }
+    }
     card.innerHTML =
       '<div class="hero-rank">' + h.rank + '</div>' +
       '<div class="hero-signet">【' + h.signet + '】</div>' +
       '<div class="hero-name">' + h.name + '</div>' +
       '<div class="hero-en">' + h.en + '</div>' +
-      '<div class="hero-lore">' + (h.lore ? h.lore : '档案待补，静候回响…') + '</div>';
+      '<div class="hero-lore">' +
+        (loreTitle ? '<div class="hero-lore-title">' + loreTitle + '</div>' : '') +
+        loreBody +
+      '</div>';
     // 点击：如果我开着另一张，先温柔地关上再打开我——「一个鞠躬，另一张才登台」呢
     card.addEventListener('click', function(){
       if (openHeroCard && openHeroCard !== card) {
