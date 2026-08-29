@@ -302,6 +302,72 @@ body{
   .af-badge{font-size:.6rem}
   .af-meta{gap:.8rem}
 }
+
+/* ===== ENDING HEROS & EPILOGUE (星与花) ===== */
+/* 呀！这里是结尾区的小礼服层——名片星域、展开档案与寄语切换的样式都住这儿♥ */
+.hereos-field{
+  position:relative;z-index:3;max-width:980px;margin:0 auto 2.5rem;
+  display:flex;flex-wrap:wrap;justify-content:center;gap:1.1rem;
+  /* 把十三张名片像星座一样捧在中央，星星们谁也不会落单呀 */
+}
+/* 每张名片：竖版小卡，玻璃拟态，像一枚枚被星空托起的徽章呢 */
+.hero-card{
+  width:148px;min-height:170px;padding:1rem 0.9rem;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.4rem;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;
+  box-shadow:0 0 18px rgba(255,143,163,.06);
+  transition:transform .3s,box-shadow .3s,border-color .3s;
+  animation:hero-float 3.6s ease-in-out var(--float-delay) infinite;
+  /* 每一张都用自己的节拍轻轻晃——「错峰」，才像是活的星空群像呢 */
+}
+/* 上下小幅飘动：像花瓣在风里轻轻晃，又像星星在呼吸 */
+@keyframes hero-float{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-7px)}
+}
+.hero-card:hover{transform:translateY(-3px);box-shadow:0 0 28px rgba(255,143,163,.16)}
+/* 名片顶部的小徽章：位次罗马数字，第一位的骄傲感呢 */
+.hero-rank{
+  font-size:1.05rem;color:var(--pink-soft);letter-spacing:.1em;
+  text-shadow:0 0 12px rgba(255,143,163,.35);
+  /* 微光一圈圈漾开，是位次亮起的暖暖小灯呀 */
+}
+/* 刻印名：每个英桀最亮的那枚印记 */
+.hero-signet{
+  font-size:.72rem;color:var(--gold-soft);letter-spacing:.12em;opacity:.85;
+  /* 金色淡淡的，像铭刻在岁月里的信物嘛 */
+}
+/* 中文名与外文名：一个用来呼唤，一个用来记得 */
+.hero-name{font-size:.95rem;color:var(--text);letter-spacing:.06em}
+.hero-en{font-size:.68rem;color:var(--text-muted);letter-spacing:.1em}
+/* 展开档案区：藏在名片里的小抽屉，点开才拉开 ♪ */
+.hero-lore{
+  margin-top:.5rem;max-height:0;overflow:hidden;opacity:0;
+  font-size:.76rem;color:var(--text-dim);line-height:1.7;text-align:center;
+  transition:max-height .5s ease,opacity .4s ease;
+  /* 平时把「档案待补」和回忆都好好收着，点击才愿意打开心门哦 */
+}
+.hero-card.open .hero-lore{max-height:220px;opacity:1}
+/* 寄语区：星与花下，一句收束——还能点击切换的两句寄语呢 */
+.epilogue{
+  position:relative;z-index:3;max-width:620px;margin:0 auto 2rem;cursor:pointer;
+  padding:1rem 2rem;user-select:none;
+  font-size:clamp(1.05rem,2.8vw,1.4rem);font-weight:300;letter-spacing:.14em;
+  color:var(--pink-mist);line-height:2;text-align:center;
+  text-shadow:0 0 25px rgba(255,200,221,.3);
+  transition:transform .3s;
+  /* 谢幕的最后一句话，也要像星辉一样温柔又闪闪发光呢 */
+}
+.epilogue:hover{transform:translateY(-2px)}
+.epilogue-msg{transition:opacity .5s ease}
+.epilogue-msg.fade{opacity:0}
+@media(max-width:768px){
+  .hereos-field{gap:.8rem}
+  .hero-card{width:132px;min-height:150px}
+  /* 小屏上让名片瘦一点点，也能整整齐齐排排坐呀 */
+}
 </style>
 </head>
 <body>
