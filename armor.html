@@ -89,7 +89,10 @@ body{
 .card-meta .v{color:var(--purple-glow)}
 .card-desc{margin-top:.55rem;font-size:.82rem;color:var(--text-dim);line-height:1.75;font-weight:300}
 .card-detail{margin-top:.6rem;max-height:0;overflow:hidden;transition:max-height .5s ease;font-size:.8rem;color:var(--text-dim);border-top:1px solid var(--glass-border);padding-top:0}
+.card-image{margin-top:.6rem;max-height:0;overflow:hidden;opacity:0;text-align:center;transition:max-height .6s ease,opacity .45s ease}
+.card-image img{max-width:100%;max-height:440px;border-radius:12px;box-shadow:0 0 26px rgba(255,143,163,.15)}
 .timeline-card.open .card-detail{max-height:180px;padding-top:.6rem}
+.timeline-card.open .card-image{max-height:460px;opacity:1}
 /* ===== RESPONSIVE ===== */
 @media(max-width:768px){
   .timeline-line{left:1.3rem}
@@ -174,6 +177,7 @@ body{
           (it.subtitle ? '<div class="card-sub">' + it.subtitle + '</div>' : '') +
           '<div class="card-meta">' + meta + '</div>' +
           '<div class="card-desc">' + it.desc + '</div>' +
+          (it.img ? '<div class="card-image"><img src="' + it.img + '" alt="' + it.title + '" loading="lazy"></div>' : '') +
           (it.detail ? '<div class="card-detail">' + it.detail + '</div>' : '') +
         '</div>';
       var card = node.querySelector('.timeline-card');

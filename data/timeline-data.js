@@ -3,16 +3,16 @@
    约定：type=armor|skin|story|event；real_date 现实日期（YYYY-MM）；version 游戏版本；ingame_time 游戏内时间 */
 window.TIMELINE_DATA = [
   // ===== 可玩装甲（3 架）=====
-  { id: 'armor-pink',     type: 'armor', title: '粉色妖精小姐♪',    subtitle: 'S级 · 异能 · 物理输出', real_date: '2021-09', version: 'v5.1',  ingame_time: '前文明纪元 · 往世乐土', desc: '初入乐土时与她相遇的那位粉色妖精。', detail: '专武：往事的飞花·爱之诗', audio: null, featured: true,  order: 11 },
-  { id: 'armor-ego',      type: 'armor', title: '真我·人之律者',     subtitle: 'S级 · 异能 · 冰伤输出',  real_date: '2022-08', version: 'v6.0',  ingame_time: '前文明纪元 · 两种律者形态', desc: '人之律者与始源之律者两种形态自由切换的她。', detail: '专武：无瑕之眷·册礼', audio: null, featured: true,  order: 12 },
-  { id: 'armor-elf',      type: 'armor', title: '嗨♪爱愿妖精♥',     subtitle: 'S级 · 星尘 · 冰冻输出',  real_date: '2025-10', version: 'v8.5',  ingame_time: '黄金庭院', desc: '黄金庭院中再度起舞的妖精。', detail: '专武：澄爱挚语·馨愿', audio: null, featured: true,  order: 13 },
+  { id: 'armor-pink',     type: 'armor', title: '粉色妖精小姐♪',    subtitle: 'S级 · 异能 · 物理输出', real_date: '2021-09', version: 'v5.1',  ingame_time: '前文明纪元 · 往世乐土', desc: '初入乐土时与她相遇的那位粉色妖精。', detail: '专武：往事的飞花·爱之诗', img: 'images/armor-pink.png', audio: null, featured: true,  order: 11 },
+  { id: 'armor-ego',      type: 'armor', title: '真我·人之律者',     subtitle: 'S级 · 异能 · 冰伤输出',  real_date: '2022-08', version: 'v6.0',  ingame_time: '前文明纪元 · 两种律者形态', desc: '人之律者与始源之律者两种形态自由切换的她。', detail: '专武：无瑕之眷·册礼', img: 'images/armor-ego.png', audio: null, featured: true,  order: 12 },
+  { id: 'armor-elf',      type: 'armor', title: '嗨♪爱愿妖精♥',     subtitle: 'S级 · 星尘 · 冰冻输出',  real_date: '2025-10', version: 'v8.5',  ingame_time: '黄金庭院', desc: '黄金庭院中再度起舞的妖精。', detail: '专武：澄爱挚语·馨愿', img: 'images/armor-elf.png', audio: null, featured: true,  order: 13 },
 
   // ===== 皮肤（5 套）=====
-  { id: 'skin-1', type: 'skin', title: '粉色甜心小姐', subtitle: '粉色妖精小姐♪ 皮肤', real_date: null, version: null, ingame_time: null, desc: '甜美的粉色少女心。', detail: null, audio: null, featured: false, order: 21 },
-  { id: 'skin-2', type: 'skin', title: '夏日妖精小姐', subtitle: '粉色妖精小姐♪ 皮肤', real_date: null, version: null, ingame_time: null, desc: '在海边度过夏日的妖精。', detail: null, audio: null, featured: false, order: 22 },
-  { id: 'skin-3', type: 'skin', title: '褪色妖精小姐', subtitle: '粉色妖精小姐♪ 皮肤', real_date: null, version: null, ingame_time: null, desc: '带着些许故事感的褪色光影。', detail: null, audio: null, featured: false, order: 23 },
-  { id: 'skin-4', type: 'skin', title: '春好桃夭',     subtitle: '真我·人之律者 服装',  real_date: null, version: null, ingame_time: null, desc: '春日桃夭，灼灼其华。', detail: null, audio: null, featured: false, order: 24 },
-  { id: 'skin-5', type: 'skin', title: '霁月婵娟',     subtitle: '嗨♪爱愿妖精♥ 服装',  real_date: null, version: null, ingame_time: null, desc: '雨霁月明，婵娟千里。', detail: null, audio: null, featured: false, order: 25 },
+  { id: 'skin-1', type: 'skin', title: '粉色甜心小姐', subtitle: '粉色妖精小姐♪ 皮肤', real_date: null, version: null, ingame_time: null, desc: '甜美的粉色少女心。', detail: null, img: 'images/skin-1.png', audio: null, featured: false, order: 21 },
+  { id: 'skin-2', type: 'skin', title: '夏日妖精小姐', subtitle: '粉色妖精小姐♪ 皮肤', real_date: null, version: null, ingame_time: null, desc: '在海边度过夏日的妖精。', detail: null, img: 'images/skin-2.png', audio: null, featured: false, order: 22 },
+  { id: 'skin-3', type: 'skin', title: '褪色妖精小姐', subtitle: '粉色妖精小姐♪ 皮肤', real_date: null, version: null, ingame_time: null, desc: '带着些许故事感的褪色光影。', detail: null, img: 'images/skin-3.png', audio: null, featured: false, order: 23 },
+  { id: 'skin-4', type: 'skin', title: '春好桃夭',     subtitle: '真我·人之律者 服装',  real_date: null, version: null, ingame_time: null, desc: '春日桃夭，灼灼其华。', detail: null, img: 'images/skin-4.png', audio: null, featured: false, order: 24 },
+  { id: 'skin-5', type: 'skin', title: '霁月婵娟',     subtitle: '嗨♪爱愿妖精♥ 服装',  real_date: null, version: null, ingame_time: null, desc: '雨霁月明，婵娟千里。', detail: null, img: 'images/skin-5.png', audio: null, featured: false, order: 25 },
 
   // ===== 剧情事件（9 条，游戏内时间线）=====
   { id: 'story-1', type: 'story', title: '降生',     subtitle: '沃斯托克-51', real_date: null, version: null, ingame_time: '前文明纪元初期', desc: '从天而降的「小妖精」在梣树下被发现，被居民送往教堂旁福利院抚养。', detail: null, audio: null, featured: false, order: 1 },
