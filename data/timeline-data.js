@@ -48,3 +48,22 @@ window.QUOTE_AUDIO = {
   9: null,
   10: null,
 };
+
+// ===== 十三英桀（由用户提供的权威名册定稿，位次/刻印/姓名一一对应）=====
+// 字段：rank=位次序号(罗马数字)  signet=刻印(铭言)  name=中文名  en=外文名
+// quote=展开对话展示的铭言原文（留 null=待用户提供对应句，绝不编造）
+window.HEROS = [
+  { id: 'her-01', rank: 'Ⅰ',   signet: '救世', name: '凯文',     en: 'Kevin' },
+  { id: 'her-02', rank: 'Ⅱ',   signet: '真我', name: '爱莉希雅', en: 'Elysia' },
+  { id: 'her-03', rank: 'Ⅲ',   signet: '戒律', name: '阿波尼亚', en: 'Aponia' },
+  { id: 'her-04', rank: 'Ⅳ',   signet: '黄金', name: '伊甸',     en: 'Eden' },
+  { id: 'her-05', rank: 'Ⅴ',   signet: '螺旋', name: '维尔薇',   en: 'Vill-V' },
+  { id: 'her-06', rank: 'Ⅵ',   signet: '鏖灭', name: '千劫',     en: 'Kalpas' },
+  { id: 'her-07', rank: 'Ⅶ',   signet: '天慧', name: '苏',       en: 'Su' },
+  { id: 'her-08', rank: 'Ⅷ',   signet: '刹那', name: '樱',       en: 'Sakura' },
+  { id: 'her-09', rank: 'Ⅸ',   signet: '旭光', name: '科斯魔',   en: 'Kosma' },
+  { id: 'her-10', rank: 'Ⅹ',   signet: '无限', name: '梅比乌斯', en: 'Mobius' },
+  { id: 'her-11', rank: 'Ⅺ',   signet: '繁星', name: '格蕾修',   en: 'Griseo' },
+  { id: 'her-12', rank: 'Ⅻ',   signet: '浮生', name: '华',       en: 'Hua' },
+  { id: 'her-13', rank: 'ⅩⅢ', signet: '空梦', name: '帕朵菲莉丝', en: 'Pardofelis' },
+];
