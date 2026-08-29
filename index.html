@@ -680,22 +680,42 @@ body{
   for (var i = 0; i < starCount; i++) stars.push(createStar());
 
   var scrollRatio = 0;
+  // 呀！用一个 0~1 的 blend 值：滚动越靠结尾，花瓣越白越透，像融进星光里嘛
+  var starBlend = Math.max(0, Math.min(1, (scrollRatio - 0.72) / 0.28));
   window.addEventListener('scroll', function() {
     var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
     scrollRatio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+    // 跟着滚动实时刷新「花→星」的渐变比例，好让花瓣一点点变成星屑呢
+    starBlend = Math.max(0, Math.min(1, (scrollRatio - 0.72) / 0.28));
   });
 
+  // 呀！让樱瓣在结尾处慢慢变成星屑——「从花到星」的幻化呢
+  // 用一个 0~1 的 blend 值：滚动越靠结尾，花瓣越白越透明，像融进了星光里
   function drawPetal(p) {
     ctx.save();
+    // 先转到花瓣自己的位置，好让这朵「小星光」在属于自己的角落里轻舞嘛
     ctx.translate(p.x, p.y);
     ctx.rotate(p.rotation);
-    ctx.globalAlpha = p.opacity;
-    ctx.fillStyle = p.color;
+    // 樱瓣颜色与星屑白之间的插值：blend=0 是本色，blend=1 是「星屑紫白」
+    ctx.globalAlpha = p.opacity * (1 - starBlend * 0.45);
+    var c = p.color;
+    // 到了结尾，就把粉花瓣悄悄染成星屑色，像星光终于接住了她呢
+    ctx.fillStyle = starBlend < 0.01 ? c : mixPetalColor(c, starBlend);
     ctx.beginPath();
     // Petal shape: an ellipse
     ctx.ellipse(0, 0, Math.max(0.5, p.size * 0.22), Math.max(0.5, p.size * 0.5), 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+  }
+
+  // 花瓣色 → 星屑色（紫白）：把粉色调进「星尘白」的染色小魔法呀
+  function mixPetalColor(hex, t) {
+    var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    var tr = 235, tg = 230, tb = 255;          // 星屑紫白的目标色
+    r = Math.round(r + (tr - r) * t);
+    g = Math.round(g + (tg - g) * t);
+    b = Math.round(b + (tb - b) * t);
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
   }
 
   function drawStar(s, time) {
@@ -792,11 +812,14 @@ body{
   });
 
   // Ending section
+  // 呀！结尾的小灯也要温柔点亮——寄语换成新容器，落款仍是那份不变的致意呢
   var endingObserver = new IntersectionObserver(function(entries) {
     entries.forEach(function(entry) {
       if (entry.isIntersecting) {
-        document.getElementById('endingQuote').classList.add('visible');
-        document.getElementById('endingAttr').classList.add('visible');
+        var eq = document.getElementById('epilogueQuote');
+        if (eq) { eq.classList.add('visible'); }
+        var ea = document.getElementById('endingAttr');
+        if (ea) { ea.classList.add('visible'); }
       }
     });
   }, { threshold: 0.3 });
@@ -855,10 +878,71 @@ body{
   // ===== RESIZE HANDLER FOR PARTICLES =====
   window.addEventListener('resize', function() {
     // Reposition stars that are out of bounds
+    // 呀！屏幕一变，星星们也要重新找到自己的位置，才不会挤成一团嘛
     for (var i = 0; i < stars.length; i++) {
       if (stars[i].x > W) stars[i].x = Math.random() * W;
+      // 出了画布的星，就像迷路的萤火，要把它轻轻引回夜空哦
       if (stars[i].y > H) stars[i].y = Math.random() * H;
     }
+  });
+
+  // ===== ENDING HEROS CARDS (十三英桀名片) =====
+  // 呀！把十三位英桀请上场——他们是「被记住就是延续」的星空群像呢♥
+  var hereosField = document.getElementById('hereosField');
+  var heroList = window.HEROS || [];
+  var openHeroCard = null;                     // 同时只开一张的「现场唯一聚光灯」
+  heroList.forEach(function(h, i){
+    var card = document.createElement('div');
+    card.className = 'hero-card';
+    // 每张名片错峰微飘：用随机延迟让星域像呼吸一样起伏，谁也不撞谁的笑声呀
+    card.style.setProperty('--float-delay', (Math.random() * 3).toFixed(2) + 's');
+    card.innerHTML =
+      '<div class="hero-rank">' + h.rank + '</div>' +
+      '<div class="hero-signet">【' + h.signet + '】</div>' +
+      '<div class="hero-name">' + h.name + '</div>' +
+      '<div class="hero-en">' + h.en + '</div>' +
+      '<div class="hero-lore">' + (h.lore ? h.lore : '档案待补，静候回响…') + '</div>';
+    // 点击：如果我开着另一张，先温柔地关上再打开我——「一个鞠躬，另一张才登台」呢
+    card.addEventListener('click', function(){
+      if (openHeroCard && openHeroCard !== card) {
+        openHeroCard.classList.remove('open');
+      }
+      var willOpen = !card.classList.contains('open');
+      card.classList.toggle('open', willOpen);
+      openHeroCard = willOpen ? card : null;
+    });
+    hereosField.appendChild(card);
+  });
+
+  // 点名片星域以外的空处 → 收起打开的名片（不打扰星空，只在谢幕时收束）
+  document.addEventListener('click', function(e){
+    if (openHeroCard && !e.target.closest('.hero-card')) {
+      openHeroCard.classList.remove('open');
+      openHeroCard = null;
+    }
+  });
+
+  // ===== EPILOGUE DUAL SWITCH (寄语双切换) =====
+  // 呀！寄语也准备好两句啦——点击一下，心声就在两句之间轻轻流转♪
+  var epilogueMessages = [
+    '「带着我们的祝福，继续前进吧。」',
+    '「爱莉希雅永远都在这里，回应你的期待。」'
+  ];
+  var epilogueEl = document.getElementById('epilogueQuote');
+  var epilogueMsgEl = epilogueEl.querySelector('.epilogue-msg');
+  var epilogueIdx = 0;
+  epilogueEl.addEventListener('click', function(){
+    // 先淡出旧句，再淡入新句——像换一口气，又不急不忙的样子呢
+    epilogueMsgEl.classList.add('fade');
+    setTimeout(function(){
+      epilogueIdx = (epilogueIdx + 1) % epilogueMessages.length;
+      epilogueMsgEl.textContent = epilogueMessages[epilogueIdx];
+      epilogueMsgEl.classList.remove('fade');
+    }, 500);
+  });
+  // 键盘也能切换哦——回车或空格，和她面对面时也方便回应嘛
+  epilogueEl.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); epilogueEl.click(); }
   });
 
 })();
