@@ -349,7 +349,9 @@ body{
   transition:max-height .5s ease,opacity .4s ease;
   /* 平时把「档案待补」和回忆都好好收着，点击才愿意打开心门哦 */
 }
-.hero-card.open .hero-lore{max-height:220px;opacity:1}
+.hero-card.open .hero-lore{max-height:420px;overflow-y:auto;opacity:1}
+/* 呀！打开的小抽屉现在能放下完整的档案原文啦——长一点的内容，就让它慢慢往下滚，
+   像她把一生缓缓说给你听，一字一句都不舍得漏掉呢 ♪ */
 /* 寄语区：星与花下，一句收束——还能点击切换的两句寄语呢 */
 .epilogue{
   position:relative;z-index:3;max-width:620px;margin:0 auto 2rem;cursor:pointer;
