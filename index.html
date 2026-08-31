@@ -1002,6 +1002,73 @@ body{
   });
 })();
 </script>
+  <!-- ===== 英桀名片 · 第二次点击跳转（预留机制） ===== -->
+<style>
+#heroToast{position:fixed;left:50%;bottom:18%;transform:translateX(-50%) translateY(8px);z-index:9995;
+  padding:.7rem 1.4rem;border-radius:999px;font-size:.85rem;letter-spacing:.08em;color:#ffd6e8;
+  background:linear-gradient(135deg,rgba(26,14,46,.92),rgba(45,27,78,.92));
+  border:1px solid rgba(255,200,221,.3);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 6px 30px rgba(0,0,0,.4),0 0 24px rgba(255,143,163,.18);
+  opacity:0;transition:opacity .35s ease,transform .35s ease;pointer-events:none;white-space:nowrap;max-width:90vw}
+#heroToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+<script>
+(function(){
+  /* 地址预留表：约定 elysiad.top/<拼音>/，主页即爱莉希雅的乐土 */
+  var HERO_SITES = {
+    '爱莉希雅': '/',
+    '凯文': '/kevin/',
+    '阿波尼亚': '/aponia/',
+    '伊甸': '/eden/',
+    '维尔薇': '/villv/',
+    '千劫': '/kalpas/',
+    '苏': '/su/',
+    '樱': '/sakura/',
+    '科斯魔': '/kosma/',
+    '梅比乌斯': '/mobius/',
+    '格蕾修': '/griseo/',
+    '华': '/hua/',
+    '帕朵菲莉丝': '/pardofelis/'
+  };
+  /* 上线开关：哪位英桀的个人网站建好了，把名字改成 true 即可 */
+  var BUILT = { '爱莉希雅': true };
+
+  var toast = null, toastTimer = null;
+  function showToast(text){
+    if (!toast){
+      toast = document.createElement('div');
+      toast.id = 'heroToast';
+      document.body.appendChild(toast);
+    }
+    clearTimeout(toastTimer);
+    toast.textContent = text;
+    toast.classList.remove('show');
+    void toast.offsetWidth;
+    toast.classList.add('show');
+    toastTimer = setTimeout(function(){ toast.classList.remove('show'); }, 2400);
+  }
+
+  /* 捕获阶段拦截：第一次点击交给原逻辑展开档案；
+     第二次点击已展开的名片 → 收起原逻辑，改为跳转或提示 */
+  document.addEventListener('click', function(e){
+    var card = e.target.closest ? e.target.closest('.hero-card') : null;
+    if (!card || !card.classList.contains('open')) return;
+    e.stopPropagation();
+    var nameEl = card.querySelector('.hero-name');
+    var name = nameEl ? nameEl.textContent.trim() : '';
+    if (name === '爱莉希雅'){
+      showToast('你已经在她的乐土里啦♪');
+      return;
+    }
+    if (BUILT[name] && HERO_SITES[name]){
+      location.href = HERO_SITES[name];
+      return;
+    }
+    showToast('「' + name + '」的乐土尚在建设中，敬请期待…');
+  }, true);
+})();
+</script>
+
 </body>
 <!-- ===== 生日倒计时彩蛋 ===== -->
 <style>
