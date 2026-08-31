@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<script>
+!(function(j,a,g){j.__itrace_conf = {bid: 'f43basl8-6nqu7l3w',rel: '0.0.1', spa: true, uid: '', plugins:['jserror','interface','perf','resource','flow','blank']};var b = a.createElement("script");var d = a.getElementsByTagName("script")[0];b.type = "text/javascript";b.crossorigin = true;b.async = true;b.onload = function(){j.__itrace && j.__itrace.setReady()};d.parentNode.insertBefore(b,d);b.src = g})(window, document, "https://g.alicdn.com/woodpeckerx/itrace-next/itrace.iife.js")
+</script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="same-origin">
+<title>elysiad.top/eden — 致伊甸</title>
+<!-- SECTION: styles -->
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-abyss:#0a0608;--bg-deep:#150a10;--bg-wine:#241019;--bg-mid:#3a1a26;
+  --gold-mist:#ffe9b8;--gold:#ffd166;--gold-deep:#e8b931;--gold-warm:#c9972c;
+  --wine:#a83246;--wine-deep:#6e1f30;
+  --text:#f5e9d8;--text-dim:#cdb79a;--text-muted:#96805f;
+  --glass-bg:rgba(255,209,102,.06);--glass-border:rgba(255,209,102,.14);
+  --glass-bg2:rgba(168,50,70,.07);--glass-border2:rgba(168,50,70,.16);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg-abyss);color:var(--text);overflow-x:hidden;line-height:1.7;
+}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg-abyss)}
+::-webkit-scrollbar-thumb{background:var(--gold-warm);border-radius:3px}
+
+#goldCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+
+/* SECTION: opening */
+.section-opening{
+  position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;
+  padding:2rem;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,var(--bg-abyss) 0%,var(--bg-deep) 30%,var(--bg-wine) 60%,var(--bg-deep) 100%);
+}
+.opening-ornament{font-size:1.1rem;color:var(--gold-deep);letter-spacing:.6em;opacity:0;transition:opacity 1.2s ease;margin-bottom:1.2rem}
+.opening-title{
+  font-size:clamp(1.6rem,5vw,3.2rem);font-weight:300;letter-spacing:.12em;
+  color:var(--gold-mist);text-shadow:0 0 30px rgba(255,209,102,.35),0 0 60px rgba(255,209,102,.15);
+  min-height:2.8em;max-width:820px;
+}
+.typing-cursor{display:inline-block;font-weight:100;color:var(--gold);animation:blink-cursor .8s step-end infinite}
+.typing-cursor.hidden{display:none}
+@keyframes blink-cursor{0%,100%{opacity:1}50%{opacity:0}}
+.opening-subtitle{
+  font-size:clamp(.9rem,2.5vw,1.25rem);color:var(--text-dim);letter-spacing:.35em;
+  margin-top:1.5rem;opacity:0;transition:opacity 1.5s ease;
+}
+.opening-subtitle.visible{opacity:1}
+.scroll-hint{
+  position:absolute;bottom:calc(2.5rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  opacity:0;transition:opacity 1s ease .5s;
+}
+.scroll-hint.visible{opacity:.6}
+.scroll-hint span{font-size:.75rem;color:var(--text-muted);letter-spacing:.2em}
+.scroll-chevron{
+  width:20px;height:20px;border-right:2px solid var(--gold);border-bottom:2px solid var(--gold);
+  transform:rotate(45deg);animation:chevron-bounce 2s ease-in-out infinite;
+}
+@keyframes chevron-bounce{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(6px)}}
+
+/* SECTION: common section */
+.content-section{
+  position:relative;z-index:2;padding:6rem 1.5rem;
+  background:linear-gradient(180deg,transparent 0%,rgba(10,6,8,.3) 20%,rgba(10,6,8,.3) 80%,transparent 100%);
+}
+.section-title-wrap{text-align:center;margin-bottom:3.5rem}
+.section-title{
+  font-size:clamp(1.5rem,4vw,2.2rem);font-weight:300;letter-spacing:.2em;
+  color:var(--gold);text-shadow:0 0 20px rgba(255,209,102,.25);
+}
+.section-title-line{display:block;width:60px;height:1px;margin:1rem auto 0;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.section-title-note{display:inline-block;font-size:.85em;color:var(--gold-deep);margin:0 .8rem;opacity:.75}
+
+/* SECTION: profile */
+.profile-card{
+  max-width:720px;margin:0 auto;padding:clamp(2rem,5vw,3rem);
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--glass-border);border-radius:24px;
+  box-shadow:0 0 50px rgba(255,209,102,.08),0 0 100px rgba(168,50,70,.08),inset 0 1px 0 rgba(255,255,255,.07);
+  position:relative;overflow:hidden;animation:glow-pulse 6s ease-in-out infinite;
+}
+.profile-card::before{
+  content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+  background:conic-gradient(from 0deg,transparent,rgba(255,209,102,.05),transparent,rgba(168,50,70,.05),transparent);
+  animation:card-rotate 22s linear infinite;
+}
+@keyframes card-rotate{to{transform:rotate(360deg)}}
+@keyframes glow-pulse{
+  0%,100%{box-shadow:0 0 50px rgba(255,209,102,.08),0 0 100px rgba(168,50,70,.08)}
+  50%{box-shadow:0 0 60px rgba(255,209,102,.14),0 0 120px rgba(168,50,70,.12)}
+}
+.profile-card-inner{position:relative;z-index:1}
+.profile-name{
+  font-size:clamp(1.8rem,5vw,2.8rem);font-weight:200;letter-spacing:.12em;
+  color:var(--gold-mist);text-align:center;margin-bottom:.2em;
+}
+.profile-name-en{
+  font-size:clamp(.9rem,2vw,1.1rem);font-weight:300;letter-spacing:.45em;
+  color:var(--wine);text-align:center;margin-bottom:2rem;text-shadow:0 0 15px rgba(168,50,70,.35);
+}
+.profile-divider{width:100%;height:1px;margin:1.5rem 0;background:linear-gradient(90deg,transparent,var(--glass-border),var(--glass-border2),transparent)}
+.profile-grid{display:grid;grid-template-columns:auto 1fr;gap:.6rem 1.5rem;font-size:.92rem}
+.profile-label{color:var(--text-muted);white-space:nowrap;font-weight:400}
+.profile-value{color:var(--text);font-weight:300}
+.profile-value .highlight{color:var(--gold);font-weight:400}
+.profile-value .winered{color:#d8677c;font-weight:400}
+.profile-desc{
+  margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--glass-border);
+  font-size:.9rem;color:var(--text-dim);line-height:1.9;font-weight:300;
+}
+
+/* SECTION: timeline */
+.timeline{position:relative;max-width:800px;margin:0 auto;padding:2rem 0}
+.timeline-line{
+  position:absolute;left:50%;top:0;bottom:0;width:2px;
+  background:linear-gradient(180deg,transparent,var(--gold-warm) 10%,var(--gold-deep) 50%,var(--gold-warm) 90%,transparent);
+  transform:translateX(-50%);
+}
+.timeline-node{
+  position:relative;display:flex;align-items:flex-start;margin-bottom:3rem;
+  opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;
+}
+.timeline-node.visible{opacity:1;transform:translateY(0)}
+.timeline-node:nth-child(odd){flex-direction:row}
+.timeline-node:nth-child(even){flex-direction:row-reverse}
+.timeline-dot{
+  position:absolute;left:50%;top:.5rem;width:14px;height:14px;border-radius:50%;
+  border:2px solid var(--gold);background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
+  box-shadow:0 0 12px rgba(255,209,102,.4);transition:background .3s;
+}
+.timeline-node.visible .timeline-dot{background:var(--gold)}
+.timeline-card{
+  width:calc(50% - 2.5rem);padding:1.2rem 1.5rem;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 0 20px rgba(255,209,102,.05);
+}
+.timeline-node:nth-child(odd) .timeline-card{margin-right:auto}
+.timeline-node:nth-child(even) .timeline-card{margin-left:auto}
+.timeline-card h3{font-size:1.05rem;font-weight:400;color:var(--gold);margin-bottom:.5rem;letter-spacing:.1em}
+.timeline-card p{font-size:.85rem;color:var(--text-dim);line-height:1.8;font-weight:300}
+
+/* SECTION: quotes */
+.quotes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;max-width:1000px;margin:0 auto}
+.quote-card{
+  padding:1.5rem;min-height:140px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
+  box-shadow:0 0 20px rgba(255,209,102,.04);
+  transition:transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
+}
+.quote-card:hover{transform:translateY(-3px);box-shadow:0 0 30px rgba(255,209,102,.12),0 8px 30px rgba(0,0,0,.2)}
+.quote-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(circle at 30% 30%,rgba(255,209,102,.06),transparent 60%);pointer-events:none;
+}
+.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition:opacity .4s ease}
+.quote-text.fading{opacity:0}
+.quote-hint{position:absolute;bottom:.6rem;right:.8rem;font-size:.65rem;color:var(--text-muted);opacity:.4}
+
+/* SECTION: ending */
+.section-ending{
+  position:relative;z-index:2;min-height:70vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:4rem 2rem;
+  background:linear-gradient(180deg,transparent,var(--bg-abyss) 30%,var(--bg-abyss));
+}
+.ending-stars{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.ending-star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--dur) ease-in-out infinite;animation-delay:var(--delay)}
+@keyframes twinkle{0%,100%{opacity:var(--min-o)}50%{opacity:var(--max-o)}}
+.ending-quote{
+  font-size:clamp(1.1rem,3vw,1.6rem);font-weight:300;letter-spacing:.12em;
+  color:var(--gold-mist);line-height:2;text-shadow:0 0 25px rgba(255,209,102,.3);
+  max-width:640px;opacity:0;transform:translateY(20px);transition:opacity 1.5s ease,transform 1.5s ease;
+}
+.ending-quote.visible{opacity:1;transform:translateY(0)}
+.ending-attr{
+  margin-top:2.5rem;font-size:.85rem;color:var(--text-muted);letter-spacing:.25em;
+  opacity:0;transition:opacity 1.5s ease .8s;
+}
+.ending-attr.visible{opacity:.7}
+.back-link{
+  display:inline-flex;align-items:center;gap:.5rem;margin-top:3rem;
+  min-height:44px;padding:.6rem 1.6rem;border-radius:999px;text-decoration:none;
+  color:var(--gold);font-size:.85rem;letter-spacing:.15em;
+  border:1px solid var(--glass-border);background:rgba(255,209,102,.05);
+  transition:background .3s ease,box-shadow .3s ease,transform .3s ease;
+  opacity:0;
+}
+.back-link.visible{opacity:1;transition:opacity 1.5s ease 1.2s,background .3s ease,box-shadow .3s ease,transform .3s ease}
+.back-link:hover{background:rgba(255,209,102,.12);box-shadow:0 0 24px rgba(255,209,102,.2);transform:translateY(-2px)}
+.ending-fade{position:absolute;bottom:0;left:0;right:0;height:120px;background:linear-gradient(transparent,var(--bg-abyss));pointer-events:none}
+
+/* SECTION: ripple */
+.ripple-note{
+  position:fixed;pointer-events:none;z-index:9999;color:var(--gold);
+  font-size:14px;opacity:.9;
+  transition:all .85s cubic-bezier(.22,.61,.36,1);
+  text-shadow:0 0 8px rgba(255,209,102,.6);
+}
+
+/* SECTION: responsive */
+@media(max-width:768px){
+  .timeline-line{left:1.5rem}
+  .timeline-node,.timeline-node:nth-child(odd),.timeline-node:nth-child(even){flex-direction:row}
+  .timeline-dot{left:1.5rem}
+  .timeline-card,.timeline-node:nth-child(odd) .timeline-card,.timeline-node:nth-child(even) .timeline-card{
+    width:calc(100% - 3.5rem);margin-left:3.5rem;margin-right:0;
+  }
+  .quotes-grid{grid-template-columns:1fr}
+  .profile-grid{grid-template-columns:auto 1fr;gap:.5rem 1rem;font-size:.85rem}
+}
+@media(max-width:480px){
+  .content-section{padding:4rem 1rem}
+  .profile-card{padding:1.5rem}
+  .quote-card{min-height:120px;padding:1.2rem}
+}
+</style>
+</head>
+<body>
+
+<canvas id="goldCanvas"></canvas>
+
+<!-- SECTION: opening -->
+<section class="section-opening" id="opening">
+  <div class="opening-content">
+    <div class="opening-ornament" id="openingOrn">✦ ✦ ✦</div>
+    <h1 class="opening-title" id="typewriterText"></h1><span class="typing-cursor" id="typingCursor">|</span>
+    <p class="opening-subtitle" id="openingSub">欢迎来到黄金庭园</p>
+  </div>
+  <div class="scroll-hint" id="scrollHint">
+    <span>向下聆听</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</section>
+
+<!-- SECTION: about -->
+<section class="content-section" id="about">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-note">♪</span>关于她<span class="section-title-note">♪</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="profile-card">
+    <div class="profile-card-inner">
+      <div class="profile-name">伊甸</div>
+      <div class="profile-name-en">E D E N</div>
+      <div class="profile-divider"></div>
+      <div class="profile-grid">
+        <span class="profile-label">名字来源</span>
+        <span class="profile-value">伊甸园（Eden），最初的艺名</span>
+        <span class="profile-label">出处</span>
+        <span class="profile-value">《崩坏3》第一文明纪元</span>
+        <span class="profile-label">身份</span>
+        <span class="profile-value">世界级巨星 · 逐火之蛾融合战士</span>
+        <span class="profile-label">位次</span>
+        <span class="profile-value"><span class="highlight">Ⅳ</span></span>
+        <span class="profile-label">刻印</span>
+        <span class="profile-value"><span class="highlight">「黄金」</span></span>
+        <span class="profile-label">生日</span>
+        <span class="profile-value"><span class="winered">10月31日</span></span>
+        <span class="profile-label">身高</span>
+        <span class="profile-value">174cm</span>
+        <span class="profile-label">武器</span>
+        <span class="profile-value">双枪 · 第九神之键<span class="highlight">「星海谐律」</span>（伊甸之心）</span>
+        <span class="profile-label">融合崩坏兽</span>
+        <span class="profile-value">「伏罗那」——光辉的海洋</span>
+        <span class="profile-label">配音</span>
+        <span class="profile-value">张安琪（汉语）/ 木村珠莉（日语）</span>
+        <span class="profile-label">外貌</span>
+        <span class="profile-value">酒红色长发，金色眼瞳</span>
+      </div>
+      <div class="profile-desc">
+        直至那场大火将万物付之一炬前，始终作为耀眼的「巨星」为世界所知的女子。模特、艺人、歌手、设计师、主理人——在文明步入末日之前，她曾拥有过诸多身份。在这日渐沦亡的末世，她仍未停止放歌，以金色的声调，使人们忆起旧时代的烟尘。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: journey -->
+<section class="content-section" id="journey">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-note">♪</span>她的时代<span class="section-title-note">♪</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="timeline">
+    <div class="timeline-line"></div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>音乐世家</h3>
+        <p>出生于音乐世家，自幼钟爱古典、倾心歌剧。经纪公司要她顺从「现实」去唱流行，年轻气盛的她断然拒绝，决意寻找独属于自己的舞台。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>一鸣惊人</h3>
+        <p>解约之后，她独自争取到一场公益演出，一夜之间一鸣惊人。此后名气席卷全球——模特、艺人、歌手、设计师、主理人，她是那个时代最璀璨的星光。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>大火</h3>
+        <p>第七次崩坏降临，炎之律者的烈焰吞没她正在演出的舞台，旧时代的一切化为灰烬。她在废墟中一无所有，幸而被及时赶到的华所救。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>余烬</h3>
+        <p>灾后一年，她积极投身救灾、自费重建家园。人们说「娱乐终会死去，而艺术永不消散」——她仍活跃在大众的视野里，用歌声证明这句话。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>逐火</h3>
+        <p>她结识的第一位逐火之蛾成员是爱莉希雅，并应其邀请加入组织。「作为明星的自己已经消失，而作为战士的自己依旧需要闪耀。」</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>金辉</h3>
+        <p>她主动申请成为融合战士，挑选了最闪耀的崩坏兽「伏罗那」。第九次崩坏后，第九神之键「星海谐律」在她手中奏出超强能量——后来人们为纪念她，将其改名为「伊甸之心」。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>庭园</h3>
+        <p>「约束的惨剧」后，爱莉希雅提议建立「逐火十三英桀」却遭驳回。伊甸慷慨出资，将自己的黄金庭院作为往世乐土的基础——那座庭园，从此成为留给后世的等待。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>谢幕</h3>
+        <p>终焉之战后，她拒绝进入休眠舱。「时代的象征，正应与时代一同消逝。」她独自走向荒芜的大地，唱着最后一首歌，与她深爱的时代一同落幕。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>回响</h3>
+        <p>在往世乐土，她以记忆体的身份再度举起金色酒盏。侵蚀之律者入侵时，她化作光融入爱莉希雅，帮助那位挚友重现于世——歌声落幕，回响不灭。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: quotes -->
+<section class="content-section" id="quotes">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-note">♪</span>黄金颂歌<span class="section-title-note">♪</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="quotes-grid" id="quotesGrid" data-primary-action></div>
+</section>
+
+<!-- SECTION: ending -->
+<section class="section-ending" id="ending">
+  <div class="ending-stars" id="endingStars"></div>
+  <p class="ending-quote" id="endingQuote">愿文明，如星火般延续。<br>愿此世，如黄金般辉煌。</p>
+  <p class="ending-attr" id="endingAttr">致伊甸 · elysiad.top/eden</p>
+  <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
+  <div class="ending-fade"></div>
+</section>
+
+<!-- SECTION: scripts -->
+<script>
+(function(){
+  /* SECTION: quotes data */
+  var quotes = [
+    '「我的时代已经一曲终了，愿你们的未来能够长颂不休。」',
+    '「愿文明，如星火般延续。愿此世，如黄金般辉煌。」',
+    '「愿你我永不离别。愿时光永驻此刻。」',
+    '「最璀璨的星光，正是在陨落时才落入人们眼中的。」',
+    '「天星之所以闪耀，不是因为它想要去闪耀，而是因为它生来如此。」',
+    '「既然要活，那就要活得绚烂璀璨，一如往昔。」',
+    '「我不过是舞台上的一介歌者、一抹为观众而闪耀的星光罢了。」',
+    '「只要不断打磨自身的光芒，那么无论是谁都一定无法对其视而不见。」',
+    '「属于我们的时代，或许终将如尘烟一般消散。但这座『黄金庭园』，却将永远于此等待。」',
+    '「美丽的事物，那也是我的追求。」'
+  ];
+
+  /* SECTION: quotes build */
+  var grid = document.getElementById('quotesGrid');
+  var cardIndices = [];
+  quotes.forEach(function(q, i){
+    var card = document.createElement('div');
+    card.className = 'quote-card';
+    card.setAttribute('role','button');
+    card.setAttribute('tabindex','0');
+    card.setAttribute('aria-label','黄金诗句，点击切换');
+    var textEl = document.createElement('div');
+    textEl.className = 'quote-text';
+    textEl.textContent = q;
+    var hint = document.createElement('span');
+    hint.className = 'quote-hint';
+    hint.textContent = '点击切换';
+    card.appendChild(textEl);
+    card.appendChild(hint);
+    cardIndices.push(i);
+    card.addEventListener('click', function(){
+      var idxPos = Array.prototype.indexOf.call(grid.querySelectorAll('.quote-card'), card);
+      var nextIdx = (cardIndices[idxPos] + 1) % quotes.length;
+      cardIndices[idxPos] = nextIdx;
+      textEl.classList.add('fading');
+      setTimeout(function(){
+        textEl.textContent = quotes[nextIdx];
+        textEl.classList.remove('fading');
+      }, 400);
+    });
+    card.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+    });
+    grid.appendChild(card);
+  });
+
+  /* SECTION: canvas particles */
+  var canvas = document.getElementById('goldCanvas');
+  var ctx = canvas.getContext('2d');
+  var W, H;
+  var goldColors = ['#ffe9b8','#ffd166','#e8b931','#c9972c','#fff3d6'];
+  var wineColors = ['#d8677c','#a83246'];
+
+  function resize(){
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  /* 金色光尘：自下而上，如舞台灯光里的微尘 */
+  var motes = [];
+  var moteCount = Math.min(50, Math.floor(window.innerWidth / 22));
+  function createMote(fromBottom){
+    return {
+      x: Math.random() * W,
+      y: fromBottom ? H + 10 + Math.random() * 80 : Math.random() * H,
+      size: 1 + Math.random() * 2.6,
+      speedY: -(0.15 + Math.random() * 0.45),
+      drift: (Math.random() - 0.5) * 0.25,
+      baseOpacity: 0.15 + Math.random() * 0.5,
+      twinkleSpd: 0.006 + Math.random() * 0.02,
+      twinkleOff: Math.random() * Math.PI * 2,
+      color: goldColors[Math.floor(Math.random() * goldColors.length)]
+    };
+  }
+  for (var i = 0; i < moteCount; i++) motes.push(createMote(false));
+
+  /* 星尘 */
+  var stars = [];
+  var starCount = Math.min(60, Math.floor(window.innerWidth / 20));
+  function createStar(){
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      size: 0.4 + Math.random() * 1.6,
+      baseOpacity: 0.15 + Math.random() * 0.5,
+      twinkleSpd: 0.008 + Math.random() * 0.025,
+      twinkleOff: Math.random() * Math.PI * 2,
+      color: Math.random() > 0.25 ? '#ffffff' : wineColors[Math.floor(Math.random() * wineColors.length)]
+    };
+  }
+  for (i = 0; i < starCount; i++) stars.push(createStar());
+
+  var scrollRatio = 0;
+  window.addEventListener('scroll', function(){
+    var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    scrollRatio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+  });
+
+  var time = 0;
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function animate(){
+    if (reducedMotion) return;
+    time++;
+    ctx.clearRect(0, 0, W, H);
+    var fadeFactor = 1 - scrollRatio * 0.6;
+    var i, s, m, tw;
+    for (i = 0; i < stars.length; i++){
+      s = stars[i];
+      tw = 0.5 + 0.5 * Math.sin(time * s.twinkleSpd + s.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = s.baseOpacity * tw * fadeFactor;
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, Math.max(0.2, s.size), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    for (i = 0; i < motes.length; i++){
+      m = motes[i];
+      m.y += m.speedY;
+      m.x += m.drift + Math.sin(time * 0.01 + m.twinkleOff) * 0.2;
+      if (m.y < -15) motes[i] = createMote(true), m = motes[i];
+      tw = 0.5 + 0.5 * Math.sin(time * m.twinkleSpd + m.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = m.baseOpacity * tw * fadeFactor;
+      ctx.fillStyle = m.color;
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, Math.max(0.3, m.size), 0, Math.PI * 2);
+      ctx.fill();
+      if (m.size > 1.8){
+        ctx.globalAlpha = m.baseOpacity * tw * fadeFactor * 0.3;
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, m.size * 2.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  /* SECTION: typewriter */
+  var typewriterEl = document.getElementById('typewriterText');
+  var cursorEl = document.getElementById('typingCursor');
+  var subEl = document.getElementById('openingSub');
+  var ornEl = document.getElementById('openingOrn');
+  var scrollHintEl = document.getElementById('scrollHint');
+  var typeText = '我的时代已经一曲终了，愿你们的未来能够长颂不休。';
+  var charIndex = 0;
+
+  function typeNext(){
+    if (charIndex < typeText.length){
+      typewriterEl.textContent += typeText[charIndex];
+      charIndex++;
+      setTimeout(typeNext, 140 + Math.random() * 70);
+    } else {
+      setTimeout(function(){
+        cursorEl.classList.add('hidden');
+        subEl.classList.add('visible');
+        setTimeout(function(){ scrollHintEl.classList.add('visible'); }, 1200);
+      }, 600);
+    }
+  }
+  ornEl.classList.add('visible');
+  setTimeout(typeNext, 800);
+
+  /* SECTION: scroll animations */
+  var observerOptions = { threshold: 0.15, rootMargin: '0px 0px -50px 0px' };
+  var scrollObserver = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, observerOptions);
+  document.querySelectorAll('.timeline-node').forEach(function(node){
+    scrollObserver.observe(node);
+  });
+
+  var endingObserver = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting){
+        document.getElementById('endingQuote').classList.add('visible');
+        document.getElementById('endingAttr').classList.add('visible');
+        document.getElementById('backLink').classList.add('visible');
+      }
+    });
+  }, { threshold: 0.3 });
+  endingObserver.observe(document.getElementById('ending'));
+
+  /* SECTION: ending stars */
+  var starsContainer = document.getElementById('endingStars');
+  var endingStarCount = Math.min(80, Math.floor(window.innerWidth / 12));
+  for (i = 0; i < endingStarCount; i++){
+    var star = document.createElement('div');
+    star.className = 'ending-star';
+    var size = 0.5 + Math.random() * 2;
+    star.style.width = size + 'px';
+    star.style.height = size + 'px';
+    star.style.left = (Math.random() * 100) + '%';
+    star.style.top = (Math.random() * 100) + '%';
+    star.style.setProperty('--min-o', (0.1 + Math.random() * 0.3).toFixed(2));
+    star.style.setProperty('--max-o', (0.5 + Math.random() * 0.5).toFixed(2));
+    star.style.setProperty('--dur', (2 + Math.random() * 4).toFixed(1) + 's');
+    star.style.setProperty('--delay', (Math.random() * 5).toFixed(1) + 's');
+    star.style.background = Math.random() > 0.35 ? '#fff' : '#ffd166';
+    starsContainer.appendChild(star);
+  }
+
+  /* SECTION: click ripple (金色音符涟漪) */
+  var noteChars = ['♪','♫','✦','♩'];
+  document.addEventListener('click', function(e){
+    if (reducedMotion) return;
+    var count = 6 + Math.floor(Math.random() * 4);
+    for (var k = 0; k < count; k++){
+      var note = document.createElement('div');
+      note.className = 'ripple-note';
+      note.textContent = noteChars[Math.floor(Math.random() * noteChars.length)];
+      var angle = (k / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.6;
+      var dist = 28 + Math.random() * 60;
+      var color = Math.random() > 0.3 ? '#ffd166' : '#d8677c';
+      note.style.color = color;
+      note.style.left = e.clientX + 'px';
+      note.style.top = e.clientY + 'px';
+      note.style.fontSize = (11 + Math.random() * 8) + 'px';
+      note.style.transform = 'translate(-50%,-50%)';
+      document.body.appendChild(note);
+      void note.offsetWidth;
+      var endX = Math.cos(angle) * dist;
+      var endY = Math.sin(angle) * dist - 18;
+      note.style.transform = 'translate(calc(-50% + ' + endX + 'px), calc(-50% + ' + endY + 'px)) rotate(' + ((Math.random() - 0.5) * 90) + 'deg)';
+      note.style.opacity = '0';
+      (function(el){ setTimeout(function(){ el.remove(); }, 900); })(note);
+    }
+  });
+
+  /* SECTION: resize guard */
+  window.addEventListener('resize', function(){
+    for (var j = 0; j < stars.length; j++){
+      if (stars[j].x > W) stars[j].x = Math.random() * W;
+      if (stars[j].y > H) stars[j].y = Math.random() * H;
+    }
+  });
+})();
+</script>
+</body>
+</html>
