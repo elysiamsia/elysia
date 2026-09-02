@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="same-origin">
+<title>elysiad.top/kevin — 致凯文</title>
+<!-- SECTION: styles -->
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-abyss:#06080e;--bg-deep:#0a0e18;--bg-ice:#101a2c;--bg-mid:#1a2740;
+  --ice-mist:#dceeff;--ice:#a8d4f5;--ice-deep:#5b9bd4;--steel:#8ba7c4;
+  --flame:#e8935c;--flame-deep:#c96a3c;
+  --text:#e8eef6;--text-dim:#a9bbce;--text-muted:#6f8299;
+  --glass-bg:rgba(168,212,245,.05);--glass-border:rgba(168,212,245,.14);
+  --glass-bg2:rgba(232,147,92,.04);--glass-border2:rgba(232,147,92,.12);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg-abyss);color:var(--text);overflow-x:hidden;line-height:1.7;
+}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg-abyss)}
+::-webkit-scrollbar-thumb{background:var(--ice-deep);border-radius:3px}
+
+#frostCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+
+/* SECTION: opening */
+.section-opening{
+  position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;
+  padding:2rem;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,var(--bg-abyss) 0%,var(--bg-deep) 30%,var(--bg-ice) 60%,var(--bg-deep) 100%);
+}
+.opening-ornament{font-size:1.05rem;color:var(--ice-deep);letter-spacing:.6em;opacity:0;transition:opacity 1.2s ease;margin-bottom:1.2rem}
+.opening-title{
+  font-size:clamp(1.5rem,4.6vw,2.9rem);font-weight:300;letter-spacing:.12em;
+  color:var(--ice-mist);text-shadow:0 0 30px rgba(168,212,245,.35),0 0 60px rgba(168,212,245,.15);
+  min-height:2.8em;max-width:860px;
+}
+.typing-cursor{display:inline-block;font-weight:100;color:var(--ice);animation:blink-cursor .8s step-end infinite}
+.typing-cursor.hidden{display:none}
+@keyframes blink-cursor{0%,100%{opacity:1}50%{opacity:0}}
+.opening-subtitle{
+  font-size:clamp(.9rem,2.5vw,1.25rem);color:var(--text-dim);letter-spacing:.35em;
+  margin-top:1.5rem;opacity:0;transition:opacity 1.5s ease;
+}
+.opening-subtitle.visible{opacity:1}
+.scroll-hint{
+  position:absolute;bottom:calc(2.5rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  opacity:0;transition:opacity 1s ease .5s;
+}
+.scroll-hint.visible{opacity:.6}
+.scroll-hint span{font-size:.75rem;color:var(--text-muted);letter-spacing:.2em}
+.scroll-chevron{
+  width:20px;height:20px;border-right:2px solid var(--ice);border-bottom:2px solid var(--ice);
+  transform:rotate(45deg);animation:chevron-bounce 2s ease-in-out infinite;
+}
+@keyframes chevron-bounce{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(6px)}}
+
+/* SECTION: common section */
+.content-section{
+  position:relative;z-index:2;padding:6rem 1.5rem;
+  background:linear-gradient(180deg,transparent 0%,rgba(6,8,14,.3) 20%,rgba(6,8,14,.3) 80%,transparent 100%);
+}
+.section-title-wrap{text-align:center;margin-bottom:3.5rem}
+.section-title{
+  font-size:clamp(1.5rem,4vw,2.2rem);font-weight:300;letter-spacing:.2em;
+  color:var(--ice);text-shadow:0 0 20px rgba(168,212,245,.25);
+}
+.section-title-line{display:block;width:60px;height:1px;margin:1rem auto 0;background:linear-gradient(90deg,transparent,var(--ice-deep),transparent)}
+.section-title-mark{display:inline-block;font-size:.8em;color:var(--flame);margin:0 .8rem;opacity:.85}
+
+/* SECTION: profile */
+.profile-card{
+  max-width:720px;margin:0 auto;padding:clamp(2rem,5vw,3rem);
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--glass-border);border-radius:24px;
+  box-shadow:0 0 50px rgba(168,212,245,.07),0 0 100px rgba(232,147,92,.04),inset 0 1px 0 rgba(255,255,255,.06);
+  position:relative;overflow:hidden;animation:glow-pulse 7s ease-in-out infinite;
+}
+.profile-card::before{
+  content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+  background:conic-gradient(from 0deg,transparent,rgba(168,212,245,.05),transparent,rgba(232,147,92,.04),transparent);
+  animation:card-rotate 26s linear infinite;
+}
+@keyframes card-rotate{to{transform:rotate(360deg)}}
+@keyframes glow-pulse{
+  0%,100%{box-shadow:0 0 50px rgba(168,212,245,.07),0 0 100px rgba(232,147,92,.04)}
+  50%{box-shadow:0 0 60px rgba(168,212,245,.13),0 0 120px rgba(232,147,92,.08)}
+}
+.profile-card-inner{position:relative;z-index:1}
+.profile-name{
+  font-size:clamp(1.8rem,5vw,2.8rem);font-weight:200;letter-spacing:.12em;
+  color:var(--ice-mist);text-align:center;margin-bottom:.2em;
+}
+.profile-name-en{
+  font-size:clamp(.85rem,1.9vw,1.05rem);font-weight:300;letter-spacing:.3em;
+  color:var(--steel);text-align:center;margin-bottom:2rem;text-shadow:0 0 15px rgba(139,167,196,.3);
+}
+.profile-divider{width:100%;height:1px;margin:1.5rem 0;background:linear-gradient(90deg,transparent,var(--glass-border),var(--glass-border2),transparent)}
+.profile-grid{display:grid;grid-template-columns:auto 1fr;gap:.6rem 1.5rem;font-size:.92rem}
+.profile-label{color:var(--text-muted);white-space:nowrap;font-weight:400}
+.profile-value{color:var(--text);font-weight:300}
+.profile-value .highlight{color:var(--ice);font-weight:400}
+.profile-value .flame{color:var(--flame);font-weight:400}
+.profile-desc{
+  margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--glass-border);
+  font-size:.9rem;color:var(--text-dim);line-height:1.9;font-weight:300;
+}
+
+/* SECTION: timeline */
+.timeline{position:relative;max-width:800px;margin:0 auto;padding:2rem 0}
+.timeline-line{
+  position:absolute;left:50%;top:0;bottom:0;width:1px;
+  background:linear-gradient(180deg,transparent,var(--ice-deep) 10%,var(--ice) 50%,var(--ice-deep) 90%,transparent);
+  transform:translateX(-50%);
+}
+.timeline-node{
+  position:relative;display:flex;align-items:flex-start;margin-bottom:3rem;
+  opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;
+}
+.timeline-node.visible{opacity:1;transform:translateY(0)}
+.timeline-node:nth-child(odd){flex-direction:row}
+.timeline-node:nth-child(even){flex-direction:row-reverse}
+.timeline-dot{
+  position:absolute;left:50%;top:.5rem;width:12px;height:12px;border-radius:50%;
+  border:2px solid var(--ice);background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
+  box-shadow:0 0 12px rgba(168,212,245,.45);transition:background .3s;
+}
+.timeline-node.visible .timeline-dot{background:var(--ice)}
+.timeline-card{
+  width:calc(50% - 2.5rem);padding:1.2rem 1.5rem;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 0 20px rgba(168,212,245,.04);
+}
+.timeline-node:nth-child(odd) .timeline-card{margin-right:auto}
+.timeline-node:nth-child(even) .timeline-card{margin-left:auto}
+.timeline-card h3{font-size:1.05rem;font-weight:400;color:var(--ice);margin-bottom:.5rem;letter-spacing:.1em}
+.timeline-card p{font-size:.85rem;color:var(--text-dim);line-height:1.8;font-weight:300}
+
+/* SECTION: quotes */
+.quotes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;max-width:1000px;margin:0 auto}
+.quote-card{
+  padding:1.5rem;min-height:140px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
+  box-shadow:0 0 20px rgba(168,212,245,.04);
+  transition:transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
+}
+.quote-card:hover{transform:translateY(-3px);box-shadow:0 0 30px rgba(168,212,245,.14),0 8px 30px rgba(0,0,0,.2)}
+.quote-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(circle at 30% 30%,rgba(168,212,245,.06),transparent 60%);pointer-events:none;
+}
+.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition:opacity .4s ease}
+.quote-text.fading{opacity:0}
+.quote-hint{position:absolute;bottom:.6rem;right:.8rem;font-size:.65rem;color:var(--text-muted);opacity:.4}
+
+/* SECTION: ending */
+.section-ending{
+  position:relative;z-index:2;min-height:70vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:4rem 2rem;
+  background:linear-gradient(180deg,transparent,var(--bg-abyss) 30%,var(--bg-abyss));
+}
+.ending-stars{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.ending-star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--dur) ease-in-out infinite;animation-delay:var(--delay)}
+@keyframes twinkle{0%,100%{opacity:var(--min-o)}50%{opacity:var(--max-o)}}
+.ending-quote{
+  font-size:clamp(1.1rem,3vw,1.6rem);font-weight:300;letter-spacing:.12em;
+  color:var(--ice-mist);line-height:2;text-shadow:0 0 25px rgba(168,212,245,.3);
+  max-width:680px;opacity:0;transform:translateY(20px);transition:opacity 1.5s ease,transform 1.5s ease;
+}
+.ending-quote.visible{opacity:1;transform:translateY(0)}
+.ending-attr{
+  margin-top:2.5rem;font-size:.85rem;color:var(--text-muted);letter-spacing:.25em;
+  opacity:0;transition:opacity 1.5s ease .8s;
+}
+.ending-attr.visible{opacity:.7}
+.back-link{
+  display:inline-flex;align-items:center;gap:.5rem;margin-top:3rem;
+  min-height:44px;padding:.6rem 1.6rem;border-radius:999px;text-decoration:none;
+  color:var(--ice);font-size:.85rem;letter-spacing:.15em;
+  border:1px solid var(--glass-border);background:rgba(168,212,245,.05);
+  transition:background .3s ease,box-shadow .3s ease,transform .3s ease;
+  opacity:0;
+}
+.back-link.visible{opacity:1;transition:opacity 1.5s ease 1.2s,background .3s ease,box-shadow .3s ease,transform .3s ease}
+.back-link:hover{background:rgba(168,212,245,.12);box-shadow:0 0 24px rgba(168,212,245,.22);transform:translateY(-2px)}
+.ending-fade{position:absolute;bottom:0;left:0;right:0;height:120px;background:linear-gradient(transparent,var(--bg-abyss));pointer-events:none}
+
+/* SECTION: ripple */
+.ripple-shard{
+  position:fixed;pointer-events:none;z-index:9999;
+  border-radius:2px;opacity:.9;
+  transition:all .85s cubic-bezier(.22,.61,.36,1);
+}
+
+/* SECTION: responsive */
+@media(max-width:768px){
+  .timeline-line{left:1.5rem}
+  .timeline-node,.timeline-node:nth-child(odd),.timeline-node:nth-child(even){flex-direction:row}
+  .timeline-dot{left:1.5rem}
+  .timeline-card,.timeline-node:nth-child(odd) .timeline-card,.timeline-node:nth-child(even) .timeline-card{
+    width:calc(100% - 3.5rem);margin-left:3.5rem;margin-right:0;
+  }
+  .quotes-grid{grid-template-columns:1fr}
+  .profile-grid{grid-template-columns:auto 1fr;gap:.5rem 1rem;font-size:.85rem}
+}
+@media(max-width:480px){
+  .content-section{padding:4rem 1rem}
+  .profile-card{padding:1.5rem}
+  .quote-card{min-height:120px;padding:1.2rem}
+}
+</style>
+</head>
+<body>
+
+<canvas id="frostCanvas"></canvas>
+
+<!-- SECTION: opening -->
+<section class="section-opening" id="opening">
+  <div class="opening-content">
+    <div class="opening-ornament" id="openingOrn">❄ ── ❄ ── ❄</div>
+    <h1 class="opening-title" id="typewriterText"></h1><span class="typing-cursor" id="typingCursor">|</span>
+    <p class="opening-subtitle" id="openingSub">欢迎来到永恒的霜土</p>
+  </div>
+  <div class="scroll-hint" id="scrollHint">
+    <span>向下前行</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</section>
+
+<!-- SECTION: about -->
+<section class="content-section" id="about">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❄</span>关于他<span class="section-title-mark">❄</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="profile-card">
+    <div class="profile-card-inner">
+      <div class="profile-name">凯文·卡斯兰娜</div>
+      <div class="profile-name-en">K E V I N · K A S L A N A</div>
+      <div class="profile-divider"></div>
+      <div class="profile-grid">
+        <span class="profile-label">出处</span>
+        <span class="profile-value">《崩坏3》前文明纪元 → 现文明纪元</span>
+        <span class="profile-label">身份</span>
+        <span class="profile-value">逐火之蛾融合战士 · 世界蛇尊主</span>
+        <span class="profile-label">位次</span>
+        <span class="profile-value"><span class="highlight">Ⅰ</span></span>
+        <span class="profile-label">刻印</span>
+        <span class="profile-value"><span class="highlight">「救世」</span></span>
+        <span class="profile-label">武器</span>
+        <span class="profile-value">第七神之键 <span class="flame">「天火圣裁」</span>（双枪 / 天火大剑 / 劫灭）</span>
+        <span class="profile-label">融合崩坏兽</span>
+        <span class="profile-value">帝王级「帕凡提」——冰雪之力</span>
+        <span class="profile-label">所属</span>
+        <span class="profile-value">逐火之蛾 → 世界蛇</span>
+        <span class="profile-label">血脉</span>
+        <span class="profile-value">卡斯兰娜家族的先祖</span>
+        <span class="profile-label">配音</span>
+        <span class="profile-value">秦且歌（汉语）</span>
+        <span class="profile-label">外貌</span>
+        <span class="profile-value">白发短马尾，黑色露指手套</span>
+      </div>
+      <div class="profile-desc">
+        往日的传说无需赘述——他是最接近「逐火之蛾」宏愿的人，被所有人承认的「英雄」。世人坚信，他终将带领人类战胜崩坏。而为了那个承诺，他走过了五万年，从阳光少年走到冰冷孤独，把生命压进枪膛，只为救世。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: journey -->
+<section class="content-section" id="journey">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❄</span>他的救世<span class="section-title-mark">❄</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="timeline">
+    <div class="timeline-line"></div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>千羽学园</h3>
+        <p>那时的他还只是个热爱运动的转校生，会为了喜欢的女孩露出幼稚的一面。梅博士的恋人，苏的挚友——那是他一生中最温暖的时光。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>追随</h3>
+        <p>崩坏爆发，梅被逐火之蛾邀请。他不愿离开她，以普通士兵的身份加入组织——不是为了拯救世界，只是为了跟在她身边。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>融合</h3>
+        <p>第七次崩坏降临，他自愿成为融合战士计划的试验者，融合帝王级崩坏兽「帕凡提」的基因，获得冰雪之力——代价是体温恒定零下，再也无法拥抱所爱之人。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>天火圣裁</h3>
+        <p>以炎之律者核心制成的第七神之键认他为主。天火出鞘，烈焰焚天——他凭借此剑斩杀第七律者，成为人类最强的战士。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>誓言</h3>
+        <p>樱牺牲后，他带着她的遗体回到故乡，只见燃尽的大地。在坟前，他许下那句贯穿五万年的承诺——「无论付出多少代价，人类一定会战胜崩坏。」</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>终焉</h3>
+        <p>终焉之战，他带领英桀与终焉律者死战，全力一击令终焉宕机十二小时，为文明争得最后的布局时间——但前文明终究落幕。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>长眠</h3>
+        <p>依照梅的遗愿，他带着两人的孩子进入休眠舱，沉入五万年的长眠。醒来时，沧海桑田，故人皆逝。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>世界蛇</h3>
+        <p>他是卡斯兰娜家族的先祖，也是世界蛇的尊主。他执行梅留下的圣痕计划，蛰伏于时间的长夜，等待战胜崩坏的唯一时机。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>告别</h3>
+        <p>最终决战，他被琪亚娜一行人击败——而这本就是他计划的一部分。留下「鸟儿为什么会飞」的答案后，救世的战士终于卸下重担，去往有故人的地方。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: quotes -->
+<section class="content-section" id="quotes">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❄</span>救世之铭<span class="section-title-mark">❄</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="quotes-grid" id="quotesGrid" data-primary-action></div>
+</section>
+
+<!-- SECTION: ending -->
+<section class="section-ending" id="ending">
+  <div class="ending-stars" id="endingStars"></div>
+  <p class="ending-quote" id="endingQuote">在燃尽的大地上，我向她，向所有人许下承诺——<br>无论付出多少代价，人类，一定会战胜崩坏。</p>
+  <p class="ending-attr" id="endingAttr">致凯文 · elysiad.top/kevin</p>
+  <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
+  <div class="ending-fade"></div>
+</section>
+
+<!-- SECTION: scripts -->
+<script>
+(function(){
+  /* SECTION: quotes data */
+  var quotes = [
+    '「我是凯文，持有「救世」之铭的战士。除此之外，再无其它了。」',
+    '「在燃尽的大地上，我向她，向所有人许下承诺——无论付出多少代价，人类，一定会战胜崩坏。」',
+    '「为了不让太阳落下，我飞上天际，将你们的光芒夺去。我将因之融化，坠落于海面。但要想将其夺回，你，你们，必须飞到比我更高的地方。」',
+    '「赫克托耳知道王国终将陷落，阿喀琉斯明白自己正在走向死亡。但他们依然义无反顾地踏上战场——在这个从一开始就注定是悲剧的故事里，没有一个人曾犹豫动摇。他们如此，我们，亦是如此。」',
+    '「一把剑之所以能成为我的武器，是因为只有我能亲手折断它。关于力量，我只能言尽于此。」',
+    '「一个人的命运，就是他的性格。这一次，我将自己的生命压进枪膛，只为拯救一人。」',
+    '「属于我的罪责，都将由我一人背负。」',
+    '「这世界早已无法拯救，但我们还是必须成为英雄。」',
+    '「踏上前来。此即「救世」之铭。」',
+    '「鸟儿为什么会飞？不是因为它必须飞翔，也不是因为它想要飞翔——而是因为它们，都想要飞翔。」'
+  ];
+
+  /* SECTION: quotes build */
+  var grid = document.getElementById('quotesGrid');
+  var cardIndices = [];
+  quotes.forEach(function(q, i){
+    var card = document.createElement('div');
+    card.className = 'quote-card';
+    card.setAttribute('role','button');
+    card.setAttribute('tabindex','0');
+    card.setAttribute('aria-label','救世铭文，点击切换');
+    var textEl = document.createElement('div');
+    textEl.className = 'quote-text';
+    textEl.textContent = q;
+    var hint = document.createElement('span');
+    hint.className = 'quote-hint';
+    hint.textContent = '点击切换';
+    card.appendChild(textEl);
+    card.appendChild(hint);
+    cardIndices.push(i);
+    card.addEventListener('click', function(){
+      var idxPos = Array.prototype.indexOf.call(grid.querySelectorAll('.quote-card'), card);
+      var nextIdx = (cardIndices[idxPos] + 1) % quotes.length;
+      cardIndices[idxPos] = nextIdx;
+      textEl.classList.add('fading');
+      setTimeout(function(){
+        textEl.textContent = quotes[nextIdx];
+        textEl.classList.remove('fading');
+      }, 400);
+    });
+    card.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+    });
+    grid.appendChild(card);
+  });
+
+  /* SECTION: canvas particles */
+  var canvas = document.getElementById('frostCanvas');
+  var ctx = canvas.getContext('2d');
+  var W, H;
+  var iceColors = ['#dceeff','#a8d4f5','#5b9bd4','#ffffff'];
+  var emberColors = ['#e8935c','#c96a3c'];
+
+  function resize(){
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  /* 霜雪：自上而下，微微摇摆 */
+  var flakes = [];
+  var flakeCount = Math.min(55, Math.floor(window.innerWidth / 20));
+  function createFlake(fromTop){
+    return {
+      x: Math.random() * W,
+      y: fromTop ? -15 - Math.random() * 80 : Math.random() * H,
+      size: 1 + Math.random() * 2.8,
+      speedY: 0.2 + Math.random() * 0.5,
+      drift: (Math.random() - 0.5) * 0.3,
+      baseOpacity: 0.15 + Math.random() * 0.45,
+      twinkleSpd: 0.006 + Math.random() * 0.02,
+      twinkleOff: Math.random() * Math.PI * 2,
+      swayAmp: 8 + Math.random() * 20,
+      swaySpd: 0.003 + Math.random() * 0.006,
+      color: iceColors[Math.floor(Math.random() * iceColors.length)]
+    };
+  }
+  for (var i = 0; i < flakeCount; i++) flakes.push(createFlake(false));
+
+  /* 余烬：自下而上，如天火的残焰 */
+  var embers = [];
+  var emberCount = Math.min(14, Math.floor(window.innerWidth / 90));
+  function createEmber(fromBottom){
+    return {
+      x: Math.random() * W,
+      y: fromBottom ? H + 10 + Math.random() * 60 : Math.random() * H,
+      size: 0.8 + Math.random() * 1.8,
+      speedY: -(0.15 + Math.random() * 0.35),
+      drift: (Math.random() - 0.5) * 0.2,
+      baseOpacity: 0.12 + Math.random() * 0.35,
+      twinkleSpd: 0.008 + Math.random() * 0.02,
+      twinkleOff: Math.random() * Math.PI * 2,
+      color: emberColors[Math.floor(Math.random() * emberColors.length)]
+    };
+  }
+  for (i = 0; i < emberCount; i++) embers.push(createEmber(false));
+
+  /* 星尘 */
+  var stars = [];
+  var starCount = Math.min(50, Math.floor(window.innerWidth / 24));
+  function createStar(){
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      size: 0.3 + Math.random() * 1.4,
+      baseOpacity: 0.12 + Math.random() * 0.45,
+      twinkleSpd: 0.008 + Math.random() * 0.025,
+      twinkleOff: Math.random() * Math.PI * 2,
+      color: '#ffffff'
+    };
+  }
+  for (i = 0; i < starCount; i++) stars.push(createStar());
+
+  var scrollRatio = 0;
+  window.addEventListener('scroll', function(){
+    var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    scrollRatio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+  });
+
+  var time = 0;
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function animate(){
+    if (reducedMotion) return;
+    time++;
+    ctx.clearRect(0, 0, W, H);
+    var fadeFactor = 1 - scrollRatio * 0.6;
+    var i, s, f, e, tw;
+
+    for (i = 0; i < stars.length; i++){
+      s = stars[i];
+      tw = 0.5 + 0.5 * Math.sin(time * s.twinkleSpd + s.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = s.baseOpacity * tw * fadeFactor;
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, Math.max(0.2, s.size), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (i = 0; i < flakes.length; i++){
+      f = flakes[i];
+      f.y += f.speedY;
+      f.x += f.drift + Math.sin(time * f.swaySpd + f.twinkleOff) * 0.3;
+      if (f.y > H + 20){ flakes[i] = createFlake(true); f = flakes[i]; }
+      tw = 0.5 + 0.5 * Math.sin(time * f.twinkleSpd + f.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = f.baseOpacity * tw * fadeFactor;
+      ctx.fillStyle = f.color;
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, Math.max(0.3, f.size), 0, Math.PI * 2);
+      ctx.fill();
+      if (f.size > 2){
+        ctx.globalAlpha = f.baseOpacity * tw * fadeFactor * 0.3;
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.size * 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    for (i = 0; i < embers.length; i++){
+      e = embers[i];
+      e.y += e.speedY;
+      e.x += e.drift + Math.sin(time * 0.01 + e.twinkleOff) * 0.2;
+      if (e.y < -15){ embers[i] = createEmber(true); e = embers[i]; }
+      tw = 0.5 + 0.5 * Math.sin(time * e.twinkleSpd + e.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = e.baseOpacity * tw * fadeFactor;
+      ctx.fillStyle = e.color;
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, Math.max(0.3, e.size), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  /* SECTION: typewriter */
+  var typewriterEl = document.getElementById('typewriterText');
+  var cursorEl = document.getElementById('typingCursor');
+  var subEl = document.getElementById('openingSub');
+  var ornEl = document.getElementById('openingOrn');
+  var scrollHintEl = document.getElementById('scrollHint');
+  var typeText = '我是凯文，持有「救世」之铭的战士。除此之外，再无其它了。';
+  var charIndex = 0;
+
+  function typeNext(){
+    if (charIndex < typeText.length){
+      typewriterEl.textContent += typeText[charIndex];
+      charIndex++;
+      setTimeout(typeNext, 130 + Math.random() * 70);
+    } else {
+      setTimeout(function(){
+        cursorEl.classList.add('hidden');
+        subEl.classList.add('visible');
+        setTimeout(function(){ scrollHintEl.classList.add('visible'); }, 1200);
+      }, 600);
+    }
+  }
+  ornEl.classList.add('visible');
+  setTimeout(typeNext, 800);
+
+  /* SECTION: scroll animations */
+  var observerOptions = { threshold: 0.15, rootMargin: '0px 0px -50px 0px' };
+  var scrollObserver = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, observerOptions);
+  document.querySelectorAll('.timeline-node').forEach(function(node){
+    scrollObserver.observe(node);
+  });
+
+  var endingObserver = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting){
+        document.getElementById('endingQuote').classList.add('visible');
+        document.getElementById('endingAttr').classList.add('visible');
+        document.getElementById('backLink').classList.add('visible');
+      }
+    });
+  }, { threshold: 0.3 });
+  endingObserver.observe(document.getElementById('ending'));
+
+  /* SECTION: ending stars */
+  var starsContainer = document.getElementById('endingStars');
+  var endingStarCount = Math.min(80, Math.floor(window.innerWidth / 12));
+  for (i = 0; i < endingStarCount; i++){
+    var star = document.createElement('div');
+    star.className = 'ending-star';
+    var size = 0.5 + Math.random() * 2;
+    star.style.width = size + 'px';
+    star.style.height = size + 'px';
+    star.style.left = (Math.random() * 100) + '%';
+    star.style.top = (Math.random() * 100) + '%';
+    star.style.setProperty('--min-o', (0.1 + Math.random() * 0.3).toFixed(2));
+    star.style.setProperty('--max-o', (0.5 + Math.random() * 0.5).toFixed(2));
+    star.style.setProperty('--dur', (2 + Math.random() * 4).toFixed(1) + 's');
+    star.style.setProperty('--delay', (Math.random() * 5).toFixed(1) + 's');
+    star.style.background = Math.random() > 0.3 ? '#fff' : '#a8d4f5';
+    starsContainer.appendChild(star);
+  }
+
+  /* SECTION: click ripple (冰晶碎片涟漪) */
+  var shardColors = ['#dceeff','#a8d4f5','#5b9bd4','#e8935c'];
+  document.addEventListener('click', function(e){
+    if (reducedMotion) return;
+    var count = 7 + Math.floor(Math.random() * 4);
+    for (var k = 0; k < count; k++){
+      var shard = document.createElement('div');
+      shard.className = 'ripple-shard';
+      var angle = (k / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.6;
+      var dist = 26 + Math.random() * 58;
+      var w = 2 + Math.random() * 2.5;
+      var h = 8 + Math.random() * 14;
+      var color = shardColors[Math.floor(Math.random() * shardColors.length)];
+      var startRot = Math.random() * 180;
+      shard.style.background = color;
+      shard.style.boxShadow = '0 0 6px ' + color;
+      shard.style.width = w + 'px';
+      shard.style.height = h + 'px';
+      shard.style.left = e.clientX + 'px';
+      shard.style.top = e.clientY + 'px';
+      shard.style.transform = 'translate(-50%,-50%) rotate(' + startRot + 'deg)';
+      document.body.appendChild(shard);
+      void shard.offsetWidth;
+      var endX = Math.cos(angle) * dist;
+      var endY = Math.sin(angle) * dist;
+      shard.style.transform = 'translate(calc(-50% + ' + endX + 'px), calc(-50% + ' + endY + 'px)) rotate(' + (startRot + 90 + Math.random() * 120) + 'deg)';
+      shard.style.opacity = '0';
+      (function(el){ setTimeout(function(){ el.remove(); }, 900); })(shard);
+    }
+  });
+
+  /* SECTION: resize guard */
+  window.addEventListener('resize', function(){
+    for (var j = 0; j < stars.length; j++){
+      if (stars[j].x > W) stars[j].x = Math.random() * W;
+      if (stars[j].y > H) stars[j].y = Math.random() * H;
+    }
+  });
+})();
+</script>
+</body>
+</html>
