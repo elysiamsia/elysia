@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="same-origin">
+<title>elysiad.top/aponia — 致阿波尼亚</title>
+<!-- SECTION: styles -->
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-abyss:#08060e;--bg-deep:#0e0a18;--bg-violet:#1c1230;--bg-mid:#2a1c42;
+  --silver-mist:#e8e4f2;--silver:#c8c2dc;--violet:#9d8fd0;--violet-deep:#6b5ca8;
+  --candle:#e8c98a;--candle-deep:#c9a45c;
+  --text:#e9e5f4;--text-dim:#b3abcc;--text-muted:#7f7699;
+  --glass-bg:rgba(157,143,208,.06);--glass-border:rgba(200,194,220,.14);
+  --glass-bg2:rgba(232,201,138,.05);--glass-border2:rgba(232,201,138,.13);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg-abyss);color:var(--text);overflow-x:hidden;line-height:1.7;
+}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg-abyss)}
+::-webkit-scrollbar-thumb{background:var(--violet-deep);border-radius:3px}
+
+#fateCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+
+/* SECTION: opening */
+.section-opening{
+  position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;
+  padding:2rem;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,var(--bg-abyss) 0%,var(--bg-deep) 30%,var(--bg-violet) 60%,var(--bg-deep) 100%);
+}
+.opening-ornament{font-size:1rem;color:var(--violet);letter-spacing:.6em;opacity:0;transition:opacity 1.2s ease;margin-bottom:1.2rem}
+.opening-title{
+  font-size:clamp(1.4rem,4.4vw,2.7rem);font-weight:300;letter-spacing:.1em;
+  color:var(--silver-mist);text-shadow:0 0 30px rgba(157,143,208,.35),0 0 60px rgba(157,143,208,.15);
+  min-height:2.8em;max-width:860px;
+}
+.typing-cursor{display:inline-block;font-weight:100;color:var(--violet);animation:blink-cursor .8s step-end infinite}
+.typing-cursor.hidden{display:none}
+@keyframes blink-cursor{0%,100%{opacity:1}50%{opacity:0}}
+.opening-subtitle{
+  font-size:clamp(.9rem,2.5vw,1.25rem);color:var(--text-dim);letter-spacing:.35em;
+  margin-top:1.5rem;opacity:0;transition:opacity 1.5s ease;
+}
+.opening-subtitle.visible{opacity:1}
+.scroll-hint{
+  position:absolute;bottom:calc(2.5rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  opacity:0;transition:opacity 1s ease .5s;
+}
+.scroll-hint.visible{opacity:.6}
+.scroll-hint span{font-size:.75rem;color:var(--text-muted);letter-spacing:.2em}
+.scroll-chevron{
+  width:20px;height:20px;border-right:2px solid var(--violet);border-bottom:2px solid var(--violet);
+  transform:rotate(45deg);animation:chevron-bounce 2s ease-in-out infinite;
+}
+@keyframes chevron-bounce{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(6px)}}
+
+/* SECTION: common section */
+.content-section{
+  position:relative;z-index:2;padding:6rem 1.5rem;
+  background:linear-gradient(180deg,transparent 0%,rgba(8,6,14,.3) 20%,rgba(8,6,14,.3) 80%,transparent 100%);
+}
+.section-title-wrap{text-align:center;margin-bottom:3.5rem}
+.section-title{
+  font-size:clamp(1.5rem,4vw,2.2rem);font-weight:300;letter-spacing:.2em;
+  color:var(--silver);text-shadow:0 0 20px rgba(200,194,220,.25);
+}
+.section-title-line{display:block;width:60px;height:1px;margin:1rem auto 0;background:linear-gradient(90deg,transparent,var(--violet),transparent)}
+.section-title-mark{display:inline-block;font-size:.8em;color:var(--candle-deep);margin:0 .8rem;opacity:.85}
+
+/* SECTION: profile */
+.profile-card{
+  max-width:720px;margin:0 auto;padding:clamp(2rem,5vw,3rem);
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--glass-border);border-radius:24px;
+  box-shadow:0 0 50px rgba(157,143,208,.08),0 0 100px rgba(232,201,138,.05),inset 0 1px 0 rgba(255,255,255,.06);
+  position:relative;overflow:hidden;animation:glow-pulse 7s ease-in-out infinite;
+}
+.profile-card::before{
+  content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+  background:conic-gradient(from 0deg,transparent,rgba(157,143,208,.05),transparent,rgba(232,201,138,.04),transparent);
+  animation:card-rotate 26s linear infinite;
+}
+@keyframes card-rotate{to{transform:rotate(360deg)}}
+@keyframes glow-pulse{
+  0%,100%{box-shadow:0 0 50px rgba(157,143,208,.08),0 0 100px rgba(232,201,138,.05)}
+  50%{box-shadow:0 0 60px rgba(157,143,208,.14),0 0 120px rgba(232,201,138,.09)}
+}
+.profile-card-inner{position:relative;z-index:1}
+.profile-name{
+  font-size:clamp(1.8rem,5vw,2.8rem);font-weight:200;letter-spacing:.12em;
+  color:var(--silver-mist);text-align:center;margin-bottom:.2em;
+}
+.profile-name-en{
+  font-size:clamp(.9rem,2vw,1.1rem);font-weight:300;letter-spacing:.45em;
+  color:var(--violet);text-align:center;margin-bottom:2rem;text-shadow:0 0 15px rgba(157,143,208,.35);
+}
+.profile-divider{width:100%;height:1px;margin:1.5rem 0;background:linear-gradient(90deg,transparent,var(--glass-border),var(--glass-border2),transparent)}
+.profile-grid{display:grid;grid-template-columns:auto 1fr;gap:.6rem 1.5rem;font-size:.92rem}
+.profile-label{color:var(--text-muted);white-space:nowrap;font-weight:400}
+.profile-value{color:var(--text);font-weight:300}
+.profile-value .highlight{color:var(--violet);font-weight:400}
+.profile-value .candle{color:var(--candle);font-weight:400}
+.profile-desc{
+  margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--glass-border);
+  font-size:.9rem;color:var(--text-dim);line-height:1.9;font-weight:300;
+}
+
+/* SECTION: timeline */
+.timeline{position:relative;max-width:800px;margin:0 auto;padding:2rem 0}
+.timeline-line{
+  position:absolute;left:50%;top:0;bottom:0;width:1px;
+  background:linear-gradient(180deg,transparent,var(--violet-deep) 10%,var(--violet) 50%,var(--violet-deep) 90%,transparent);
+  transform:translateX(-50%);
+}
+.timeline-node{
+  position:relative;display:flex;align-items:flex-start;margin-bottom:3rem;
+  opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;
+}
+.timeline-node.visible{opacity:1;transform:translateY(0)}
+.timeline-node:nth-child(odd){flex-direction:row}
+.timeline-node:nth-child(even){flex-direction:row-reverse}
+.timeline-dot{
+  position:absolute;left:50%;top:.5rem;width:12px;height:12px;border-radius:50%;
+  border:2px solid var(--violet);background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
+  box-shadow:0 0 12px rgba(157,143,208,.45);transition:background .3s;
+}
+.timeline-node.visible .timeline-dot{background:var(--violet)}
+.timeline-card{
+  width:calc(50% - 2.5rem);padding:1.2rem 1.5rem;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 0 20px rgba(157,143,208,.05);
+}
+.timeline-node:nth-child(odd) .timeline-card{margin-right:auto}
+.timeline-node:nth-child(even) .timeline-card{margin-left:auto}
+.timeline-card h3{font-size:1.05rem;font-weight:400;color:var(--silver);margin-bottom:.5rem;letter-spacing:.1em}
+.timeline-card p{font-size:.85rem;color:var(--text-dim);line-height:1.8;font-weight:300}
+
+/* SECTION: quotes */
+.quotes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;max-width:1000px;margin:0 auto}
+.quote-card{
+  padding:1.5rem;min-height:140px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
+  box-shadow:0 0 20px rgba(157,143,208,.04);
+  transition:transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
+}
+.quote-card:hover{transform:translateY(-3px);box-shadow:0 0 30px rgba(157,143,208,.14),0 8px 30px rgba(0,0,0,.2)}
+.quote-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(circle at 30% 30%,rgba(200,194,220,.06),transparent 60%);pointer-events:none;
+}
+.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition:opacity .4s ease}
+.quote-text.fading{opacity:0}
+.quote-hint{position:absolute;bottom:.6rem;right:.8rem;font-size:.65rem;color:var(--text-muted);opacity:.4}
+
+/* SECTION: ending */
+.section-ending{
+  position:relative;z-index:2;min-height:70vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:4rem 2rem;
+  background:linear-gradient(180deg,transparent,var(--bg-abyss) 30%,var(--bg-abyss));
+}
+.ending-stars{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.ending-star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--dur) ease-in-out infinite;animation-delay:var(--delay)}
+@keyframes twinkle{0%,100%{opacity:var(--min-o)}50%{opacity:var(--max-o)}}
+.ending-quote{
+  font-size:clamp(1.1rem,3vw,1.6rem);font-weight:300;letter-spacing:.12em;
+  color:var(--silver-mist);line-height:2;text-shadow:0 0 25px rgba(200,194,220,.3);
+  max-width:640px;opacity:0;transform:translateY(20px);transition:opacity 1.5s ease,transform 1.5s ease;
+}
+.ending-quote.visible{opacity:1;transform:translateY(0)}
+.ending-attr{
+  margin-top:2.5rem;font-size:.85rem;color:var(--text-muted);letter-spacing:.25em;
+  opacity:0;transition:opacity 1.5s ease .8s;
+}
+.ending-attr.visible{opacity:.7}
+.back-link{
+  display:inline-flex;align-items:center;gap:.5rem;margin-top:3rem;
+  min-height:44px;padding:.6rem 1.6rem;border-radius:999px;text-decoration:none;
+  color:var(--violet);font-size:.85rem;letter-spacing:.15em;
+  border:1px solid var(--glass-border);background:rgba(157,143,208,.05);
+  transition:background .3s ease,box-shadow .3s ease,transform .3s ease;
+  opacity:0;
+}
+.back-link.visible{opacity:1;transition:opacity 1.5s ease 1.2s,background .3s ease,box-shadow .3s ease,transform .3s ease}
+.back-link:hover{background:rgba(157,143,208,.12);box-shadow:0 0 24px rgba(157,143,208,.22);transform:translateY(-2px)}
+.ending-fade{position:absolute;bottom:0;left:0;right:0;height:120px;background:linear-gradient(transparent,var(--bg-abyss));pointer-events:none}
+
+/* SECTION: ripple */
+.ripple-thread{
+  position:fixed;pointer-events:none;z-index:9999;
+  border-radius:999px;opacity:.85;
+  transition:all .85s cubic-bezier(.22,.61,.36,1);
+}
+
+/* SECTION: responsive */
+@media(max-width:768px){
+  .timeline-line{left:1.5rem}
+  .timeline-node,.timeline-node:nth-child(odd),.timeline-node:nth-child(even){flex-direction:row}
+  .timeline-dot{left:1.5rem}
+  .timeline-card,.timeline-node:nth-child(odd) .timeline-card,.timeline-node:nth-child(even) .timeline-card{
+    width:calc(100% - 3.5rem);margin-left:3.5rem;margin-right:0;
+  }
+  .quotes-grid{grid-template-columns:1fr}
+  .profile-grid{grid-template-columns:auto 1fr;gap:.5rem 1rem;font-size:.85rem}
+}
+@media(max-width:480px){
+  .content-section{padding:4rem 1rem}
+  .profile-card{padding:1.5rem}
+  .quote-card{min-height:120px;padding:1.2rem}
+}
+</style>
+</head>
+<body>
+
+<canvas id="fateCanvas"></canvas>
+
+<!-- SECTION: opening -->
+<section class="section-opening" id="opening">
+  <div class="opening-content">
+    <div class="opening-ornament" id="openingOrn">✧ ── ✧ ── ✧</div>
+    <h1 class="opening-title" id="typewriterText"></h1><span class="typing-cursor" id="typingCursor">|</span>
+    <p class="opening-subtitle" id="openingSub">欢迎来到至深之处</p>
+  </div>
+  <div class="scroll-hint" id="scrollHint">
+    <span>向下前行</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</section>
+
+<!-- SECTION: about -->
+<section class="content-section" id="about">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">✧</span>关于她<span class="section-title-mark">✧</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="profile-card">
+    <div class="profile-card-inner">
+      <div class="profile-name">阿波尼亚</div>
+      <div class="profile-name-en">A P O N I A</div>
+      <div class="profile-divider"></div>
+      <div class="profile-grid">
+        <span class="profile-label">名字来源</span>
+        <span class="profile-value">Aponia，意为「无痛」——伊壁鸠鲁哲学中的安宁之境</span>
+        <span class="profile-label">出处</span>
+        <span class="profile-value">《崩坏3》第一文明纪元</span>
+        <span class="profile-label">身份</span>
+        <span class="profile-value">黄昏街疗养院主人 · 逐火之蛾融合战士</span>
+        <span class="profile-label">位次</span>
+        <span class="profile-value"><span class="highlight">Ⅲ</span></span>
+        <span class="profile-label">刻印</span>
+        <span class="profile-value"><span class="highlight">「戒律」</span></span>
+        <span class="profile-label">生日</span>
+        <span class="profile-value"><span class="candle">5月25日</span></span>
+        <span class="profile-label">身高</span>
+        <span class="profile-value">175cm</span>
+        <span class="profile-label">能力属性</span>
+        <span class="profile-value">精神系 · 预知未来</span>
+        <span class="profile-label">融合崩坏兽</span>
+        <span class="profile-value">「密多罗」——吠陀的昼神，意为朋友</span>
+        <span class="profile-label">配音</span>
+        <span class="profile-value">杨梦露（汉语）/ 白石晴香（日语）</span>
+        <span class="profile-label">外貌</span>
+        <span class="profile-value">银灰长发，目光沉静悲悯，修女气质</span>
+      </div>
+      <div class="profile-desc">
+        不可知不可觉的丝线，将诸人的命运紧紧缠缚。它引导着生命，在啼哭中降生；它轻挽着灵魂，于沉寂中归去。终局已定，一如阿波尼亚目中所见；囚牢已成，唯有阿波尼亚身陷其中。以自缚之身，她尝试从不可回避的命运中，看护一切弱者——即使已然立足于因果之上，她仍然愿意承受因此而起的全数罪愆。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: journey -->
+<section class="content-section" id="journey">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">✧</span>她的戒律<span class="section-title-mark">✧</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="timeline">
+    <div class="timeline-line"></div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>黄昏街</h3>
+        <p>她自小生活在黄昏街，直到被逐火之蛾带走前从未离开。她天生拥有令人不自觉听从的力量——那份力量日后将以「戒律」为名。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>疗养院</h3>
+        <p>崩坏病爆发后，她不忍受病痛折磨的人们，创建疗养院收留病人。第五次崩坏时，她遇见了流浪的千劫，收留他做了一名搬运工。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>暮色降临</h3>
+        <p>病毒终于失控，黄昏街人口锐减。樱为阻断传播清理了疗养院，千劫怒而与之激战。逐火之蛾带走了她与千劫，以「崩坏病主使」之名对她审讯。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>超变</h3>
+        <p>高层为控制或抹除她，将她推上手术台，融合崩坏兽「密多罗」的基因。手术意外成功——她获得了「戒律」与预知未来的能力，从此再无人能囚禁她。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>至深之处</h3>
+        <p>成为融合战士后，她主动要求进入至深之处——握住弱者的手，承受关押者的恶念。千劫接受了她「不可滥杀无辜」的戒律。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>精神的堡垒</h3>
+        <p>第八次崩坏，识之律者的权能覆盖大半个世界，至深之处尽数沉睡。唯有她以一己之力抵挡律者的精神攻击，救回苏濒临崩溃的意志。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>戒护</h3>
+        <p>她以戒律压制科斯魔的过重超变，让他恢复成人；她庇护失去一切的格蕾修，在至深之处将她养大——格蕾修唤她「妈妈」。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>予全人类的戒律</h3>
+        <p>「约束的惨剧」后，绝望蔓延。她为全人类下了那道著名的戒律——「永远不要放弃希望」。然而戒律酿成的苦果，也将由她亲手背负。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>谢幕</h3>
+        <p>终焉之战前夕，她为寻找改变未来的答案，将自身融入往世乐土。侵蚀之律者入侵时，她主动与律者接触，将意识注入侵蚀，换得梅比乌斯的短暂回归——自己则被完全侵蚀，就此消失。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: quotes -->
+<section class="content-section" id="quotes">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">✧</span>至深低语<span class="section-title-mark">✧</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="quotes-grid" id="quotesGrid" data-primary-action></div>
+</section>
+
+<!-- SECTION: ending -->
+<section class="section-ending" id="ending">
+  <div class="ending-stars" id="endingStars"></div>
+  <p class="ending-quote" id="endingQuote">你，早已拥有了这个能力。</p>
+  <p class="ending-attr" id="endingAttr">致阿波尼亚 · elysiad.top/aponia</p>
+  <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
+  <div class="ending-fade"></div>
+</section>
+
+<!-- SECTION: scripts -->
+<script>
+(function(){
+  /* SECTION: quotes data */
+  var quotes = [
+    '「我没能改变任何事。我没能拯救任何人。这是我的罪孽，这是我的命运。我——绝不会逃离。」',
+    '「多么漂亮的一双手呀，我可以握住它们吗？我无法给予你救赎，但至少可以向你诉说……你并非孤独一人。」',
+    '「终局已至，我已无力阻止。但我至少能够让它……到来得更加仁慈。」',
+    '「命运对于我来说不再『无常』，因此，它才被镀上了『残忍』的光泽。」',
+    '「诚然，道德的界限瞬息万变，一如天光。我因善意施与的一切都酿成过苦果，但我不会……也不能害怕犯错，哪怕是亘古之错，哪怕是一生之错。」',
+    '「如同预言中那样，人们所畏惧的事物，被我一一带来，一一实现。这无法托辞于命运的安排，我知我罪，我罪常在我前。」',
+    '「我们的时代从不缺少引领者——可他们走到的地方是如此遥远，以至于跟随者无力看见。所以……我才会走向来路。」',
+    '「于藩篱之中，我们拥获文明；唯驻足之时，我们得见未来。」',
+    '「如果有一天我不得不向你施以『戒律』，请相信，我首先考虑的……是保护你自己。」',
+    '「我憎恨命运，因为它将带你离去。我感激命运，因为它让你我相遇。」'
+  ];
+
+  /* SECTION: quotes build */
+  var grid = document.getElementById('quotesGrid');
+  var cardIndices = [];
+  quotes.forEach(function(q, i){
+    var card = document.createElement('div');
+    card.className = 'quote-card';
+    card.setAttribute('role','button');
+    card.setAttribute('tabindex','0');
+    card.setAttribute('aria-label','低语卡片，点击切换');
+    var textEl = document.createElement('div');
+    textEl.className = 'quote-text';
+    textEl.textContent = q;
+    var hint = document.createElement('span');
+    hint.className = 'quote-hint';
+    hint.textContent = '点击切换';
+    card.appendChild(textEl);
+    card.appendChild(hint);
+    cardIndices.push(i);
+    card.addEventListener('click', function(){
+      var idxPos = Array.prototype.indexOf.call(grid.querySelectorAll('.quote-card'), card);
+      var nextIdx = (cardIndices[idxPos] + 1) % quotes.length;
+      cardIndices[idxPos] = nextIdx;
+      textEl.classList.add('fading');
+      setTimeout(function(){
+        textEl.textContent = quotes[nextIdx];
+        textEl.classList.remove('fading');
+      }, 400);
+    });
+    card.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+    });
+    grid.appendChild(card);
+  });
+
+  /* SECTION: canvas particles */
+  var canvas = document.getElementById('fateCanvas');
+  var ctx = canvas.getContext('2d');
+  var W, H;
+  var silverColors = ['#e8e4f2','#c8c2dc','#9d8fd0'];
+  var candleColors = ['#e8c98a','#c9a45c'];
+
+  function resize(){
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  /* 命运丝线：细长的垂直线，缓慢摇曳 */
+  var threads = [];
+  var threadCount = Math.min(14, Math.floor(window.innerWidth / 90));
+  function createThread(){
+    return {
+      x: Math.random() * W,
+      len: 80 + Math.random() * 180,
+      y: Math.random() * H,
+      swayAmp: 4 + Math.random() * 10,
+      swaySpd: 0.002 + Math.random() * 0.004,
+      swayOff: Math.random() * Math.PI * 2,
+      opacity: 0.04 + Math.random() * 0.08,
+      color: Math.random() > 0.7 ? candleColors[0] : silverColors[1]
+    };
+  }
+  for (var i = 0; i < threadCount; i++) threads.push(createThread());
+
+  /* 光尘：如教堂光柱中的微尘，缓缓下沉 */
+  var motes = [];
+  var moteCount = Math.min(45, Math.floor(window.innerWidth / 24));
+  function createMote(fromTop){
+    return {
+      x: Math.random() * W,
+      y: fromTop ? -10 - Math.random() * 60 : Math.random() * H,
+      size: 0.8 + Math.random() * 2.2,
+      speedY: 0.1 + Math.random() * 0.3,
+      drift: (Math.random() - 0.5) * 0.2,
+      baseOpacity: 0.12 + Math.random() * 0.4,
+      twinkleSpd: 0.005 + Math.random() * 0.018,
+      twinkleOff: Math.random() * Math.PI * 2,
+      color: Math.random() > 0.85 ? candleColors[Math.floor(Math.random() * candleColors.length)] : silverColors[Math.floor(Math.random() * silverColors.length)]
+    };
+  }
+  for (i = 0; i < moteCount; i++) motes.push(createMote(false));
+
+  /* 星尘 */
+  var stars = [];
+  var starCount = Math.min(55, Math.floor(window.innerWidth / 22));
+  function createStar(){
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      size: 0.3 + Math.random() * 1.4,
+      baseOpacity: 0.12 + Math.random() * 0.45,
+      twinkleSpd: 0.008 + Math.random() * 0.025,
+      twinkleOff: Math.random() * Math.PI * 2,
+      color: '#ffffff'
+    };
+  }
+  for (i = 0; i < starCount; i++) stars.push(createStar());
+
+  var scrollRatio = 0;
+  window.addEventListener('scroll', function(){
+    var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    scrollRatio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+  });
+
+  var time = 0;
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function animate(){
+    if (reducedMotion) return;
+    time++;
+    ctx.clearRect(0, 0, W, H);
+    var fadeFactor = 1 - scrollRatio * 0.6;
+    var i, s, m, t, tw, sway;
+
+    for (i = 0; i < threads.length; i++){
+      t = threads[i];
+      sway = Math.sin(time * t.swaySpd + t.swayOff) * t.swayAmp;
+      ctx.save();
+      ctx.globalAlpha = t.opacity * fadeFactor;
+      ctx.strokeStyle = t.color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(t.x + sway * 0.4, t.y);
+      ctx.quadraticCurveTo(t.x + sway, t.y + t.len * 0.5, t.x + sway * 0.6, t.y + t.len);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    for (i = 0; i < stars.length; i++){
+      s = stars[i];
+      tw = 0.5 + 0.5 * Math.sin(time * s.twinkleSpd + s.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = s.baseOpacity * tw * fadeFactor;
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, Math.max(0.2, s.size), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (i = 0; i < motes.length; i++){
+      m = motes[i];
+      m.y += m.speedY;
+      m.x += m.drift + Math.sin(time * 0.008 + m.twinkleOff) * 0.15;
+      if (m.y > H + 15){ motes[i] = createMote(true); m = motes[i]; }
+      tw = 0.5 + 0.5 * Math.sin(time * m.twinkleSpd + m.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = m.baseOpacity * tw * fadeFactor;
+      ctx.fillStyle = m.color;
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, Math.max(0.3, m.size), 0, Math.PI * 2);
+      ctx.fill();
+      if (m.size > 1.6){
+        ctx.globalAlpha = m.baseOpacity * tw * fadeFactor * 0.3;
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, m.size * 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  /* SECTION: typewriter */
+  var typewriterEl = document.getElementById('typewriterText');
+  var cursorEl = document.getElementById('typingCursor');
+  var subEl = document.getElementById('openingSub');
+  var ornEl = document.getElementById('openingOrn');
+  var scrollHintEl = document.getElementById('scrollHint');
+  var typeText = '我无法给予你救赎，但至少可以向你诉说……你并非孤独一人。';
+  var charIndex = 0;
+
+  function typeNext(){
+    if (charIndex < typeText.length){
+      typewriterEl.textContent += typeText[charIndex];
+      charIndex++;
+      setTimeout(typeNext, 140 + Math.random() * 70);
+    } else {
+      setTimeout(function(){
+        cursorEl.classList.add('hidden');
+        subEl.classList.add('visible');
+        setTimeout(function(){ scrollHintEl.classList.add('visible'); }, 1200);
+      }, 600);
+    }
+  }
+  ornEl.classList.add('visible');
+  setTimeout(typeNext, 800);
+
+  /* SECTION: scroll animations */
+  var observerOptions = { threshold: 0.15, rootMargin: '0px 0px -50px 0px' };
+  var scrollObserver = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, observerOptions);
+  document.querySelectorAll('.timeline-node').forEach(function(node){
+    scrollObserver.observe(node);
+  });
+
+  var endingObserver = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting){
+        document.getElementById('endingQuote').classList.add('visible');
+        document.getElementById('endingAttr').classList.add('visible');
+        document.getElementById('backLink').classList.add('visible');
+      }
+    });
+  }, { threshold: 0.3 });
+  endingObserver.observe(document.getElementById('ending'));
+
+  /* SECTION: ending stars */
+  var starsContainer = document.getElementById('endingStars');
+  var endingStarCount = Math.min(80, Math.floor(window.innerWidth / 12));
+  for (i = 0; i < endingStarCount; i++){
+    var star = document.createElement('div');
+    star.className = 'ending-star';
+    var size = 0.5 + Math.random() * 2;
+    star.style.width = size + 'px';
+    star.style.height = size + 'px';
+    star.style.left = (Math.random() * 100) + '%';
+    star.style.top = (Math.random() * 100) + '%';
+    star.style.setProperty('--min-o', (0.1 + Math.random() * 0.3).toFixed(2));
+    star.style.setProperty('--max-o', (0.5 + Math.random() * 0.5).toFixed(2));
+    star.style.setProperty('--dur', (2 + Math.random() * 4).toFixed(1) + 's');
+    star.style.setProperty('--delay', (Math.random() * 5).toFixed(1) + 's');
+    star.style.background = Math.random() > 0.3 ? '#fff' : '#9d8fd0';
+    starsContainer.appendChild(star);
+  }
+
+  /* SECTION: click ripple (命运丝线涟漪) */
+  var rippleColors = ['#c8c2dc','#9d8fd0','#e8c98a','#e8e4f2'];
+  document.addEventListener('click', function(e){
+    if (reducedMotion) return;
+    var count = 7 + Math.floor(Math.random() * 4);
+    for (var k = 0; k < count; k++){
+      var threadEl = document.createElement('div');
+      threadEl.className = 'ripple-thread';
+      var angle = (k / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.6;
+      var dist = 26 + Math.random() * 58;
+      var w = 1.5 + Math.random() * 1.5;
+      var h = 10 + Math.random() * 16;
+      var color = rippleColors[Math.floor(Math.random() * rippleColors.length)];
+      var startRot = Math.random() * 180;
+      threadEl.style.background = color;
+      threadEl.style.boxShadow = '0 0 6px ' + color;
+      threadEl.style.width = w + 'px';
+      threadEl.style.height = h + 'px';
+      threadEl.style.left = e.clientX + 'px';
+      threadEl.style.top = e.clientY + 'px';
+      threadEl.style.transform = 'translate(-50%,-50%) rotate(' + startRot + 'deg)';
+      document.body.appendChild(threadEl);
+      void threadEl.offsetWidth;
+      var endX = Math.cos(angle) * dist;
+      var endY = Math.sin(angle) * dist;
+      threadEl.style.transform = 'translate(calc(-50% + ' + endX + 'px), calc(-50% + ' + endY + 'px)) rotate(' + (startRot + 90 + Math.random() * 90) + 'deg)';
+      threadEl.style.opacity = '0';
+      (function(el){ setTimeout(function(){ el.remove(); }, 900); })(threadEl);
+    }
+  });
+
+  /* SECTION: resize guard */
+  window.addEventListener('resize', function(){
+    for (var j = 0; j < stars.length; j++){
+      if (stars[j].x > W) stars[j].x = Math.random() * W;
+      if (stars[j].y > H) stars[j].y = Math.random() * H;
+    }
+    for (j = 0; j < threads.length; j++){
+      if (threads[j].x > W) threads[j].x = Math.random() * W;
+    }
+  });
+})();
+</script>
+</body>
+</html>
