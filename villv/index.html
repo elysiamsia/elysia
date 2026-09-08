@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="same-origin">
+<title>elysiad.top/villv — 致维尔薇</title>
+<!-- SECTION: styles -->
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-abyss:#0d0614;--bg-deep:#160a22;--bg-stage:#2a1040;--bg-mid:#3d1a58;
+  --accent:#ff6b9d;--accent-soft:rgba(255,107,157,.35);
+  --magenta:#ff6b9d;--magenta-deep:#d94a7b;
+  --gold:#ffd166;--gold-deep:#e8b931;
+  --teal:#4ecdc4;--amber:#e8a35c;
+  --text:#f5eaf2;--text-dim:#c3aed0;--text-muted:#8a7499;
+  --glass-bg:rgba(255,107,157,.06);--glass-border:rgba(255,209,102,.16);
+  --glass-bg2:rgba(78,205,196,.05);--glass-border2:rgba(78,205,196,.13);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg-abyss);color:var(--text);overflow-x:hidden;line-height:1.7;
+}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg-abyss)}
+::-webkit-scrollbar-thumb{background:var(--magenta-deep);border-radius:3px}
+
+#confettiCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+
+/* SECTION: opening */
+.section-opening{
+  position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;
+  padding:2rem;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%,rgba(255,107,157,.12),transparent 70%),
+    radial-gradient(ellipse 40% 30% at 15% 20%,rgba(78,205,196,.07),transparent 70%),
+    radial-gradient(ellipse 40% 30% at 85% 25%,rgba(255,209,102,.07),transparent 70%),
+    linear-gradient(180deg,var(--bg-abyss) 0%,var(--bg-deep) 30%,var(--bg-stage) 60%,var(--bg-deep) 100%);
+}
+.opening-ornament{
+  font-size:1.2rem;letter-spacing:.8em;opacity:0;transition:opacity 1.2s ease;margin-bottom:1.4rem;
+  color:var(--gold);
+}
+.opening-ornament.visible{opacity:.9}
+.opening-ornament .gear{display:inline-block;animation:gear-spin 8s linear infinite;color:var(--teal)}
+@keyframes gear-spin{to{transform:rotate(360deg)}}
+.opening-title{
+  font-size:clamp(1.6rem,5vw,3.2rem);font-weight:400;letter-spacing:.1em;
+  color:var(--gold);text-shadow:0 0 30px var(--accent-soft),0 0 60px rgba(255,209,102,.2);
+  min-height:1.6em;
+}
+.typing-cursor{display:inline-block;font-weight:100;color:var(--accent);animation:blink-cursor .8s step-end infinite}
+.typing-cursor.hidden{display:none}
+@keyframes blink-cursor{0%,100%{opacity:1}50%{opacity:0}}
+.opening-subtitle{
+  font-size:clamp(.9rem,2.5vw,1.25rem);color:var(--text-dim);letter-spacing:.35em;
+  margin-top:1.5rem;opacity:0;transition:opacity 1.5s ease;
+}
+.opening-subtitle.visible{opacity:1}
+.opening-hint{
+  font-size:.72rem;color:var(--text-muted);letter-spacing:.15em;margin-top:.9rem;
+  opacity:0;transition:opacity 1.5s ease 1s;
+}
+.opening-hint.visible{opacity:.65}
+.scroll-hint{
+  position:absolute;bottom:calc(2.5rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  opacity:0;transition:opacity 1s ease .5s;
+}
+.scroll-hint.visible{opacity:.6}
+.scroll-hint span{font-size:.75rem;color:var(--text-muted);letter-spacing:.2em}
+.scroll-chevron{
+  width:20px;height:20px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);
+  transform:rotate(45deg);animation:chevron-bounce 2s ease-in-out infinite;
+}
+@keyframes chevron-bounce{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(6px)}}
+
+/* SECTION: common section */
+.content-section{
+  position:relative;z-index:2;padding:6rem 1.5rem;
+  background:linear-gradient(180deg,transparent 0%,rgba(13,6,20,.3) 20%,rgba(13,6,20,.3) 80%,transparent 100%);
+}
+.section-title-wrap{text-align:center;margin-bottom:3.5rem}
+.section-title{
+  font-size:clamp(1.5rem,4vw,2.2rem);font-weight:300;letter-spacing:.2em;
+  color:var(--gold);text-shadow:0 0 20px rgba(255,209,102,.25);
+}
+.section-title-line{display:block;width:60px;height:1px;margin:1rem auto 0;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+.section-title-suit{display:inline-block;margin:0 .8rem;color:var(--accent);font-size:.8em;opacity:.9}
+
+/* SECTION: profile */
+.profile-card{
+  max-width:720px;margin:0 auto;padding:clamp(2rem,5vw,3rem);
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--glass-border);border-radius:24px;
+  box-shadow:0 0 50px rgba(255,107,157,.09),0 0 100px rgba(255,209,102,.06),inset 0 1px 0 rgba(255,255,255,.07);
+  position:relative;overflow:hidden;animation:glow-pulse 5s ease-in-out infinite;
+}
+.profile-card::before{
+  content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+  background:conic-gradient(from 0deg,transparent,rgba(255,107,157,.06),transparent,rgba(78,205,196,.05),transparent,rgba(255,209,102,.06),transparent);
+  animation:card-rotate 16s linear infinite;
+}
+@keyframes card-rotate{to{transform:rotate(360deg)}}
+@keyframes glow-pulse{
+  0%,100%{box-shadow:0 0 50px rgba(255,107,157,.09),0 0 100px rgba(255,209,102,.06)}
+  50%{box-shadow:0 0 65px rgba(255,107,157,.16),0 0 120px rgba(255,209,102,.1)}
+}
+.profile-card-inner{position:relative;z-index:1}
+.profile-name{
+  font-size:clamp(1.8rem,5vw,2.8rem);font-weight:300;letter-spacing:.12em;cursor:pointer;
+  background:linear-gradient(90deg,var(--amber) 0%,var(--gold) 30%,var(--accent) 60%,var(--teal) 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+  text-align:center;margin-bottom:.2em;user-select:none;
+}
+.profile-name-en{
+  font-size:clamp(.9rem,2vw,1.1rem);font-weight:300;letter-spacing:.4em;
+  color:var(--teal);text-align:center;margin-bottom:2rem;text-shadow:0 0 15px rgba(78,205,196,.3);
+}
+.profile-divider{width:100%;height:1px;margin:1.5rem 0;background:linear-gradient(90deg,transparent,var(--glass-border),var(--glass-border2),transparent)}
+.profile-grid{display:grid;grid-template-columns:auto 1fr;gap:.6rem 1.5rem;font-size:.92rem}
+.profile-label{color:var(--text-muted);white-space:nowrap;font-weight:400}
+.profile-value{color:var(--text);font-weight:300}
+.profile-value .highlight{color:var(--gold);font-weight:400}
+.profile-value .pink{color:var(--accent);font-weight:400}
+.profile-value .mint{color:var(--teal);font-weight:400}
+.profile-desc{
+  margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--glass-border);
+  font-size:.9rem;color:var(--text-dim);line-height:1.9;font-weight:300;
+}
+
+/* SECTION: personalities */
+.persona-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:1rem;max-width:1000px;margin:0 auto;
+}
+.persona-card{
+  padding:1.2rem 1.3rem;cursor:pointer;user-select:none;
+  background:linear-gradient(150deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--glass-border);border-radius:16px;
+  transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;
+  position:relative;overflow:hidden;
+}
+.persona-card:hover{transform:translateY(-3px) rotate(-.4deg);box-shadow:0 0 26px rgba(255,107,157,.14)}
+.persona-card.active{border-color:var(--pc);box-shadow:0 0 24px var(--pc-glow)}
+.persona-head{display:flex;align-items:center;gap:.6rem;margin-bottom:.4rem}
+.persona-icon{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:1rem;
+  background:rgba(255,255,255,.06);border:1px solid var(--pc);color:var(--pc);
+  box-shadow:0 0 10px var(--pc-glow);
+}
+.persona-name{font-size:.95rem;color:var(--text);letter-spacing:.06em;font-weight:400}
+.persona-brief{font-size:.75rem;color:var(--text-muted);letter-spacing:.04em}
+.persona-detail{
+  max-height:0;overflow:hidden;opacity:0;
+  transition:max-height .45s ease,opacity .45s ease,margin .45s ease;
+  font-size:.8rem;color:var(--text-dim);line-height:1.8;font-weight:300;
+}
+.persona-card.active .persona-detail{max-height:200px;opacity:1;margin-top:.6rem}
+.persona-note{
+  max-width:1000px;margin:1.4rem auto 0;text-align:center;
+  font-size:.78rem;color:var(--text-muted);letter-spacing:.05em;line-height:1.9;
+}
+.persona-note .dim{color:var(--accent);opacity:.8}
+
+/* SECTION: timeline */
+.timeline{position:relative;max-width:800px;margin:0 auto;padding:2rem 0}
+.timeline-line{
+  position:absolute;left:50%;top:0;bottom:0;width:2px;
+  background:linear-gradient(180deg,transparent,var(--magenta-deep) 10%,var(--accent) 30%,var(--gold) 55%,var(--teal) 80%,var(--magenta-deep) 95%,transparent);
+  transform:translateX(-50%);
+}
+.timeline-node{
+  position:relative;display:flex;align-items:flex-start;margin-bottom:3rem;
+  opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;
+}
+.timeline-node.visible{opacity:1;transform:translateY(0)}
+.timeline-node:nth-child(odd){flex-direction:row}
+.timeline-node:nth-child(even){flex-direction:row-reverse}
+.timeline-dot{
+  position:absolute;left:50%;top:.5rem;width:14px;height:14px;border-radius:50%;
+  border:2px solid var(--gold);background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
+  box-shadow:0 0 12px rgba(255,209,102,.45);transition:background .3s;
+}
+.timeline-node.visible .timeline-dot{background:var(--gold)}
+.timeline-card{
+  width:calc(50% - 2.5rem);padding:1.2rem 1.5rem;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 0 20px rgba(255,107,157,.05);
+}
+.timeline-node:nth-child(odd) .timeline-card{margin-right:auto}
+.timeline-node:nth-child(even) .timeline-card{margin-left:auto}
+.timeline-card h3{font-size:1.05rem;font-weight:400;color:var(--gold);margin-bottom:.5rem;letter-spacing:.1em}
+.timeline-card p{font-size:.85rem;color:var(--text-dim);line-height:1.8;font-weight:300}
+
+/* SECTION: quotes */
+.quotes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;max-width:1000px;margin:0 auto}
+.quote-card{
+  padding:1.5rem;min-height:140px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
+  box-shadow:0 0 20px rgba(255,209,107,.04);
+  transition:transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
+}
+.quote-card:hover{transform:translateY(-3px) rotate(.3deg);box-shadow:0 0 30px rgba(255,107,157,.14),0 8px 30px rgba(0,0,0,.2)}
+.quote-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(circle at 30% 30%,rgba(255,209,102,.06),transparent 60%);pointer-events:none;
+}
+.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition:opacity .4s ease}
+.quote-text.fading{opacity:0}
+.quote-hint{position:absolute;bottom:.6rem;right:.8rem;font-size:.65rem;color:var(--text-muted);opacity:.4}
+
+/* SECTION: card draw */
+.draw-wrap{max-width:560px;margin:0 auto;text-align:center}
+.draw-btn{
+  min-height:52px;padding:.9rem 2.6rem;border-radius:999px;border:1px solid var(--glass-border);
+  background:linear-gradient(135deg,rgba(255,107,157,.14),rgba(255,209,102,.1));
+  color:var(--gold);font-size:1rem;letter-spacing:.2em;cursor:pointer;
+  transition:transform .25s ease,box-shadow .25s ease;
+  box-shadow:0 0 24px rgba(255,107,157,.12);
+  font-family:inherit;
+}
+.draw-btn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 0 34px rgba(255,209,107,.25)}
+.draw-btn:active{transform:scale(.97)}
+.draw-stage{
+  margin-top:2.2rem;min-height:190px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;
+}
+.draw-card{
+  width:120px;height:172px;border-radius:14px;position:relative;
+  background:linear-gradient(160deg,#fdf6e3,#f3e2c0);
+  border:2px solid var(--gold-deep);
+  box-shadow:0 8px 32px rgba(0,0,0,.4),0 0 30px rgba(255,209,102,.2);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:.2rem;
+  opacity:0;transform:rotateY(90deg) scale(.7);
+  transition:opacity .35s ease,transform .55s cubic-bezier(.34,1.56,.64,1);
+}
+.draw-card.reveal{opacity:1;transform:rotateY(0) scale(1)}
+.draw-card .suit-big{font-size:3.2rem;line-height:1}
+.draw-card .rank-big{font-size:1.5rem;font-weight:600;letter-spacing:.08em}
+.draw-card.red{color:#c0334d}
+.draw-card.black{color:#2b2333}
+.draw-fortune{
+  font-size:.88rem;color:var(--text-dim);line-height:1.9;font-weight:300;max-width:480px;
+  opacity:0;transition:opacity .5s ease .3s;
+}
+.draw-fortune.visible{opacity:1}
+.draw-tip{font-size:.72rem;color:var(--text-muted);letter-spacing:.1em;margin-top:.4rem;opacity:.7}
+
+/* SECTION: ending */
+.section-ending{
+  position:relative;z-index:2;min-height:70vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:4rem 2rem;
+  background:linear-gradient(180deg,transparent,var(--bg-abyss) 30%,var(--bg-abyss));
+}
+.ending-stars{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.ending-star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--dur) ease-in-out infinite;animation-delay:var(--delay)}
+@keyframes twinkle{0%,100%{opacity:var(--min-o)}50%{opacity:var(--max-o)}}
+.ending-quote{
+  font-size:clamp(1.15rem,3vw,1.7rem);font-weight:300;letter-spacing:.12em;cursor:pointer;user-select:none;
+  color:var(--gold);line-height:2;text-shadow:0 0 25px rgba(255,209,102,.35);
+  max-width:640px;opacity:0;transform:translateY(20px);transition:opacity 1.5s ease,transform 1.5s ease;
+}
+.ending-quote.visible{opacity:1;transform:translateY(0)}
+.ending-attr{
+  margin-top:2.5rem;font-size:.85rem;color:var(--text-muted);letter-spacing:.25em;
+  opacity:0;transition:opacity 1.5s ease .8s;
+}
+.ending-attr.visible{opacity:.7}
+.back-link{
+  display:inline-flex;align-items:center;gap:.5rem;margin-top:3rem;
+  min-height:44px;padding:.6rem 1.6rem;border-radius:999px;text-decoration:none;
+  color:var(--accent);font-size:.85rem;letter-spacing:.15em;
+  border:1px solid var(--glass-border);background:rgba(255,107,157,.06);
+  transition:background .3s ease,box-shadow .3s ease,transform .3s ease;
+  opacity:0;
+}
+.back-link.visible{opacity:1;transition:opacity 1.5s ease 1.2s,background .3s ease,box-shadow .3s ease,transform .3s ease}
+.back-link:hover{background:rgba(255,107,157,.14);box-shadow:0 0 24px rgba(255,107,157,.25);transform:translateY(-2px)}
+.ending-fade{position:absolute;bottom:0;left:0;right:0;height:120px;background:linear-gradient(transparent,var(--bg-abyss));pointer-events:none}
+
+/* SECTION: toast */
+#vvToast{
+  position:fixed;left:50%;bottom:16%;transform:translateX(-50%) translateY(10px);z-index:9995;
+  max-width:88vw;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;letter-spacing:.06em;
+  color:var(--text);background:linear-gradient(135deg,rgba(42,16,64,.94),rgba(61,26,88,.94));
+  border:1px solid var(--glass-border);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 24px rgba(255,107,157,.2);
+  opacity:0;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:opacity .35s ease,transform .35s ease;
+}
+#vvToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* SECTION: ripple */
+.ripple-confetti{
+  position:fixed;pointer-events:none;z-index:9999;border-radius:2px;opacity:.95;
+  transition:all .85s cubic-bezier(.22,.61,.36,1);
+}
+
+/* SECTION: kevin killer 666 */
+body.kk-locked{overflow:hidden}
+#kkOverlay{position:fixed;inset:0;z-index:10000;pointer-events:none;display:none}
+#kkOverlay.on{display:block;pointer-events:auto}
+.kk-vignette{position:absolute;inset:0;opacity:0;transition:opacity .4s;background:radial-gradient(ellipse at center,transparent 30%,rgba(217,42,42,.55) 100%)}
+#kkOverlay.phase-alert .kk-vignette{opacity:1;animation:kk-pulse .7s ease-in-out infinite}
+@keyframes kk-pulse{0%,100%{opacity:.55}50%{opacity:1}}
+.kk-banner{
+  position:absolute;top:12%;left:50%;transform:translateX(-50%);width:max-content;max-width:92vw;
+  padding:.8rem 1.6rem;border:1px solid rgba(255,80,60,.7);border-radius:10px;
+  background:rgba(20,4,6,.92);color:#ff8a7a;font-size:clamp(.8rem,2.4vw,1.05rem);
+  letter-spacing:.18em;text-align:center;opacity:0;box-shadow:0 0 30px rgba(255,60,40,.4);
+}
+#kkOverlay.phase-alert .kk-banner{opacity:1;animation:kk-blink .5s steps(2) infinite,kk-jitter .12s linear infinite}
+@keyframes kk-blink{0%,100%{border-color:rgba(255,80,60,.9)}50%{border-color:rgba(255,80,60,.25)}}
+@keyframes kk-jitter{
+  0%{transform:translateX(-50%) translate(0,0)}25%{transform:translateX(-50%) translate(-2px,1px)}
+  50%{transform:translateX(-50%) translate(2px,-1px)}75%{transform:translateX(-50%) translate(-1px,-2px)}
+  100%{transform:translateX(-50%) translate(1px,2px)}
+}
+.kk-count{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:clamp(5rem,22vw,11rem);font-weight:700;color:#ffd166;
+  text-shadow:0 0 40px rgba(255,60,40,.8),0 0 90px rgba(255,209,102,.5);
+  opacity:0;font-variant-numeric:tabular-nums;
+}
+#kkOverlay.phase-count .kk-count{opacity:1}
+#kkOverlay.phase-count .kk-banner{opacity:.25;animation:none}
+#kkOverlay.phase-count .kk-vignette{opacity:1;animation:kk-pulse .35s ease-in-out infinite}
+.kk-count.pop{animation:kk-pop .75s ease-out}
+@keyframes kk-pop{0%{transform:translate(-50%,-50%) scale(2.2);opacity:0}30%{opacity:1}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
+.kk-flash{position:absolute;inset:0;background:#fff;opacity:0}
+#kkOverlay.phase-boom .kk-flash{animation:kk-flash 1.1s ease-out forwards}
+@keyframes kk-flash{0%{opacity:0}8%{opacity:1}30%{opacity:1}100%{opacity:0}}
+#kkOverlay.phase-boom .kk-banner,#kkOverlay.phase-boom .kk-count,#kkOverlay.phase-boom .kk-vignette{opacity:0;animation:none}
+body.kk-shaking{animation:kk-quake .1s linear infinite}
+@keyframes kk-quake{
+  0%{transform:translate(0,0)}25%{transform:translate(-6px,4px)}
+  50%{transform:translate(5px,-5px)}75%{transform:translate(-4px,-3px)}100%{transform:translate(4px,5px)}
+}
+.kk-after{
+  position:absolute;inset:0;background:#050203;opacity:0;transition:opacity 1.2s ease;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.4rem;
+  padding:2rem;text-align:center;overflow:hidden;
+}
+#kkOverlay.phase-after .kk-after{opacity:1}
+#kkOverlay.phase-after .kk-flash{animation:none;opacity:0}
+.kk-line{
+  font-size:clamp(.9rem,2.6vw,1.15rem);color:#c3aed0;letter-spacing:.14em;line-height:2;
+  opacity:0;transform:translateY(14px);transition:opacity 1.2s ease,transform 1.2s ease;max-width:640px;
+}
+.kk-line.show{opacity:1;transform:translateY(0)}
+.kk-line.kk-big{font-size:clamp(1.1rem,3.2vw,1.5rem);color:#ff8a7a}
+.kk-line.kk-small{font-size:.8rem;color:#8a7499}
+.kk-reload{
+  min-height:46px;margin-top:1rem;padding:.7rem 2.2rem;border-radius:999px;
+  border:1px solid rgba(255,209,102,.5);background:rgba(255,209,102,.08);
+  color:#ffd166;font-size:.9rem;letter-spacing:.2em;cursor:pointer;font-family:inherit;
+  opacity:0;transform:translateY(10px);
+  transition:opacity 1s ease,transform 1s ease,box-shadow .3s ease,background .3s ease;
+}
+.kk-reload.show{opacity:1;transform:translateY(0)}
+.kk-reload:hover{background:rgba(255,209,102,.16);box-shadow:0 0 22px rgba(255,209,102,.3)}
+.kk-ember{
+  position:absolute;bottom:-10px;width:3px;height:3px;border-radius:50%;
+  background:#e8935c;box-shadow:0 0 6px #ff6b3d;opacity:0;
+  animation:kk-ember-rise linear infinite;
+}
+@keyframes kk-ember-rise{0%{opacity:0;transform:translateY(0)}10%{opacity:.8}100%{opacity:0;transform:translateY(-105vh)}}
+
+/* SECTION: responsive */
+@media(max-width:768px){
+  .timeline-line{left:1.5rem}
+  .timeline-node,.timeline-node:nth-child(odd),.timeline-node:nth-child(even){flex-direction:row}
+  .timeline-dot{left:1.5rem}
+  .timeline-card,.timeline-node:nth-child(odd) .timeline-card,.timeline-node:nth-child(even) .timeline-card{
+    width:calc(100% - 3.5rem);margin-left:3.5rem;margin-right:0;
+  }
+  .quotes-grid{grid-template-columns:1fr}
+  .persona-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+  .profile-grid{grid-template-columns:auto 1fr;gap:.5rem 1rem;font-size:.85rem}
+  #vvToast{white-space:normal;text-align:center;line-height:1.6}
+}
+@media(max-width:480px){
+  .content-section{padding:4rem 1rem}
+  .profile-card{padding:1.5rem}
+  .quote-card{min-height:120px;padding:1.2rem}
+  .persona-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<canvas id="confettiCanvas"></canvas>
+
+<!-- SECTION: opening -->
+<section class="section-opening" id="opening">
+  <div class="opening-content">
+    <div class="opening-ornament" id="openingOrn">♠ <span class="gear">⚙</span> ♥ <span class="gear">⚙</span> ♣ <span class="gear">⚙</span> ♦</div>
+    <h1 class="opening-title" id="typewriterText"></h1><span class="typing-cursor" id="typingCursor">|</span>
+    <p class="opening-subtitle" id="openingSub">欢迎来到螺旋工坊</p>
+    <p class="opening-hint" id="openingHint">……听说把她的名字连点五次，会有意想不到的演出？</p>
+  </div>
+  <div class="scroll-hint" id="scrollHint">
+    <span>入场就座</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</section>
+
+<!-- SECTION: about -->
+<section class="content-section" id="about">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-suit">♠</span>关于她<span class="section-title-suit">♦</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="profile-card">
+    <div class="profile-card-inner">
+      <div class="profile-name" id="profileName">维尔薇</div>
+      <div class="profile-name-en">V I L L - V</div>
+      <div class="profile-divider"></div>
+      <div class="profile-grid">
+        <span class="profile-label">名字来源</span>
+        <span class="profile-value">由「Will」（意志）拆分而来——只要愿意，就可以</span>
+        <span class="profile-label">出处</span>
+        <span class="profile-value">《崩坏3》第一文明纪元</span>
+        <span class="profile-label">身份</span>
+        <span class="profile-value">十三英桀工程顾问 · 螺旋工坊最年轻的主人 · 黄昏纪元的魔术王</span>
+        <span class="profile-label">位次</span>
+        <span class="profile-value"><span class="highlight">Ⅴ</span></span>
+        <span class="profile-label">刻印</span>
+        <span class="profile-value"><span class="highlight">「螺旋」</span></span>
+        <span class="profile-label">生日</span>
+        <span class="profile-value"><span class="pink">5月5日</span></span>
+        <span class="profile-label">身高</span>
+        <span class="profile-value">166cm</span>
+        <span class="profile-label">发色瞳色</span>
+        <span class="profile-value"><span class="pink">左棕黄</span> · <span class="mint">右深绿</span>；白瞳 → 粉瞳</span>
+        <span class="profile-label">能力</span>
+        <span class="profile-value">思维分割——八个人格，每一位都是天才</span>
+        <span class="profile-label">代表作</span>
+        <span class="profile-value">神之键（第1–5把）· 对凯文武装 · 至深之处 · 月光王座 · 方舟</span>
+        <span class="profile-label">配音</span>
+        <span class="profile-value">阮从青（汉语）/ 金元寿子（日语）</span>
+        <span class="profile-label">爱好</span>
+        <span class="profile-value">魔术表演、机械工程、做饭、神秘学研究、「愚弄众生」</span>
+        <span class="profile-label">讨厌</span>
+        <span class="profile-value">提前揭幕、乱吃东西、又厚又重的靴子、修不好的东西……和自己</span>
+      </div>
+      <div class="profile-desc">
+        齿轮转动，拉开舞台的幕布；蒸汽喧闹，献上不绝的欢呼。她是传递惊奇的魔术师，也是创造万物的手工匠——倾毕生才华，只为获得片刻的惊叫与掌声。而当幕布遮下，舞台散场，张扬的演员亦归于短暂的静默。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: personas -->
+<section class="content-section" id="personas">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-suit">♥</span>八个「我」<span class="section-title-suit">♣</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="persona-grid" id="personaGrid" data-primary-action></div>
+  <p class="persona-note">
+    她曾还有第九份意识——「讲师」。为了让大家免受「戒律」的束缚，讲师独自承担了全部效力，<span class="dim">永远地消失了</span>。
+  </p>
+</section>
+
+<!-- SECTION: journey -->
+<section class="content-section" id="journey">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-suit">♦</span>她的螺旋<span class="section-title-suit">♠</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="timeline">
+    <div class="timeline-line"></div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>欺诈师</h3>
+        <p>黄昏街里以「魔术师」之名行欺诈之实的少女，自称没有才能，却想要什么就能成为什么——三个月自学高等机械动力学，伪装成大学生，骗过所有人。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>相遇</h3>
+        <p>她放出无人机潜入梅比乌斯的实验室，想揭开逐火之蛾的真相——却被爱莉希雅当场抓个正着。「哎呀，你运气真好」，这场相遇成了她第二人生的序幕。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>P-21</h3>
+        <p>多次越狱未果，被流放到太平洋的孤岛。加入逐火之蛾后，她的第一个任务充满讽刺——建造一座谁都逃不出去的监狱：「至深之处」。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>思维分割</h3>
+        <p>成为融合战士后，她获得了「思维分割」的能力：把意识分成八份，指挥家、魔术师、专家、厨师……每一个「她」都是天才。她对外宣称：吾名为「群」。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>螺旋工坊</h3>
+        <p>工程部部长，第一至第五神之键的锻造者，「对凯文武装」的发明人，月光王座与方舟的设计师。整个时代的造物奇迹，一半出自她灵巧的指间。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>愧疚</h3>
+        <p>第十二次崩坏，侵蚀之律者把核弹射向人类仅存的三座城市——而那些核弹，出自她的手。这一场大错，她决定亲手弥补。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>万物休眠</h3>
+        <p>她从苏的手中收回自己锻造的第五神之键，把灭绝生灵的武器，亲手重制为延续生命的火种——「停滞之键·万物休眠」。毁灭与救赎，在她手中完成了一次螺旋反转。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>和解</h3>
+        <p>往世乐土中，「本我」与「恶」两个自己终于相拥。所有意识合而为一，成为完整的维尔薇——她把「螺旋」的刻印交给芽衣，也留下了只有她才懂的「后门」。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>谢幕</h3>
+        <p>侵蚀来袭，她引导着每一位英桀走向最后的舞台。当所有的「我」汇聚成螺旋，这场震惊世界的嬉闹剧终于迎来终章——谢幕之时，敬请欢呼。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: quotes -->
+<section class="content-section" id="quotes">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-suit">♣</span>螺旋台词<span class="section-title-suit">♥</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="quotes-grid" id="quotesGrid"></div>
+</section>
+
+<!-- SECTION: card draw -->
+<section class="content-section" id="draw">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-suit">♦</span>魔术时间<span class="section-title-suit">♣</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="draw-wrap">
+    <button class="draw-btn" id="drawBtn" data-primary-action>🎩 从帽子里抽一张牌</button>
+    <div class="draw-stage">
+      <div class="draw-card" id="drawCard">
+        <span class="suit-big" id="drawSuit">♠</span>
+        <span class="rank-big" id="drawRank">A</span>
+      </div>
+      <p class="draw-fortune" id="drawFortune"></p>
+      <p class="draw-tip">——只有真正的惊讶，才无法被伪装——</p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: ending -->
+<section class="section-ending" id="ending">
+  <div class="ending-stars" id="endingStars"></div>
+  <p class="ending-quote" id="endingQuote">谢幕之时，敬请欢呼吧！</p>
+  <p class="ending-attr" id="endingAttr">致维尔薇 · elysiad.top/villv</p>
+  <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
+  <div class="ending-fade"></div>
+</section>
+
+<!-- SECTION: kevin killer overlay -->
+<div id="kkOverlay" aria-hidden="true">
+  <div class="kk-vignette"></div>
+  <div class="kk-banner" id="kkBanner">⚠ 未授权武装启动 —— 对凯文武装·型号666 ⚠</div>
+  <div class="kk-count" id="kkCount">3</div>
+  <div class="kk-flash" id="kkFlash"></div>
+  <div class="kk-after" id="kkAfter">
+    <p class="kk-line kk-big" id="kkLine1">……轰。</p>
+    <p class="kk-line" id="kkLine2">对凯文武装·型号666——以摧毁整座乐土为代价，击败了凯文。</p>
+    <p class="kk-line kk-small" id="kkLine3">她早就留好了后门：刷新页面，螺旋工坊重新开张♪</p>
+    <button class="kk-reload" id="kkReload">重新开张 ♪</button>
+  </div>
+</div>
+
+<div id="vvToast" role="status"></div>
+
+<!-- SECTION: scripts -->
+<script>
+(function(){
+  /* SECTION: quotes data */
+  var quotes = [
+    '「没错，就是我。螺旋工坊最年轻的主人，对凯文武装的发明者、黄昏纪元的魔术王、俯瞰群星之人，以及——热爱制造『天才小垃圾』的维尔薇！」',
+    '「用真实创造虚妄，以矛盾反转意义。吾名为『群』，只要我『愿意』，那我就『可以』。」',
+    '「拉开帷幕，这将会盛大无前！」',
+    '「唉……希望你永远不会遇到自己跟自己吵架的情况。那……再见啦。」',
+    '「鼓掌是基本的礼仪，明白了吗？至于在我宣布谢幕之前就离场……你试试也可以，后果会相当出人意料，我保证。」',
+    '「哎呀……你运气真好，刚好赶上了演出的序幕呢。请先别入座，让我们一起——超越想象力。」',
+    '「在所有时间欺骗所有人——我的目标就这么简单。既然有人做到过，我当然也可以。」',
+    '「放心吧，问题总会解决的——至少它总能解决我们嘛。」',
+    '「后备方案也要有后备方案才行……不对，后备方案的后备方案也得还有一个后备方案才行……」',
+    '「拆解自己，正是为了成为自己。唯有创造对立，才能步入统一。」'
+  ];
+
+  /* SECTION: quotes build */
+  var grid = document.getElementById('quotesGrid');
+  var cardIndices = [];
+  quotes.forEach(function(q, i){
+    var card = document.createElement('div');
+    card.className = 'quote-card';
+    card.setAttribute('role','button');
+    card.setAttribute('tabindex','0');
+    card.setAttribute('aria-label','台词卡片，点击切换');
+    var textEl = document.createElement('div');
+    textEl.className = 'quote-text';
+    textEl.textContent = q;
+    var hint = document.createElement('span');
+    hint.className = 'quote-hint';
+    hint.textContent = '点击切换';
+    card.appendChild(textEl);
+    card.appendChild(hint);
+    cardIndices.push(i);
+    card.addEventListener('click', function(){
+      var idxPos = Array.prototype.indexOf.call(grid.querySelectorAll('.quote-card'), card);
+      var nextIdx = (cardIndices[idxPos] + 1) % quotes.length;
+      cardIndices[idxPos] = nextIdx;
+      textEl.classList.add('fading');
+      setTimeout(function(){
+        textEl.textContent = quotes[nextIdx];
+        textEl.classList.remove('fading');
+      }, 400);
+    });
+    card.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+    });
+    grid.appendChild(card);
+  });
+
+  /* SECTION: personas data */
+  var personas = [
+    { name:'指挥家', icon:'🎼', color:'#ffd166', brief:'最接近「本我」的存在',
+      detail:'原初人格沉睡前，把分割意识的权限交给了她。八位「维尔薇」的调度者，一句「你们安静点」就能让脑海里的剧场瞬间鸦雀无声。',
+      line:'「你们安静点。」——指挥家说。' },
+    { name:'大魔术师', icon:'🎩', color:'#ff6b9d', brief:'聚光灯下的表演者',
+      detail:'源于黄昏街魔术欺诈的岁月，如今是舞台的主人。她热爱掌声、热爱惊呼、热爱在揭幕前卖足关子——毕竟魔术的要诀，就是误导。',
+      line:'「鼓掌是基本的礼仪，明白了吗？」' },
+    { name:'专家', icon:'⚙', color:'#4ecdc4', brief:'包揽研发的机械师',
+      detail:'神之键、对凯文武装、至深之处……大部分研发工作都由她完成，所以她总觉得其他人格占了便宜。顺带一提，她对冷兵器一窍不通。',
+      line:'「从我这里得到的武器，用起来最好慎之又慎。」' },
+    { name:'神秘学者', icon:'🔮', color:'#9d8fd0', brief:'钻研未知的探求者',
+      detail:'沉迷神秘学研究的人格。「在所有时间欺骗所有人」——这句狂言，大概只有她说得面不改色。',
+      line:'「在所有时间欺骗所有人——我的目标就这么简单。」' },
+    { name:'厨师', icon:'🍳', color:'#e8a35c', brief:'三星餐厅的主厨',
+      detail:'曾以「维尔薇」之名执掌米其林三星餐厅后厨的天才主厨。八个人格里最有人间烟火气的一位——可惜其他「我」总是来不及品尝就换班了。',
+      line:'「能请你尝尝我的手艺吗？」' },
+    { name:'恶', icon:'🕷', color:'#d94a4a', brief:'自傲与暗面的集合',
+      detail:'维尔薇一切自傲与负面特质的集合体，曾被隔离在意识深处。往世乐土中，她与「本我」兵刃相向，最终相拥和解——天才与愚人，本就是螺旋的两端。',
+      line:'「我会让你的毁灭，美妙绝伦！」' },
+    { name:'对凯文武装·型号五', icon:'⚔', color:'#8ba7c4', brief:'为对抗凯文而生',
+      detail:'「人为崩落」的思维，专为对抗凯文而启用的最强底牌。诡异的是——没有任何人格拥有她被启用时的记忆。（工坊最深处还锁着一台「型号666」——敢把它的编号连按三次试试吗？）',
+      line:'型号五沉默不语。没有人记得她苏醒的那一刻。' },
+    { name:'原初人格', icon:'🌙', color:'#e8e4f2', brief:'最初的维尔薇',
+      detail:'四岁起就讨厌自己、希望变成另一个人的那个女孩。分割出所有人格、移交权限之后，她便沉入长眠，极少醒来——约束惨剧的爆炸中，似乎有人见过她。',
+      line:'她只是安静地看着你，随后再度沉睡。' }
+  ];
+
+  /* SECTION: personas build */
+  var pGrid = document.getElementById('personaGrid');
+  personas.forEach(function(p){
+    var card = document.createElement('div');
+    card.className = 'persona-card';
+    card.setAttribute('role','button');
+    card.setAttribute('tabindex','0');
+    card.style.setProperty('--pc', p.color);
+    card.style.setProperty('--pc-glow', p.color + '44');
+    var head = document.createElement('div');
+    head.className = 'persona-head';
+    var icon = document.createElement('div');
+    icon.className = 'persona-icon';
+    icon.textContent = p.icon;
+    var nameBox = document.createElement('div');
+    var nameEl = document.createElement('div');
+    nameEl.className = 'persona-name';
+    nameEl.textContent = p.name;
+    var briefEl = document.createElement('div');
+    briefEl.className = 'persona-brief';
+    briefEl.textContent = p.brief;
+    nameBox.appendChild(nameEl);
+    nameBox.appendChild(briefEl);
+    head.appendChild(icon);
+    head.appendChild(nameBox);
+    var detail = document.createElement('div');
+    detail.className = 'persona-detail';
+    detail.textContent = p.detail;
+    card.appendChild(head);
+    card.appendChild(detail);
+    card.addEventListener('click', function(){
+      var wasActive = card.classList.contains('active');
+      pGrid.querySelectorAll('.persona-card').forEach(function(c){ c.classList.remove('active'); });
+      if (!wasActive){
+        card.classList.add('active');
+        showToast(p.name + '接管了对话：' + p.line);
+      }
+    });
+    card.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+    });
+    pGrid.appendChild(card);
+  });
+
+  /* SECTION: toast */
+  var toastEl = document.getElementById('vvToast');
+  var toastTimer = null;
+  function showToast(text){
+    clearTimeout(toastTimer);
+    toastEl.textContent = text;
+    toastEl.classList.remove('show');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, 3200);
+  }
+
+  /* SECTION: easter egg - name clicks (人格切换) */
+  var nameEl = document.getElementById('profileName');
+  var clickCount = 0;
+  var clickResetTimer = null;
+  var personaIdx = 0;
+  var accentByPersona = ['#ffd166','#ff6b9d','#4ecdc4','#9d8fd0','#e8a35c','#d94a4a','#8ba7c4','#e8e4f2'];
+  nameEl.addEventListener('click', function(){
+    clickCount++;
+    clearTimeout(clickResetTimer);
+    clickResetTimer = setTimeout(function(){ clickCount = 0; }, 2500);
+    if (clickCount >= 5){
+      clickCount = 0;
+      var p = personas[personaIdx % personas.length];
+      document.documentElement.style.setProperty('--accent', accentByPersona[personaIdx % personas.length]);
+      document.documentElement.style.setProperty('--accent-soft', accentByPersona[personaIdx % personas.length] + '55');
+      confettiBurst(window.innerWidth / 2, window.innerHeight * 0.32, 26);
+      showToast('舞台灯光一变——现在是「' + p.name + '」：' + p.line);
+      personaIdx++;
+    }
+  });
+
+  /* SECTION: easter egg - card draw */
+  var drawBtn = document.getElementById('drawBtn');
+  var drawCard = document.getElementById('drawCard');
+  var drawSuit = document.getElementById('drawSuit');
+  var drawRank = document.getElementById('drawRank');
+  var drawFortune = document.getElementById('drawFortune');
+  var fortunes = [
+    '今日宜：制造惊喜。忌：提前揭幕。',
+    '今日的你会遇见意想不到的转折——放心，问题总会解决的。',
+    '有后备方案吗？很好。后备方案的后备方案呢？……再去准备一个吧。',
+    '今天适合向讨厌自己的人伸出手——拆解自己，正是为了成为自己。',
+    '舞台已经搭好，灯光已经就位。今日的主角，是你。',
+    '小心身边自称「专家」的人……也可能真的是专家。',
+    '今日幸运物：一顶帽子。里面可能什么都没有，也可能有一整个工坊。',
+    '只要愿意，就可以——今天的你，无所不能。'
+  ];
+  var suits = [
+    { s:'♠', red:false }, { s:'♥', red:true }, { s:'♣', red:false }, { s:'♦', red:true }
+  ];
+  var ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+  drawBtn.addEventListener('click', function(){
+    drawCard.classList.remove('reveal');
+    drawFortune.classList.remove('visible');
+    setTimeout(function(){
+      var suit = suits[Math.floor(Math.random() * suits.length)];
+      var rank = ranks[Math.floor(Math.random() * ranks.length)];
+      drawSuit.textContent = suit.s;
+      drawRank.textContent = rank;
+      drawCard.classList.toggle('red', suit.red);
+      drawCard.classList.toggle('black', !suit.red);
+      drawFortune.textContent = '『' + suit.s + rank + '』—— ' + fortunes[Math.floor(Math.random() * fortunes.length)];
+      drawCard.classList.add('reveal');
+      drawFortune.classList.add('visible');
+      var rect = drawCard.getBoundingClientRect();
+      confettiBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, 18);
+      if (rank === '6'){
+        sixDrawn++;
+        if (sixDrawn >= 3){
+          setTimeout(function(){ fireKevinKiller666(); }, 1000);
+        }
+      }
+    }, 380);
+  });
+
+  /* SECTION: easter egg - ending quote encore */
+  var endingQuote = document.getElementById('endingQuote');
+  var encores = [
+    '「唉……希望你永远不会遇到自己跟自己吵架的情况。那……再见啦。」',
+    '「用真实创造虚妄，以矛盾反转意义。吾名为『群』。」',
+    '「让我们拭目以待吧——当所有的我，汇聚成螺旋之时。」',
+    '「谢幕之时，敬请欢呼吧！」'
+  ];
+  var encoreIdx = 0;
+  endingQuote.addEventListener('click', function(){
+    var rect = endingQuote.getBoundingClientRect();
+    confettiBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, 24);
+    endingQuote.style.opacity = '0';
+    setTimeout(function(){
+      endingQuote.textContent = encores[encoreIdx % encores.length];
+      encoreIdx++;
+      endingQuote.style.opacity = '1';
+    }, 400);
+  });
+
+  /* SECTION: canvas confetti & gears */
+  var canvas = document.getElementById('confettiCanvas');
+  var ctx = canvas.getContext('2d');
+  var W, H;
+  var confettiColors = ['#ff6b9d','#ffd166','#4ecdc4','#e8a35c','#d94a7b','#e8e4f2'];
+
+  function resize(){
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  /* 常驻彩带雨 */
+  var confetti = [];
+  var confettiCount = Math.min(48, Math.floor(window.innerWidth / 24));
+  function createConfetti(fromTop){
+    return {
+      x: Math.random() * W,
+      y: fromTop ? -20 - Math.random() * 100 : Math.random() * H,
+      w: 3 + Math.random() * 5,
+      h: 6 + Math.random() * 9,
+      speedY: 0.4 + Math.random() * 0.9,
+      drift: (Math.random() - 0.5) * 0.5,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.06,
+      swayAmp: 20 + Math.random() * 30,
+      swaySpd: 0.008 + Math.random() * 0.015,
+      swayOff: Math.random() * Math.PI * 2,
+      opacity: 0.35 + Math.random() * 0.45,
+      color: confettiColors[Math.floor(Math.random() * confettiColors.length)]
+    };
+  }
+  for (var i = 0; i < confettiCount; i++) confetti.push(createConfetti(false));
+
+  /* 漂浮花色符号 */
+  var suitSymbols = ['♠','♥','♣','♦','⚙'];
+  var floaters = [];
+  var floaterCount = Math.min(10, Math.floor(window.innerWidth / 130));
+  function createFloater(fromTop){
+    return {
+      x: Math.random() * W,
+      y: fromTop ? -30 - Math.random() * 80 : Math.random() * H,
+      size: 12 + Math.random() * 16,
+      speedY: 0.15 + Math.random() * 0.3,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.01,
+      opacity: 0.08 + Math.random() * 0.14,
+      color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
+      char: suitSymbols[Math.floor(Math.random() * suitSymbols.length)]
+    };
+  }
+  for (i = 0; i < floaterCount; i++) floaters.push(createFloater(false));
+
+  /* 爆发彩带（彩蛋用） */
+  var bursts = [];
+  function confettiBurst(cx, cy, count){
+    for (var k = 0; k < count; k++){
+      var angle = (k / count) * Math.PI * 2 + Math.random() * 0.5;
+      var speed = 2 + Math.random() * 4.5;
+      bursts.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 2,
+        w: 3 + Math.random() * 5,
+        h: 6 + Math.random() * 8,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.2,
+        life: 1,
+        color: confettiColors[Math.floor(Math.random() * confettiColors.length)]
+      });
+    }
+  }
+
+  var scrollRatio = 0;
+  window.addEventListener('scroll', function(){
+    var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    scrollRatio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+  });
+
+  var time = 0;
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function animate(){
+    if (reducedMotion) return;
+    time++;
+    ctx.clearRect(0, 0, W, H);
+    var fadeFactor = 1 - scrollRatio * 0.5;
+    var i, c, f, b;
+
+    for (i = 0; i < floaters.length; i++){
+      f = floaters[i];
+      f.y += f.speedY;
+      f.rotation += f.rotSpeed;
+      if (f.y > H + 40){ floaters[i] = createFloater(true); f = floaters[i]; }
+      ctx.save();
+      ctx.globalAlpha = f.opacity * fadeFactor;
+      ctx.fillStyle = f.color;
+      ctx.font = f.size + 'px serif';
+      ctx.textAlign = 'center';
+      ctx.translate(f.x + Math.sin(time * 0.01 + f.rotation) * 12, f.y);
+      ctx.rotate(f.rotation);
+      ctx.fillText(f.char, 0, 0);
+      ctx.restore();
+    }
+
+    for (i = 0; i < confetti.length; i++){
+      c = confetti[i];
+      c.y += c.speedY;
+      c.rotation += c.rotSpeed;
+      var sway = Math.sin(time * c.swaySpd + c.swayOff) * c.swayAmp * 0.05;
+      c.x += c.drift + sway;
+      if (c.y > H + 20){ confetti[i] = createConfetti(true); c = confetti[i]; }
+      ctx.save();
+      ctx.globalAlpha = c.opacity * fadeFactor;
+      ctx.fillStyle = c.color;
+      ctx.translate(c.x, c.y);
+      ctx.rotate(c.rotation);
+      ctx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h);
+      ctx.restore();
+    }
+
+    for (i = bursts.length - 1; i >= 0; i--){
+      b = bursts[i];
+      b.x += b.vx;
+      b.y += b.vy;
+      b.vy += 0.12;
+      b.vx *= 0.985;
+      b.rotation += b.rotSpeed;
+      b.life -= 0.016;
+      if (b.life <= 0 || b.y > H + 30){ bursts.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, b.life);
+      ctx.fillStyle = b.color;
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.rotation);
+      ctx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h);
+      ctx.restore();
+    }
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  /* SECTION: typewriter */
+  var typewriterEl = document.getElementById('typewriterText');
+  var cursorEl = document.getElementById('typingCursor');
+  var subEl = document.getElementById('openingSub');
+  var hintEl = document.getElementById('openingHint');
+  var ornEl = document.getElementById('openingOrn');
+  var scrollHintEl = document.getElementById('scrollHint');
+  var typeText = '拉开帷幕，这将会盛大无前！';
+  var charIndex = 0;
+
+  function typeNext(){
+    if (charIndex < typeText.length){
+      typewriterEl.textContent += typeText[charIndex];
+      charIndex++;
+      setTimeout(typeNext, 130 + Math.random() * 70);
+    } else {
+      setTimeout(function(){
+        cursorEl.classList.add('hidden');
+        subEl.classList.add('visible');
+        hintEl.classList.add('visible');
+        setTimeout(function(){ scrollHintEl.classList.add('visible'); }, 1000);
+      }, 500);
+    }
+  }
+  ornEl.classList.add('visible');
+  setTimeout(typeNext, 700);
+
+  /* SECTION: scroll animations */
+  var observerOptions = { threshold: 0.15, rootMargin: '0px 0px -50px 0px' };
+  var scrollObserver = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, observerOptions);
+  document.querySelectorAll('.timeline-node').forEach(function(node){
+    scrollObserver.observe(node);
+  });
+
+  var endingObserver = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting){
+        document.getElementById('endingQuote').classList.add('visible');
+        document.getElementById('endingAttr').classList.add('visible');
+        document.getElementById('backLink').classList.add('visible');
+      }
+    });
+  }, { threshold: 0.3 });
+  endingObserver.observe(document.getElementById('ending'));
+
+  /* SECTION: ending stars */
+  var starsContainer = document.getElementById('endingStars');
+  var endingStarCount = Math.min(80, Math.floor(window.innerWidth / 12));
+  var endStarColors = ['#fff','#ffd166','#ff6b9d','#4ecdc4'];
+  for (i = 0; i < endingStarCount; i++){
+    var star = document.createElement('div');
+    star.className = 'ending-star';
+    var size = 0.5 + Math.random() * 2;
+    star.style.width = size + 'px';
+    star.style.height = size + 'px';
+    star.style.left = (Math.random() * 100) + '%';
+    star.style.top = (Math.random() * 100) + '%';
+    star.style.setProperty('--min-o', (0.1 + Math.random() * 0.3).toFixed(2));
+    star.style.setProperty('--max-o', (0.5 + Math.random() * 0.5).toFixed(2));
+    star.style.setProperty('--dur', (2 + Math.random() * 4).toFixed(1) + 's');
+    star.style.setProperty('--delay', (Math.random() * 5).toFixed(1) + 's');
+    star.style.background = endStarColors[Math.floor(Math.random() * endStarColors.length)];
+    starsContainer.appendChild(star);
+  }
+
+  /* SECTION: click ripple (彩带迸发) */
+  document.addEventListener('click', function(e){
+    if (reducedMotion) return;
+    if (e.target.closest && (e.target.closest('#drawBtn') || e.target.closest('.persona-card') || e.target.closest('#profileName') || e.target.closest('#endingQuote'))) return;
+    confettiBurst(e.clientX, e.clientY, 8);
+  });
+
+  /* SECTION: easter egg - 对凯文武装·型号666（炸掉乐土） */
+  var kkOverlay = document.getElementById('kkOverlay');
+  var kkCount = document.getElementById('kkCount');
+  var kkAfter = document.getElementById('kkAfter');
+  var kkFired = false;
+  var sixDrawn = 0;
+
+  function emberField(){
+    for (var n = 0; n < 26; n++){
+      var em = document.createElement('div');
+      em.className = 'kk-ember';
+      em.style.left = (Math.random() * 100) + '%';
+      em.style.animationDuration = (3.5 + Math.random() * 4.5).toFixed(1) + 's';
+      em.style.animationDelay = (Math.random() * 5).toFixed(1) + 's';
+      var sz = (2 + Math.random() * 3).toFixed(1) + 'px';
+      em.style.width = sz;
+      em.style.height = sz;
+      kkAfter.appendChild(em);
+    }
+  }
+
+  function explosionBurst(){
+    var fireColors = ['#ff4d2d','#ff9d2e','#ffd166','#ffffff','#d94a4a'];
+    for (var n = 0; n < 7; n++){
+      var cx = W * (0.15 + Math.random() * 0.7);
+      var cy = H * (0.15 + Math.random() * 0.6);
+      for (var k = 0; k < 26; k++){
+        var angle = (k / 26) * Math.PI * 2 + Math.random() * 0.6;
+        var speed = 3 + Math.random() * 7;
+        bursts.push({
+          x: cx, y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 3,
+          w: 3 + Math.random() * 6,
+          h: 6 + Math.random() * 10,
+          rotation: Math.random() * Math.PI * 2,
+          rotSpeed: (Math.random() - 0.5) * 0.25,
+          life: 1.4,
+          color: fireColors[Math.floor(Math.random() * fireColors.length)]
+        });
+      }
+    }
+  }
+
+  function fireKevinKiller666(){
+    if (kkFired) return;
+    kkFired = true;
+    document.body.classList.add('kk-locked');
+    kkOverlay.classList.add('on');
+    kkOverlay.classList.add('phase-alert');
+    kkOverlay.setAttribute('aria-hidden','false');
+    setTimeout(function(){
+      kkOverlay.classList.remove('phase-alert');
+      kkOverlay.classList.add('phase-count');
+      var nums = ['3','2','1'];
+      nums.forEach(function(num, idx){
+        setTimeout(function(){
+          kkCount.textContent = num;
+          kkCount.classList.remove('pop');
+          void kkCount.offsetWidth;
+          kkCount.classList.add('pop');
+        }, idx * 800);
+      });
+    }, 2400);
+    setTimeout(function(){
+      kkOverlay.classList.remove('phase-count');
+      kkOverlay.classList.add('phase-boom');
+      document.body.classList.add('kk-shaking');
+      explosionBurst();
+      setTimeout(explosionBurst, 150);
+      setTimeout(explosionBurst, 320);
+    }, 4900);
+    setTimeout(function(){
+      document.body.classList.remove('kk-shaking');
+      kkOverlay.classList.remove('phase-boom');
+      kkOverlay.classList.add('phase-after');
+      emberField();
+      var l1 = document.getElementById('kkLine1');
+      var l2 = document.getElementById('kkLine2');
+      var l3 = document.getElementById('kkLine3');
+      var btn = document.getElementById('kkReload');
+      setTimeout(function(){ l1.classList.add('show'); }, 900);
+      setTimeout(function(){ l2.classList.add('show'); }, 2600);
+      setTimeout(function(){ l3.classList.add('show'); }, 5000);
+      setTimeout(function(){ btn.classList.add('show'); }, 6200);
+    }, 6100);
+  }
+
+  document.getElementById('kkReload').addEventListener('click', function(){
+    location.reload();
+  });
+
+  /* 键盘彩蛋：把「666」连按三次 */
+  var sixSeq = 0;
+  var sixTimer = null;
+  document.addEventListener('keydown', function(e){
+    if (kkFired) return;
+    if (e.key === '6'){
+      sixSeq++;
+      clearTimeout(sixTimer);
+      sixTimer = setTimeout(function(){ sixSeq = 0; }, 1600);
+      if (sixSeq >= 3){
+        sixSeq = 0;
+        fireKevinKiller666();
+      }
+    } else {
+      sixSeq = 0;
+    }
+  });
+
+  /* SECTION: welcome burst */
+  if (!reducedMotion){
+    setTimeout(function(){
+      confettiBurst(window.innerWidth / 2, window.innerHeight * 0.38, 20);
+    }, 2600);
+  }
+})();
+</script>
+</body>
+</html>
