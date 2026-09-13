@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="same-origin">
+<title>elysiad.top/su — 致苏</title>
+<!-- SECTION: styles -->
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-abyss:#050b10;--bg-deep:#08141c;--bg-teal:#0d2430;--bg-mid:#123440;
+  --jade:#2dd4bf;--jade-deep:#1a8a7a;--peacock:#1a6b5a;
+  --lamp:#e8c98a;--lamp-deep:#c9a45c;--moon:#eef6f4;
+  --text:#e4efec;--text-dim:#a3bfba;--text-muted:#6d8a86;
+  --glass-bg:rgba(45,212,191,.05);--glass-border:rgba(232,201,138,.14);
+  --glass-bg2:rgba(26,107,90,.07);--glass-border2:rgba(45,212,191,.12);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg-abyss);color:var(--text);overflow-x:hidden;line-height:1.7;
+}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg-abyss)}
+::-webkit-scrollbar-thumb{background:var(--jade-deep);border-radius:3px}
+
+#bodhiCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+
+/* SECTION: opening */
+.section-opening{
+  position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:2rem;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(ellipse 55% 38% at 50% 12%,rgba(232,201,138,.09),transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 100%,rgba(45,212,191,.07),transparent 70%),
+    linear-gradient(180deg,var(--bg-abyss) 0%,var(--bg-deep) 32%,var(--bg-teal) 62%,var(--bg-deep) 100%);
+}
+.opening-moon{
+  width:64px;height:64px;border-radius:50%;margin-bottom:1.6rem;opacity:0;transition:opacity 2s ease;
+  background:radial-gradient(circle at 38% 35%,#fdf6e3,#e8c98a 60%,#c9a45c);
+  box-shadow:0 0 40px rgba(232,201,138,.4),0 0 90px rgba(232,201,138,.2);
+}
+.opening-moon.visible{opacity:.92}
+.opening-title{
+  font-size:clamp(1.35rem,4.2vw,2.5rem);font-weight:300;letter-spacing:.12em;
+  color:var(--moon);text-shadow:0 0 30px rgba(45,212,191,.25),0 0 60px rgba(232,201,138,.15);
+  min-height:2.6em;max-width:860px;
+}
+.typing-cursor{display:inline-block;font-weight:100;color:var(--jade);animation:blink-cursor .8s step-end infinite}
+.typing-cursor.hidden{display:none}
+@keyframes blink-cursor{0%,100%{opacity:1}50%{opacity:0}}
+.opening-subtitle{
+  font-size:clamp(.9rem,2.5vw,1.25rem);color:var(--text-dim);letter-spacing:.4em;
+  margin-top:1.5rem;opacity:0;transition:opacity 1.5s ease;
+}
+.opening-subtitle.visible{opacity:1}
+.opening-hint{
+  font-size:.72rem;color:var(--text-muted);letter-spacing:.14em;margin-top:1rem;
+  opacity:0;transition:opacity 1.5s ease 1s;
+}
+.opening-hint.visible{opacity:.65}
+.scroll-hint{
+  position:absolute;bottom:calc(2.5rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  opacity:0;transition:opacity 1s ease .5s;
+}
+.scroll-hint.visible{opacity:.6}
+.scroll-hint span{font-size:.75rem;color:var(--text-muted);letter-spacing:.2em}
+.scroll-chevron{
+  width:20px;height:20px;border-right:2px solid var(--jade);border-bottom:2px solid var(--jade);
+  transform:rotate(45deg);animation:chevron-bounce 2.4s ease-in-out infinite;
+}
+@keyframes chevron-bounce{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(6px)}}
+
+/* SECTION: common section */
+.content-section{
+  position:relative;z-index:2;padding:6rem 1.5rem;
+  background:linear-gradient(180deg,transparent 0%,rgba(5,11,16,.3) 20%,rgba(5,11,16,.3) 80%,transparent 100%);
+}
+.section-title-wrap{text-align:center;margin-bottom:3.5rem}
+.section-title{
+  font-size:clamp(1.5rem,4vw,2.2rem);font-weight:300;letter-spacing:.24em;
+  color:var(--jade);text-shadow:0 0 20px rgba(45,212,191,.25);
+}
+.section-title-line{display:block;width:60px;height:1px;margin:1rem auto 0;background:linear-gradient(90deg,transparent,var(--lamp-deep),transparent)}
+.section-title-mark{display:inline-block;font-size:.8em;color:var(--lamp);margin:0 .8rem;opacity:.85}
+.section-sub{text-align:center;font-size:.78rem;color:var(--text-muted);letter-spacing:.12em;margin:-2.4rem auto 3rem}
+
+/* SECTION: profile */
+.profile-card{
+  max-width:720px;margin:0 auto;padding:clamp(2rem,5vw,3rem);
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--glass-border);border-radius:24px;
+  box-shadow:0 0 50px rgba(45,212,191,.06),0 0 100px rgba(232,201,138,.05),inset 0 1px 0 rgba(255,255,255,.05);
+  position:relative;overflow:hidden;animation:glow-pulse 8s ease-in-out infinite;
+}
+.profile-card::before{
+  content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+  background:conic-gradient(from 0deg,transparent,rgba(45,212,191,.04),transparent,rgba(232,201,138,.04),transparent);
+  animation:card-rotate 30s linear infinite;
+}
+@keyframes card-rotate{to{transform:rotate(360deg)}}
+@keyframes glow-pulse{
+  0%,100%{box-shadow:0 0 50px rgba(45,212,191,.06),0 0 100px rgba(232,201,138,.05)}
+  50%{box-shadow:0 0 65px rgba(45,212,191,.11),0 0 120px rgba(232,201,138,.08)}
+}
+.profile-card-inner{position:relative;z-index:1}
+.profile-name{
+  font-size:clamp(2rem,5.5vw,3rem);font-weight:200;letter-spacing:.3em;text-indent:.3em;cursor:pointer;user-select:none;
+  color:var(--moon);text-align:center;margin-bottom:.2em;
+  text-shadow:0 0 28px rgba(45,212,191,.3);transition:text-shadow .3s ease;
+}
+.profile-name:hover{text-shadow:0 0 40px rgba(45,212,191,.55)}
+.profile-name-en{
+  font-size:clamp(.85rem,1.9vw,1.05rem);font-weight:300;letter-spacing:.5em;text-indent:.5em;
+  color:var(--jade-deep);text-align:center;margin-bottom:2rem;filter:brightness(1.35);
+}
+.profile-divider{width:100%;height:1px;margin:1.5rem 0;background:linear-gradient(90deg,transparent,var(--glass-border),var(--glass-border2),transparent)}
+.profile-grid{display:grid;grid-template-columns:auto 1fr;gap:.6rem 1.5rem;font-size:.92rem}
+.profile-label{color:var(--text-muted);white-space:nowrap;font-weight:400}
+.profile-value{color:var(--text);font-weight:300}
+.profile-value .highlight{color:var(--jade);font-weight:400}
+.profile-value .lamp{color:var(--lamp);font-weight:400}
+.profile-desc{
+  margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--glass-border);
+  font-size:.9rem;color:var(--text-dim);line-height:1.9;font-weight:300;
+}
+
+/* SECTION: muyu (木鱼) */
+.muyu-wrap{max-width:520px;margin:0 auto;text-align:center}
+.muyu-stage{position:relative;display:inline-block;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
+.muyu-stage svg{display:block;transition:transform .09s ease;filter:drop-shadow(0 10px 24px rgba(0,0,0,.5))}
+.muyu-stage.struck svg{transform:scale(.93,1.04)}
+.muyu-hint{font-size:.75rem;color:var(--text-muted);letter-spacing:.15em;margin-top:1.1rem;opacity:.8}
+.meru-count{
+  margin-top:.7rem;font-size:.95rem;color:var(--lamp);letter-spacing:.2em;
+  text-shadow:0 0 14px rgba(232,201,138,.35);font-variant-numeric:tabular-nums;
+}
+.meru-float{
+  position:absolute;left:50%;top:-6px;transform:translateX(-50%);pointer-events:none;
+  font-size:.9rem;color:var(--lamp);letter-spacing:.1em;text-shadow:0 0 10px rgba(232,201,138,.6);
+  animation:meru-rise 1.1s ease-out forwards;white-space:nowrap;
+}
+@keyframes meru-rise{
+  0%{opacity:0;transform:translate(-50%,0) scale(.8)}
+  18%{opacity:1}
+  100%{opacity:0;transform:translate(-50%,-64px) scale(1.05)}
+}
+.muyu-glow{
+  position:absolute;inset:-30px;border-radius:50%;pointer-events:none;opacity:0;
+  background:radial-gradient(circle,rgba(232,201,138,.28),transparent 65%);
+  transition:opacity .8s ease;
+}
+.muyu-glow.lit{opacity:1}
+
+/* SECTION: timeline */
+.timeline{position:relative;max-width:800px;margin:0 auto;padding:2rem 0}
+.timeline-line{
+  position:absolute;left:50%;top:0;bottom:0;width:1px;
+  background:linear-gradient(180deg,transparent,var(--jade-deep) 10%,var(--jade) 50%,var(--lamp-deep) 85%,transparent);
+  transform:translateX(-50%);
+}
+.timeline-node{
+  position:relative;display:flex;align-items:flex-start;margin-bottom:3rem;
+  opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;
+}
+.timeline-node.visible{opacity:1;transform:translateY(0)}
+.timeline-node:nth-child(odd){flex-direction:row}
+.timeline-node:nth-child(even){flex-direction:row-reverse}
+.timeline-dot{
+  position:absolute;left:50%;top:.5rem;width:12px;height:12px;border-radius:50%;
+  border:2px solid var(--jade);background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
+  box-shadow:0 0 12px rgba(45,212,191,.4);transition:background .3s;
+}
+.timeline-node.visible .timeline-dot{background:var(--jade)}
+.timeline-card{
+  width:calc(50% - 2.5rem);padding:1.2rem 1.5rem;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 0 20px rgba(45,212,191,.04);
+}
+.timeline-node:nth-child(odd) .timeline-card{margin-right:auto}
+.timeline-node:nth-child(even) .timeline-card{margin-left:auto}
+.timeline-card h3{font-size:1.05rem;font-weight:400;color:var(--jade);margin-bottom:.5rem;letter-spacing:.12em}
+.timeline-card p{font-size:.85rem;color:var(--text-dim);line-height:1.8;font-weight:300}
+
+/* SECTION: quotes */
+.quotes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;max-width:1000px;margin:0 auto}
+.quote-card{
+  padding:1.5rem;min-height:140px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
+  box-shadow:0 0 20px rgba(45,212,191,.03);
+  transition:transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
+}
+.quote-card:hover{transform:translateY(-3px);box-shadow:0 0 30px rgba(45,212,191,.12),0 8px 30px rgba(0,0,0,.2)}
+.quote-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(circle at 30% 30%,rgba(232,201,138,.05),transparent 60%);pointer-events:none;
+}
+.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition:opacity .4s ease}
+.quote-text.fading{opacity:0}
+.quote-hint{position:absolute;bottom:.6rem;right:.8rem;font-size:.65rem;color:var(--text-muted);opacity:.4}
+
+/* SECTION: ending */
+.section-ending{
+  position:relative;z-index:2;min-height:70vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:4rem 2rem;
+  background:linear-gradient(180deg,transparent,var(--bg-abyss) 30%,var(--bg-abyss));
+}
+.ending-stars{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.ending-star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--dur) ease-in-out infinite;animation-delay:var(--delay)}
+@keyframes twinkle{0%,100%{opacity:var(--min-o)}50%{opacity:var(--max-o)}}
+.ending-quote{
+  font-size:clamp(1.1rem,3vw,1.6rem);font-weight:300;letter-spacing:.14em;cursor:pointer;user-select:none;
+  color:var(--moon);line-height:2;text-shadow:0 0 25px rgba(232,201,138,.25);
+  max-width:640px;opacity:0;transform:translateY(20px);transition:opacity 1.5s ease,transform 1.5s ease;
+}
+.ending-quote.visible{opacity:1;transform:translateY(0)}
+.ending-sub{
+  margin-top:1.6rem;font-size:.85rem;color:var(--text-muted);letter-spacing:.1em;line-height:2;
+  max-width:560px;opacity:0;transition:opacity 1s ease;min-height:1.4em;
+}
+.ending-sub.visible{opacity:.85}
+.ending-attr{
+  margin-top:2.2rem;font-size:.85rem;color:var(--text-muted);letter-spacing:.25em;
+  opacity:0;transition:opacity 1.5s ease .8s;
+}
+.ending-attr.visible{opacity:.7}
+.back-link{
+  display:inline-flex;align-items:center;gap:.5rem;margin-top:3rem;
+  min-height:44px;padding:.6rem 1.6rem;border-radius:999px;text-decoration:none;
+  color:var(--jade);font-size:.85rem;letter-spacing:.15em;
+  border:1px solid var(--glass-border2);background:rgba(45,212,191,.05);
+  transition:background .3s ease,box-shadow .3s ease,transform .3s ease;opacity:0;
+}
+.back-link.visible{opacity:1;transition:opacity 1.5s ease 1.2s,background .3s ease,box-shadow .3s ease,transform .3s ease}
+.back-link:hover{background:rgba(45,212,191,.12);box-shadow:0 0 24px rgba(45,212,191,.2);transform:translateY(-2px)}
+.ending-fade{position:absolute;bottom:0;left:0;right:0;height:120px;background:linear-gradient(transparent,var(--bg-abyss));pointer-events:none}
+
+/* SECTION: toast */
+#suToast{
+  position:fixed;left:50%;bottom:15%;transform:translateX(-50%) translateY(10px);z-index:9995;
+  max-width:88vw;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;letter-spacing:.06em;
+  color:var(--text);background:linear-gradient(135deg,rgba(8,20,28,.94),rgba(18,52,64,.94));
+  border:1px solid var(--glass-border2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 24px rgba(45,212,191,.18);
+  opacity:0;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:opacity .35s ease,transform .35s ease;text-align:center;
+}
+#suToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#suToast.golden{color:#ffe9b8;border-color:rgba(232,201,138,.6);box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 36px rgba(232,201,138,.4)}
+@media(max-width:600px){#suToast{white-space:normal;line-height:1.6}}
+
+/* SECTION: ripple (水面圆环) */
+.water-ring{
+  position:fixed;pointer-events:none;z-index:9993;border-radius:50%;
+  border:1.5px solid rgba(45,212,191,.7);
+  transform:translate(-50%,-50%) scale(0);opacity:.9;
+  animation:ring-spread .9s cubic-bezier(.22,.61,.36,1) forwards;
+}
+@keyframes ring-spread{
+  to{transform:translate(-50%,-50%) scale(1);opacity:0}
+}
+/* 娑之凝视 */
+#shaVeil{
+  position:fixed;inset:0;z-index:9992;pointer-events:none;opacity:0;transition:opacity .6s ease;
+  background:radial-gradient(ellipse at center,transparent 40%,rgba(26,107,90,.4) 100%);
+}
+#shaVeil.lit{opacity:1}
+
+/* SECTION: responsive */
+@media(max-width:768px){
+  .timeline-line{left:1.5rem}
+  .timeline-node,.timeline-node:nth-child(odd),.timeline-node:nth-child(even){flex-direction:row}
+  .timeline-dot{left:1.5rem}
+  .timeline-card,.timeline-node:nth-child(odd) .timeline-card,.timeline-node:nth-child(even) .timeline-card{
+    width:calc(100% - 3.5rem);margin-left:3.5rem;margin-right:0;
+  }
+  .quotes-grid{grid-template-columns:1fr}
+  .profile-grid{grid-template-columns:auto 1fr;gap:.5rem 1rem;font-size:.85rem}
+}
+@media(max-width:480px){
+  .content-section{padding:4rem 1rem}
+  .profile-card{padding:1.5rem}
+  .quote-card{min-height:120px;padding:1.2rem}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bodhiCanvas"></canvas>
+<div id="shaVeil"></div>
+
+<!-- SECTION: opening -->
+<section class="section-opening" id="opening">
+  <div class="opening-content">
+    <div class="opening-moon" id="openingMoon"></div>
+    <h1 class="opening-title" id="typewriterText"></h1><span class="typing-cursor" id="typingCursor">|</span>
+    <p class="opening-subtitle" id="openingSub">欢迎来到须弥芥子</p>
+    <p class="opening-hint" id="openingHint">……心浮气躁的话，就去敲敲木鱼吧。</p>
+  </div>
+  <div class="scroll-hint" id="scrollHint">
+    <span>静心而下</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</section>
+
+<!-- SECTION: about -->
+<section class="content-section" id="about">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">☸</span>关于他<span class="section-title-mark">☸</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="profile-card">
+    <div class="profile-card-inner">
+      <div class="profile-name" id="profileName" role="button" tabindex="0">苏</div>
+      <div class="profile-name-en">S U</div>
+      <div class="profile-divider"></div>
+      <div class="profile-grid">
+        <span class="profile-label">别名</span>
+        <span class="profile-value">先行者 · 「湖中仙女」 · <span class="highlight">觉者</span></span>
+        <span class="profile-label">出处</span>
+        <span class="profile-value">《崩坏3》第一文明纪元 → 现文明纪元</span>
+        <span class="profile-label">身份</span>
+        <span class="profile-value">医者 → 融合战士 → 圣痕计划科研室主任 → 执掌「恒沙计划」的先行者</span>
+        <span class="profile-label">位次</span>
+        <span class="profile-value"><span class="highlight">Ⅶ</span></span>
+        <span class="profile-label">刻印</span>
+        <span class="profile-value"><span class="highlight">「天慧」</span></span>
+        <span class="profile-label">融合崩坏兽</span>
+        <span class="profile-value">帝王级「摩瑜利」（孔雀明王）· 精神感知型</span>
+        <span class="profile-label">神之键</span>
+        <span class="profile-value">第二神之键 <span class="lamp">「千界一乘」</span>——内含世界泡「须弥芥子」</span>
+        <span class="profile-label">领域</span>
+        <span class="profile-value">「因果转轮」——加诸其身的攻击，将返还自身</span>
+        <span class="profile-label">配音</span>
+        <span class="profile-value">杨超然（汉语）/ 樱井孝宏（日语）</span>
+        <span class="profile-label">外貌</span>
+        <span class="profile-value">灰色长发带青之挑染，紫红虹膜、绿色瞳孔；常年闭目，俊美曾被称为「湖中仙女」</span>
+        <span class="profile-label">喜好</span>
+        <span class="profile-value"><span class="lamp">围棋、茶道、冥想、种植绿植</span>；饮食清淡</span>
+      </div>
+      <div class="profile-desc">
+        以医师的身份入世，以仁心为兆始开悟。洞观三千世界，这位始终闭目思量的智者，终将成为一瞬天慧的权化。他相信生命无法用金钱衡量，相信人类的慧才一脉相承——于是他用五万年，看完了恒河沙数的世界生灭，只为找到一个「战胜崩坏」的答案。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: muyu -->
+<section class="content-section" id="merit">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">☸</span>功德箱<span class="section-title-mark">☸</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="muyu-wrap">
+    <div class="muyu-stage" id="muyuStage" role="button" tabindex="0" aria-label="木鱼，点击敲击" data-primary-action>
+      <div class="muyu-glow" id="muyuGlow"></div>
+      <svg viewBox="0 0 170 130" width="168" height="128" aria-hidden="true">
+        <defs>
+          <radialGradient id="wfBody" cx="38%" cy="30%" r="78%">
+            <stop offset="0%" stop-color="#9a6b3f"/>
+            <stop offset="55%" stop-color="#6b4423"/>
+            <stop offset="100%" stop-color="#3a2412"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="80" cy="70" rx="58" ry="43" fill="url(#wfBody)" stroke="#241508" stroke-width="2"/>
+        <path d="M42 80 Q80 102 118 80" stroke="#241508" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <ellipse cx="60" cy="50" rx="15" ry="8" fill="#e8c98a" opacity=".22" transform="rotate(-18 60 50)"/>
+        <path d="M80 27 Q86 18 80 10 Q74 18 80 27" fill="#c9a45c" opacity=".8"/>
+        <circle cx="132" cy="36" r="9" fill="#6b4423" stroke="#241508" stroke-width="2"/>
+        <path d="M138 43 L156 64" stroke="#8b5a2b" stroke-width="6" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <p class="meru-count" id="meruCount">功德 × 0</p>
+    <p class="muyu-hint">敲一敲，心就静了。（觉者没有在看着你。大概。）</p>
+  </div>
+</section>
+
+<!-- SECTION: journey -->
+<section class="content-section" id="journey">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">☸</span>他的天慧<span class="section-title-mark">☸</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="timeline">
+    <div class="timeline-line"></div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>医者仁心</h3>
+        <p>他本是一名医生，为治愈「崩坏病」奔走，坚信生命无法用金钱衡量。医院主任法尔视他为得意门生，临终前将他托付了出去。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>挚友</h3>
+        <p>学生时代他便与凯文相识相知，因凯文而结识了梅。第三次崩坏让挚友分离五年，再重逢时，两人已站在同一条逐火的路上。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>第八次崩坏</h3>
+        <p>他自愿接受改造，融合帝王级崩坏兽「摩瑜利」，成为精神感知型融合战士，以「法身」定位识之律者。导师司帕西为唤醒他而牺牲——这份重量，他记了一生。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>科研室主任</h3>
+        <p>因解决第八次崩坏，他被梅邀请加入圣痕计划的研究，执掌科研室。医者的手，从此同时握着手术刀与文明的图纸。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>约束之战</h3>
+        <p>面对约束之律者，他链接千劫的精神、解开那道「不可滥杀」的戒律，唤回这头狂兽为人类再战一场。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>最后的托付</h3>
+        <p>终焉之战，他作为精神系战士留守地面指挥，陪梅走完最后一程。梅把「恒沙计划」与「监察者计划」托付给了他——观测万界，以及，看着凯文。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>恒沙</h3>
+        <p>他坐在第二神之键「千界一乘」中，观测了五万年。须弥芥子里，每一片树叶的凋零，都是一个世界的终结。他看遍了恒河沙数的失败，只为等一片不枯的叶子。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>封印挚友</h3>
+        <p>公元五世纪末，为阻止圣痕计划，他将凯文引入「须弥芥子」，连同世界泡一起沉入量子之海。封印完成的那一刻他才察觉挚友内心的痛苦——此后千年，都在为此赎罪。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>觉者</h3>
+        <p>2015年，他把千界一乘与使命托付给比安卡·幽兰黛尔。肉体因超限观测而消亡，意识却升入更高的维度——有人说，他与某个未知存在相对而坐，弈着一盘未完的棋。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: quotes -->
+<section class="content-section" id="quotes">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">☸</span>觉者之言<span class="section-title-mark">☸</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="quotes-grid" id="quotesGrid" data-primary-action></div>
+</section>
+
+<!-- SECTION: ending -->
+<section class="section-ending" id="ending">
+  <div class="ending-stars" id="endingStars"></div>
+  <p class="ending-quote" id="endingQuote" role="button" tabindex="0">思考的过程本身，也是其意义所在。</p>
+  <p class="ending-sub" id="endingSub"></p>
+  <p class="ending-attr" id="endingAttr">致苏 · elysiad.top/su</p>
+  <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
+  <div class="ending-fade"></div>
+</section>
+
+<div id="suToast" role="status"></div>
+
+<!-- SECTION: scripts -->
+<script>
+(function(){
+  /* SECTION: quotes data */
+  var quotes = [
+    '「我只是一介旁观者，前方的路将往何去，你自有答案。」',
+    '「思考的过程本身，也是其意义所在。」',
+    '「勿需太过在意外物，开辟天地的门扉，自在你的心中。」',
+    '「以此『天慧』，授予你踏破试炼之理。」',
+    '「愿往日的枯壤，化作幼芽新生的温床。」',
+    '「执念是欲求，希望也是欲求。若心中没有期许，我便不会存在于这『往世乐土』中。」',
+    '「你的到来，同样证明了地上的火种已被点燃。终有一日，这个时代的人们也会领悟当行的道路。」',
+    '「我相信，人类的慧才定是一脉相承的。祝愿你们……能走得比前人更远。」',
+    '「若你对前路还有迷惘，暂且驻足。答案终会显现，只是需要时间。」',
+    '「诸行无常，刹那生灭，梦幻泡影。」'
+  ];
+
+  /* SECTION: quotes build */
+  var grid = document.getElementById('quotesGrid');
+  var cardIndices = [];
+  quotes.forEach(function(q, i){
+    var card = document.createElement('div');
+    card.className = 'quote-card';
+    card.setAttribute('role','button');
+    card.setAttribute('tabindex','0');
+    card.setAttribute('aria-label','觉者之言，点击切换');
+    var textEl = document.createElement('div');
+    textEl.className = 'quote-text';
+    textEl.textContent = q;
+    var hint = document.createElement('span');
+    hint.className = 'quote-hint';
+    hint.textContent = '点击切换';
+    card.appendChild(textEl);
+    card.appendChild(hint);
+    cardIndices.push(i);
+    card.addEventListener('click', function(){
+      var idxPos = Array.prototype.indexOf.call(grid.querySelectorAll('.quote-card'), card);
+      var nextIdx = (cardIndices[idxPos] + 1) % quotes.length;
+      cardIndices[idxPos] = nextIdx;
+      textEl.classList.add('fading');
+      setTimeout(function(){
+        textEl.textContent = quotes[nextIdx];
+        textEl.classList.remove('fading');
+      }, 400);
+    });
+    card.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+    });
+    grid.appendChild(card);
+  });
+
+  /* SECTION: canvas particles (菩提叶 + 灯尘 + 星) */
+  var canvas = document.getElementById('bodhiCanvas');
+  var ctx = canvas.getContext('2d');
+  var W, H;
+  var leafColors = ['#1a6b5a','#2dd4bf','#c9a45c','#6b8f71'];
+  var dustColors = ['#e8c98a','#fdf6e3','#2dd4bf'];
+
+  function resize(){
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  var leaves = [];
+  var leafCount = Math.min(26, Math.floor(window.innerWidth / 48));
+  function createLeaf(fromTop){
+    return {
+      x: Math.random() * W,
+      y: fromTop ? -20 - Math.random() * 100 : Math.random() * H,
+      size: 4 + Math.random() * 8,
+      speedY: 0.2 + Math.random() * 0.45,
+      drift: (Math.random() - 0.5) * 0.3,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.012,
+      swayAmp: 16 + Math.random() * 30,
+      swaySpd: 0.004 + Math.random() * 0.008,
+      swayOff: Math.random() * Math.PI * 2,
+      opacity: 0.16 + Math.random() * 0.34,
+      color: leafColors[Math.floor(Math.random() * leafColors.length)]
+    };
+  }
+  for (var i = 0; i < leafCount; i++) leaves.push(createLeaf(false));
+
+  var dusts = [];
+  var dustCount = Math.min(34, Math.floor(window.innerWidth / 34));
+  function createDust(){
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      size: 0.4 + Math.random() * 1.8,
+      speedY: -(0.05 + Math.random() * 0.18),
+      baseOpacity: 0.1 + Math.random() * 0.35,
+      twinkleSpd: 0.006 + Math.random() * 0.02,
+      twinkleOff: Math.random() * Math.PI * 2,
+      color: dustColors[Math.floor(Math.random() * dustColors.length)]
+    };
+  }
+  for (i = 0; i < dustCount; i++) dusts.push(createDust());
+
+  var scrollRatio = 0;
+  window.addEventListener('scroll', function(){
+    var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    scrollRatio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+  });
+
+  var time = 0;
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function animate(){
+    if (reducedMotion) return;
+    time++;
+    ctx.clearRect(0, 0, W, H);
+    var fadeFactor = 1 - scrollRatio * 0.55;
+    var i, l, d, tw;
+
+    for (i = 0; i < dusts.length; i++){
+      d = dusts[i];
+      d.y += d.speedY;
+      if (d.y < -10){ d.y = H + 10; d.x = Math.random() * W; }
+      tw = 0.5 + 0.5 * Math.sin(time * d.twinkleSpd + d.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = d.baseOpacity * tw * fadeFactor;
+      ctx.fillStyle = d.color;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, Math.max(0.25, d.size), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (i = 0; i < leaves.length; i++){
+      l = leaves[i];
+      l.y += l.speedY;
+      l.x += l.drift + Math.sin(time * l.swaySpd + l.swayOff) * 0.4;
+      l.rotation += l.rotSpeed;
+      if (l.y > H + 25){ leaves[i] = createLeaf(true); l = leaves[i]; }
+      ctx.save();
+      ctx.translate(l.x, l.y);
+      ctx.rotate(l.rotation);
+      ctx.globalAlpha = l.opacity * fadeFactor;
+      ctx.fillStyle = l.color;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, Math.max(0.6, l.size * 0.3), Math.max(0.8, l.size * 0.62), 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (i = bursts.length - 1; i >= 0; i--){
+      var b = bursts[i];
+      b.x += b.vx;
+      b.y += b.vy;
+      b.vy += 0.03;
+      b.vx *= 0.99;
+      b.rotation += b.rotSpeed;
+      b.life -= 0.015;
+      if (b.life <= 0){ bursts.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, b.life * 0.9);
+      ctx.fillStyle = b.color;
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.rotation);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, b.w * 0.4, b.w, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    requestAnimationFrame(animate);
+  }
+  var bursts = [];
+  function leafBurst(cx, cy, count, colors){
+    var palette = colors || leafColors;
+    for (var k = 0; k < count; k++){
+      var angle = (k / count) * Math.PI * 2 + Math.random() * 0.6;
+      var speed = 1 + Math.random() * 3;
+      bursts.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1,
+        w: 3 + Math.random() * 5,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.12,
+        life: 1,
+        color: palette[Math.floor(Math.random() * palette.length)]
+      });
+    }
+  }
+  animate();
+
+  /* SECTION: toast */
+  var toastEl = document.getElementById('suToast');
+  var toastTimer = null;
+  function showToast(text, golden){
+    clearTimeout(toastTimer);
+    toastEl.textContent = text;
+    toastEl.classList.toggle('golden', !!golden);
+    toastEl.classList.remove('show');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, golden ? 4200 : 3000);
+  }
+
+  /* SECTION: muyu (木鱼积功德) */
+  var muyuStage = document.getElementById('muyuStage');
+  var muyuGlow = document.getElementById('muyuGlow');
+  var meruCountEl = document.getElementById('meruCount');
+  var meru = 0;
+  try { meru = parseInt(localStorage.getItem('suMeru') || '0', 10) || 0; } catch(err){ meru = 0; }
+  renderMeru();
+
+  var audioCtx = null;
+  function muyuSound(){
+    try{
+      if (!audioCtx){
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        audioCtx = new AC();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var t = audioCtx.currentTime;
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(760, t);
+      osc.frequency.exponentialRampToValueAtTime(280, t + 0.09);
+      gain.gain.setValueAtTime(0.42, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.25);
+    } catch(err){ /* 静音失败不影响视觉 */ }
+  }
+
+  function renderMeru(){
+    meruCountEl.textContent = '功德 × ' + meru;
+  }
+
+  function strikeMuyu(){
+    meru++;
+    renderMeru();
+    try { localStorage.setItem('suMeru', String(meru)); } catch(err){}
+    muyuSound();
+    muyuStage.classList.remove('struck');
+    void muyuStage.offsetWidth;
+    muyuStage.classList.add('struck');
+    setTimeout(function(){ muyuStage.classList.remove('struck'); }, 110);
+
+    var floatEl = document.createElement('div');
+    floatEl.className = 'meru-float';
+    floatEl.textContent = '功德 +1';
+    floatEl.style.left = (40 + Math.random() * 20) + '%';
+    muyuStage.appendChild(floatEl);
+    setTimeout(function(){ floatEl.remove(); }, 1200);
+
+    if (!reducedMotion){
+      var r = muyuStage.getBoundingClientRect();
+      leafBurst(r.left + r.width / 2, r.top + r.height * 0.4, 6, ['#e8c98a','#c9a45c','#fdf6e3']);
+    }
+
+    if (meru === 100){
+      muyuGlow.classList.add('lit');
+      showToast('敲满一百下……你的心，渐渐静了。', false);
+    } else if (meru === 500){
+      showToast('木鱼声惊动了池底的鱼。它探出头，又潜了回去。', false);
+    } else if (meru === 999){
+      showToast('功德圆满——须弥芥子中，你窥见了三千世界。', true);
+      if (!reducedMotion){
+        var r2 = muyuStage.getBoundingClientRect();
+        leafBurst(r2.left + r2.width / 2, r2.top + r2.height / 2, 30, ['#e8c98a','#ffd166','#fdf6e3','#2dd4bf']);
+      }
+    }
+  }
+  muyuStage.addEventListener('click', strikeMuyu);
+  muyuStage.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); strikeMuyu(); }
+  });
+
+  /* SECTION: easter egg - 点名字得禅语 */
+  var nameEl = document.getElementById('profileName');
+  var zenLines = [
+    '诸行无常。',
+    '刹那生灭，梦幻泡影。',
+    '暂且驻足。答案终会显现。',
+    '轻，如一叶菩提；重，似万千生命。',
+    '一花一世界，一叶一菩提。'
+  ];
+  var zenIdx = 0;
+  var pressTimer = null;
+  var longPressed = false;
+  var shaVeil = document.getElementById('shaVeil');
+
+  function nameTap(){
+    showToast(zenLines[zenIdx % zenLines.length], false);
+    zenIdx++;
+  }
+  nameEl.addEventListener('click', function(){
+    if (longPressed){ longPressed = false; return; }
+    nameTap();
+  });
+  nameEl.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nameTap(); }
+  });
+  /* 长按他的名字 1.6 秒 —— 深海的凝视 */
+  function startPress(){
+    longPressed = false;
+    pressTimer = setTimeout(function(){
+      longPressed = true;
+      shaVeil.classList.add('lit');
+      showToast('……海面上忽然起了涟漪。另一个「自己」，正在深处注视着你。', true);
+      setTimeout(function(){ shaVeil.classList.remove('lit'); }, 2600);
+    }, 1600);
+  }
+  function cancelPress(){ clearTimeout(pressTimer); }
+  nameEl.addEventListener('mousedown', startPress);
+  nameEl.addEventListener('touchstart', startPress, { passive: true });
+  nameEl.addEventListener('mouseup', cancelPress);
+  nameEl.addEventListener('mouseleave', cancelPress);
+  nameEl.addEventListener('touchend', cancelPress);
+
+  /* SECTION: easter egg - 结尾心声 */
+  var endingQuote = document.getElementById('endingQuote');
+  var endingSub = document.getElementById('endingSub');
+  var heartLines = [
+    '「愿往日的枯壤，化作幼芽新生的温床。」',
+    '「勿需太过在意外物，开辟天地的门扉，自在你的心中。」',
+    '「谢谢你帮助了未来的我。至于『过去』……它早已是『未来』的一部分了，不是么？」',
+    '「……这盘棋，还没下完。」'
+  ];
+  var heartIdx = 0;
+  endingQuote.addEventListener('click', function(){
+    endingSub.textContent = heartLines[heartIdx % heartLines.length];
+    endingSub.classList.add('visible');
+    heartIdx++;
+    if (!reducedMotion){
+      var r = endingQuote.getBoundingClientRect();
+      leafBurst(r.left + r.width / 2, r.top + r.height / 2, 10, ['#e8c98a','#2dd4bf','#fdf6e3']);
+    }
+  });
+  endingQuote.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); endingQuote.click(); }
+  });
+
+  /* SECTION: click ripple (水面圆环) */
+  document.addEventListener('click', function(e){
+    if (reducedMotion) return;
+    if (e.target.closest && (e.target.closest('#muyuStage') || e.target.closest('#profileName') || e.target.closest('#endingQuote'))) return;
+    for (var n = 0; n < 2; n++){
+      var ring = document.createElement('div');
+      ring.className = 'water-ring';
+      var size = 60 + n * 46 + Math.random() * 20;
+      ring.style.width = size + 'px';
+      ring.style.height = size + 'px';
+      ring.style.left = e.clientX + 'px';
+      ring.style.top = e.clientY + 'px';
+      ring.style.animationDelay = (n * 0.14) + 's';
+      ring.style.borderColor = n === 0 ? 'rgba(45,212,191,.7)' : 'rgba(232,201,138,.5)';
+      document.body.appendChild(ring);
+      setTimeout(function(el){ el.remove(); }.bind(null, ring), 1300);
+    }
+  });
+
+  /* SECTION: typewriter */
+  var typewriterEl = document.getElementById('typewriterText');
+  var cursorEl = document.getElementById('typingCursor');
+  var subEl = document.getElementById('openingSub');
+  var hintEl = document.getElementById('openingHint');
+  var moonEl = document.getElementById('openingMoon');
+  var scrollHintEl = document.getElementById('scrollHint');
+  var typeText = '我只是一介旁观者，前方的路将往何去，你自有答案。';
+  var charIndex = 0;
+
+  function typeNext(){
+    if (charIndex < typeText.length){
+      typewriterEl.textContent += typeText[charIndex];
+      charIndex++;
+      setTimeout(typeNext, 150 + Math.random() * 80);
+    } else {
+      setTimeout(function(){
+        cursorEl.classList.add('hidden');
+        subEl.classList.add('visible');
+        hintEl.classList.add('visible');
+        setTimeout(function(){ scrollHintEl.classList.add('visible'); }, 1000);
+      }, 600);
+    }
+  }
+  moonEl.classList.add('visible');
+  setTimeout(typeNext, 800);
+
+  /* SECTION: scroll animations */
+  var observerOptions = { threshold: 0.15, rootMargin: '0px 0px -50px 0px' };
+  var scrollObserver = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, observerOptions);
+  document.querySelectorAll('.timeline-node').forEach(function(node){
+    scrollObserver.observe(node);
+  });
+
+  var endingObserver = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting){
+        document.getElementById('endingQuote').classList.add('visible');
+        document.getElementById('endingAttr').classList.add('visible');
+        document.getElementById('backLink').classList.add('visible');
+      }
+    });
+  }, { threshold: 0.3 });
+  endingObserver.observe(document.getElementById('ending'));
+
+  /* SECTION: ending stars */
+  var starsContainer = document.getElementById('endingStars');
+  var endingStarCount = Math.min(80, Math.floor(window.innerWidth / 12));
+  var endStarColors = ['#fff','#2dd4bf','#e8c98a'];
+  for (i = 0; i < endingStarCount; i++){
+    var star = document.createElement('div');
+    star.className = 'ending-star';
+    var size = 0.5 + Math.random() * 2;
+    star.style.width = size + 'px';
+    star.style.height = size + 'px';
+    star.style.left = (Math.random() * 100) + '%';
+    star.style.top = (Math.random() * 100) + '%';
+    star.style.setProperty('--min-o', (0.08 + Math.random() * 0.3).toFixed(2));
+    star.style.setProperty('--max-o', (0.45 + Math.random() * 0.5).toFixed(2));
+    star.style.setProperty('--dur', (2.4 + Math.random() * 4).toFixed(1) + 's');
+    star.style.setProperty('--delay', (Math.random() * 5).toFixed(1) + 's');
+    star.style.background = endStarColors[Math.floor(Math.random() * endStarColors.length)];
+    starsContainer.appendChild(star);
+  }
+
+  /* SECTION: resize guard */
+  window.addEventListener('resize', function(){
+    for (var j = 0; j < dusts.length; j++){
+      if (dusts[j].x > W) dusts[j].x = Math.random() * W;
+    }
+    for (j = 0; j < leaves.length; j++){
+      if (leaves[j].x > W) leaves[j].x = Math.random() * W;
+    }
+  });
+})();
+</script>
+</body>
+</html>
