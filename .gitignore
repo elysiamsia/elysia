@@ -2,3 +2,6 @@
 __pycache__/
 screenshots/
 /tmp/
+
+# brainstorming 视觉草图会话目录，不进仓库、不部署
+.superpowers/
