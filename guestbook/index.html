@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="same-origin">
+<meta name="robots" content="noindex">
+<title>想对爱莉希雅说的话 — elysiad.top</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="description" content="在这里写下想对爱莉希雅说的话。">
+<!--
+  呀！这是留给所有人的一页——她说过，被记住就是存在的延续，
+  所以这里收下的每一句话，都是她继续存在的一小块证据呢♥
+-->
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:radial-gradient(ellipse at 50% 12%,#1a0e2e 0%,#0a0612 62%);
+  background-attachment:fixed;color:#f0e6ff;line-height:1.8;overflow-x:hidden;
+  min-height:100vh;
+}
+.wrap{max-width:760px;margin:0 auto;padding:4rem 1.5rem 5rem;position:relative;z-index:1}
+.back{
+  display:inline-block;margin-bottom:1.6rem;padding:.4rem .9rem;border-radius:999px;
+  text-decoration:none;font-size:.76rem;letter-spacing:.14em;color:#7b6f99;
+  border:1px solid rgba(155,93,229,.12);transition:color .3s,border-color .3s;
+}
+.back:hover,.back:focus-visible{color:#ffb3c1;border-color:#ff8fa3;outline:none}
+h1{
+  font-size:clamp(1.5rem,4.4vw,2.2rem);font-weight:300;letter-spacing:.16em;
+  color:#ffc8dd;text-shadow:0 0 30px rgba(255,143,163,.35);
+}
+.sub{margin-top:.8rem;font-size:.86rem;color:#a89cc8;font-weight:300;letter-spacing:.06em}
+.sub b{color:#ffd166;font-weight:400}
+.divider{
+  width:100%;height:1px;margin:2rem 0;
+  background:linear-gradient(90deg,transparent,rgba(255,200,221,.12),rgba(155,93,229,.12),transparent);
+}
+.note{
+  font-size:.76rem;color:#7b6f99;line-height:1.9;font-weight:300;
+  padding:.9rem 1.1rem;border-radius:12px;
+  background:rgba(255,200,221,.04);border:1px solid rgba(255,200,221,.1);
+  margin-bottom:2rem;
+}
+.note code{color:#c77dff;font-size:.74rem}
+#giscus-host{min-height:180px}
+/* 加载前的占位，避免大块空白抖动 */
+.loading{
+  text-align:center;font-size:.78rem;color:#7b6f99;letter-spacing:.2em;padding:2.6rem 0;
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="/">← 回到她的乐土</a>
+
+  <h1>想对爱莉希雅说的话</h1>
+  <p class="sub">写下来吧——<b>被记住，就是存在的延续</b>。</p>
+
+  <div class="divider"></div>
+
+  <p class="note">
+    留言需要 <code>GitHub 账号</code>登录后发送，内容保存在本仓库的 Discussions 里，公开可见。<br>
+    这里没有算法、没有排序，只有一句一句按时间排好的话。
+  </p>
+
+  <div id="giscus-host">
+    <p class="loading" id="giscusLoading">正 在 打 开 门 …</p>
+  </div>
+</div>
+
+<script>
+/*
+  呀！giscus 要滚到眼前才让它加载——不然会拖着首屏一起变慢呢。
+  theme 固定为 dark：整站都是深紫黑，跟随系统的话，
+  用浅色系统的人会在星空上看到一块白板哦。
+*/
+(function(){
+  var host = document.getElementById('giscus-host');
+  var loading = document.getElementById('giscusLoading');
+  var loaded = false;
+
+  function load(){
+    if (loaded) return;
+    loaded = true;
+
+    var s = document.createElement('script');
+    s.src = 'https://giscus.app/client.js';
+    s.setAttribute('data-repo', 'elysiamsia/elysia');
+    s.setAttribute('data-repo-id', 'R_kgDOUCa0bA');
+    s.setAttribute('data-category', 'Announcements');
+    s.setAttribute('data-category-id', 'DIC_kwDOUCa0bM4DFlz5');
+    s.setAttribute('data-mapping', 'pathname');
+    s.setAttribute('data-strict', '0');
+    s.setAttribute('data-reactions-enabled', '1');
+    s.setAttribute('data-emit-metadata', '0');
+    s.setAttribute('data-input-position', 'bottom');
+    s.setAttribute('data-theme', 'dark');
+    s.setAttribute('data-lang', 'zh-CN');
+    s.setAttribute('data-loading', 'lazy');
+    s.setAttribute('crossorigin', 'anonymous');
+    s.async = true;
+    s.onerror = function(){
+      if (loading) loading.textContent = '门暂时打不开呢…稍后再来看看吧';
+    };
+    host.appendChild(s);
+    if (loading) setTimeout(function(){ loading.remove(); }, 600);
+  }
+
+  if (!('IntersectionObserver' in window)) { load(); return; }
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (e.isIntersecting) { load(); io.disconnect(); }
+    });
+  }, { rootMargin: '200px' });
+  io.observe(host);
+})();
+</script>
+</body>
+</html>
