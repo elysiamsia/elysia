@@ -456,6 +456,27 @@ body{
   .flower-btn{transition:none}
   .flower-petal{display:none}
 }
+
+/* ===== HIDDEN EGG (隐藏彩蛋) ===== */
+/* 呀！给细心的人准备的小惊喜——连点标题五次才会开花呢♥ */
+.egg-petal{
+  position:fixed;pointer-events:none;z-index:9997;
+  border-radius:50% 50% 50% 0;opacity:0;
+  transition:transform 3.4s cubic-bezier(.16,.68,.32,1),opacity 3.4s ease;
+}
+.egg-line{
+  position:fixed;left:50%;top:38%;transform:translate(-50%,-50%) scale(.96);
+  z-index:9999;pointer-events:none;max-width:min(560px,86vw);text-align:center;
+  font-size:clamp(1rem,3.2vw,1.45rem);font-weight:300;letter-spacing:.12em;
+  color:var(--pink-mist);line-height:2;
+  text-shadow:0 0 30px rgba(255,200,221,.5),0 0 60px rgba(199,125,255,.35);
+  opacity:0;transition:opacity 1.1s ease,transform 1.1s ease;
+}
+.egg-line.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+@media(prefers-reduced-motion:reduce){
+  .egg-petal{transition:none}
+  .egg-line{transition:none;top:42%}
+}
 </style>
 </head>
 <body>
@@ -465,6 +486,7 @@ body{
 <script src="data/timeline-data.js"></script>
 <script src="assets/daily.js" defer></script>
 <script src="assets/flowers.js" defer></script>
+<script src="assets/egg.js" defer></script>
 
 <!-- ===== OPENING ===== -->
 <section class="section-opening" id="opening">
