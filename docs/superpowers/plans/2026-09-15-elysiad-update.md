@@ -831,6 +831,25 @@ PYTHONIOENCODING=utf-8 python tools/to_webp.py --dry-run
 
 期望：合计压缩比在 **80% 以上**。若低于 70%，把 `QUALITY` 降到 78 再试；若某张图掉得特别少，检查它是否本来就已经很小。
 
+> **⚠ 实测校正：干净环境下这一步看不到真实压缩比。**
+> 脚本里 `after = dst.stat().st_size if dst.exists() else 0`——`.webp` 还不存在时 `after` 恒为 0，
+> 于是 WebP 列与压缩比会显示成**假的 100%**。
+>
+> 所以顺序应该是：**先正式转换（Step 3），再回头跑 `--dry-run` 看真实数值**。
+> 本计划首次执行时的真值如下，可作对照：
+>
+> | 文件 | 原始 | WebP | 省下 |
+> |---|---|---|---|
+> | armor-pink | 538KB | 93KB | 82.6% |
+> | armor-ego | 1019KB | 247KB | 75.8% |
+> | armor-elf | 875KB | 189KB | 78.3% |
+> | skin-1 | 737KB | 116KB | 84.2% |
+> | skin-2 | 613KB | 44KB | 92.8% |
+> | skin-3 | 232KB | 24KB | 89.8% |
+> | skin-4 | 573KB | 119KB | 79.3% |
+> | skin-5 | 507KB | 46KB | 90.8% |
+> | **合计** | **4.97MB** | **0.86MB** | **82.8%** |
+
 - [ ] **Step 3: 正式转换**
 
 ```bash
@@ -904,6 +923,32 @@ kill %1 2>/dev/null
                     + ' loading="lazy" decoding="async"></div>' : '') +
 ```
 
+- [ ] **Step 6b: ⚠ 必须同时改 CSS，否则图片会被拉伸变形**
+
+**这一步不能漏。** 只加 `width`/`height` 属性会引入肉眼可见的回归——首次执行时实测到了：
+
+```
+改动前  →  340.78 × 327.48   （1024:984 比例保持）
+只加属性 →  340.81 × 440.00   ← 纵向拉伸约 34%，脸都变形了
+整页像素差异 6.87%，最大差 246
+```
+
+**根因**：`armor.html` 已有的 `.card-image img{max-width:100%;max-height:440px}` 是两条**独立**的约束。一旦 `<img>` 带上了 `width`/`height` 属性（映射为 `width`/`height` 属性值），两个方向就都成了确定值，`max-width` 和 `max-height` 各自生效、**宽高比不再守恒**。
+
+**修法**：把 `width`/`height` 交回浏览器按原始比例联合求解——这是 `width`/`height` 属性的标准配套写法。找到 `armor.html:99` 的：
+
+```css
+.card-image img{max-width:100%;max-height:440px;border-radius:12px;box-shadow:0 0 26px rgba(255,143,163,.15)}
+```
+
+改为：
+
+```css
+.card-image img{width:auto;height:auto;max-width:100%;max-height:440px;border-radius:12px;box-shadow:0 0 26px rgba(255,143,163,.15)}
+```
+
+改完 8 张图的渲染盒必须与基线**逐像素相同**（实测：整页差异从 6.87% 降到 0.024%，余量来自 WebP 有损压缩本身）。
+
 - [ ] **Step 7: 重新截图，与 Step 4 的基准逐张比对**
 
 ```bash
@@ -924,6 +969,22 @@ kill %1 2>/dev/null
 期望：图片文件名为 `.webp`；`naturalWidth`/`naturalHeight` 为正数且与 Step 5 的记录一致；`document.querySelectorAll('img').length` 大于 0。
 
 用 Read 打开 `screenshots/armor-webp.png`，与 `screenshots/armor-png.png` 对比：**构图、位置、清晰度应无肉眼可见差异**。若出现明显色带或边缘发糊，把 `QUALITY` 提到 88 重跑 Step 3。
+
+> **⚠ 探测图片时必须把视口拉高**（例如 `size 1280x9000`）。图片是 `loading="lazy"`，在 900 高的视口里下面 5 张**永远不会加载**，`complete=false`、渲染盒 `0x0`——那是懒加载的正常行为，**不是回归**，但会让你误判。首次执行时就因为这一点多绕了一圈。
+>
+> 正确的探测方式（视口拉高 + 展开全部卡片 + 逐个比对渲染比与原生比）：
+>
+> ```bash
+> PYTHONIOENCODING=utf-8 python tools/cdp.py http://localhost:8500/armor.html \
+>   size 1280x9000 sleep 3000 \
+>   eval "(()=>{document.querySelectorAll('.timeline-card').forEach(c=>c.classList.add('open'));return 'opened'})()" \
+>   sleep 3000 \
+>   eval "Array.from(document.images).map((i,n)=>{const r=i.getBoundingClientRect();const ar=r.height>0?(r.width/r.height).toFixed(3):'—';const nat=(i.naturalWidth/i.naturalHeight).toFixed(3);return n+': '+i.getAttribute('src').replace('images/','')+' '+Math.round(r.width)+'x'+Math.round(r.height)+' 比'+ar+' 原生比'+nat+' 加载='+i.complete}).join('\n')"
+> ```
+>
+> 期望：8 张图全部 `加载=true`，且**渲染比 == 原生比**。本计划首次执行的实测值：
+> `armor-pink 341x327`、`armor-ego 341x327`、`armor-elf 341x307`、`skin-1 341x419`、
+> `skin-2 341x240`、`skin-3 335x440`、`skin-4 341x192`、`skin-5 341x240`。
 
 - [ ] **Step 8: 确认没有遗漏的 `.png` 引用**
 
