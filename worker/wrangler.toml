@@ -11,4 +11,4 @@ routes = [
 # ⚠ 把 id 换成 `wrangler kv namespace create FLOWERS` 输出的那个 id
 [[kv_namespaces]]
 binding = "FLOWERS"
-id = "REPLACE_WITH_YOUR_KV_ID"
+id = "e2d964f0af9f4863820bcfa20a5aac7e"
