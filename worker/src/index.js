@@ -62,8 +62,12 @@ export default {
 
       return json({ error: 'not found' }, cors, 404);
     } catch (err) {
-      // 出错也让前端能拿到数字，前端有降级但没必要主动触发
-      return json({ error: 'internal', message: String(err && err.message) }, cors, 500);
+      // 不把原始错误回给客户端——它会泄露内部细节。
+      // 实测额度耗尽时，响应里带出了 "KV put() limit exceeded for the day."
+      // 这类 Cloudflare 内部错误原文。前端本来就静默降级、不需要这个 message，
+      // 所以只在服务端日志里留一份即可。
+      console.error('flower error:', err && err.message);
+      return json({ error: 'internal' }, cors, 500);
     }
   },
 };

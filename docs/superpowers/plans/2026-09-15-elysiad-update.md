@@ -2589,22 +2589,48 @@ kill %1 2>/dev/null
 
 - [ ] **Step 7: 「换一句」真的换句**
 
+> **⚠ 这条验证命令有两处坑，首次执行时都踩到了。**
+>
+> **① `#postcardRedraw` 在视口外。** 它在页面坐标 y ≈ 7377，而视口只有 900 高。
+> `cdp.py` 的 click 用 `getBoundingClientRect()` 的**视口坐标**派发鼠标事件
+> （`tools/cdp.py:54-64`），点到画面外 → **静默无操作**。所以必须先
+> `scrollIntoView({behavior:'instant'})`——注意不能省 `instant`，见 Task 11 Step 6 的说明。
+>
+> **② 原先的比较表达式是恒真式。** `window.__sig() === (window.__sig||(()=>''))()`
+> 里，`(window.__sig || fallback)` 求值就是 `window.__sig` 本身，两边调的是同一个函数，
+> **永远输出 `相同`**——即使画布真的变了也测不出来。
+>
+> **另一个必须知道的点**：画布每次重绘都会重新撒**随机星屑**，所以整张图的哈希
+> **必然变化**。也就是说「哈希变了」只能证明重绘了，**不能证明台词换了**。
+> 要隔离出"台词确实换了"，得把 `Math.random` 冻成常量。
+
 ```bash
 cd <repo 根>
 python -m http.server 8500 >/dev/null 2>&1 &
 sleep 2
 PYTHONIOENCODING=utf-8 python tools/cdp.py http://localhost:8500/index.html \
   sleep 2500 \
-  eval "(()=>{window.__sig=()=>document.querySelector('#postcardPreview canvas').toDataURL().slice(-64);return window.__sig()})()" \
-  click "#postcardRedraw" sleep 1400 \
-  eval "window.__sig() === (window.__sig||(()=>''))() ? '相同' : '已变化'" \
-  eval "window.__sig()" 2>&1
+  eval "(()=>{document.getElementById('postcard').scrollIntoView({behavior:'instant',block:'center'});return '已定位'})()" \
+  sleep 700 \
+  eval "(()=>{const d=document.querySelector('#postcardPreview canvas').toDataURL();let h=0;for(let i=0;i<d.length;i++)h=(h*31+d.charCodeAt(i))|0;window.__before=d.length+':'+h;return 'BEFORE '+window.__before})()" \
+  click "#postcardRedraw" sleep 1500 \
+  eval "(()=>{const d=document.querySelector('#postcardPreview canvas').toDataURL();let h=0;for(let i=0;i<d.length;i++)h=(h*31+d.charCodeAt(i))|0;const now=d.length+':'+h;return 'AFTER '+now+'  → '+(now===window.__before?'❌ 相同':'✅ 已变化')})()" 2>&1
 kill %1 2>/dev/null
 ```
 
-期望：第二个 eval 输出 `已变化`。
+期望：`已定位` → `BEFORE …` → `AFTER … → ✅ 已变化`。
 
-> 若两次签名恰好相同（同一句被抽中两次的概率是 1/10），重跑即可。
+**隔离验证：冻结 `Math.random` 后，确认变的确实是台词。** 把星屑固定住，让唯一变量只剩台词：
+
+```bash
+# 在页面载入后、点「换一句」之前注入：
+#   window.__mr = Math.random; Math.random = () => 0.42;
+# 然后连点两次，比较两次的哈希：
+#   A(第 1 次换句) 与 B(第 2 次换句) 必须不同   ← 台词真的换了
+#   C(再点 10 次)  必须等于 B                  ← 周期正好 10，确定性重绘
+```
+
+期望：`A ≠ B` 且 `C == B`。
 
 - [ ] **Step 8: 「切换横竖」生效**
 
@@ -2614,6 +2640,8 @@ python -m http.server 8500 >/dev/null 2>&1 &
 sleep 2
 PYTHONIOENCODING=utf-8 python tools/cdp.py http://localhost:8500/index.html \
   size 1280x900 sleep 2500 \
+  eval "(()=>{document.getElementById('postcard').scrollIntoView({behavior:'instant',block:'center'});return '已定位'})()" \
+  sleep 700 \
   eval "(()=>{const c=document.querySelector('#postcardPreview canvas');return '切换前 '+c.width+'x'+c.height})()" \
   click "#postcardToggle" sleep 1400 \
   eval "(()=>{const c=document.querySelector('#postcardPreview canvas');return '切换后 '+c.width+'x'+c.height})()" \

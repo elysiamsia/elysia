@@ -65,20 +65,37 @@
   }
 
   // ---------- 渲染 ----------
+  // 记录「上次成功读到的全局总数」。
+  //
+  // 为什么需要它：实测故障时的表现是——载入时显示「这里已收到 1247 朵花」，
+  // 点击失败后若直接换成「本机累计 1 朵」，**数字会从 1247 跌到 1**，
+  // 访客会以为自己把计数搞坏了。而载入的 GET 有 4 秒超时、点击的 POST 只有 3 秒，
+  // 慢线路上完全可能「载入成功、点击超时」，所以这不是理论问题。
+  var knownShared = null;
+
   function showShared(n) {
     // 呀！这是「大家的花」——数字是真的，所以说出口的时候也很安心呢♥
+    knownShared = n;
     countEl.innerHTML = '这里已收到 <b>' + n + '</b> 朵花';
     hintEl.textContent = '每一朵，都会被记得';
   }
 
   function showLocal(n) {
-    // 接口不通时的诚实说法：只数自己这一台
+    // 从头到尾没读到过全局数字时的诚实说法：只数自己这一台
     countEl.innerHTML = '你的花已送达 · 本机累计 <b>' + n + '</b> 朵';
     hintEl.textContent = '花已经送到她那里了';
   }
 
   function goLocal() {
-    showLocal(localAdd());
+    var n = localAdd();
+    if (knownShared === null) {
+      showLocal(n);
+      return;
+    }
+    // 已经知道全局数字了 → 保留它，别让它掉下来。
+    // 自己这一朵诚实地括在本机计数里，不谎称它进了全局。
+    countEl.innerHTML = '这里已收到 <b>' + knownShared + '</b> 朵花';
+    hintEl.textContent = '你的这一朵先留在本机（共 ' + n + ' 朵），等下再来送一次吧';
   }
 
   // ---------- 花瓣动画 ----------
