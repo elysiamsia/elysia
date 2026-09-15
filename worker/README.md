@@ -1,5 +1,25 @@
 # 献花后端 · Cloudflare Worker 部署手册
 
+> **状态：已部署 ✅（2026-09-15）**
+>
+> | 项目 | 值 |
+> |---|---|
+> | 端点 | `https://flowers.elysiad.top` |
+> | KV namespace id | `e2d964f0af9f4863820bcfa20a5aac7e` |
+> | Worker 版本 | `67f858ce-d241-497c-8e94-2baa59ab9a7f` |
+> | 账号 | `dongqm070731@gmail.com` |
+>
+> **实测已验证**：`GET /count` 正常；`POST /flower` 真实写入 KV；异站来源返回
+> `403 forbidden origin` 且不改动总数；`OPTIONS` 返回 `204`；`http://localhost:8500`
+> 在白名单内（本地调试可用）。
+>
+> **中国可访问性**：已用手机流量（不挂梯子）访问 `https://flowers.elysiad.top/count`，
+> **返回正常 JSON**——大陆线路可用。
+>
+> 下面的章节保留完整步骤，供日后**换账号、换域名、重建 KV** 时照做。
+
+---
+
 > 这一份是**给你自己动手的**。前端那边（`assets/flowers.js`）我会写好并负责降级逻辑，
 > 你只需要把这个 Worker 部署起来，然后把域名填给我。
 >
