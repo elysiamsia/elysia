@@ -1106,8 +1106,28 @@ print('✅ 1200x630')
 
 用 Read 打开 `images/og.png`，检查：
 - 左侧「致 爱 莉 希 雅」、`E L Y S I A`、分隔线、两行描述、`11 / 11 她的生日` 全部完整可见，没有被裁切
-- 右侧立绘可见，**头部没有被裁掉**（`object-position:50% 20%` 就是为此设的）
-- 若立绘被裁得不好看，调整 `object-position` 的第二个值（越小越靠上），重新出图
+- 右侧立绘可见，**头部没有被裁掉**
+
+> **⚠ 实测校正一：`object-position` 的第二个值（竖向）在这里不起作用。**
+> 右栏是 `flex:1 1 42%` → `504×630`，而原图 `armor-elf` 是 `1024×921`（比例 1.112 > 0.8），
+> 所以 `object-fit:cover` 是**按高度**缩放的 → 缩放后 `700×630`，**竖向正好铺满、裁切量恒为 0**，
+> 多出来的 196px 全在横向。因此竖向前景不可调，**能动的只有第一个值（横向）**。
+> 若换了比例更窄的立绘，竖向才可能开始裁切。
+
+> **⚠ 实测校正二：立绘素材必须检查有没有截图浮层。**
+> `images/armor-elf.png`（嗨♪爱愿妖精♥）**自带两个 UI 贴纸**——一个白色圆角气泡带心形图标与
+> `\(^o^)/~~`，旁边还有一个带小图标与粉色爱心的方块，位置在画面中部偏右、压在她的裙摆上。
+> 那是原图自带的，不是渲染瑕疵。它们**不属于立绘本身**，放在分享卡片上看着像缺陷。
+>
+> **选素材时务必逐张放大确认**。本计划实测的三张：
+>
+> | 素材 | 是否干净 | 构图 |
+> |---|---|---|
+> | `armor-elf.webp`（嗨♪爱愿妖精♥） | ❌ **有两个 UI 贴纸** | 明亮、色彩最饱和 |
+> | `armor-ego.webp`（真我·人之律者） | ✅ 干净 | 优雅，但她本身偏白，缩略图下可能发糊 |
+> | `armor-pink.webp`（粉色妖精小姐♪） | ✅ 干净 | 有飞花，粉/紫/深色对比强，**缩略图可读性最好** |
+>
+> 换素材只需改 `tools/og-card.html` 里 `.art` 的 `src`，然后重跑 Step 2、Step 3。
 
 - [ ] **Step 5: 给出 8 个页面的 OG 描述文案**
 
@@ -1209,6 +1229,124 @@ kill %1 2>/dev/null
 git add tools/og-card.html images/og.png index.html armor.html */index.html
 git commit -m "新增分享卡片：og.png（1200x630）与 8 页 OG 元数据"
 ```
+
+---
+
+---
+
+### Task 8 补充：分享卡片改为多变体 + 随机轮换
+
+**背景**：Task 8 首次执行时用了 `armor-elf.webp`（嗨♪爱愿妖精♥），但它**自带两个 UI 截图浮层**（一个写着 `\(^o^)/~~` 的白色气泡、一个带爱心的方块），压在裙摆上，作为分享卡片看着像瑕疵。需求方的决定是：**三张立绘都保留，随机轮换当前生效的那一张**。
+
+**Files:**
+- Modify: `tools/og-card.html`（支持 `?art=` 切换立绘）
+- Create: `images/og-1.png`、`og-2.png`、`og-3.png`
+- Delete: `images/og.png`（单张方案作废）
+- Create: `tools/pick_og.py`
+- Modify: 8 个页面的 `og:image`
+
+**Interfaces:**
+- Produces: `images/og-<n>.png` 三个变体；`python tools/pick_og.py [--list | --set N]`
+
+- [ ] **Step 1: 让模板支持切换立绘**
+
+`tools/og-card.html` 的 `<img class="art">` 加 `id="art"`，默认 `src="/images/armor-pink.webp"`，并在 `</body>` 前加：
+
+```html
+<script>
+  // 立绘由 ?art= 决定；允许的取值写死在白名单里，避免这个模板被拿来读任意文件
+  (function () {
+    var OK = ['armor-pink', 'armor-ego', 'armor-elf'];
+    var want = new URLSearchParams(location.search).get('art');
+    if (want && OK.indexOf(want) >= 0) {
+      document.getElementById('art').src = '/images/' + want + '.webp';
+    }
+  })();
+</script>
+```
+
+> 白名单很重要：这个模板在 `tools/` 下、会被 `http.server` 提供，不加白名单等于开放了一个「按参数读任意路径」的口子。
+
+- [ ] **Step 2: 生成三个变体**
+
+```bash
+cd <repo 根>
+python -m http.server 8500 >/dev/null 2>&1 &
+sleep 2
+i=1
+for art in armor-pink armor-ego armor-elf; do
+  PYTHONIOENCODING=utf-8 python tools/cdp.py "http://localhost:8500/tools/og-card.html?art=$art" \
+    size 1200x630 sleep 2200 shot "images/og-$i.png"
+  i=$((i+1))
+done
+kill %1 2>/dev/null
+rm -f images/og.png
+```
+
+变体编号固定为：
+
+| 编号 | 立绘 | 说明 |
+|---|---|---|
+| `og-1.png` | `armor-pink` | 粉色妖精小姐♪（初遇那位粉色妖精） |
+| `og-2.png` | `armor-ego` | 真我·人之律者（她的本质形态） |
+| `og-3.png` | `armor-elf` | 嗨♪爱愿妖精♥（黄金庭院再舞，**有 UI 浮层**） |
+
+- [ ] **Step 3: 校验三张都是 1200×630 PNG**
+
+```bash
+cd <repo 根>
+PYTHONIOENCODING=utf-8 python -c "
+from PIL import Image
+import os
+for n in (1,2,3):
+    f='images/og-%d.png'%n
+    im=Image.open(f)
+    assert im.size==(1200,630) and im.format=='PNG', f
+    print('%s  %s  %.0f KB  OK' % (f, im.size, os.path.getsize(f)/1024))
+"
+```
+
+- [ ] **Step 4: 写 `tools/pick_og.py`**
+
+脚本见仓库内的实际文件。它做三件事：列出变体与当前生效项、随机挑一张（**避开当前那张**，保证每次都真换）、把 8 个页面的 `og:image` 统一改成选中的那张。
+
+关键正则：
+
+```python
+PATTERN = re.compile(r'(property="og:image"\s+content="https://elysiad\.top/)images/og(?:-\d+)?\.png(")')
+```
+
+- [ ] **Step 5: 验证轮换真的会换**
+
+```bash
+cd <repo 根>
+PYTHONIOENCODING=utf-8 python tools/pick_og.py --list
+for i in 1 2 3 4 5; do PYTHONIOENCODING=utf-8 python tools/pick_og.py | head -1; done
+PYTHONIOENCODING=utf-8 python tools/pick_og.py --set 1
+```
+
+期望：连续 5 次随机，**没有一次与上一次相同**（脚本会避开当前那张）；8 个页面同步更新；`--set` 能指定。
+
+- [ ] **Step 6: 确认没有页面还指向已删除的 `og.png`**
+
+```bash
+cd <repo 根>
+grep -l 'images/og\.png' index.html armor.html */index.html 2>/dev/null || echo "无 ✅"
+grep -h 'property="og:image"' index.html armor.html */index.html | grep -o 'images/[^"]*' | sort -u
+```
+
+期望：第一条无输出；第二条只剩一行 `images/og-<n>.png`。
+
+- [ ] **Step 7: 提交**
+
+```bash
+git add tools/og-card.html tools/pick_og.py images/og-*.png index.html armor.html */index.html
+git commit -m "分享卡片改为三个立绘变体，新增随机轮换脚本 pick_og.py"
+```
+
+**⚠ 必须向需求方说明的限制**：微信 / QQ 的预览图由平台自行抓取并缓存，**缓存期可能长达数天到数周**。因此「每次分享都随机一张」在这些平台上**做不到**——服务端随机对它们无效。本方案实现的是「**轮换当前生效的那一张**」：跑一次 `pick_og.py`，之后所有分享统一换成新的那张。这是在不引入运行时依赖的前提下能拿到的最好效果。
+
+若日后确实需要**每请求随机**，唯一的办法是让 Worker 加一个 `/og.png` 路由返回随机变体。但那样分享卡片的可用性就绑在 Worker 上——Cloudflare 在中国大陆不通时会是**空白预览图**，比固定一张更糟。**本计划不采用**。
 
 ---
 

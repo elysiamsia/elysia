@@ -4,9 +4,13 @@
 <meta charset="UTF-8">
 <!--
   呀！这是出分享卡片用的模板，不是给人看的页面——
-  用 tools/cdp.py 按 1200x630 截一张图，存成 images/og.png 就完成啦♥
+  用 tools/cdp.py 按 1200x630 截一张图，存成 images/og-N.png 就完成啦♥
   立绘在右、文案在左，因为分享卡片的唯一任务是让人愿意点进来：
   在任何缩略图尺寸下，都要还能看出「这是什么地方」。
+
+  立绘可以换：用 ?art=armor-pink / armor-ego / armor-elf 指定，
+  不传就默认 armor-pink。三张变体都存在 images/ 下，
+  由 tools/pick_og.py 随机决定当前生效的是哪一张。
 -->
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
@@ -40,8 +44,18 @@
     <div class="bday">11 / 11　她的生日</div>
   </div>
   <div class="right">
-    <img class="art" src="/images/armor-elf.webp" alt="">
+    <img class="art" id="art" src="/images/armor-pink.webp" alt="">
     <div class="glow"></div>
   </div>
+<script>
+  // 立绘由 ?art= 决定；允许的取值写死在白名单里，避免这个模板被拿来读任意文件
+  (function () {
+    var OK = ['armor-pink', 'armor-ego', 'armor-elf'];
+    var want = new URLSearchParams(location.search).get('art');
+    if (want && OK.indexOf(want) >= 0) {
+      document.getElementById('art').src = '/images/' + want + '.webp';
+    }
+  })();
+</script>
 </body>
 </html>
