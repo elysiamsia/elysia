@@ -318,11 +318,14 @@ python -m http.server 8500 >/dev/null 2>&1 &
 sleep 2
 PYTHONIOENCODING=utf-8 python tools/cdp.py http://localhost:8500/index.html \
   size 1280x900 sleep 800 eval "window.innerWidth + 'x' + window.innerHeight" \
-  shot screenshots/size-1280.png 2>&1
+  eval "(()=>{document.getElementById('journey').scrollIntoView();return '已滚到时间轴'})()" \
+  sleep 700 shot screenshots/size-1280.png 2>&1
 kill %1 2>/dev/null
 ```
 
-期望：`size -> 1280x900`，随后输出 `1280x900`。
+期望：`size -> 1280x900`，随后输出 `1280x900`，再输出 `已滚到时间轴`。
+
+> **为什么必须 `scrollIntoView`**：`.timeline-line` 在 `#journey` 区块里，位于首屏之下。直接截图只会拍到开场区，**图里根本没有时间轴**，就没法做 Step 5 的目视核对。这一条是实测踩出来的。
 
 - [ ] **Step 4: 验证移动尺寸，且确认响应式真的生效**
 
@@ -333,15 +336,22 @@ sleep 2
 PYTHONIOENCODING=utf-8 python tools/cdp.py http://localhost:8500/index.html \
   size 375x812 sleep 800 eval "window.innerWidth + 'x' + window.innerHeight" \
   eval "getComputedStyle(document.querySelector('.timeline-line')).left" \
-  shot screenshots/size-375.png 2>&1
+  eval "(()=>{document.getElementById('journey').scrollIntoView();return '已滚到时间轴'})()" \
+  sleep 700 shot screenshots/size-375.png 2>&1
 kill %1 2>/dev/null
 ```
 
-期望：`size -> 375x812`、输出 `375x812`；`.timeline-line` 的 `left` 为 `24px`（移动端媒体查询里的 `1.5rem`），而非桌面端的 `50%`。这一条同时证明了媒体查询确实按新视口生效。
+期望：`size -> 375x812`、输出 `375x812`；`.timeline-line` 的 `left` 为 **`24px`**（移动端媒体查询里的 `1.5rem`，见 `index.html:240`）。
+
+> **⚠ 关于桌面端的期望值，这里有个实测校正**：计划初稿写「桌面端是 `50%`」，**这是错的**。`.timeline{max-width:800px}` + `.timeline-line{left:50%}`，浏览器对绝对定位元素返回的是**折算后的使用值**，即 `50% × 800px = 400px`。
+>
+> 所以正确的对照是：**桌面 `400px`（居中） vs 移动 `24px`（贴左）**。这个差异才是媒体查询真的按新视口生效的证据——光看 `window.innerWidth` 变了不算数，那只证明视口改了，不证明 media query 跟上了。
 
 - [ ] **Step 5: 目视核对两张截图**
 
-用 Read 工具打开 `screenshots/size-1280.png` 与 `screenshots/size-375.png`，确认：桌面版时间轴居中双栏，移动版时间轴靠左单栏。若两者长得一样，说明 `mobile` 参数或视口未生效，需回查 Step 2。
+用 Read 工具打开 `screenshots/size-1280.png` 与 `screenshots/size-375.png`，确认：桌面版时间轴居中双栏（卡片左右交替），移动版时间轴靠左单栏（卡片全部同侧）。若两者长得一样，说明 `mobile` 参数或视口未生效，需回查 Step 2。
+
+实测参考值（来自本计划的首次执行）：桌面端 `.timeline-line` 的 `left` = `400px`、`getBoundingClientRect().left` ≈ `636`；移动端 `left` = `24px`、`rect.left` ≈ `39`。
 
 - [ ] **Step 6: 提交**
 
