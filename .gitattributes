@@ -1,0 +1,11 @@
+# 统一换行符为 LF。
+# 本机系统级 core.autocrlf=true（Git for Windows 默认），不统一的话
+# 工作区是 CRLF、仓库是 LF，大范围重构时 diff 会被换行噪音淹没。
+* text=auto eol=lf
+
+# 二进制文件不做换行转换
+*.png  binary
+*.jpg  binary
+*.webp binary
+*.ico  binary
+*.mp3  binary
