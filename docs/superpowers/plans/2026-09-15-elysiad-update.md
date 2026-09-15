@@ -1727,9 +1727,16 @@ git commit -m "首页新增「今日之语」，按本地日期轮换"
  * 隐私：本脚本不采集、不上报任何访客信息，只发一个 POST。
  */
 (function () {
-  // ⚠ 部署完 Worker 后，把这里换成实际域名
   var API = 'https://flowers.elysiad.top';
-  var TIMEOUT_MS = 1500;
+
+  // 超时按「谁在等」分开设：载入时没人在等，可以放宽；点击时有反馈延迟，收紧一点。
+  //
+  // ⚠ 这两个值不是拍脑袋定的。实测从大陆冷启动到 Cloudflare 的 TLS 握手可以到
+  //    1.66 秒（热连接只要 0.6~0.9 秒）。原先两者统一用 1500ms，会把这个握手掐断，
+  //    于是接口明明是好的、访客却看到「本机累计 N 朵」——同一台机器上时好时坏。
+  //    那不叫降级，那叫「显示错误的信息」，比报错更糟：访客会以为没人来过。
+  var TIMEOUT_LOAD_MS = 4000;   // GET  /count  —— 在页面最底部，慢一点没人察觉
+  var TIMEOUT_POST_MS = 3000;   // POST /flower —— 点完在等，别让人干等太久
   var LOCAL_KEY = 'elysia.flowers.local';
 
   var btn = document.getElementById('flowerBtn');
@@ -1891,12 +1898,21 @@ kill %1 2>/dev/null
 
 - [ ] **Step 6: 点击后的降级验证**
 
+> **⚠ 必须先滚动到按钮，而且要用 `behavior:'instant'`。**
+> `#flowerBtn` 在页面底部（y ≈ 7500），900 高的视口里它根本不在画面上，
+> **直接 `click "#flowerBtn"` 会把坐标点到空处，静默失败**——文案一直是空，很难看出是点错了。
+> 又因为 `html{scroll-behavior:smooth}`，普通 `scrollIntoView()` 是**动画**，
+> 800ms 只滚到中途，还是点不到。**必须显式传 `behavior:'instant'`**。
+> 首次执行时就是因为这一点，第一次尝试静默失败。
+
 ```bash
 cd <repo 根>
 python -m http.server 8500 >/dev/null 2>&1 &
 sleep 2
 PYTHONIOENCODING=utf-8 python tools/cdp.py http://localhost:8500/index.html \
   sleep 3000 \
+  eval "(()=>{document.getElementById('flowerBtn').scrollIntoView({behavior:'instant',block:'center'});return '已定位'})()" \
+  sleep 600 \
   click "#flowerBtn" sleep 2500 \
   eval "document.getElementById('flowerCount').textContent" \
   eval "document.getElementById('flowerHint').textContent" \
@@ -1905,11 +1921,17 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py http://localhost:8500/index.html \
 kill %1 2>/dev/null
 ```
 
-期望：count 文案为「你的花已送达 · 本机累计 1 朵」；localStorage 值为 `1`。
+期望：`已定位`；count 文案为「你的花已送达 · 本机累计 1 朵」；localStorage 值为 `1`。
 
 - [ ] **Step 7: 再点一次，确认本地计数递增**
 
-重复 Step 6 的命令。期望 count 变为 `2 朵`，localStorage 为 `2`。
+**在同一次会话里**再点一次，确认本地计数递增。
+
+> **⚠ 不能靠「重跑上一条命令」来验证递增。**
+> `cdp.py` 结尾是 `proc.terminate()` 硬杀 Edge，localStorage 的 LevelDB 来不及落盘，
+> 下一个进程读到的是 `null`。所以要在**同一次会话内连点**——这才是这条要求真正要证的东西。
+
+期望：count 变为 `2 朵`，localStorage 为 `2`，每次点后按钮都恢复可点（`disabled = false`）。
 
 - [ ] **Step 8: 接口可用时的路径——用本地假后端验证**
 
@@ -2147,7 +2169,8 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py http://localhost:8500/index.html \
   click "#typewriterText" click "#typewriterText" click "#typewriterText" \
   sleep 1000 \
   eval "document.querySelectorAll('.egg-petal,.egg-line').length" \
-  eval "JSON.stringify({errs: window.__pageErrors || 'none'})" 2>&1
+  eval "(()=>{window.__errs=[];window.addEventListener('error',e=>window.__errs.push(String(e.message)));return '监听已装'})()" \
+  eval "JSON.stringify(window.__errs || [])" 2>&1
 kill %1 2>/dev/null
 ```
 

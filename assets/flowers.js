@@ -12,9 +12,16 @@
  * 隐私：本脚本不采集、不上报任何访客信息，只发一个 POST。
  */
 (function () {
-  // ⚠ 部署完 Worker 后，把这里换成实际域名
   var API = 'https://flowers.elysiad.top';
-  var TIMEOUT_MS = 1500;
+
+  // 超时按「谁在等」分开设：载入时没人在等，可以放宽；点击时有反馈延迟，收紧一点。
+  //
+  // ⚠ 这两个值不是拍脑袋定的。实测从大陆冷启动到 Cloudflare 的 TLS 握手可以到
+  //    1.66 秒（热连接只要 0.6~0.9 秒）。原先两者统一用 1500ms，会把这个握手掐断，
+  //    于是接口明明是好的、访客却看到「本机累计 N 朵」——同一台机器上时好时坏。
+  //    那不叫降级，那叫「显示错误的信息」，比报错更糟：访客会以为没人来过。
+  var TIMEOUT_LOAD_MS = 4000;   // GET  /count  —— 在页面最底部，慢一点没人察觉
+  var TIMEOUT_POST_MS = 3000;   // POST /flower —— 点完在等，别让人干等太久
   var LOCAL_KEY = 'elysia.flowers.local';
 
   var btn = document.getElementById('flowerBtn');
@@ -41,9 +48,10 @@
   }
 
   // ---------- 带超时的 fetch ----------
-  function req(url, options) {
+  // timeoutMs 由调用方按场景给：载入宽、点击紧，见顶部常量的说明
+  function req(url, options, timeoutMs) {
     var ctrl = new AbortController();
-    var timer = setTimeout(function () { ctrl.abort(); }, TIMEOUT_MS);
+    var timer = setTimeout(function () { ctrl.abort(); }, timeoutMs || TIMEOUT_POST_MS);
     var opts = options || {};
     opts.signal = ctrl.signal;
     return fetch(url, opts).then(function (r) {
@@ -112,7 +120,7 @@
     var r = btn.getBoundingClientRect();
     burst(r.left + r.width / 2, r.top);
 
-    req(API + '/flower', { method: 'POST' })
+    req(API + '/flower', { method: 'POST' }, TIMEOUT_POST_MS)
       .then(function (data) {
         if (data && typeof data.count === 'number') showShared(data.count);
         else goLocal();
@@ -128,7 +136,7 @@
   });
 
   // ---------- 首次载入 ----------
-  req(API + '/count', { method: 'GET' })
+  req(API + '/count', { method: 'GET' }, TIMEOUT_LOAD_MS)
     .then(function (data) {
       if (data && typeof data.count === 'number') showShared(data.count);
       else goLocal();   // 接口在但不认识这个响应 → 走本地，不显示 0
