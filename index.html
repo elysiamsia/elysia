@@ -388,12 +388,39 @@ body{
   .hero-card{width:132px;min-height:150px}
   /* 小屏上让名片瘦一点点，也能整整齐齐排排坐呀 */
 }
+
+/* ===== DAILY QUOTE (今日之语) ===== */
+/* 呀！这是每天都会换一句的语句带——夹在「关于她」和「她的旅途」中间，
+   像走过她身边时，她忽然转头跟你说的那一句♥ */
+.daily-band{
+  position:relative;z-index:2;text-align:center;
+  padding:3.2rem 1.5rem 1rem;max-width:720px;margin:0 auto;
+}
+.daily-label{
+  display:inline-block;font-size:.7rem;color:var(--text-muted);
+  letter-spacing:.35em;margin-bottom:1.1rem;
+}
+.daily-label::before,.daily-label::after{
+  content:'';display:inline-block;width:26px;height:1px;vertical-align:middle;
+  background:linear-gradient(90deg,transparent,var(--pink),transparent);
+  margin:0 .8rem;
+}
+.daily-text{
+  font-size:clamp(1rem,2.8vw,1.25rem);font-weight:300;letter-spacing:.1em;
+  color:var(--pink-mist);line-height:2;
+  text-shadow:0 0 22px rgba(255,200,221,.25);
+}
+@media(prefers-reduced-motion:reduce){
+  .daily-text{text-shadow:none}
+}
 </style>
 </head>
 <body>
 
 <canvas id="petalCanvas"></canvas>
+<script src="data/quotes.js"></script>
 <script src="data/timeline-data.js"></script>
+<script src="assets/daily.js" defer></script>
 
 <!-- ===== OPENING ===== -->
 <section class="section-opening" id="opening">
@@ -455,6 +482,13 @@ body{
       </div>
     </div>
   </div>
+</section>
+
+<!-- ===== DAILY QUOTE ===== -->
+<!-- 同上：每天一句，按访客本地日期轮换 -->
+<section class="daily-band" id="daily" aria-labelledby="dailyLabel">
+  <span class="daily-label" id="dailyLabel">今 日 之 语</span>
+  <p class="daily-text" id="dailyQuote"></p>
 </section>
 
 <!-- ===== JOURNEY ===== -->
