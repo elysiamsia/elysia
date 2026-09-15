@@ -1553,10 +1553,27 @@ git commit -m "新增台词语料池 data/quotes.js（与首页飞花寄语逐�
 在 `data/timeline-data.js` 那行**之后**插入：
 
 ```html
-<script src="assets/daily.js"></script>
+<script src="assets/daily.js" defer></script>
 ```
 
 顺序不能颠倒：`quotes.js` 必须先于 `daily.js` 执行，否则 `window.QUOTES` 还不存在。
+
+> **⚠ `defer` 不能省——这是实测踩出来的坑，而且它静默失败。**
+>
+> `data/timeline-data.js` 那行位于 `<body>` 开头（`<canvas id="petalCanvas">` 紧后方），
+> **在 `#dailyQuote` 元素出现之前**。所以要是不加 `defer`，`daily.js` 执行时
+> `getElementById('dailyQuote')` 拿到 `null`，命中 `if (!el) return;`
+> **直接静默退出——不报错、页面空白**。首次执行时先按字面实现并真跑了一遍，实测：
+>
+> ```
+> （第一行 #dailyQuote.textContent 为空，无输出）
+> 今 日 之 语
+> 期望索引 1 / 共 10 句
+> -1                      ← indexOf 返回 -1，证明元素是空的
+> ```
+>
+> 加 `defer` 后（**脚本位置不动，只加属性**）：DOM 解析完才执行，而 `quotes.js`
+> 是非 defer 脚本仍会先执行，`window.QUOTES` 已就绪。改后实测索引吻合。
 
 - [ ] **Step 5: 验证取到句、且与手算一致**
 
