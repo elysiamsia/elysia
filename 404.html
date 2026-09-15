@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="same-origin">
+<meta name="robots" content="noindex">
+<title>这里还没有被乐土记录哦…… — elysiad.top</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<!--
+  呀！这是走错路时迎接你的那一页——不吓人，不催促，
+  只是轻轻说一句「这里还没有被乐土记录」，然后给你三扇门♥
+  路径全部用绝对路径：访客可能是在 /a/b/c/d 上撞的墙，
+  相对路径会让他再撞一次呢。
+-->
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:2rem;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:radial-gradient(ellipse at 50% 40%,#1a0e2e 0%,#0a0612 70%);
+  color:#f0e6ff;line-height:1.8;overflow-x:hidden;
+}
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0}
+.star{position:absolute;border-radius:50%;background:#fff;
+  animation:twinkle var(--dur) ease-in-out var(--delay) infinite}
+@keyframes twinkle{0%,100%{opacity:.15}50%{opacity:.85}}
+.wrap{position:relative;z-index:1;max-width:560px}
+.code{font-size:.72rem;letter-spacing:.4em;color:#7b6f99;margin-bottom:1.4rem}
+.msg{
+  font-size:clamp(1.1rem,3.6vw,1.5rem);font-weight:300;letter-spacing:.1em;
+  color:#ffc8dd;text-shadow:0 0 25px rgba(255,200,221,.3);
+}
+.sub{margin-top:.9rem;font-size:.9rem;color:#a89cc8;font-weight:300;letter-spacing:.08em}
+.doors{display:flex;gap:.9rem;justify-content:center;flex-wrap:wrap;margin-top:2.6rem}
+.door{
+  display:flex;flex-direction:column;gap:.25rem;min-width:104px;
+  padding:.9rem 1.1rem;border-radius:14px;text-decoration:none;
+  background:linear-gradient(135deg,rgba(255,200,221,.06),rgba(155,93,229,.06));
+  border:1px solid rgba(255,200,221,.12);
+  transition:transform .3s,box-shadow .3s,border-color .3s;
+}
+.door:hover,.door:focus-visible{
+  transform:translateY(-3px);border-color:rgba(255,200,221,.35);
+  box-shadow:0 0 28px rgba(255,143,163,.16);outline:none;
+}
+.door .t{font-size:.9rem;color:#ffc8dd;letter-spacing:.08em}
+.door .n{font-size:.7rem;color:#7b6f99;letter-spacing:.06em}
+.home{
+  display:inline-block;margin-top:2.4rem;padding:.6rem 1.5rem;border-radius:999px;
+  text-decoration:none;font-size:.85rem;letter-spacing:.15em;color:#ffc8dd;
+  background:linear-gradient(135deg,rgba(255,143,163,.18),rgba(155,93,229,.2));
+  border:1px solid rgba(255,200,221,.3);
+  transition:transform .3s,box-shadow .3s;
+}
+.home:hover,.home:focus-visible{transform:translateY(-2px);box-shadow:0 0 28px rgba(255,143,163,.28);outline:none}
+.foot{margin-top:3rem;font-size:.72rem;color:#7b6f99;letter-spacing:.2em}
+@media(max-width:480px){.doors{gap:.6rem}.door{min-width:88px;padding:.8rem .8rem}}
+@media(prefers-reduced-motion:reduce){
+  .star{animation:none;opacity:.4}
+  .door,.home{transition:none}
+}
+</style>
+</head>
+<body>
+
+<!-- 呀！背景撒一把不会动的星星，静静陪着迷路的人♥ -->
+<div class="stars" id="stars" aria-hidden="true"></div>
+
+<div class="wrap">
+  <p class="code">4 0 4</p>
+  <h1 class="msg">这里还没有被乐土记录哦……</h1>
+  <p class="sub">不过，来都来了——</p>
+
+  <nav class="doors" aria-label="推荐去处">
+    <a class="door" href="/#journey">
+      <span class="t">她的旅途</span><span class="n">9 段</span>
+    </a>
+    <a class="door" href="/armor.html">
+      <span class="t">她的装甲</span><span class="n">时间轴</span>
+    </a>
+    <a class="door" href="/#quotes">
+      <span class="t">飞花寄语</span><span class="n">10 句</span>
+    </a>
+  </nav>
+
+  <a class="home" href="/">← 回到她的乐土</a>
+  <p class="foot">elysiad.top</p>
+</div>
+
+<script>
+// 呀！星星是这一页唯一的动效——而且减动偏好下它们会乖乖静下来呢
+(function(){
+  var box = document.getElementById('stars');
+  if (!box) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var n = Math.min(60, Math.floor(window.innerWidth / 14));
+  var html = '';
+  for (var i = 0; i < n; i++) {
+    var size = (0.5 + Math.random() * 1.8).toFixed(1);
+    html += '<div class="star" style="' +
+      'width:' + size + 'px;height:' + size + 'px;' +
+      'left:' + (Math.random() * 100).toFixed(1) + '%;' +
+      'top:' + (Math.random() * 100).toFixed(1) + '%;' +
+      '--dur:' + (2 + Math.random() * 4).toFixed(1) + 's;' +
+      '--delay:' + (Math.random() * 5).toFixed(1) + 's;' +
+      (Math.random() > 0.3 ? '' : 'background:#c77dff;') +
+      '"></div>';
+  }
+  box.innerHTML = html;
+})();
+</script>
+</body>
+</html>
