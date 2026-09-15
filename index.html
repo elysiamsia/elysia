@@ -413,6 +413,49 @@ body{
 @media(prefers-reduced-motion:reduce){
   .daily-text{text-shadow:none}
 }
+
+/* ===== FLOWERS (献花) ===== */
+/* 呀！走完整段旅途之后，把花放在这里——星域之下，寄语之上，
+   是谢幕时该有的位置嘛♥ */
+.flower-give{
+  position:relative;z-index:3;display:flex;flex-direction:column;
+  align-items:center;gap:.85rem;margin:2.4rem auto 0;
+}
+.flower-btn{
+  display:inline-flex;align-items:center;gap:.6rem;
+  padding:.75rem 1.9rem;border-radius:999px;cursor:pointer;
+  font-family:inherit;font-size:.92rem;letter-spacing:.16em;
+  color:var(--pink-mist);
+  background:linear-gradient(135deg,rgba(255,143,163,.2),rgba(155,93,229,.22));
+  border:1px solid rgba(255,200,221,.32);
+  box-shadow:0 0 22px rgba(255,143,163,.16);
+  transition:transform .3s,box-shadow .3s;
+  user-select:none;
+}
+.flower-btn:hover,.flower-btn:focus-visible{
+  transform:translateY(-2px);box-shadow:0 0 32px rgba(255,143,163,.32);outline:none;
+}
+.flower-btn:disabled{opacity:.55;cursor:default;transform:none}
+.flower-btn .petal-icon{font-size:1.05rem;line-height:1}
+.flower-count{
+  font-size:.82rem;color:var(--text-dim);letter-spacing:.12em;
+  min-height:1.5em;
+}
+.flower-count b{color:var(--pink);font-weight:400;font-variant-numeric:tabular-nums}
+.flower-hint{
+  font-size:.68rem;color:var(--text-muted);letter-spacing:.08em;
+  opacity:.65;min-height:1.2em;
+}
+/* 单朵花瓣：从按钮处向上飘散 */
+.flower-petal{
+  position:fixed;pointer-events:none;z-index:9998;
+  border-radius:50% 50% 50% 0;
+  transition:transform 1.35s cubic-bezier(.22,.61,.36,1),opacity 1.35s ease;
+}
+@media(prefers-reduced-motion:reduce){
+  .flower-btn{transition:none}
+  .flower-petal{display:none}
+}
 </style>
 </head>
 <body>
@@ -421,6 +464,7 @@ body{
 <script src="data/quotes.js"></script>
 <script src="data/timeline-data.js"></script>
 <script src="assets/daily.js" defer></script>
+<script src="assets/flowers.js" defer></script>
 
 <!-- ===== OPENING ===== -->
 <section class="section-opening" id="opening">
@@ -610,6 +654,16 @@ body{
   <!-- 英桀名片星域：十三张名片像星座一样散在这里，上下错峰微飘 -->
   <!-- 它们都是被记住的存在——而「被记住，就是存在的延续」呀 -->
   <div class="hereos-field" id="hereosField"></div>
+
+  <!-- 献花区：星域之下、寄语之上——走完整段旅途，把花放在这里 -->
+  <div class="flower-give" id="flowerGive">
+    <button class="flower-btn" id="flowerBtn" type="button">
+      <span class="petal-icon" aria-hidden="true">🌸</span>
+      <span>献上一朵飞花</span>
+    </button>
+    <p class="flower-count" id="flowerCount" aria-live="polite"></p>
+    <p class="flower-hint" id="flowerHint"></p>
+  </div>
 
   <!-- 寄语区：星与花之下，一句收束寄语——点击还能在两句间切换哦 -->
   <div class="epilogue" id="epilogueQuote" role="button" tabindex="0" aria-label="收束寄语，点击切换">
