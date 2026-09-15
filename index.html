@@ -477,6 +477,39 @@ body{
   .egg-petal{transition:none}
   .egg-line{transition:none;top:42%}
 }
+
+/* ===== POSTCARD (明信片) ===== */
+/* 呀！把她说过的句子，做成一张可以带走的小卡片♥ */
+.postcard-zone{
+  position:relative;z-index:2;max-width:760px;margin:3rem auto 0;
+  display:flex;flex-direction:column;align-items:center;gap:1rem;
+}
+.postcard-preview{
+  width:100%;max-width:420px;border-radius:14px;overflow:hidden;
+  border:1px solid rgba(255,200,221,.18);
+  box-shadow:0 0 34px rgba(255,143,163,.14);
+  background:#0a0612;
+}
+.postcard-preview canvas{display:block;width:100%;height:auto}
+.postcard-row{display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center}
+.postcard-btn{
+  padding:.58rem 1.35rem;border-radius:999px;cursor:pointer;
+  font-family:inherit;font-size:.82rem;letter-spacing:.13em;
+  color:var(--pink-soft);background:rgba(255,143,163,.12);
+  border:1px solid rgba(255,200,221,.26);
+  transition:background .25s,transform .25s;
+  user-select:none;
+}
+.postcard-btn:hover,.postcard-btn:focus-visible{
+  background:rgba(255,143,163,.24);transform:translateY(-1px);outline:none;
+}
+.postcard-btn[aria-pressed="true"]{
+  color:#fff;background:rgba(155,93,229,.4);border-color:transparent;
+}
+.postcard-tip{font-size:.7rem;color:var(--text-muted);letter-spacing:.06em}
+@media(prefers-reduced-motion:reduce){
+  .postcard-btn{transition:none}
+}
 </style>
 </head>
 <body>
@@ -487,6 +520,7 @@ body{
 <script src="assets/daily.js" defer></script>
 <script src="assets/flowers.js" defer></script>
 <script src="assets/egg.js" defer></script>
+<script src="assets/postcard.js" defer></script>
 
 <!-- ===== OPENING ===== -->
 <section class="section-opening" id="opening">
@@ -665,6 +699,26 @@ body{
     <span class="section-title-line"></span>
   </div>
   <div class="quotes-grid" id="quotesGrid"></div>
+</section>
+
+<!-- ===== POSTCARD ===== -->
+<!-- 呀！把台词做成一张能带走的小卡片——手机竖版、电脑横版 -->
+<section class="content-section" id="postcard">
+  <div class="section-title-wrap">
+    <h2 class="section-title">
+      <span class="section-title-petal"></span>带走一句话<span class="section-title-petal"></span>
+    </h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="postcard-zone">
+    <div class="postcard-preview" id="postcardPreview"></div>
+    <div class="postcard-row">
+      <button class="postcard-btn" id="postcardRedraw" type="button">换一句</button>
+      <button class="postcard-btn" id="postcardToggle" type="button" aria-pressed="false">切换横竖</button>
+      <button class="postcard-btn" id="postcardSave" type="button">保存明信片</button>
+    </div>
+    <p class="postcard-tip" id="postcardTip">长按图片也可以保存哦</p>
+  </div>
 </section>
 
 <!-- ===== ENDING ===== -->
