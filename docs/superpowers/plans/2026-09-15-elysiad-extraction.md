@@ -53,6 +53,26 @@
 
 ### Task 1: 建立验证基线与比对工具
 
+> ✅ **本任务已于 2026-09-16 执行完毕。**
+>
+> ⚠ **但仓库里的工具比下面列出的代码更严，别照抄本文的代码块去覆盖它。**
+> 照原样实现出来会得到一个**每次都返回假的「无差异」**的工具——实测踩到四个坑，
+> 都已修进 `tools/snapshot.py` / `tools/snapshot_diff.py`：
+>
+> | 坑 | 后果 |
+> |---|---|
+> | 浏览器 HTTP 缓存没关 | **每一轮比对都是假的「✅ 无差异」**。实测：改 0.0001em 都测不出来 |
+> | 无限动画停在随机相位 | 星星 opacity、名片呼吸光的 box-shadow 每次都不同 |
+> | 星星是 `Math.random()` 生成 | 尺寸/颜色/时长随机。已用 `addScriptToEvaluateOnNewDocument` 固定种子 |
+> | 页面会连线上献花接口 | 通/不通 → 文案不同 → **整页高度差 8px**。已 `setBlockedURLs` 屏蔽 |
+>
+> 另有两处放宽：`IGNORE_PROPS` 已清空（`transform` 实测 807/807 稳定，不再是噪音）；
+> `armor.html` 截图前注入 `background-attachment:scroll`，否则它 80% 的面积是全白
+> （该页是全站唯一用 fixed 背景的）。
+>
+> **验证结论**（都已真跑）：三轮快照两两比对全为 0 差异；把 su 页 `.back-link` 的
+> `letter-spacing` 改 0.0001em，工具准确报出 3 处差异（3 个视口各一处）——**既确定又敏感**。
+
 **Files:**
 - Create: `tools/snapshot.py`、`tools/snapshot_diff.py`
 - Produces: `screenshots/snap/<label>/*.png` 与 `*.json`
@@ -65,7 +85,7 @@
 
 这是整个计划的地基。**没有它，后面每一步都只能靠肉眼，而肉眼看不出 1px 和 0.05 的透明度差异。**
 
-- [ ] **Step 1: 写 `tools/snapshot.py`**
+- [x] **Step 1: 写 `tools/snapshot.py`**
 
 ```python
 # tools/snapshot.py — 对站点做「像素 + 计算样式」双重快照（本地工具，不部署）
@@ -235,7 +255,7 @@ if __name__ == '__main__':
     main()
 ```
 
-- [ ] **Step 2: 写 `tools/snapshot_diff.py`**
+- [x] **Step 2: 写 `tools/snapshot_diff.py`**
 
 ```python
 # tools/snapshot_diff.py — 比对两次快照，列出差异（本地工具，不部署）
@@ -320,7 +340,7 @@ if __name__ == '__main__':
     sys.exit(main())
 ```
 
-- [ ] **Step 3: 起服务器，生成基线**
+- [x] **Step 3: 起服务器，生成基线**
 
 ```bash
 cd <repo 根>
@@ -331,7 +351,7 @@ PYTHONIOENCODING=utf-8 python tools/snapshot.py baseline
 
 期望：打印 24 行 `✓`（8 页 × 3 视口），随后 `快照存入 …/screenshots/snap/baseline`。
 
-- [ ] **Step 4: 验证工具本身可信——对同一份代码跑两次，必须零差异**
+- [x] **Step 4: 验证工具本身可信——对同一份代码跑两次，必须零差异**
 
 ```bash
 cd <repo 根>
@@ -343,7 +363,7 @@ PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py baseline baseline-b; echo "
 
 **若报出差异**，说明有页面在采样时刻不稳定（动画未收敛、随机粒子、随机延迟）。先解决这一点再往下走——否则后面每一个任务都会被噪音淹没。常见的处理：把 `IGNORE_PROPS` 加上出问题的属性，或把 `time.sleep` 调长。
 
-- [ ] **Step 5: 确认基线截图可信**
+- [x] **Step 5: 确认基线截图可信**
 
 ```bash
 cd <repo 根>
@@ -353,7 +373,7 @@ du -sh screenshots/snap/baseline
 
 用 Read 打开 `screenshots/snap/baseline/index_1920.png` 与 `screenshots/snap/baseline/kalpas_375.png`，确认是完整页面（不是白屏、不是只有首屏）。
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add tools/snapshot.py tools/snapshot_diff.py
@@ -689,6 +709,48 @@ git commit -m "归一化前导零写法（不动任何数值）"
 
 ### Task 6: 抽 JS —— `resize` 工厂与结尾星星生成
 
+> 🔺 **形状决定（2026-09-16，需求方拍板）：共享层按「每页一份主题块」驱动。**
+>
+> 背景：**这 13 位英桀的界面最终都要做出来**，目前只有 6 位有独立页面。
+> 所以本轮抽出的形状**就是未来 6 页（樱 / 科斯魔 / 梅比乌斯 / 格蕾修 / 华 / 帕朵菲莉丝）
+> 的模板**——抽成什么样，那 6 页就长什么样。
+>
+> 若按本文原样（数值写在调用处），新页面仍要从头抄一遍参数，
+> 只是把「复制 200 行」换成「复制 12 行」——**没解决根本问题**。
+> 故改为：**每页只声明一个 `THEME` 对象（这一页的「性格」），其余交给共享层**。
+>
+> ```js
+> // 每页脚本开头
+> var THEME = {
+>   accent: '#c77dff',
+>   particles:   { count: [80, 12] },
+>   endingStars: {
+>     size: [0.5, 2],                  // 0.5 + rnd*2 —— **不做四舍五入**
+>     minO: [0.1, 0.3], maxO: [0.5, 0.5],
+>     dur:  [2, 4],     delay: [0, 5],
+>     colors: [['#fff', 0.7], ['#c77dff', 0.3]],   // [色, 权重]，不是数组近似
+>   },
+>   typing: { speed: [55, 95] },
+> };
+> ElysiaShared.boot(THEME);
+> ```
+>
+> **实施时按实际代码修正计划的四处不实**（详见下方 Step 0）。
+
+- [ ] **Step 0: ⚠ 先读这一节——计划与实际代码不符的四处**
+
+  | # | 计划以为 | 实际代码 | 处置 |
+  |---|---|---|---|
+  | 1 | 粒子守卫在 `resize()` 里 | 在**另一个匿名监听器**里；七页的 `resize()` 本体**完全一样**（只有 W/H/canvas 三行） | `makeResize` **只抽那三行**，守卫各页自留。aponnia 的守卫**同时碰 `stars` 和 `threads`**，吞掉会丢行为 |
+  | 2 | 七页 `resize` "写法不同" | **逐字节一样**（只有 `(){` vs `() {`） | 同上 |
+  | 3 | `size` 用 `toFixed(1)` | **没有任何一页对 size 做四舍五入**（是原始浮点） | **不要加 toFixed**，否则是改数值 |
+  | 4 | 颜色用数组近似概率 | eden 是 `>0.35`、kalpas/villv 是等概率颜色池 | 改成 **[色, 权重]** 对，三种形态都能忠实表达 |
+  | 5 | — | **`Math.random()` 的调用顺序**：index 是 `size,minO,maxO,dur,delay,left,top,color`；aponnia 是 `size,left,top,minO,...` | 统一采用 **index 的顺序**：index 的星空**逐字节不变**；其余 6 页的星空会重新洗一次（**统计参数完全不变**，见 Step 7 的验证方式） |
+
+  ⚠ 第 5 条要点：星星是**随机装饰**，「同一片星空」不是有意义的不变量——
+  真正的不变量是**数量 / 尺寸区间 / 透明度区间 / 时长区间 / 颜色分布**。
+  这五样一个都不能变，具体哪颗星在哪不重要。
+
 **Files:**
 - Create: `assets/site.js`
 - Modify: 7 页（引入 `<script src="/assets/site.js">` 并删除各自的实现）
@@ -904,6 +966,10 @@ git commit -m "抽出共享 JS：resize 工厂与结尾星星生成（villv 原�
 
 ### Task 7: 抽子页公共 JS —— 语录卡与滚动进场
 
+> 🎯 动手前先读 `docs/HANDOVER.md` §5.1 末尾的「🎯 下一步做什么」。
+> ⚠ **本任务开工第一件事**：把 `THEME` 的**完整 schema**（加进语录与打字参数后）
+> 写出来给需求方过目再往下写 —— 它是未来 6 位英桀页的模板。
+
 **Files:**
 - Modify: `assets/site.js`
 - Modify: 6 个子页（**不含 index**）
@@ -1098,6 +1164,8 @@ git commit -m "抽子页公共 JS：语录卡改用闭包 O(1) 索引，滚动�
 
 ### Task 8: 抽打字机
 
+> 🎯 动手前先读 `docs/HANDOVER.md` §5.1 末尾的「🎯 下一步做什么」。
+
 **Files:**
 - Modify: `assets/site.js`
 - Modify: 7 页（不含 armor）
@@ -1243,6 +1311,18 @@ git commit -m "抽共享 JS：打字机（数值逐页参数化，kalpas/su 的 
 - Produces: 全站减动偏好生效
 
 **⚠ 本任务的 index 涟漪部分与 villv/kalpas 护栏都是「行为变更」**，不是纯重构。三个改动**各单独一个 commit**，信息里标明。
+
+> ✅ **决定（2026-09-16，需求方拍板）：index 的点击涟漪保持现状，不改。**
+>
+> 三种处置里选了「不改」——本次抽取不动任何行为，只搬位置，让 P1 的
+> 「全程不改变任何页面的视觉呈现」字面成立。首页涟漪在减弱动效下仍然迸发花瓣
+> 这件事，作为**独立问题**另行跟踪，不混进这轮重构。
+>
+> **执行 Task 9 时跳过 `index.html`**，不要给点击监听器补 `if (reducedMotion) return;`。
+> （其余 6 个子页本来就有这个判断，只有首页缺——现状即如此，不是本轮引入的。）
+>
+> 决定依据：`index.html` 定义了 `reducedMotion` 却从未使用（L746 定义 / L856 监听器），
+> 看起来更像漏写而非有意设计；但这属于产品判断，交需求方定。
 
 **这是设计文档 §5-P1 明确要求的一项**，也是此前评审里唯一的 WCAG 2.3.1 风险点（villv 的全屏白闪 + kalpas 的全页抖动）。
 

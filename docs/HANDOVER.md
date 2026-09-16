@@ -2,6 +2,10 @@
 
 > 写给下一个接手的人（或 agent）。**动手前请通读一遍**，尤其是 §六 的坑。
 > 最后更新：2026-09-16
+>
+> 🎯 **如果你是接手 P1 的下一个 agent，直接跳 §5.1 末尾的「🎯 下一步做什么」。**
+> 那里写清了：先做哪三个任务、每个任务的注意事项、验证协议怎么跑、
+> 以及**开新页面之前必须先向需求方确认的一件事**。
 
 ---
 
@@ -29,7 +33,7 @@
 | Cloudflare 缓存优化 | ✅ 已配置 |
 | **献花在 QQ 浏览器上修好（同源 + 来源判定）** | ✅ 已修已部署，见 §4.3 |
 | **`armor.html` 皮肤徽章失色** | ✅ 已修已部署，见 §4.4 |
-| **P1 公共层抽取（12 个任务）** | ⬜ **计划已写，未开工** |
+| **P1 公共层抽取（12 个任务）** | 🟡 **进行中：Task 1–6 完成**（样式层已抽完，正在抽 JS 层） |
 
 ---
 
@@ -105,11 +109,28 @@ https://flowers.elysiad.top/notes/manage?key=<MANAGE_KEY>
 - **部署白名单**：`static.yml` 改成只打包 `_site/`，`tools/ docs/ worker/ images/raw/ .github/` **永不进产物**
 - **`.gitattributes`**：统一 LF（本机系统级 `core.autocrlf=true`）
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
-- **`tools/` 现有工具**：`cdp.py`（无头 Edge，支持 `size` 动作切换视口）、`pick_og.py`（分享卡片轮换）、`og_convert.py`（PNG→JPEG）、`to_webp.py`（图片转 WebP）
+- **`tools/` 现有工具**：`cdp.py`（无头 Edge，支持 `size` 动作切换视口）、`pick_og.py`（分享卡片轮换）、`og_convert.py`（PNG→JPEG）、`to_webp.py`（图片转 WebP）、**`snapshot.py` / `snapshot_diff.py`（双基线验证，见下）**
 
-> ⚠ **`tools/snapshot.py` 与 `tools/snapshot_diff.py` 目前不存在。**
-> 它们是 P1 计划里 Task 1 要产出的验证地基（8 页 × 3 视口的像素 + 计算样式比对），
-> **计划写了但从未执行**。做 P1 时第一步就是创建它们——没有这个，"重构不改变视觉"只能靠肉眼。
+**快照验证工具（2026-09-16 建立）**：
+
+```bash
+python -m http.server 8500 &              # 先起服务器
+PYTHONIOENCODING=utf-8 python tools/snapshot.py <label>          # 8 页 × 3 视口 → screenshots/snap/<label>/
+PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py <旧> <新>   # 有差异退出码 1
+```
+
+机械判据是**计算样式 JSON 的差分**；PNG 只供人眼确认「不是白屏」。
+
+⚠ **写这个工具时踩了四个坑，都修掉了，别再退回**（细节见工具内注释）：
+
+| 坑 | 后果 |
+|---|---|
+| 浏览器 HTTP 缓存没关 | **每一次比对都返回假的「✅ 无差异」**——工具形同虚设。实测：改 0.0001em 都测不出来 |
+| 无限动画停在随机相位 | 星星的 opacity、名片呼吸光的 box-shadow 每次都不同，全是噪音 |
+| 星星是 `Math.random()` 生成的 | 尺寸/颜色/时长随机，两次跑必然不同。已用 `addScriptToEvaluateOnNewDocument` 固定种子 |
+| 页面会去连线上献花接口 | 接口通/不通 → 文案不同 → **整页高度差 8px**。基线测的是网络不是代码。已 `setBlockedURLs` 屏蔽 |
+
+另外 `armor.html` 的 `body` 用了 `background-attachment:fixed`（全站唯一），整页截图时**视口以外不绘背景 → 80% 全白**。截图前注入 `background-attachment:scroll` 覆盖解决（只影响截图，不碰采样属性）。
 
 ### 4.3 献花改同源 + 来源判定改成只比主机名（2026-09-16）
 
@@ -203,9 +224,58 @@ https://flowers.elysiad.top/notes/manage?key=<MANAGE_KEY>
 
 ## 五、还没做的事
 
-### 5.1 P1 公共层抽取（**最要紧的未完成项**）
+### 5.1 P1 公共层抽取（**进行中**）
 
-**计划已完整写好，未开工。**
+> 🔺 **重要的方向性背景（2026-09-16 需求方确认）：逐火十三英桀的界面最终要做齐，共 13 页。**
+> 目前只有 6 位有独立页面（aponia / eden / kalpas / kevin / su / villv），
+> 加上首页（爱莉希雅）与 armor。**还差 6 位**：樱、科斯魔、梅比乌斯、格蕾修、华、帕朵菲莉丝。
+>
+> 每位要有**自己的性格设计**，但可以沿用现有几位的框架。
+> **所以 P1 抽出来的形状就是那 6 页的模板**——抽成什么样，新页面就长什么样。
+>
+> 据此已定：共享层按**「每页一份主题块」**驱动（每页只声明一个 `THEME` 对象，
+> 内含配色 / 粒子 / 星屑 / 打字速度等「性格参数」，其余交给共享层）。
+> 新英桀页 = 写一个 THEME + 各自的专属特效，不再复制实现。
+> 详见 P1 计划 Task 6 开头的形状决定。
+
+**Task 1–6 已完成**（2026-09-16）。**接下来做 Task 7 → 8 → 9，做完立刻开新页面 —— 见本节末尾的「🎯 下一步做什么」**（那是给下一个 agent 的交接）。
+
+| Task | 内容 | 结果 |
+|---|---|---|
+| 1 | 验证地基（`snapshot.py` / `snapshot_diff.py`） | ✅ 见 §4.2——**计划给的代码是坏的，修了四个坑** |
+| 2 | 新建 `assets/site.css`（A 组 31 条） | ✅ |
+| 3 | 7 页接入基础重置 + keyframes | ✅ 删 55 条（+14/−55） |
+| 4 | 7 页接入几何中性规则 | ✅ 删 **153** 条（+9/−201） |
+| 5 | 归一化前导零写法（不动数值） | ✅ index 79 处；JS 里的 43 处一个没碰 |
+| 6 | 抽出 `assets/site.js`（resize 工厂 + 星屑生成） | ✅ 7 页改用 `ElysiaShared`，见下 |
+
+Task 1–5 全部以「✅ 无差异」通过（24 张快照 × 30+ 选择器 × 30+ 计算属性逐字段比对）。
+
+#### ⚠ Task 6 起，验收口径要改一句话
+
+Task 1–5 是「✅ 无差异」。**Task 6 起不是了，而且以后也不会是。**
+
+结尾的星屑是**每次加载都重新随机**的（不刷新也会洗牌）。之前基线能对上，
+纯粹是因为快照工具固定了随机种子。Task 6 把 7 页的随机调用顺序统一之后，
+星屑必然重新洗一次 —— 快照会报出 18 处差异，全部落在 `.ending-star` 一个选择器上
+（差异属性只有 `animation-duration` 和一处 `opacity`）。
+
+**所以 P1 的最终验收要写成**：「零差异，**除已解释的星屑重洗**」。
+真正该守的五个不变量 —— 数量 / 尺寸区间 / 透明度区间 / 时长区间 / 颜色分布 ——
+已经用统计方式单独验过（各 80/70 个实测样本，分毫不差）。
+
+> 参照点：`screenshots/snap/baseline` 是 **P1 动手前**的状态，留给最终验收；
+> `screenshots/snap/baseline-task6` 是 **Task 6 之后**的状态，给 Task 7–12 当参照，
+> 免得每次比对都被这 18 处已知差异淹没。
+
+> ✅ **那处工具缺口已补**（2026-09-16）：`left` / `top` / `animation-delay` 已加进 `PROPS`。
+> 效果立竿见影 —— 同一组对照（pre-P1 vs Task6）报出的差异从 **18 处涨到 72 处**，
+> 因为现在能把星屑重洗的**全部范围**照出来（之前只看得到 `--dur` 一条线）。
+> **72 处仍然全部落在 `.ending-star` 一个选择器上**，其余 7 个 × 8 页 × 3 视口零变化。
+>
+> 参照点已用新 `PROPS` 重新生成：`baseline`（取自 `origin/main` 的 worktree，
+> 真正的 pre-P1）与 `baseline-task6`，两者都验证过同码两次零差异。
+
 
 ```
 docs/superpowers/plans/2026-09-15-elysiad-extraction.md      12 个任务
@@ -235,6 +305,114 @@ docs/superpowers/plans/2026-09-15-extraction-inventory.md    抽取分析（1173
 > 「与 after-task11 相比，`--gold-soft` 是唯一已知变化」。**那一处现在已经修好了**，
 > 所以到时候快照比对**不该再出现任何变化**——若还看到徽章颜色变化，说明动坏了别的东西。
 
+#### 🎯 下一步做什么（2026-09-16 需求方拍板）
+
+> **顺序：Task 7 → 8 → 9，做完立刻开新页面；10 / 11 / 12 留到新页面之后补。**
+
+**这个顺序是硬要求，理由不是洁癖**：Task 7（语录卡 + 滚动进场）与 Task 8（打字机）
+抽的正是**每一个英桀页都要用**的两段代码，而且 inventory 已查实那 6 个子页的这两段
+**逐字节一致**。
+
+> 若先建新页面：新页会把这两段再抄一遍 → Task 7/8 之后要改 **13 页而不是 7 页**，
+> 工作量差不多翻倍；更糟的是，新页面会写成「即将被改掉的形状」。
+> **一句话：现在建一页，就等于给未来的自己多留一份待办。**
+
+| 任务 | 对新页面的意义 | 何时做 |
+|---|---|---|
+| **7** 语录卡 + IntersectionObserver | ⭐ 每页都要 | **本轮** |
+| **8** 打字机 | ⭐ 每页都要 | **本轮** |
+| **9** 全站减动保护 | ⭐ 每页都要遵循 | **本轮** |
+| 10 index 专项 | ❌ 首页专属 | 新页面之后 |
+| 11 armor 专项 | ❌ 异形页专属 | 新页面之后 |
+| 12 收尾清理 | ➖ 好看 | 最后 |
+
+**10/11/12 也要做**，只是排在后面 —— 别让新页面从一个「半迁移」的仓库起步：
+那时 armor 还挂着自己那套、首页还挂着自己那套，「到底该照谁写」会变成问题。
+
+##### ⚠ 开始 Task 7 之前必须先做的一件事
+
+**把 `THEME` 的完整 schema 摊给需求方过目。**
+
+现在 `THEME` 只有 `endingStars` 一个字段。Task 7/8 会往里加**语录列表**与
+**打字速度** —— 也就是说，**这个对象现在还没长完**。
+若现在开新页面，每页写的都是残缺版 `THEME`，等 Task 7/8 做完还得回头补。
+
+> Task 7 一开工就把完整 schema 写出来给需求方确认，再往下写。
+> **它是 13 页的模板，值得多花这十分钟。**
+
+##### Task 7 注意事项（6 个子页，**不含 index**）
+
+- index **不参与**：它的语录卡有配音逻辑（`window.QUOTE_AUDIO`），
+  结尾观察器用 `epilogueQuote` 且没有 `backLink`
+- **顺带修掉的正事**：6 个子页现在是
+  `Array.prototype.indexOf.call(grid.querySelectorAll('.quote-card'), card)`
+  —— **每次点击都重扫 DOM**。index 早就是闭包索引了。统一成**闭包 O(1)** 版本，
+  这是设计文档 §5-P1 明确要求的一项
+- ⚠ **R9**：`cardIndices` 必须封装在工厂函数**内部**，绝不能变成模块级全局
+  —— 否则跨多次初始化的索引会串味
+- ⚠ **R11**：子页的 `endingObserver` **没有判空**，index 有。
+  统一采用**带判空**的写法属于**行为改善**（元素齐全时表现完全一致），
+  但要**单独 commit 并写明**
+- ⚠ **R10**：villv 缺粒子 resize 守卫 —— **保持现状，不要顺手补**
+
+##### Task 8 注意事项（7 页）
+
+- 各页的**起始延迟 / 每字延迟 / 随机幅度三个数值都不同**，逐页抄，**不要依赖默认值**
+- kalpas / su 独有 `hintEl.classList.add('visible')`
+
+##### Task 9 注意事项（全站减动保护）
+
+- `assets/site.css` 末尾加 `@media (prefers-reduced-motion: reduce)` 段
+- `villv/index.html` 的 `fireKevinKiller666()` 与 `kalpas/index.html` 的 `startRage()`
+  加护栏 —— **这两个是行为变更，各单独一个 commit**
+- ⛔ **`index.html` 的点击涟漪：跳过不动。** 需求方已拍板（见 §5.4）。
+  **不要**给点击监听器补 `if (reducedMotion) return;`
+
+##### 验证协议（照这个走）
+
+```bash
+cd D:\claude-code\elysia-main
+
+# 1) 起服务器 —— ⚠ 起完**必须先验内容**再采样（见 §6.4 的 pkill 坑）
+python -m http.server 8500 &
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8500/assets/site.css   # 应为 200
+
+# 2) 快照 + 比对。Task 7–9 用 baseline-task6 当参照
+PYTHONIOENCODING=utf-8 python tools/snapshot.py after-task7
+PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py baseline-task6 after-task7; echo "退出码 $?"
+```
+
+**参照点分工**：
+
+| 快照目录 | 是什么 | 用来做什么 |
+|---|---|---|
+| `screenshots/snap/baseline` | **P1 动手前**（从 `origin/main` 的 worktree 取） | P1 最终验收 |
+| `screenshots/snap/baseline-task6` | **Task 6 之后** | Task 7–9 每步的参照 |
+
+⚠ **P1 最终验收的口径是「零差异，除已解释的星屑重洗」**：
+`baseline` vs 最终状态会报 **72 处差异，全部落在 `.ending-star` 一个选择器上**
+（`left` / `top` / `animation-delay` / `animation-duration` / `opacity`）。
+根因是 Task 6 统一了随机调用顺序，星屑必然重洗 —— 星星本来就是每次加载重新随机的。
+**除 `.ending-star` 外，任何选择器动一处都要停下来查。**
+
+##### 新页面怎么开（做完 7/8/9 之后）
+
+1. 参照一份现有子页当骨架 —— 建议从 `su/index.html` 或 `kevin/index.html` 起，
+   它们的专属模块较少，模板更干净
+2. 写自己的 `THEME`（此时它已长全）
+3. 写自己的**专属特效** —— 这正是每位英桀「性格」所在
+   （樱的瓣 / 科斯魔的影 / 梅比乌斯的蛇 / 格蕾修的画 / 华的剑 / 帕朵的铃……）
+4. 别忘了三件事：
+   - 加进 `.github/workflows/static.yml` 的 **`KEEP_FILES` / `KEEP_DIRS` 白名单**，
+     否则**不会上线**
+   - 加进 `sitemap.xml`
+   - 角色页用的是**子页那套** `.back-link` / `.ending-*`（**不是** armor 那套）
+
+> ✅ **待做的英桀页确认为 6 位**（2026-09-17 需求方确认）：
+> **樱 / 科斯魔 / 梅比乌斯 / 格蕾修 / 华 / 帕朵菲莉丝**。
+> （已有的 7 页是：index=爱莉希雅、aponia 阿波尼亚、eden 伊甸、villv 维尔薇、
+> kalpas 千劫、kevin 凯文、su 苏；armor 是装甲时间轴，不算角色页。13 = 7 + 6 ✓）
+
 ### 5.2 等需求方提供素材
 
 - **隐藏彩蛋的台词**：现为空数组，所以彩蛋不触发。项目数据纪律是「绝不编造」，**拿到有出处的台词后填进 `data/quotes.js` 的 `hidden` 即可自动生效，代码不用改**
@@ -244,11 +422,19 @@ docs/superpowers/plans/2026-09-15-extraction-inventory.md    抽取分析（1173
 
 - **`data/timeline-data.js` 里 12 位英桀的 `lore` 是两份稿子叠加**（旧稿未删、新稿续在后面），含 OCR 坏文（「凶笼」应为「囚笼」、「抓马」、「守难口磨去了金瞳」）与孤立的标点/姓名行。**点开首页名片就能看到**。13 位里只有樱是干净的。已记在设计文档 §2.4，未纳入任何计划
 
-### 5.4 时间点任务
+### 5.4 已决定不改、另行跟踪的问题
+
+| 问题 | 决定 | 依据 |
+|---|---|---|
+| **`index.html` 的点击涟漪缺 `reducedMotion` 判断** | **不改，另行跟踪**（2026-09-16 需求方拍板） | `index.html` 定义了 `reducedMotion` 却从未使用（L746 定义 / L856 监听器），其余 6 个子页的涟漪**都有** `if (reducedMotion) return;`，只有首页缺。统一会让首页在减弱动效下从「有花瓣迸发」变成「完全没反应」——属**行为变更**，不混进这轮纯重构。详见 P1 计划 Task 9 里的记录 |
+
+> ⚠ **执行 P1 Task 9 时跳过 `index.html`**，不要补那个判断。
+
+### 5.5 时间点任务
 
 - **2026-11-11（她的生日）**：当天记录献花总数。接近或超过 500 → 需要换 Durable Objects（方案见 `worker/README.md` §11）
 
-### 5.5 已放弃的
+### 5.6 已放弃的
 
 - **QQ / 微信的分享预览**：需求方实测始终不出，已决定不再追。排查过程与排除项记录在设计文档 §11.2。**别重查**
 
@@ -291,6 +477,7 @@ docs/superpowers/plans/2026-09-15-extraction-inventory.md    抽取分析（1173
 |---|---|
 | **`cdp.py` 的 click 要先滚动** | 它用 `getBoundingClientRect()` 的视口坐标派发鼠标事件，元素在视口外会**静默无操作**。且站点有 `scroll-behavior:smooth`，必须 `scrollIntoView({behavior:'instant'})` |
 | **探测 `loading="lazy"` 的图片要把视口拉高** | 否则下面的图不加载，渲染盒 `0x0`——那是正常行为，不是回归 |
+| **⚠ `pkill` 杀不掉 Windows 原生 python 进程** | `python -m http.server 8500` 用 `pkill -f` 杀不干净——**多个服务器会同时监听同一端口**，请求落到哪个不确定。实测踩到过：为了生成 pre-P1 基线，起了一个服务 worktree 的服务器，但旧的（服务主仓库）仍在响应，于是采样出一份**内容完全错的「pre-P1 基线」**，差点当成真的用。查：`netstat -ano \| grep ":8500 " \| grep LISTENING`（同一 PID 出现两行是 IPv4/IPv6 双栈，正常）；杀：`taskkill //F //PID <pid>`。**起完服务器必须先验内容再采样**——例如请求一个只应存在于新目录的文件。 |
 | **`cdp.py` 的浏览器缓存跨次留存** | 它用固定的 `--user-data-dir=C:/tmp/edge_cdp`，所以**改了 CSS/JS 再测，读到的可能还是旧版本**——会让人误判成「改动没生效」或「修了还是坏的」。给 URL 加 `?cb=<时间戳>` 再测 |
 | **改视觉必须截图核对** | 项目纪律：不接受"看起来差不多"。桌面 `1280×900` + 移动 `375×812` 各一轮 |
 | **元素有入场动画时要等** | `.timeline-node` 是 `opacity:0` + IntersectionObserver 出 `.visible`。滚过去要 `sleep` 一两秒再截图，否则拍到一片空白——那不是页面坏了 |
@@ -343,7 +530,7 @@ docs/superpowers/
 │                                                  ★ 改功能前先读这份
 └── plans/
     ├── 2026-09-15-elysiad-update.md             计划 A：14 个任务（已全部执行）
-    ├── 2026-09-15-elysiad-extraction.md         计划 B：P1 公共层抽取，12 个任务（未开工）
+    ├── 2026-09-15-elysiad-extraction.md         计划 B：P1 公共层抽取，12 个任务（Task 1 完成）
     └── 2026-09-15-extraction-inventory.md       CSS/JS 抽取分析（1173 行）★ P1 的事实来源
 
 worker/README.md                                  Worker 部署手册

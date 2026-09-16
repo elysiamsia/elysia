@@ -21,25 +21,23 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#0a0612">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
+<link rel="stylesheet" href="/assets/site.css">
 <title>elysiad.top — 致爱莉希雅</title>
 <style>
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
   --bg-abyss:#0a0612;--bg-deep:#12091f;--bg-purple:#1a0e2e;--bg-mid:#2d1b4e;
   --pink-mist:#ffc8dd;--pink-soft:#ffb3c1;--pink:#ff8fa3;--pink-deep:#ff5c8a;--pink-hot:#ff2d78;
   --purple-glow:#c77dff;--purple:#9b5de5;--purple-deep:#7b2cbf;--purple-ink:#5a189a;
   --gold:#ffd166;--gold-warm:#e8b931;--gold-soft:#ffe5a0;
   --text:#f0e6ff;--text-dim:#a89cc8;--text-muted:#7b6f99;
-  --glass-bg:rgba(255,200,221,0.06);--glass-border:rgba(255,200,221,0.12);
-  --glass-bg2:rgba(155,93,229,0.06);--glass-border2:rgba(155,93,229,0.12);
+  --glass-bg:rgba(255,200,221,.06);--glass-border:rgba(255,200,221,.12);
+  --glass-bg2:rgba(155,93,229,.06);--glass-border2:rgba(155,93,229,.12);
 }
-html{scroll-behavior:smooth}
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
   background:var(--bg-abyss);color:var(--text);overflow-x:hidden;line-height:1.7;
 }
-::-webkit-scrollbar{width:6px}
-::-webkit-scrollbar-track{background:var(--bg-abyss)}
 ::-webkit-scrollbar-thumb{background:var(--purple-deep);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:var(--purple)}
 
@@ -52,42 +50,37 @@ body{
   background:linear-gradient(180deg,var(--bg-abyss) 0%,var(--bg-deep) 30%,var(--bg-purple) 60%,var(--bg-deep) 100%);
 }
 .opening-title{
-  font-size:clamp(2rem,6vw,4rem);font-weight:300;letter-spacing:0.15em;
-  color:var(--pink-mist);text-shadow:0 0 30px rgba(255,143,163,0.4),0 0 60px rgba(255,143,163,0.2);
+  font-size:clamp(2rem,6vw,4rem);font-weight:300;letter-spacing:.15em;
+  color:var(--pink-mist);text-shadow:0 0 30px rgba(255,143,163,.4),0 0 60px rgba(255,143,163,.2);
   min-height:1.4em;
 }
 .typing-cursor{
   display:inline-block;font-weight:100;color:var(--pink);
-  animation:blink-cursor 0.8s step-end infinite;
+  animation:blink-cursor .8s step-end infinite;
 }
-.typing-cursor.hidden{display:none}
-@keyframes blink-cursor{0%,100%{opacity:1}50%{opacity:0}}
 .opening-subtitle{
-  font-size:clamp(0.9rem,2.5vw,1.3rem);color:var(--text-dim);letter-spacing:0.3em;
+  font-size:clamp(.9rem,2.5vw,1.3rem);color:var(--text-dim);letter-spacing:.3em;
   margin-top:1.5rem;opacity:0;transition:opacity 1.5s ease;
 }
-.opening-subtitle.visible{opacity:1}
 .scroll-hint{
-  position:absolute;bottom:2.5rem;display:flex;flex-direction:column;align-items:center;gap:0.5rem;
-  opacity:0;transition:opacity 1s ease 0.5s;
+  position:absolute;bottom:2.5rem;display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  opacity:0;transition:opacity 1s ease .5s;
 }
-.scroll-hint.visible{opacity:0.6}
-.scroll-hint span{font-size:0.75rem;color:var(--text-muted);letter-spacing:0.2em}
+.scroll-hint.visible{opacity:.6}
+.scroll-hint span{font-size:.75rem;color:var(--text-muted);letter-spacing:.2em}
 .scroll-chevron{
   width:20px;height:20px;border-right:2px solid var(--pink);border-bottom:2px solid var(--pink);
   transform:rotate(45deg);animation:chevron-bounce 2s ease-in-out infinite;
 }
-@keyframes chevron-bounce{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(6px)}}
 
 /* ===== COMMON SECTION ===== */
 .content-section{
   position:relative;z-index:2;padding:6rem 1.5rem;
-  background:linear-gradient(180deg,transparent 0%,rgba(10,6,18,0.3) 20%,rgba(10,6,18,0.3) 80%,transparent 100%);
+  background:linear-gradient(180deg,transparent 0%,rgba(10,6,18,.3) 20%,rgba(10,6,18,.3) 80%,transparent 100%);
 }
-.section-title-wrap{text-align:center;margin-bottom:3.5rem}
 .section-title{
-  font-size:clamp(1.5rem,4vw,2.2rem);font-weight:300;letter-spacing:0.2em;
-  color:var(--pink-soft);text-shadow:0 0 20px rgba(255,179,193,0.3);
+  font-size:clamp(1.5rem,4vw,2.2rem);font-weight:300;letter-spacing:.2em;
+  color:var(--pink-soft);text-shadow:0 0 20px rgba(255,179,193,.3);
 }
 .section-title-line{
   display:block;width:60px;height:1px;margin:1rem auto 0;
@@ -95,7 +88,7 @@ body{
 }
 .section-title-petal{
   display:inline-block;width:8px;height:12px;border-radius:50% 50% 50% 0;
-  background:var(--pink);transform:rotate(-30deg);margin:0 0.8rem;opacity:0.6;
+  background:var(--pink);transform:rotate(-30deg);margin:0 .8rem;opacity:.6;
 }
 
 /* ===== ABOUT ===== */
@@ -104,38 +97,30 @@ body{
   background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
   backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
   border:1px solid var(--glass-border);border-radius:24px;
-  box-shadow:0 0 50px rgba(255,143,163,0.1),0 0 100px rgba(155,93,229,0.08),
-    inset 0 1px 0 rgba(255,255,255,0.08);
+  box-shadow:0 0 50px rgba(255,143,163,.1),0 0 100px rgba(155,93,229,.08),
+    inset 0 1px 0 rgba(255,255,255,.08);
   position:relative;overflow:hidden;
 }
 .profile-card::before{
   content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
-  background:conic-gradient(from 0deg,transparent,rgba(255,143,163,0.05),transparent,rgba(155,93,229,0.05),transparent);
+  background:conic-gradient(from 0deg,transparent,rgba(255,143,163,.05),transparent,rgba(155,93,229,.05),transparent);
   animation:card-rotate 20s linear infinite;
 }
-@keyframes card-rotate{to{transform:rotate(360deg)}}
-.profile-card-inner{position:relative;z-index:1}
 .profile-name{
-  font-size:clamp(1.8rem,5vw,2.8rem);font-weight:200;letter-spacing:0.1em;
-  color:var(--pink-mist);text-align:center;margin-bottom:0.2em;
+  font-size:clamp(1.8rem,5vw,2.8rem);font-weight:200;letter-spacing:.1em;
+  color:var(--pink-mist);text-align:center;margin-bottom:.2em;
 }
 .profile-name-en{
-  font-size:clamp(0.9rem,2vw,1.1rem);font-weight:300;letter-spacing:0.35em;
+  font-size:clamp(.9rem,2vw,1.1rem);font-weight:300;letter-spacing:.35em;
   color:var(--purple-glow);text-align:center;margin-bottom:2rem;
-  text-shadow:0 0 15px rgba(199,125,255,0.3);
+  text-shadow:0 0 15px rgba(199,125,255,.3);
 }
-.profile-divider{
-  width:100%;height:1px;margin:1.5rem 0;
-  background:linear-gradient(90deg,transparent,var(--glass-border),var(--glass-border2),transparent);
-}
-.profile-grid{display:grid;grid-template-columns:auto 1fr;gap:0.6rem 1.5rem;font-size:0.92rem}
-.profile-label{color:var(--text-muted);white-space:nowrap;font-weight:400}
-.profile-value{color:var(--text);font-weight:300}
+.profile-grid{display:grid;grid-template-columns:auto 1fr;gap:.6rem 1.5rem;font-size:.92rem}
 .profile-value .highlight{color:var(--pink);font-weight:400}
 .profile-value .gold{color:var(--gold);font-weight:400}
 .profile-desc{
   margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--glass-border);
-  font-size:0.9rem;color:var(--text-dim);line-height:1.9;font-weight:300;
+  font-size:.9rem;color:var(--text-dim);line-height:1.9;font-weight:300;
 }
 .profile-desc .emoji-heart{color:var(--pink)}
 
@@ -148,16 +133,13 @@ body{
 }
 .timeline-node{
   position:relative;display:flex;align-items:flex-start;margin-bottom:3rem;
-  opacity:0;transform:translateY(30px);transition:opacity 0.7s ease,transform 0.7s ease;
+  opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;
 }
-.timeline-node.visible{opacity:1;transform:translateY(0)}
-.timeline-node:nth-child(odd){flex-direction:row}
-.timeline-node:nth-child(even){flex-direction:row-reverse}
 .timeline-dot{
-  position:absolute;left:50%;top:0.5rem;width:14px;height:14px;
+  position:absolute;left:50%;top:.5rem;width:14px;height:14px;
   border-radius:50%;border:2px solid var(--pink);
   background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
-  box-shadow:0 0 12px rgba(255,143,163,0.4);transition:background 0.3s;
+  box-shadow:0 0 12px rgba(255,143,163,.4);transition:background .3s;
 }
 .timeline-node.visible .timeline-dot{background:var(--pink)}
 .timeline-card{
@@ -165,88 +147,63 @@ body{
   background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   border:1px solid var(--glass-border);border-radius:16px;
-  box-shadow:0 0 20px rgba(255,143,163,0.06);
+  box-shadow:0 0 20px rgba(255,143,163,.06);
 }
-.timeline-node:nth-child(odd) .timeline-card{margin-right:auto}
-.timeline-node:nth-child(even) .timeline-card{margin-left:auto}
 .timeline-card h3{
-  font-size:1.05rem;font-weight:400;color:var(--pink-soft);margin-bottom:0.5rem;
-  letter-spacing:0.1em;
+  font-size:1.05rem;font-weight:400;color:var(--pink-soft);margin-bottom:.5rem;
+  letter-spacing:.1em;
 }
-.timeline-card p{font-size:0.85rem;color:var(--text-dim);line-height:1.8;font-weight:300}
+.timeline-card p{font-size:.85rem;color:var(--text-dim);line-height:1.8;font-weight:300}
 .timeline-node .timeline-index{
-  position:absolute;left:50%;top:0.5rem;transform:translate(-50%,-50%);
-  font-size:0.6rem;color:var(--text-muted);white-space:nowrap;
-  top:-0.8rem;letter-spacing:0.05em;
+  position:absolute;left:50%;top:.5rem;transform:translate(-50%,-50%);
+  font-size:.6rem;color:var(--text-muted);white-space:nowrap;
+  top:-.8rem;letter-spacing:.05em;
 }
 
 /* ===== QUOTES ===== */
-.quotes-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
-  gap:1.2rem;max-width:1000px;margin:0 auto;
-}
 .quote-card{
   padding:1.5rem;min-height:140px;display:flex;align-items:center;justify-content:center;
   background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
-  box-shadow:0 0 20px rgba(255,143,163,0.05);
-  transition:transform 0.3s ease,box-shadow 0.3s ease;position:relative;overflow:hidden;
+  box-shadow:0 0 20px rgba(255,143,163,.05);
+  transition:transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;
   user-select:none;
 }
 .quote-card:hover{
   transform:translateY(-3px);
-  box-shadow:0 0 30px rgba(255,143,163,0.12),0 8px 30px rgba(0,0,0,0.2);
+  box-shadow:0 0 30px rgba(255,143,163,.12),0 8px 30px rgba(0,0,0,.2);
 }
 .quote-card::after{
   content:'';position:absolute;top:0;left:0;right:0;bottom:0;
-  background:radial-gradient(circle at 30% 30%,rgba(255,143,163,0.06),transparent 60%);
+  background:radial-gradient(circle at 30% 30%,rgba(255,143,163,.06),transparent 60%);
   pointer-events:none;
 }
 .quote-text{
-  font-size:0.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;
-  transition:opacity 0.4s ease;
+  font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;
+  transition:opacity .4s ease;
 }
-.quote-text.fading{opacity:0}
 .quote-hint{
-  position:absolute;bottom:0.6rem;right:0.8rem;font-size:0.65rem;color:var(--text-muted);opacity:0.4;
+  position:absolute;bottom:.6rem;right:.8rem;font-size:.65rem;color:var(--text-muted);opacity:.4;
 }
 
 /* ===== ENDING ===== */
-.section-ending{
-  position:relative;z-index:2;min-height:70vh;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;text-align:center;padding:4rem 2rem;
-  background:linear-gradient(180deg,transparent,var(--bg-abyss) 30%,var(--bg-abyss));
-}
-.ending-stars{position:absolute;inset:0;overflow:hidden;pointer-events:none}
-.ending-star{
-  position:absolute;border-radius:50%;background:#fff;
-  animation:twinkle var(--dur) ease-in-out infinite;
-  animation-delay:var(--delay);
-}
-@keyframes twinkle{0%,100%{opacity:var(--min-o)}50%{opacity:var(--max-o)}}
 .ending-quote{
-  font-size:clamp(1.1rem,3vw,1.6rem);font-weight:300;letter-spacing:0.12em;
-  color:var(--pink-mist);line-height:2;text-shadow:0 0 25px rgba(255,200,221,0.3);
+  font-size:clamp(1.1rem,3vw,1.6rem);font-weight:300;letter-spacing:.12em;
+  color:var(--pink-mist);line-height:2;text-shadow:0 0 25px rgba(255,200,221,.3);
   max-width:600px;opacity:0;transform:translateY(20px);
   transition:opacity 1.5s ease,transform 1.5s ease;
 }
-.ending-quote.visible{opacity:1;transform:translateY(0)}
 .ending-attr{
-  margin-top:2.5rem;font-size:0.85rem;color:var(--text-muted);letter-spacing:0.25em;
-  opacity:0;transition:opacity 1.5s ease 0.8s;
-}
-.ending-attr.visible{opacity:0.7}
-.ending-fade{
-  position:absolute;bottom:0;left:0;right:0;height:120px;
-  background:linear-gradient(transparent,var(--bg-abyss));pointer-events:none;
+  margin-top:2.5rem;font-size:.85rem;color:var(--text-muted);letter-spacing:.25em;
+  opacity:0;transition:opacity 1.5s ease .8s;
 }
 
 /* ===== RIPPLE ===== */
 .ripple-petal{
   position:fixed;pointer-events:none;z-index:9999;
-  border-radius:50% 50% 50% 0;opacity:0.85;
-  transition:all 0.75s cubic-bezier(0.22,0.61,0.36,1);
+  border-radius:50% 50% 50% 0;opacity:.85;
+  transition:all .75s cubic-bezier(.22,.61,.36,1);
 }
 
 /* ===== RESPONSIVE ===== */
@@ -259,7 +216,7 @@ body{
     width:calc(100% - 3.5rem);margin-left:3.5rem;margin-right:0;
   }
   .quotes-grid{grid-template-columns:1fr}
-  .profile-grid{grid-template-columns:auto 1fr;gap:0.5rem 1rem;font-size:0.85rem}
+  .profile-grid{grid-template-columns:auto 1fr;gap:.5rem 1rem;font-size:.85rem}
 }
 @media(max-width:480px){
   .content-section{padding:4rem 1rem}
@@ -272,8 +229,8 @@ body{
   0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}
 }
 @keyframes glow-pulse{
-  0%,100%{box-shadow:0 0 50px rgba(255,143,163,0.1),0 0 100px rgba(155,93,229,0.08)}
-  50%{box-shadow:0 0 60px rgba(255,143,163,0.15),0 0 120px rgba(155,93,229,0.12)}
+  0%,100%{box-shadow:0 0 50px rgba(255,143,163,.1),0 0 100px rgba(155,93,229,.08)}
+  50%{box-shadow:0 0 60px rgba(255,143,163,.15),0 0 120px rgba(155,93,229,.12)}
 }
 .profile-card{animation:glow-pulse 6s ease-in-out infinite}
 
@@ -326,8 +283,8 @@ body{
 }
 /* 每张名片：竖版小卡，玻璃拟态，像一枚枚被星空托起的徽章呢 */
 .hero-card{
-  width:148px;min-height:170px;padding:1rem 0.9rem;cursor:pointer;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.4rem;
+  width:148px;min-height:170px;padding:1rem .9rem;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;
   background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   border:1px solid var(--glass-border);border-radius:16px;
@@ -784,6 +741,7 @@ body{
   <div class="ending-fade"></div>
 </section>
 
+<script src="/assets/site.js"></script>
 <script>
 (function(){
   // ===== QUOTES DATA =====
@@ -849,10 +807,12 @@ body{
   const pinkColors = ['#ffc8dd','#ffb3c1','#ff8fa3','#ff5c8a','#f9bec7'];
   const purpleColors = ['#c77dff','#9b5de5','#e0b0ff'];
 
-  function resize() {
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-  }
+  // ⚠ 只抽「把 canvas 和视口尺寸对上」这三行。下面那个「把越界花瓣拉回画布」的
+  //   匿名监听器**故意留着不动**——它碰的数组每页不一样，抽走会改行为。
+  const resize = ElysiaShared.makeResize(canvas, {
+    get W() { return W; }, set W(v) { W = v; },
+    get H() { return H; }, set H(v) { H = v; },
+  });
   resize();
   window.addEventListener('resize', resize);
 
@@ -1044,24 +1004,21 @@ body{
   endingObserver.observe(document.getElementById('ending'));
 
   // ===== ENDING STARS =====
-  var starsContainer = document.getElementById('endingStars');
-  var endingStarCount = Math.min(80, Math.floor(window.innerWidth / 12));
-  for (var i = 0; i < endingStarCount; i++) {
-    var star = document.createElement('div');
-    star.className = 'ending-star';
-    var size = 0.5 + Math.random() * 2;
-    var minO = (0.1 + Math.random() * 0.3).toFixed(2);
-    var maxO = (0.5 + Math.random() * 0.5).toFixed(2);
-    var dur = (2 + Math.random() * 4).toFixed(1);
-    var delay = (Math.random() * 5).toFixed(1);
-    star.style.cssText =
-      'width:' + size + 'px;height:' + size + 'px;' +
-      'left:' + (Math.random() * 100) + '%;top:' + (Math.random() * 100) + '%;' +
-      '--min-o:' + minO + ';--max-o:' + maxO + ';' +
-      '--dur:' + dur + 's;--delay:' + delay + 's;' +
-      'background:' + (Math.random() > 0.3 ? '#fff' : '#c77dff') + ';';
-    starsContainer.appendChild(star);
-  }
+  // 呀！星星的区间就是这一页的脾气，交给共享层的时候一个数都不敢动呢♥
+  //
+  // ⚠ 区间写法是 **[起点, 跨度]**，与原来的 `0.1 + Math.random() * 0.3` 一一对应。
+  //   不用 [下限, 上限] 是因为 `0.4 - 0.1` 在浮点里是 0.30000000000000004，
+  //   会让 toFixed(2) 在边界上偶尔差一位。
+  var THEME = {
+    endingStars: {
+      count: [80, 12],                                 // min(80, floor(宽 / 12))
+      size: [0.5, 2],                                  // 0.5 + rnd * 2（不四舍五入）
+      minO: [0.1, 0.3], maxO: [0.5, 0.5],
+      dur: [2, 4], delay: [0, 5],
+      colors: { base: '#fff', alt: '#c77dff', altChance: 0.3 },
+    },
+  };
+  ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
 
   // ===== CLICK RIPPLE =====
   var rippleColors = ['#ffc8dd','#ffb3c1','#ff8fa3','#ff5c8a','#c77dff','#f9bec7'];
@@ -1284,7 +1241,7 @@ body{
 </body>
 <!-- ===== 生日倒计时彩蛋 ===== -->
 <style>
-#bdayEgg{position:fixed;right:1.2rem;bottom:1.2rem;z-index:9990;display:flex;align-items:center;gap:0.55rem;padding:0.55rem 1rem;border-radius:999px;cursor:pointer;user-select:none;background:linear-gradient(135deg,rgba(255,143,163,.16),rgba(155,93,229,.16));border:1px solid rgba(255,200,221,.25);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 0 18px rgba(255,143,163,.18);color:#ffd6e8;font-size:.8rem;letter-spacing:.08em;transition:transform .25s,box-shadow .25s;animation:bdayFloat 3.5s ease-in-out infinite}
+#bdayEgg{position:fixed;right:1.2rem;bottom:1.2rem;z-index:9990;display:flex;align-items:center;gap:.55rem;padding:.55rem 1rem;border-radius:999px;cursor:pointer;user-select:none;background:linear-gradient(135deg,rgba(255,143,163,.16),rgba(155,93,229,.16));border:1px solid rgba(255,200,221,.25);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 0 18px rgba(255,143,163,.18);color:#ffd6e8;font-size:.8rem;letter-spacing:.08em;transition:transform .25s,box-shadow .25s;animation:bdayFloat 3.5s ease-in-out infinite}
 #bdayEgg:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 0 26px rgba(255,143,163,.3)}
 @keyframes bdayFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 .bday-dot{width:8px;height:8px;border-radius:50%;background:#ff8fa3;box-shadow:0 0 10px #ff8fa3;animation:bdayPulse 1.6s ease-in-out infinite}

@@ -1,0 +1,205 @@
+/* ==========================================================================
+   assets/site.css — 7 页共享样式（**不含 armor.html**）
+   本文件只放「跨页逐字节一致」的规则（A 组，31 条）。
+   颜色/主题差异一律通过 var(--*) 注入，由各页 <style> 的 :root 覆盖块提供。
+   不要在此文件内联任何具体色值（除极少数与主题无关的 neutral，见 §3 风险）。
+
+   ⚠ armor.html **不接本文件**，这不是遗漏，是刻意的（Inventory R12 / R13）：
+     · armor 的 .timeline 系列是**另一套结构** —— max-width:900px（7 页是 800px）、
+       卡片 calc(50% - 2.4rem)（7 页 2.5rem）、768px 断点 1.3rem（7 页 1.5rem）、
+       且没有 480px 断点。绝不能让它继承 7 页版本，否则整页布局错位。
+     · armor 的 .back-link 与子页也是**两种完全不同的组件**（小胶囊 vs 进场淡入的大按钮）。
+     · .section-ending / .ending-* 系列只在除 armor 外的 7 页出现。
+   所以 armor 作为「独立主题」处理，只吃它确实有的那几条。
+   ========================================================================== */
+
+/* ---------- 0. 基础重置 ---------- */
+*,*::before,*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* ---------- 1. 滚动条 ---------- */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-abyss);
+}
+
+/* ---------- 2. 开场：打字机 + 副标题 + 滚动提示 ---------- */
+.typing-cursor.hidden {
+  display: none;
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
+.opening-subtitle.visible {
+  opacity: 1;
+}
+
+@keyframes chevron-bounce {
+  0%, 100% { transform: rotate(45deg) translateY(0); }
+  50%      { transform: rotate(45deg) translateY(6px); }
+}
+
+.opening-hint.visible {
+  opacity: .65;
+}
+
+/* ---------- 3. 通用小节标题 ---------- */
+.section-title-wrap {
+  text-align: center;
+  margin-bottom: 3.5rem;
+}
+
+/* ---------- 4. 人物档案卡 ---------- */
+/* 注意：.profile-card 本体在 B 组，本文件不接管 */
+.profile-card-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.profile-divider {
+  width: 100%;
+  height: 1px;
+  margin: 1.5rem 0;
+  background: linear-gradient(90deg, transparent, var(--glass-border), var(--glass-border2), transparent);
+}
+
+.profile-label {
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-weight: 400;
+}
+
+.profile-value {
+  color: var(--text);
+  font-weight: 300;
+}
+
+@keyframes card-rotate {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- 5. 时间轴骨架 ---------- */
+.timeline-node.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.timeline-node:nth-child(odd) {
+  flex-direction: row;
+}
+
+.timeline-node:nth-child(even) {
+  flex-direction: row-reverse;
+}
+
+.timeline-node:nth-child(odd) .timeline-card {
+  margin-right: auto;
+}
+
+.timeline-node:nth-child(even) .timeline-card {
+  margin-left: auto;
+}
+
+/* ---------- 6. 语录卡 ---------- */
+.quotes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.quote-text.fading {
+  opacity: 0;
+}
+
+/* ---------- 7. 结尾 ---------- */
+.section-ending {
+  position: relative;
+  z-index: 2;
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem 2rem;
+  background: linear-gradient(180deg, transparent, var(--bg-abyss) 30%, var(--bg-abyss));
+}
+
+.ending-quote.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ending-attr.visible {
+  /* 这条原本是 B 组：index 写 opacity:0.7、其余 6 页写 .7 —— 数值等价，只差前导零。
+     Task 5 把 index 的写法归一成 .7 之后，七页逐字节一致，正式成为 A 组（见 §3-R1）。 */
+  opacity: .7;
+}
+
+.ending-sub {
+  margin-top: 1.6rem;
+  font-size: .85rem;
+  color: var(--text-muted);
+  letter-spacing: .1em;
+  line-height: 2;
+  max-width: 560px;
+  opacity: 0;
+  transition: opacity 1s ease;
+  min-height: 1.4em;
+}
+
+.ending-sub.visible {
+  opacity: .85;
+}
+
+.ending-stars {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* 每颗星的 --dur / --delay / --min-o / --max-o 由 JS 内联注入，见 §2.4 */
+.ending-star {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+  animation: twinkle var(--dur) ease-in-out infinite;
+  animation-delay: var(--delay);
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: var(--min-o); }
+  50%      { opacity: var(--max-o); }
+}
+
+.ending-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: linear-gradient(transparent, var(--bg-abyss));
+  pointer-events: none;
+}
+
+/* ---------- 8. 返回链接（子页专用，index 无 .back-link） ---------- */
+.back-link.visible {
+  opacity: 1;
+  transition: opacity 1.5s ease 1.2s, background .3s ease, box-shadow .3s ease, transform .3s ease;
+}

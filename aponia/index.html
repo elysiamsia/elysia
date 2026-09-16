@@ -17,11 +17,12 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#0a0612">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
+<link rel="stylesheet" href="/assets/site.css">
 <meta name="referrer" content="same-origin">
 <title>elysiad.top/aponia — 致阿波尼亚</title>
 <!-- SECTION: styles -->
 <style>
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
   --bg-abyss:#08060e;--bg-deep:#0e0a18;--bg-violet:#1c1230;--bg-mid:#2a1c42;
   --silver-mist:#e8e4f2;--silver:#c8c2dc;--violet:#9d8fd0;--violet-deep:#6b5ca8;
@@ -30,13 +31,10 @@
   --glass-bg:rgba(157,143,208,.06);--glass-border:rgba(200,194,220,.14);
   --glass-bg2:rgba(232,201,138,.05);--glass-border2:rgba(232,201,138,.13);
 }
-html{scroll-behavior:smooth}
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
   background:var(--bg-abyss);color:var(--text);overflow-x:hidden;line-height:1.7;
 }
-::-webkit-scrollbar{width:6px}
-::-webkit-scrollbar-track{background:var(--bg-abyss)}
 ::-webkit-scrollbar-thumb{background:var(--violet-deep);border-radius:3px}
 
 #fateCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
@@ -56,13 +54,10 @@ body{
   min-height:2.8em;max-width:860px;
 }
 .typing-cursor{display:inline-block;font-weight:100;color:var(--violet);animation:blink-cursor .8s step-end infinite}
-.typing-cursor.hidden{display:none}
-@keyframes blink-cursor{0%,100%{opacity:1}50%{opacity:0}}
 .opening-subtitle{
   font-size:clamp(.9rem,2.5vw,1.25rem);color:var(--text-dim);letter-spacing:.35em;
   margin-top:1.5rem;opacity:0;transition:opacity 1.5s ease;
 }
-.opening-subtitle.visible{opacity:1}
 .scroll-hint{
   position:absolute;bottom:calc(2.5rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.5rem;
   opacity:0;transition:opacity 1s ease .5s;
@@ -73,14 +68,12 @@ body{
   width:20px;height:20px;border-right:2px solid var(--violet);border-bottom:2px solid var(--violet);
   transform:rotate(45deg);animation:chevron-bounce 2s ease-in-out infinite;
 }
-@keyframes chevron-bounce{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(6px)}}
 
 /* SECTION: common section */
 .content-section{
   position:relative;z-index:2;padding:6rem 1.5rem;
   background:linear-gradient(180deg,transparent 0%,rgba(8,6,14,.3) 20%,rgba(8,6,14,.3) 80%,transparent 100%);
 }
-.section-title-wrap{text-align:center;margin-bottom:3.5rem}
 .section-title{
   font-size:clamp(1.5rem,4vw,2.2rem);font-weight:300;letter-spacing:.2em;
   color:var(--silver);text-shadow:0 0 20px rgba(200,194,220,.25);
@@ -102,12 +95,10 @@ body{
   background:conic-gradient(from 0deg,transparent,rgba(157,143,208,.05),transparent,rgba(232,201,138,.04),transparent);
   animation:card-rotate 26s linear infinite;
 }
-@keyframes card-rotate{to{transform:rotate(360deg)}}
 @keyframes glow-pulse{
   0%,100%{box-shadow:0 0 50px rgba(157,143,208,.08),0 0 100px rgba(232,201,138,.05)}
   50%{box-shadow:0 0 60px rgba(157,143,208,.14),0 0 120px rgba(232,201,138,.09)}
 }
-.profile-card-inner{position:relative;z-index:1}
 .profile-name{
   font-size:clamp(1.8rem,5vw,2.8rem);font-weight:200;letter-spacing:.12em;
   color:var(--silver-mist);text-align:center;margin-bottom:.2em;
@@ -116,10 +107,7 @@ body{
   font-size:clamp(.9rem,2vw,1.1rem);font-weight:300;letter-spacing:.45em;
   color:var(--violet);text-align:center;margin-bottom:2rem;text-shadow:0 0 15px rgba(157,143,208,.35);
 }
-.profile-divider{width:100%;height:1px;margin:1.5rem 0;background:linear-gradient(90deg,transparent,var(--glass-border),var(--glass-border2),transparent)}
 .profile-grid{display:grid;grid-template-columns:auto 1fr;gap:.6rem 1.5rem;font-size:.92rem}
-.profile-label{color:var(--text-muted);white-space:nowrap;font-weight:400}
-.profile-value{color:var(--text);font-weight:300}
 .profile-value .highlight{color:var(--violet);font-weight:400}
 .profile-value .candle{color:var(--candle);font-weight:400}
 .profile-desc{
@@ -138,9 +126,6 @@ body{
   position:relative;display:flex;align-items:flex-start;margin-bottom:3rem;
   opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;
 }
-.timeline-node.visible{opacity:1;transform:translateY(0)}
-.timeline-node:nth-child(odd){flex-direction:row}
-.timeline-node:nth-child(even){flex-direction:row-reverse}
 .timeline-dot{
   position:absolute;left:50%;top:.5rem;width:12px;height:12px;border-radius:50%;
   border:2px solid var(--violet);background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
@@ -153,13 +138,10 @@ body{
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 0 20px rgba(157,143,208,.05);
 }
-.timeline-node:nth-child(odd) .timeline-card{margin-right:auto}
-.timeline-node:nth-child(even) .timeline-card{margin-left:auto}
 .timeline-card h3{font-size:1.05rem;font-weight:400;color:var(--silver);margin-bottom:.5rem;letter-spacing:.1em}
 .timeline-card p{font-size:.85rem;color:var(--text-dim);line-height:1.8;font-weight:300}
 
 /* SECTION: quotes */
-.quotes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;max-width:1000px;margin:0 auto}
 .quote-card{
   padding:1.5rem;min-height:140px;display:flex;align-items:center;justify-content:center;
   background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
@@ -174,29 +156,18 @@ body{
   background:radial-gradient(circle at 30% 30%,rgba(200,194,220,.06),transparent 60%);pointer-events:none;
 }
 .quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition:opacity .4s ease}
-.quote-text.fading{opacity:0}
 .quote-hint{position:absolute;bottom:.6rem;right:.8rem;font-size:.65rem;color:var(--text-muted);opacity:.4}
 
 /* SECTION: ending */
-.section-ending{
-  position:relative;z-index:2;min-height:70vh;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;text-align:center;padding:4rem 2rem;
-  background:linear-gradient(180deg,transparent,var(--bg-abyss) 30%,var(--bg-abyss));
-}
-.ending-stars{position:absolute;inset:0;overflow:hidden;pointer-events:none}
-.ending-star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--dur) ease-in-out infinite;animation-delay:var(--delay)}
-@keyframes twinkle{0%,100%{opacity:var(--min-o)}50%{opacity:var(--max-o)}}
 .ending-quote{
   font-size:clamp(1.1rem,3vw,1.6rem);font-weight:300;letter-spacing:.12em;
   color:var(--silver-mist);line-height:2;text-shadow:0 0 25px rgba(200,194,220,.3);
   max-width:640px;opacity:0;transform:translateY(20px);transition:opacity 1.5s ease,transform 1.5s ease;
 }
-.ending-quote.visible{opacity:1;transform:translateY(0)}
 .ending-attr{
   margin-top:2.5rem;font-size:.85rem;color:var(--text-muted);letter-spacing:.25em;
   opacity:0;transition:opacity 1.5s ease .8s;
 }
-.ending-attr.visible{opacity:.7}
 .back-link{
   display:inline-flex;align-items:center;gap:.5rem;margin-top:3rem;
   min-height:44px;padding:.6rem 1.6rem;border-radius:999px;text-decoration:none;
@@ -205,9 +176,7 @@ body{
   transition:background .3s ease,box-shadow .3s ease,transform .3s ease;
   opacity:0;
 }
-.back-link.visible{opacity:1;transition:opacity 1.5s ease 1.2s,background .3s ease,box-shadow .3s ease,transform .3s ease}
 .back-link:hover{background:rgba(157,143,208,.12);box-shadow:0 0 24px rgba(157,143,208,.22);transform:translateY(-2px)}
-.ending-fade{position:absolute;bottom:0;left:0;right:0;height:120px;background:linear-gradient(transparent,var(--bg-abyss));pointer-events:none}
 
 /* SECTION: ripple */
 .ripple-thread{
@@ -395,6 +364,7 @@ body{
 </section>
 
 <!-- SECTION: scripts -->
+<script src="/assets/site.js"></script>
 <script>
 (function(){
   /* SECTION: quotes data */
@@ -452,13 +422,14 @@ body{
   var silverColors = ['#e8e4f2','#c8c2dc','#9d8fd0'];
   var candleColors = ['#e8c98a','#c9a45c'];
 
-  function resize(){
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-  }
+  // ⚠ 只抽「把 canvas 和视口尺寸对上」这三行。下面那个「把越界粒子拉回画布」的
+  //   匿名监听器**故意留着不动**——它碰的数组每页不一样，抽走会改行为。
+  const resize = ElysiaShared.makeResize(canvas, {
+    get W() { return W; }, set W(v) { W = v; },
+    get H() { return H; }, set H(v) { H = v; },
+  });
   resize();
   window.addEventListener('resize', resize);
-
   /* 命运丝线：细长的垂直线，缓慢摇曳 */
   var threads = [];
   var threadCount = Math.min(14, Math.floor(window.innerWidth / 90));
@@ -625,23 +596,18 @@ body{
 
   /* SECTION: ending stars */
   var starsContainer = document.getElementById('endingStars');
-  var endingStarCount = Math.min(80, Math.floor(window.innerWidth / 12));
-  for (i = 0; i < endingStarCount; i++){
-    var star = document.createElement('div');
-    star.className = 'ending-star';
-    var size = 0.5 + Math.random() * 2;
-    star.style.width = size + 'px';
-    star.style.height = size + 'px';
-    star.style.left = (Math.random() * 100) + '%';
-    star.style.top = (Math.random() * 100) + '%';
-    star.style.setProperty('--min-o', (0.1 + Math.random() * 0.3).toFixed(2));
-    star.style.setProperty('--max-o', (0.5 + Math.random() * 0.5).toFixed(2));
-    star.style.setProperty('--dur', (2 + Math.random() * 4).toFixed(1) + 's');
-    star.style.setProperty('--delay', (Math.random() * 5).toFixed(1) + 's');
-    star.style.background = Math.random() > 0.3 ? '#fff' : '#9d8fd0';
-    starsContainer.appendChild(star);
-  }
-
+  // 呀！星星的区间就是这一页的脾气，交给共享层的时候一个数都不敢动呢♥
+  // ⚠ 区间写法是 [起点, 跨度]，与原来的 `0.1 + Math.random() * 0.3` 一一对应。
+  var THEME = {
+    endingStars: {
+      count: [80, 12],
+      size: [0.5, 2],
+      minO: [0.1, 0.3], maxO: [0.5, 0.5],
+      dur: [2, 4], delay: [0, 5],
+      colors: { base: '#fff', alt: '#9d8fd0', altChance: 0.3 },
+    },
+  };
+  ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
   /* SECTION: click ripple (命运丝线涟漪) */
   var rippleColors = ['#c8c2dc','#9d8fd0','#e8c98a','#e8e4f2'];
   document.addEventListener('click', function(e){
