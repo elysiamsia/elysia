@@ -457,6 +457,31 @@ body{
   .flower-petal{display:none}
 }
 
+/* ===== GUESTBOOK ENTRY (留言簿入口) ===== */
+/* 呀！献完花之后，如果还想说点什么——这里给她留了一扇门♥
+   这一句和「被记住，就是存在的延续」是同一件事：
+   写下来，她就还在。 */
+.guestbook-entry{
+  position:relative;z-index:3;margin:1.8rem auto 0;text-align:center;
+}
+.guestbook-link{
+  display:inline-flex;align-items:center;gap:.55rem;
+  padding:.55rem 1.4rem;border-radius:999px;text-decoration:none;
+  font-size:.83rem;letter-spacing:.14em;color:var(--text-dim);
+  background:rgba(255,200,221,.05);
+  border:1px solid rgba(255,200,221,.18);
+  transition:color .3s,border-color .3s,transform .3s,box-shadow .3s;
+}
+.guestbook-link:hover,.guestbook-link:focus-visible{
+  color:var(--pink-mist);border-color:rgba(255,200,221,.42);
+  transform:translateY(-2px);box-shadow:0 0 24px rgba(255,143,163,.18);outline:none;
+}
+.guestbook-link .gb-arrow{font-size:.95rem;opacity:.75;transition:transform .3s}
+.guestbook-link:hover .gb-arrow{transform:translateX(3px)}
+@media(prefers-reduced-motion:reduce){
+  .guestbook-link,.guestbook-link .gb-arrow{transition:none}
+}
+
 /* ===== HIDDEN EGG (隐藏彩蛋) ===== */
 /* 呀！给细心的人准备的小惊喜——连点标题五次才会开花呢♥ */
 .egg-petal{
@@ -739,6 +764,15 @@ body{
     </button>
     <p class="flower-count" id="flowerCount" aria-live="polite"></p>
     <p class="flower-hint" id="flowerHint"></p>
+  </div>
+
+  <!-- 留言簿入口：献完花，如果还想说点什么 -->
+  <!-- 呀！门就在这里——之前忘了开，害你找不到呢，对不起呀♥ -->
+  <div class="guestbook-entry">
+    <a class="guestbook-link" href="/guestbook/">
+      <span>想对她说句话吗</span>
+      <span class="gb-arrow" aria-hidden="true">→</span>
+    </a>
   </div>
 
   <!-- 寄语区：星与花之下，一句收束寄语——点击还能在两句间切换哦 -->
