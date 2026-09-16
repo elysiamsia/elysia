@@ -529,18 +529,23 @@ POST /notes
   → 400 {"error": "too_long" | "empty" | "has_link"}
   → 429 {"error": "rate_limited"}
 
-GET /notes
-  → 200 {"notes": [{"id","name","body","created_at"}]}    只含 approved，最多 200 条
-
-GET /notes?tokens=a,b,c
-  → 200 {"notes": [{...,"status":"pending"}]}              按 token 取自己的，含未审核的
+GET /notes[?tokens=a,b,c]
+  → 200 {
+      "notes": [{"id","name","body","created_at"}],              ← 已上墙的，最多 200 条
+      "mine":  [{"id","name","body","created_at","status"}]      ← 自己提交的，含待审
+    }
 
 GET  /notes/manage?key=<密钥>
   → 200 极简 HTML 列表（待审在前），每条带「通过」「删除」两个表单按钮
 POST /notes/manage?key=<密钥>
   body: {"id": 12, "action": "approve" | "reject"}
-  → 302 重定向回管理页
+  → 303 重定向回管理页（表单提交）；JSON 调用则回 {"ok":true,"id":12,"status":"approved"}
 ```
+
+> **实现时的偏差**：规格初稿把「公开列表」和「自己那几条」设计成同一个 `notes` 字段的两种形态
+> （带不带 `tokens` 参数返回不同结构）。实现改成**始终同时返回 `notes` 与 `mine` 两个字段**——
+> 同一个接口两种形状会让前端必须分支，而且没法在显示公开列表的同时高亮自己那条。
+> `mine` 里带 `status`，`notes` 里不带（不需要给公开列表暴露审核状态）。
 
 #### 校验与限流（服务端，不可绕过）
 
