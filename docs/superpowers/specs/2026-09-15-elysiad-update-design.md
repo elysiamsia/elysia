@@ -492,3 +492,91 @@ http.sslverify = false                  # 全局关闭 HTTPS 证书校验，存�
 ### 11.6 一个已知的缓存行为
 
 GitHub Pages 的 `Cache-Control` 是 `max-age=600`。**改了 `assets/` 下的任何文件，访客最多 10 分钟后才会看到新版本。** 测试时若发现改动"没生效"，先怀疑浏览器缓存——加个 `?v=<时间戳>` 再试。
+
+### 11.7 匿名花笺（2026-09-16 新增需求）
+
+**背景**：giscus 要求 GitHub 账号，而访客大多从 QQ / 微信点进来。实测反馈是"找不到留言的地方"——补了入口之后，新问题是**没有 GitHub 账号的人根本留不了言**。
+
+**决策**：不换评论系统（换则现有 giscus 评论要迁移，且 Waline 等自建方案在大陆的可达性依赖备案或境外主机）。改为**在 giscus 之上加一条自建匿名通道**，两条通道在展示层合成一堵墙。
+
+**复用现有基础设施**：Cloudflare Worker + D1，域名复用 `flowers.elysiad.top`（**大陆可达性已由需求方手机实测确认**）。**不用 KV**——KV 有 1000 写/天的实测坑，且本需求要列表读取。
+
+#### 存储（D1）
+
+```sql
+CREATE TABLE notes (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at INTEGER NOT NULL,                     -- 毫秒时间戳
+  day        TEXT    NOT NULL,                     -- YYYY-MM-DD（北京时区），用于限流
+  name       TEXT,                                 -- 昵称，可空，≤16 字
+  body       TEXT    NOT NULL,                     -- 正文，≤80 字
+  status     TEXT    NOT NULL DEFAULT 'pending',   -- pending | approved | rejected
+  ip_hash    TEXT    NOT NULL,                     -- hash(IP + 每日盐)，不存原文
+  token      TEXT    NOT NULL                      -- 32 位随机十六进制，提交者自查用
+);
+CREATE INDEX idx_notes_status_id ON notes(status, id DESC);
+CREATE INDEX idx_notes_rate ON notes(day, ip_hash);
+```
+
+免费额度：500 MB/库、5,000,000 行读/天、100,000 行写/天——远超需求。
+
+#### 接口
+
+```
+POST /notes
+  body: {"name": "小星", "body": "谢谢你一直在。"}
+  → 201 {"ok": true, "token": "<32 位十六进制>"}
+  → 400 {"error": "too_long" | "empty" | "has_link"}
+  → 429 {"error": "rate_limited"}
+
+GET /notes
+  → 200 {"notes": [{"id","name","body","created_at"}]}    只含 approved，最多 200 条
+
+GET /notes?tokens=a,b,c
+  → 200 {"notes": [{...,"status":"pending"}]}              按 token 取自己的，含未审核的
+
+GET  /notes/manage?key=<密钥>
+  → 200 极简 HTML 列表（待审在前），每条带「通过」「删除」两个表单按钮
+POST /notes/manage?key=<密钥>
+  body: {"id": 12, "action": "approve" | "reject"}
+  → 302 重定向回管理页
+```
+
+#### 校验与限流（服务端，不可绕过）
+
+| 规则 | 处理 |
+|---|---|
+| `body` 去空白后为空 | 400 `empty` |
+| `body` 超 80 字 / `name` 超 16 字 | 400 `too_long` |
+| `body` 含 URL（`http://`、`www.`、`://`） | 400 `has_link` |
+| 同 `ip_hash` 当日已提交 ≥ 3 条 | 429 `rate_limited` |
+| 以上全过 | 入库，`status='pending'` |
+
+**注意**：匿名通道的校验必须**全部在服务端**做——前端校验只是体验优化，不是防线。
+
+#### 审核（需求方选定：先审后发）
+
+- 新提交一律 `status='pending'`，**不出现在公开列表里**
+- 需求方打开管理页（密钥存为 Worker secret `MANAGE_KEY`），点「通过」→ `status='approved'`；点「删除」→ `status='rejected'`
+- 管理页用密钥做凭证，**不做登录系统**；密钥走 URL 查询参数，服务端比对，不匹配返回 404（不是 403——不暴露这个入口存在）
+
+#### ⚠ 先审后发的体验补偿（必须实现）
+
+留言者提交后**看不到自己的话**，会以为失败——而"被记住"正是这个地方的全部意义。所以：
+
+1. **提交成功后立刻在页面上显示自己那条**，带一个灰标「待上墙」
+2. 实现方式：POST 返回的 `token` 存进 `localStorage`，之后 `GET /notes?tokens=…` 把它取回来（含 `status`）
+3. **别人看不到**这条——它不在公开列表里
+4. 审核通过后灰标消失（下次刷新时 `status` 变成 `approved`）
+5. 提交后的文案要诚实又温柔，不能是「发布成功」（它还没上墙）：
+   > 「收到啦。这句话会先在这里安静地待一会儿，再出现在墙上。」
+
+#### 无障碍与减动
+
+- 表单控件用原生 `<input>` / `<textarea>` / `<button>`，天然键盘可达
+- 提交状态用 `aria-live="polite"` 播报，读屏用户能听到「已收到」
+- 列表项的进场动画在 `prefers-reduced-motion: reduce` 下关闭
+
+#### 与 giscus 的关系
+
+giscus **原样保留**在匿名区下方，两者是同一页的两块。**不做数据合并**——两种通道的身份、长度、能力本来就不同，硬合并会造成"为什么这条能回复那条不能"的困惑。视觉上明确分区即可。
