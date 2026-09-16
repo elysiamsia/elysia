@@ -190,7 +190,22 @@ input:focus,textarea:focus{
      这里做一遍只是为了让人立刻知道自己哪里写错了，不用等一个来回。
 */
 (function () {
-  var API = 'https://flowers.elysiad.top';
+  // 同源路径。Worker 通过 wrangler.toml 的 route 挂在 elysiad.top/notes* 上，
+  // 所以线上直接用相对路径——不跨域、不发预检、少一次 DNS，
+  // 而且「只要页面能打开，接口就一定能连上」。
+  //
+  // ⚠ 为什么必须同源：实测同一台手机同一个网络，**换浏览器结果完全不同**——
+  //   Edge 一切正常，QQ 浏览器 / 系统自带浏览器页面能开但跨域请求被拦，
+  //   夸克连页面都打不开。这些浏览器有自己的拦截与「云加速」机制。
+  //   同源请求走的是和页面同一条路，最不容易被拦。
+  //
+  // ⚠ 判断写成「默认同源，只有本地开发才用远端地址」，而不是
+  //   「等于 elysiad.top 才同源」——后者的隐患是：那些浏览器的云加速
+  //   可能改写 URL（主机名不再严格相等），于是线上会悄悄退回跨域地址，
+  //   正是我们要修的那个问题。宁可反过来兜底。
+  var isLocalDev = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
+    || location.protocol === 'file:';
+  var API = isLocalDev ? 'https://flowers.elysiad.top' : '';
   var TOKEN_KEY = 'elysia.notes.tokens';
   var BODY_MAX = 80;
   var NAME_MAX = 16;
