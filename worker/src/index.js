@@ -21,13 +21,43 @@
  *   绕过前端直接发请求太容易了。
  */
 
-const ALLOWED_ORIGINS = [
-  'https://elysiad.top',
-  'https://www.elysiad.top',
+/**
+ * 允许的来源：**只比主机名，不比协议**。
+ *
+ * ⚠ 这里原本是一串精确的 URL（'https://elysiad.top' 等），2026-09-16 因此出了事：
+ *   QQ 浏览器的云加速把页面降级成 http 提供给访客，于是页面的 origin 是
+ *   'http://elysiad.top'；同源请求带着它发过来，和 'https://elysiad.top'
+ *   字符串一比不等 → 403 → 访客点献花静默降级成「本机累计 N 朵」。
+ *   页面能开、接口也连得上，**只差一个字母 s**，而且降级不报错，所以很久没人发现。
+ *
+ *   只比主机名之后，http / https / 端口变化都不再影响判定；
+ *   而「别的网站拿访客的浏览器来刷」这条仍然挡得住。
+ *   真正的防线始终是限流与校验——Origin 本来就挡不住脚本伪造。
+ */
+const ALLOWED_HOSTS = [
+  'elysiad.top',
+  'www.elysiad.top',
   // 本地调试用，上线后可以删掉
-  'http://localhost:8500',
-  'http://127.0.0.1:8500',
+  'localhost',
+  '127.0.0.1',
+  '[::1]',
 ];
+
+const DEFAULT_ORIGIN = 'https://elysiad.top';
+
+/** 判定来源是否可信。空 Origin 放行：同源请求在部分浏览器里不带这个头。 */
+function originAllowed(origin) {
+  if (!origin) return true;
+  // 'null' 来自沙箱 iframe / data: 页面，正经访客碰不到，不给过
+  if (origin === 'null') return false;
+  let host;
+  try {
+    host = new URL(origin).hostname;
+  } catch {
+    return false; // 不是合法 URL，一律不给过
+  }
+  return ALLOWED_HOSTS.includes(host);
+}
 
 // 献花
 const TOTAL_KEY = 'total';
@@ -94,7 +124,7 @@ async function flower(request, env, cors, origin) {
   // 允许空 Origin：同源请求在部分浏览器里不带这个头。
   // ⚠ Origin 检查本来就挡不住脚本（脚本可以随便伪造这个头），
   //   它只防「别的网站拿访客的浏览器来刷」。真正的防线是限流。
-  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+  if (!originAllowed(origin)) {
     return json({ error: 'forbidden origin' }, cors, 403);
   }
 
@@ -141,7 +171,7 @@ function validateNote(rawName, rawBody) {
 async function notesCreate(request, env, cors, origin) {
   // 允许空 Origin：同源请求在部分浏览器里不带这个头（换到同源之后，
   // 线上的请求就是这种情况）。理由同上：真正的防线是限流与校验。
-  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+  if (!originAllowed(origin)) {
     return json({ error: 'forbidden origin' }, cors, 403);
   }
 
@@ -379,7 +409,7 @@ function notFoundPage() {
 }
 
 function corsHeaders(origin) {
-  const allow = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allow = origin && originAllowed(origin) ? origin : DEFAULT_ORIGIN;
   return {
     'Access-Control-Allow-Origin': allow,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, HEAD',
