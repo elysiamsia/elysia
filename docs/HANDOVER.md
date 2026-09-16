@@ -29,7 +29,7 @@
 | Cloudflare 缓存优化 | ✅ 已配置 |
 | **献花在 QQ 浏览器上修好（同源 + 来源判定）** | ✅ 已修已部署，见 §4.3 |
 | **`armor.html` 皮肤徽章失色** | ✅ 已修已部署，见 §4.4 |
-| **P1 公共层抽取（12 个任务）** | ⬜ **计划已写，未开工** |
+| **P1 公共层抽取（12 个任务）** | 🟡 **进行中：Task 1/12 完成**（验证地基已建） |
 
 ---
 
@@ -105,11 +105,28 @@ https://flowers.elysiad.top/notes/manage?key=<MANAGE_KEY>
 - **部署白名单**：`static.yml` 改成只打包 `_site/`，`tools/ docs/ worker/ images/raw/ .github/` **永不进产物**
 - **`.gitattributes`**：统一 LF（本机系统级 `core.autocrlf=true`）
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
-- **`tools/` 现有工具**：`cdp.py`（无头 Edge，支持 `size` 动作切换视口）、`pick_og.py`（分享卡片轮换）、`og_convert.py`（PNG→JPEG）、`to_webp.py`（图片转 WebP）
+- **`tools/` 现有工具**：`cdp.py`（无头 Edge，支持 `size` 动作切换视口）、`pick_og.py`（分享卡片轮换）、`og_convert.py`（PNG→JPEG）、`to_webp.py`（图片转 WebP）、**`snapshot.py` / `snapshot_diff.py`（双基线验证，见下）**
 
-> ⚠ **`tools/snapshot.py` 与 `tools/snapshot_diff.py` 目前不存在。**
-> 它们是 P1 计划里 Task 1 要产出的验证地基（8 页 × 3 视口的像素 + 计算样式比对），
-> **计划写了但从未执行**。做 P1 时第一步就是创建它们——没有这个，"重构不改变视觉"只能靠肉眼。
+**快照验证工具（2026-09-16 建立）**：
+
+```bash
+python -m http.server 8500 &              # 先起服务器
+PYTHONIOENCODING=utf-8 python tools/snapshot.py <label>          # 8 页 × 3 视口 → screenshots/snap/<label>/
+PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py <旧> <新>   # 有差异退出码 1
+```
+
+机械判据是**计算样式 JSON 的差分**；PNG 只供人眼确认「不是白屏」。
+
+⚠ **写这个工具时踩了四个坑，都修掉了，别再退回**（细节见工具内注释）：
+
+| 坑 | 后果 |
+|---|---|
+| 浏览器 HTTP 缓存没关 | **每一次比对都返回假的「✅ 无差异」**——工具形同虚设。实测：改 0.0001em 都测不出来 |
+| 无限动画停在随机相位 | 星星的 opacity、名片呼吸光的 box-shadow 每次都不同，全是噪音 |
+| 星星是 `Math.random()` 生成的 | 尺寸/颜色/时长随机，两次跑必然不同。已用 `addScriptToEvaluateOnNewDocument` 固定种子 |
+| 页面会去连线上献花接口 | 接口通/不通 → 文案不同 → **整页高度差 8px**。基线测的是网络不是代码。已 `setBlockedURLs` 屏蔽 |
+
+另外 `armor.html` 的 `body` 用了 `background-attachment:fixed`（全站唯一），整页截图时**视口以外不绘背景 → 80% 全白**。截图前注入 `background-attachment:scroll` 覆盖解决（只影响截图，不碰采样属性）。
 
 ### 4.3 献花改同源 + 来源判定改成只比主机名（2026-09-16）
 
@@ -203,9 +220,9 @@ https://flowers.elysiad.top/notes/manage?key=<MANAGE_KEY>
 
 ## 五、还没做的事
 
-### 5.1 P1 公共层抽取（**最要紧的未完成项**）
+### 5.1 P1 公共层抽取（**进行中**）
 
-**计划已完整写好，未开工。**
+**Task 1（验证基线与比对工具）已完成**（2026-09-16）。剩下的 Task 2–12 未开工。
 
 ```
 docs/superpowers/plans/2026-09-15-elysiad-extraction.md      12 个任务
@@ -343,7 +360,7 @@ docs/superpowers/
 │                                                  ★ 改功能前先读这份
 └── plans/
     ├── 2026-09-15-elysiad-update.md             计划 A：14 个任务（已全部执行）
-    ├── 2026-09-15-elysiad-extraction.md         计划 B：P1 公共层抽取，12 个任务（未开工）
+    ├── 2026-09-15-elysiad-extraction.md         计划 B：P1 公共层抽取，12 个任务（Task 1 完成）
     └── 2026-09-15-extraction-inventory.md       CSS/JS 抽取分析（1173 行）★ P1 的事实来源
 
 worker/README.md                                  Worker 部署手册

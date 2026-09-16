@@ -53,6 +53,26 @@
 
 ### Task 1: 建立验证基线与比对工具
 
+> ✅ **本任务已于 2026-09-16 执行完毕。**
+>
+> ⚠ **但仓库里的工具比下面列出的代码更严，别照抄本文的代码块去覆盖它。**
+> 照原样实现出来会得到一个**每次都返回假的「无差异」**的工具——实测踩到四个坑，
+> 都已修进 `tools/snapshot.py` / `tools/snapshot_diff.py`：
+>
+> | 坑 | 后果 |
+> |---|---|
+> | 浏览器 HTTP 缓存没关 | **每一轮比对都是假的「✅ 无差异」**。实测：改 0.0001em 都测不出来 |
+> | 无限动画停在随机相位 | 星星 opacity、名片呼吸光的 box-shadow 每次都不同 |
+> | 星星是 `Math.random()` 生成 | 尺寸/颜色/时长随机。已用 `addScriptToEvaluateOnNewDocument` 固定种子 |
+> | 页面会连线上献花接口 | 通/不通 → 文案不同 → **整页高度差 8px**。已 `setBlockedURLs` 屏蔽 |
+>
+> 另有两处放宽：`IGNORE_PROPS` 已清空（`transform` 实测 807/807 稳定，不再是噪音）；
+> `armor.html` 截图前注入 `background-attachment:scroll`，否则它 80% 的面积是全白
+> （该页是全站唯一用 fixed 背景的）。
+>
+> **验证结论**（都已真跑）：三轮快照两两比对全为 0 差异；把 su 页 `.back-link` 的
+> `letter-spacing` 改 0.0001em，工具准确报出 3 处差异（3 个视口各一处）——**既确定又敏感**。
+
 **Files:**
 - Create: `tools/snapshot.py`、`tools/snapshot_diff.py`
 - Produces: `screenshots/snap/<label>/*.png` 与 `*.json`
@@ -65,7 +85,7 @@
 
 这是整个计划的地基。**没有它，后面每一步都只能靠肉眼，而肉眼看不出 1px 和 0.05 的透明度差异。**
 
-- [ ] **Step 1: 写 `tools/snapshot.py`**
+- [x] **Step 1: 写 `tools/snapshot.py`**
 
 ```python
 # tools/snapshot.py — 对站点做「像素 + 计算样式」双重快照（本地工具，不部署）
@@ -235,7 +255,7 @@ if __name__ == '__main__':
     main()
 ```
 
-- [ ] **Step 2: 写 `tools/snapshot_diff.py`**
+- [x] **Step 2: 写 `tools/snapshot_diff.py`**
 
 ```python
 # tools/snapshot_diff.py — 比对两次快照，列出差异（本地工具，不部署）
@@ -320,7 +340,7 @@ if __name__ == '__main__':
     sys.exit(main())
 ```
 
-- [ ] **Step 3: 起服务器，生成基线**
+- [x] **Step 3: 起服务器，生成基线**
 
 ```bash
 cd <repo 根>
@@ -331,7 +351,7 @@ PYTHONIOENCODING=utf-8 python tools/snapshot.py baseline
 
 期望：打印 24 行 `✓`（8 页 × 3 视口），随后 `快照存入 …/screenshots/snap/baseline`。
 
-- [ ] **Step 4: 验证工具本身可信——对同一份代码跑两次，必须零差异**
+- [x] **Step 4: 验证工具本身可信——对同一份代码跑两次，必须零差异**
 
 ```bash
 cd <repo 根>
@@ -343,7 +363,7 @@ PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py baseline baseline-b; echo "
 
 **若报出差异**，说明有页面在采样时刻不稳定（动画未收敛、随机粒子、随机延迟）。先解决这一点再往下走——否则后面每一个任务都会被噪音淹没。常见的处理：把 `IGNORE_PROPS` 加上出问题的属性，或把 `time.sleep` 调长。
 
-- [ ] **Step 5: 确认基线截图可信**
+- [x] **Step 5: 确认基线截图可信**
 
 ```bash
 cd <repo 根>
@@ -353,7 +373,7 @@ du -sh screenshots/snap/baseline
 
 用 Read 打开 `screenshots/snap/baseline/index_1920.png` 与 `screenshots/snap/baseline/kalpas_375.png`，确认是完整页面（不是白屏、不是只有首屏）。
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add tools/snapshot.py tools/snapshot_diff.py
