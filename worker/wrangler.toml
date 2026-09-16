@@ -1,0 +1,14 @@
+name = "elysia-flowers"
+main = "src/index.js"
+compatibility_date = "2026-09-15"
+
+# 自定义域名。因为 elysiad.top 的 DNS 已在 Cloudflare，这一行会自动建好解析记录
+# ⚠ 如果你以后换用 workers.dev 地址，就删掉这一段，改用 <名字>.<账号>.workers.dev
+routes = [
+  { pattern = "flowers.elysiad.top", custom_domain = true }
+]
+
+# ⚠ 把 id 换成 `wrangler kv namespace create FLOWERS` 输出的那个 id
+[[kv_namespaces]]
+binding = "FLOWERS"
+id = "e2d964f0af9f4863820bcfa20a5aac7e"

@@ -6,6 +6,20 @@
 <!-- 同站请求保留Referer，跨站请求不发送 -->
 <meta name="referrer" content="same-origin">
 <meta charset="UTF-8">
+<!-- 呀！标签页上也要有一枚小花呀，不然浏览器给的是个空白方块呢♥ -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<!-- 呀！分享出去的时候，要带着她的样子，而不是一行光秃秃的链接♥ -->
+<meta name="description" content="往世乐土 · 她的旅途 · 十三英桀 · 飞花寄语。一位如飞花般绚丽的少女，和她的十三位同伴。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="elysiad.top">
+<meta property="og:title" content="elysiad.top — 致爱莉希雅">
+<meta property="og:description" content="往世乐土 · 她的旅途 · 十三英桀 · 飞花寄语。一位如飞花般绚丽的少女，和她的十三位同伴。">
+<meta property="og:url" content="https://elysiad.top/">
+<meta property="og:image" content="https://elysiad.top/images/og-1.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0a0612">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>elysiad.top — 致爱莉希雅</title>
 <style>
@@ -374,12 +388,139 @@ body{
   .hero-card{width:132px;min-height:150px}
   /* 小屏上让名片瘦一点点，也能整整齐齐排排坐呀 */
 }
+
+/* ===== DAILY QUOTE (今日之语) ===== */
+/* 呀！这是每天都会换一句的语句带——夹在「关于她」和「她的旅途」中间，
+   像走过她身边时，她忽然转头跟你说的那一句♥ */
+.daily-band{
+  position:relative;z-index:2;text-align:center;
+  padding:3.2rem 1.5rem 1rem;max-width:720px;margin:0 auto;
+}
+.daily-label{
+  display:inline-block;font-size:.7rem;color:var(--text-muted);
+  letter-spacing:.35em;margin-bottom:1.1rem;
+}
+.daily-label::before,.daily-label::after{
+  content:'';display:inline-block;width:26px;height:1px;vertical-align:middle;
+  background:linear-gradient(90deg,transparent,var(--pink),transparent);
+  margin:0 .8rem;
+}
+.daily-text{
+  font-size:clamp(1rem,2.8vw,1.25rem);font-weight:300;letter-spacing:.1em;
+  color:var(--pink-mist);line-height:2;
+  text-shadow:0 0 22px rgba(255,200,221,.25);
+}
+@media(prefers-reduced-motion:reduce){
+  .daily-text{text-shadow:none}
+}
+
+/* ===== FLOWERS (献花) ===== */
+/* 呀！走完整段旅途之后，把花放在这里——星域之下，寄语之上，
+   是谢幕时该有的位置嘛♥ */
+.flower-give{
+  position:relative;z-index:3;display:flex;flex-direction:column;
+  align-items:center;gap:.85rem;margin:2.4rem auto 0;
+}
+.flower-btn{
+  display:inline-flex;align-items:center;gap:.6rem;
+  padding:.75rem 1.9rem;border-radius:999px;cursor:pointer;
+  font-family:inherit;font-size:.92rem;letter-spacing:.16em;
+  color:var(--pink-mist);
+  background:linear-gradient(135deg,rgba(255,143,163,.2),rgba(155,93,229,.22));
+  border:1px solid rgba(255,200,221,.32);
+  box-shadow:0 0 22px rgba(255,143,163,.16);
+  transition:transform .3s,box-shadow .3s;
+  user-select:none;
+}
+.flower-btn:hover,.flower-btn:focus-visible{
+  transform:translateY(-2px);box-shadow:0 0 32px rgba(255,143,163,.32);outline:none;
+}
+.flower-btn:disabled{opacity:.55;cursor:default;transform:none}
+.flower-btn .petal-icon{font-size:1.05rem;line-height:1}
+.flower-count{
+  font-size:.82rem;color:var(--text-dim);letter-spacing:.12em;
+  min-height:1.5em;
+}
+.flower-count b{color:var(--pink);font-weight:400;font-variant-numeric:tabular-nums}
+.flower-hint{
+  font-size:.68rem;color:var(--text-muted);letter-spacing:.08em;
+  opacity:.65;min-height:1.2em;
+}
+/* 单朵花瓣：从按钮处向上飘散 */
+.flower-petal{
+  position:fixed;pointer-events:none;z-index:9998;
+  border-radius:50% 50% 50% 0;
+  transition:transform 1.35s cubic-bezier(.22,.61,.36,1),opacity 1.35s ease;
+}
+@media(prefers-reduced-motion:reduce){
+  .flower-btn{transition:none}
+  .flower-petal{display:none}
+}
+
+/* ===== HIDDEN EGG (隐藏彩蛋) ===== */
+/* 呀！给细心的人准备的小惊喜——连点标题五次才会开花呢♥ */
+.egg-petal{
+  position:fixed;pointer-events:none;z-index:9997;
+  border-radius:50% 50% 50% 0;opacity:0;
+  transition:transform 3.4s cubic-bezier(.16,.68,.32,1),opacity 3.4s ease;
+}
+.egg-line{
+  position:fixed;left:50%;top:38%;transform:translate(-50%,-50%) scale(.96);
+  z-index:9999;pointer-events:none;max-width:min(560px,86vw);text-align:center;
+  font-size:clamp(1rem,3.2vw,1.45rem);font-weight:300;letter-spacing:.12em;
+  color:var(--pink-mist);line-height:2;
+  text-shadow:0 0 30px rgba(255,200,221,.5),0 0 60px rgba(199,125,255,.35);
+  opacity:0;transition:opacity 1.1s ease,transform 1.1s ease;
+}
+.egg-line.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+@media(prefers-reduced-motion:reduce){
+  .egg-petal{transition:none}
+  .egg-line{transition:none;top:42%}
+}
+
+/* ===== POSTCARD (明信片) ===== */
+/* 呀！把她说过的句子，做成一张可以带走的小卡片♥ */
+.postcard-zone{
+  position:relative;z-index:2;max-width:760px;margin:3rem auto 0;
+  display:flex;flex-direction:column;align-items:center;gap:1rem;
+}
+.postcard-preview{
+  width:100%;max-width:420px;border-radius:14px;overflow:hidden;
+  border:1px solid rgba(255,200,221,.18);
+  box-shadow:0 0 34px rgba(255,143,163,.14);
+  background:#0a0612;
+}
+.postcard-preview canvas{display:block;width:100%;height:auto}
+.postcard-row{display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center}
+.postcard-btn{
+  padding:.58rem 1.35rem;border-radius:999px;cursor:pointer;
+  font-family:inherit;font-size:.82rem;letter-spacing:.13em;
+  color:var(--pink-soft);background:rgba(255,143,163,.12);
+  border:1px solid rgba(255,200,221,.26);
+  transition:background .25s,transform .25s;
+  user-select:none;
+}
+.postcard-btn:hover,.postcard-btn:focus-visible{
+  background:rgba(255,143,163,.24);transform:translateY(-1px);outline:none;
+}
+.postcard-btn[aria-pressed="true"]{
+  color:#fff;background:rgba(155,93,229,.4);border-color:transparent;
+}
+.postcard-tip{font-size:.7rem;color:var(--text-muted);letter-spacing:.06em}
+@media(prefers-reduced-motion:reduce){
+  .postcard-btn{transition:none}
+}
 </style>
 </head>
 <body>
 
 <canvas id="petalCanvas"></canvas>
+<script src="data/quotes.js"></script>
 <script src="data/timeline-data.js"></script>
+<script src="assets/daily.js" defer></script>
+<script src="assets/flowers.js" defer></script>
+<script src="assets/egg.js" defer></script>
+<script src="assets/postcard.js" defer></script>
 
 <!-- ===== OPENING ===== -->
 <section class="section-opening" id="opening">
@@ -441,6 +582,13 @@ body{
       </div>
     </div>
   </div>
+</section>
+
+<!-- ===== DAILY QUOTE ===== -->
+<!-- 同上：每天一句，按访客本地日期轮换 -->
+<section class="daily-band" id="daily" aria-labelledby="dailyLabel">
+  <span class="daily-label" id="dailyLabel">今 日 之 语</span>
+  <p class="daily-text" id="dailyQuote"></p>
 </section>
 
 <!-- ===== JOURNEY ===== -->
@@ -553,6 +701,26 @@ body{
   <div class="quotes-grid" id="quotesGrid"></div>
 </section>
 
+<!-- ===== POSTCARD ===== -->
+<!-- 呀！把台词做成一张能带走的小卡片——手机竖版、电脑横版 -->
+<section class="content-section" id="postcard">
+  <div class="section-title-wrap">
+    <h2 class="section-title">
+      <span class="section-title-petal"></span>带走一句话<span class="section-title-petal"></span>
+    </h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="postcard-zone">
+    <div class="postcard-preview" id="postcardPreview"></div>
+    <div class="postcard-row">
+      <button class="postcard-btn" id="postcardRedraw" type="button">换一句</button>
+      <button class="postcard-btn" id="postcardToggle" type="button" aria-pressed="false">切换横竖</button>
+      <button class="postcard-btn" id="postcardSave" type="button">保存明信片</button>
+    </div>
+    <p class="postcard-tip" id="postcardTip">长按图片也可以保存哦</p>
+  </div>
+</section>
+
 <!-- ===== ENDING ===== -->
 <!-- 呀！结尾区要变成「三层小礼服」啦——星是底座，名片是中场，寄语是谢幕♥ -->
 <section class="section-ending" id="ending">
@@ -562,6 +730,16 @@ body{
   <!-- 英桀名片星域：十三张名片像星座一样散在这里，上下错峰微飘 -->
   <!-- 它们都是被记住的存在——而「被记住，就是存在的延续」呀 -->
   <div class="hereos-field" id="hereosField"></div>
+
+  <!-- 献花区：星域之下、寄语之上——走完整段旅途，把花放在这里 -->
+  <div class="flower-give" id="flowerGive">
+    <button class="flower-btn" id="flowerBtn" type="button">
+      <span class="petal-icon" aria-hidden="true">🌸</span>
+      <span>献上一朵飞花</span>
+    </button>
+    <p class="flower-count" id="flowerCount" aria-live="polite"></p>
+    <p class="flower-hint" id="flowerHint"></p>
+  </div>
 
   <!-- 寄语区：星与花之下，一句收束寄语——点击还能在两句间切换哦 -->
   <div class="epilogue" id="epilogueQuote" role="button" tabindex="0" aria-label="收束寄语，点击切换">

@@ -65,6 +65,15 @@ def main(url, actions):
                 print(f'click "{sel}"[{idx}] -> clicked ({p["x"]},{p["y"]})')
             elif act == 'sleep':
                 time.sleep(int(actions[i + 1]) / 1000); i += 2
+            elif act == 'size':
+                # 呀！给页面换一件合身的衣服——移动端验收和 og 出图都要靠它呢♥
+                w, h = actions[i + 1].lower().split('x')
+                send('Emulation.setDeviceMetricsOverride', {
+                    'width': int(w), 'height': int(h),
+                    'deviceScaleFactor': 1, 'mobile': int(w) < 768,
+                })
+                print(f'size -> {w}x{h}')
+                i += 2
             elif act == 'shot':
                 out = actions[i + 1]
                 r = send('Page.captureScreenshot', {})

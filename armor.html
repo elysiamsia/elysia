@@ -2,6 +2,20 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
+<!-- 呀！标签页上也要有一枚小花呀，不然浏览器给的是个空白方块呢♥ -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<!-- 呀！分享出去的时候，要带着她的样子，而不是一行光秃秃的链接♥ -->
+<meta name="description" content="爱莉希雅的装甲与皮肤完整时间轴：现实时间 · 游戏时间 · 游戏版本三轴对照。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="elysiad.top">
+<meta property="og:title" content="她的装甲 · 完整时间轴 — elysiad.top">
+<meta property="og:description" content="爱莉希雅的装甲与皮肤完整时间轴：现实时间 · 游戏时间 · 游戏版本三轴对照。">
+<meta property="og:url" content="https://elysiad.top/armor.html">
+<meta property="og:image" content="https://elysiad.top/images/og-1.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0a0612">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="referrer" content="same-origin">
 <title>她的装甲 · 完整时间轴 — elysiad.top</title>
@@ -90,7 +104,11 @@ body{
 .card-desc{margin-top:.55rem;font-size:.82rem;color:var(--text-dim);line-height:1.75;font-weight:300}
 .card-detail{margin-top:.6rem;max-height:0;overflow:hidden;transition:max-height .5s ease;font-size:.8rem;color:var(--text-dim);border-top:1px solid var(--glass-border);padding-top:0}
 .card-image{margin-top:.6rem;max-height:0;overflow:hidden;opacity:0;text-align:center;transition:max-height .6s ease,opacity .45s ease}
-.card-image img{max-width:100%;max-height:440px;border-radius:12px;box-shadow:0 0 26px rgba(255,143,163,.15)}
+/* 呀！width/height 属性少了这两个 auto 可不行呢——
+   属性一旦有了具体值，max-width 与 max-height 会各自独立生效，
+   立绘就会被拉成 341x440（skin-3 更是 341 而非 335），脸蛋都变形啦。
+   交回 auto 让浏览器按原始比例联合求解，才和加尺寸属性之前一模一样♥ */
+.card-image img{width:auto;height:auto;max-width:100%;max-height:440px;border-radius:12px;box-shadow:0 0 26px rgba(255,143,163,.15)}
 .timeline-card.open .card-detail{max-height:180px;padding-top:.6rem}
 .timeline-card.open .card-image{max-height:460px;opacity:1}
 /* ===== RESPONSIVE ===== */
@@ -177,7 +195,9 @@ body{
           (it.subtitle ? '<div class="card-sub">' + it.subtitle + '</div>' : '') +
           '<div class="card-meta">' + meta + '</div>' +
           '<div class="card-desc">' + it.desc + '</div>' +
-          (it.img ? '<div class="card-image"><img src="' + it.img + '" alt="' + it.title + '" loading="lazy"></div>' : '') +
+          (it.img ? '<div class="card-image"><img src="' + it.img + '" alt="' + it.title + '"'
+                    + (it.img_w ? ' width="' + it.img_w + '" height="' + it.img_h + '"' : '')
+                    + ' loading="lazy" decoding="async"></div>' : '') +
           (it.detail ? '<div class="card-detail">' + it.detail + '</div>' : '') +
         '</div>';
       var card = node.querySelector('.timeline-card');

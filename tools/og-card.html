@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<!--
+  呀！这是出分享卡片用的模板，不是给人看的页面——
+  用 tools/cdp.py 按 1200x630 截一张图，存成 images/og-N.png 就完成啦♥
+  立绘在右、文案在左，因为分享卡片的唯一任务是让人愿意点进来：
+  在任何缩略图尺寸下，都要还能看出「这是什么地方」。
+
+  立绘可以换：用 ?art=armor-pink / armor-ego / armor-elf 指定，
+  不传就默认 armor-pink。三张变体都存在 images/ 下，
+  由 tools/pick_og.py 随机决定当前生效的是哪一张。
+-->
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    width:1200px;height:630px;overflow:hidden;display:flex;
+    background:linear-gradient(115deg,#0a0612 0%,#1a0e2e 55%,#2d1b4e 100%);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  .left{flex:0 0 58%;padding-left:84px;display:flex;flex-direction:column;justify-content:center}
+  .title{font-size:64px;font-weight:300;letter-spacing:.1em;color:#ffc8dd;
+    text-shadow:0 0 40px rgba(255,143,163,.45)}
+  .en{font-size:19px;letter-spacing:.42em;color:#c77dff;margin-top:16px;
+    text-shadow:0 0 18px rgba(199,125,255,.5)}
+  .line{width:96px;height:2px;margin:30px 0;
+    background:linear-gradient(90deg,#ff8fa3,transparent)}
+  .meta{font-size:21px;line-height:2.15;color:#a89cc8;font-weight:300;letter-spacing:.04em}
+  .bday{font-size:21px;color:#ffd166;margin-top:22px;letter-spacing:.06em}
+  .right{flex:1 1 42%;position:relative;overflow:hidden}
+  .glow{position:absolute;inset:0;z-index:1;
+    background:radial-gradient(circle at 55% 62%,rgba(255,143,163,.30),transparent 62%)}
+  .art{position:absolute;inset:0;z-index:0;width:100%;height:100%;
+    object-fit:cover;object-position:50% 20%}
+</style>
+</head>
+<body>
+  <div class="left">
+    <div class="title">致 爱 莉 希 雅</div>
+    <div class="en">E L Y S I A</div>
+    <div class="line"></div>
+    <div class="meta">往世乐土 · 她的旅途<br>十三英桀 · 飞花寄语</div>
+    <div class="bday">11 / 11　她的生日</div>
+  </div>
+  <div class="right">
+    <img class="art" id="art" src="/images/armor-pink.webp" alt="">
+    <div class="glow"></div>
+  </div>
+<script>
+  // 立绘由 ?art= 决定；允许的取值写死在白名单里，避免这个模板被拿来读任意文件
+  (function () {
+    var OK = ['armor-pink', 'armor-ego', 'armor-elf'];
+    var want = new URLSearchParams(location.search).get('art');
+    if (want && OK.indexOf(want) >= 0) {
+      document.getElementById('art').src = '/images/' + want + '.webp';
+    }
+  })();
+</script>
+</body>
+</html>

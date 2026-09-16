@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <radialGradient id="petal" cx="50%" cy="45%" r="62%">
+      <stop offset="0%" stop-color="#ffc8dd"/>
+      <stop offset="55%" stop-color="#ff8fa3"/>
+      <stop offset="100%" stop-color="#c77dff"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#0a0612"/>
+  <g fill="url(#petal)" opacity="0.95">
+    <ellipse cx="32" cy="17" rx="7" ry="13"/>
+    <ellipse cx="32" cy="47" rx="7" ry="13"/>
+    <ellipse cx="17" cy="32" rx="13" ry="7"/>
+    <ellipse cx="47" cy="32" rx="13" ry="7"/>
+  </g>
+  <circle cx="32" cy="32" r="6" fill="#ffd166"/>
+</svg>

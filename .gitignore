@@ -2,3 +2,21 @@
 __pycache__/
 screenshots/
 /tmp/
+
+# brainstorming 视觉草图会话目录，不进仓库、不部署
+.superpowers/
+
+# 部署产物（由 CI 在 runner 上生成，不进仓库）
+_site/
+
+# 图片原始素材：留在仓库备份，但不部署（见 static.yml 白名单）
+images/raw/
+
+# 音频素材（语录配音待接入时使用）
+audio/
+
+# Python 虚拟环境
+.venv/
+
+# og.png 的渲染中间产物
+tools/og-render-*.png
