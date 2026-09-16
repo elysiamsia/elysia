@@ -3,11 +3,11 @@
 > 两个功能共用这一个 Worker：**献花计数**（KV）与**匿名花笺**（D1）。
 > 献花部分见 §1–§10，匿名花笺见 §12，KV 的实测坑见 §11。
 
-> **状态：已部署 ✅（2026-09-15）**
+> **状态：已部署 ✅（2026-09-15；2026-09-16 补同源路由）**
 >
 > | 项目 | 值 |
 > |---|---|
-> | 端点 | `https://flowers.elysiad.top` |
+> | 端点 | `https://flowers.elysiad.top`（保留）<br>`https://elysiad.top/count`、`/flower`、`/notes*`（同源路由，前端实际使用） |
 > | KV namespace id | `e2d964f0af9f4863820bcfa20a5aac7e` |
 > | Worker 版本 | `67f858ce-d241-497c-8e94-2baa59ab9a7f` |
 > | 账号 | `dongqm070731@gmail.com` |
@@ -18,6 +18,8 @@
 >
 > **中国可访问性**：已用手机流量（不挂梯子）访问 `https://flowers.elysiad.top/count`，
 > **返回正常 JSON**——大陆线路可用。
+>
+> ⚠ **同源路由的由来见 §13**：献花原本漏了这一处，导致 QQ 浏览器上点献花静默降级。
 >
 > 下面的章节保留完整步骤，供日后**换账号、换域名、重建 KV** 时照做。
 
@@ -99,6 +101,11 @@ Add the following to your configuration file in your kv_namespaces array:
 ## 3. 项目文件
 
 在这个仓库里建 `worker/` 目录，放三个文件。下面直接给出完整内容。
+
+> ⚠ **本节是「从零重建」用的初版快照，不是当前线上配置。**
+> 真实内容以 `worker/wrangler.toml` 与 `worker/src/index.js` 为准。已知差异至少两处：
+> 路由后来多了同源三条（§13），`json()` 后来加了 `Cache-Control: no-store`（见 `wrangler.toml` 上文注释）。
+> 照抄本节会得到一个**能跑但少了这两处修复**的版本。
 
 ### 3.1 `worker/wrangler.toml`
 
@@ -594,3 +601,54 @@ npm run smoke:flowers  # 只跑献花（26 项断言）
 
 **所有校验都在服务端做。** 前端的校验只是为了让人立刻知道自己哪里写错了，不是防线。
 
+
+---
+
+## 13. 献花改同源（2026-09-16）
+
+**背景**：需求方手机实拍——同一时间，QQ 浏览器上点献花显示
+「你的花已送达 · 本机累计 3 朵」，桌面浏览器显示「这里已收到 7 朵花」。
+前者是 `assets/flowers.js` 的**静默降级**分支，意味着 POST 根本没到 Worker。
+
+**根因**：`assets/flowers.js` 把接口地址写死成 `https://flowers.elysiad.top`，
+页面却在 `elysiad.top`——两个域名就是跨域。留言簿的 `/notes` 早就为同一个原因
+改成了同源（见 `wrangler.toml` 里 `elysiad.top/notes*` 的注释），**献花这一处当时漏了**。
+
+**为什么一直没人发现**：降级是设计好的静默行为——任何情况下都不给访客看错误提示。
+所以症状不是报错，而是「数字悄悄变成本机计数」，且只在特定浏览器上出现。
+这正是 §6.2 那个「比报错更糟」的情形。
+
+**改了两处**：
+
+| 文件 | 改动 |
+|---|---|
+| `worker/wrangler.toml` | 路由加 `elysiad.top/count`、`elysiad.top/flower` |
+| `assets/flowers.js` | `var API = 'https://flowers.elysiad.top'` → 默认同源，只有本地开发才用远端 |
+
+`flowers.elysiad.top` **保留**：本地开发（`localhost:8500`）仍然用它，
+它也已经过一次大陆可达性验证，是留着的退路。
+
+⚠ 加了路由**不要**顺手改成 `elysiad.top/*`——那会把整站静态页面也吞进 Worker。
+
+**验证**（部署后逐条跑，别只看部署成功）：
+
+```bash
+# 1. 路由通了：返回 JSON，而不是 GitHub Pages 的 404 HTML
+curl -s https://elysiad.top/count
+# 期望：{"count":N}
+
+# 2. POST 也路由到了 Worker——故意用非法 Origin，期望 403 而不是 HTML 404。
+#    ★ 用非法 Origin 是为了「不改动总数」地验证路由
+curl -s -D - -o /dev/null -X POST https://elysiad.top/flower \
+  -H 'Origin: https://evil.example'
+# 期望：HTTP 403 + {"error":"forbidden origin"}
+
+# 3. 旧地址没被改坏
+curl -s https://flowers.elysiad.top/count
+# 期望：{"count":N}（与第 1 条同一个数）
+```
+
+**真实验收只能在手机上做**：QQ 浏览器打开 `https://elysiad.top`，点「献上一朵飞花」，
+应显示「这里已收到 N 朵花」，而**不是**「本机累计 N 朵」。
+
+> 别用数字判断，用**文案**判断——数字碰巧一样也能骗过去，文案骗不了。
