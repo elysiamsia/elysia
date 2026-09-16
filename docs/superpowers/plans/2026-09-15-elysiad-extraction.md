@@ -966,6 +966,10 @@ git commit -m "抽出共享 JS：resize 工厂与结尾星星生成（villv 原�
 
 ### Task 7: 抽子页公共 JS —— 语录卡与滚动进场
 
+> 🎯 动手前先读 `docs/HANDOVER.md` §5.1 末尾的「🎯 下一步做什么」。
+> ⚠ **本任务开工第一件事**：把 `THEME` 的**完整 schema**（加进语录与打字参数后）
+> 写出来给需求方过目再往下写 —— 它是未来 6 位英桀页的模板。
+
 **Files:**
 - Modify: `assets/site.js`
 - Modify: 6 个子页（**不含 index**）
@@ -1159,6 +1163,8 @@ git commit -m "抽子页公共 JS：语录卡改用闭包 O(1) 索引，滚动�
 ---
 
 ### Task 8: 抽打字机
+
+> 🎯 动手前先读 `docs/HANDOVER.md` §5.1 末尾的「🎯 下一步做什么」。
 
 **Files:**
 - Modify: `assets/site.js`

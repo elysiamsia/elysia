@@ -2,6 +2,10 @@
 
 > 写给下一个接手的人（或 agent）。**动手前请通读一遍**，尤其是 §六 的坑。
 > 最后更新：2026-09-16
+>
+> 🎯 **如果你是接手 P1 的下一个 agent，直接跳 §5.1 末尾的「🎯 下一步做什么」。**
+> 那里写清了：先做哪三个任务、每个任务的注意事项、验证协议怎么跑、
+> 以及**开新页面之前必须先向需求方确认的一件事**。
 
 ---
 
@@ -234,7 +238,7 @@ PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py <旧> <新>   # 有差异�
 > 新英桀页 = 写一个 THEME + 各自的专属特效，不再复制实现。
 > 详见 P1 计划 Task 6 开头的形状决定。
 
-**Task 1–6 已完成**（2026-09-16）。剩下的 Task 7–12 未开工。
+**Task 1–6 已完成**（2026-09-16）。**接下来做 Task 7 → 8 → 9，做完立刻开新页面 —— 见本节末尾的「🎯 下一步做什么」**（那是给下一个 agent 的交接）。
 
 | Task | 内容 | 结果 |
 |---|---|---|
@@ -300,6 +304,113 @@ docs/superpowers/plans/2026-09-15-extraction-inventory.md    抽取分析（1173
 > ⚠ **给 P1 执行者的提醒**：P1 计划（Task 11 Step 4）里也安排了这一处修复，且预期
 > 「与 after-task11 相比，`--gold-soft` 是唯一已知变化」。**那一处现在已经修好了**，
 > 所以到时候快照比对**不该再出现任何变化**——若还看到徽章颜色变化，说明动坏了别的东西。
+
+#### 🎯 下一步做什么（2026-09-16 需求方拍板）
+
+> **顺序：Task 7 → 8 → 9，做完立刻开新页面；10 / 11 / 12 留到新页面之后补。**
+
+**这个顺序是硬要求，理由不是洁癖**：Task 7（语录卡 + 滚动进场）与 Task 8（打字机）
+抽的正是**每一个英桀页都要用**的两段代码，而且 inventory 已查实那 6 个子页的这两段
+**逐字节一致**。
+
+> 若先建新页面：新页会把这两段再抄一遍 → Task 7/8 之后要改 **13 页而不是 7 页**，
+> 工作量差不多翻倍；更糟的是，新页面会写成「即将被改掉的形状」。
+> **一句话：现在建一页，就等于给未来的自己多留一份待办。**
+
+| 任务 | 对新页面的意义 | 何时做 |
+|---|---|---|
+| **7** 语录卡 + IntersectionObserver | ⭐ 每页都要 | **本轮** |
+| **8** 打字机 | ⭐ 每页都要 | **本轮** |
+| **9** 全站减动保护 | ⭐ 每页都要遵循 | **本轮** |
+| 10 index 专项 | ❌ 首页专属 | 新页面之后 |
+| 11 armor 专项 | ❌ 异形页专属 | 新页面之后 |
+| 12 收尾清理 | ➖ 好看 | 最后 |
+
+**10/11/12 也要做**，只是排在后面 —— 别让新页面从一个「半迁移」的仓库起步：
+那时 armor 还挂着自己那套、首页还挂着自己那套，「到底该照谁写」会变成问题。
+
+##### ⚠ 开始 Task 7 之前必须先做的一件事
+
+**把 `THEME` 的完整 schema 摊给需求方过目。**
+
+现在 `THEME` 只有 `endingStars` 一个字段。Task 7/8 会往里加**语录列表**与
+**打字速度** —— 也就是说，**这个对象现在还没长完**。
+若现在开新页面，每页写的都是残缺版 `THEME`，等 Task 7/8 做完还得回头补。
+
+> Task 7 一开工就把完整 schema 写出来给需求方确认，再往下写。
+> **它是 13 页的模板，值得多花这十分钟。**
+
+##### Task 7 注意事项（6 个子页，**不含 index**）
+
+- index **不参与**：它的语录卡有配音逻辑（`window.QUOTE_AUDIO`），
+  结尾观察器用 `epilogueQuote` 且没有 `backLink`
+- **顺带修掉的正事**：6 个子页现在是
+  `Array.prototype.indexOf.call(grid.querySelectorAll('.quote-card'), card)`
+  —— **每次点击都重扫 DOM**。index 早就是闭包索引了。统一成**闭包 O(1)** 版本，
+  这是设计文档 §5-P1 明确要求的一项
+- ⚠ **R9**：`cardIndices` 必须封装在工厂函数**内部**，绝不能变成模块级全局
+  —— 否则跨多次初始化的索引会串味
+- ⚠ **R11**：子页的 `endingObserver` **没有判空**，index 有。
+  统一采用**带判空**的写法属于**行为改善**（元素齐全时表现完全一致），
+  但要**单独 commit 并写明**
+- ⚠ **R10**：villv 缺粒子 resize 守卫 —— **保持现状，不要顺手补**
+
+##### Task 8 注意事项（7 页）
+
+- 各页的**起始延迟 / 每字延迟 / 随机幅度三个数值都不同**，逐页抄，**不要依赖默认值**
+- kalpas / su 独有 `hintEl.classList.add('visible')`
+
+##### Task 9 注意事项（全站减动保护）
+
+- `assets/site.css` 末尾加 `@media (prefers-reduced-motion: reduce)` 段
+- `villv/index.html` 的 `fireKevinKiller666()` 与 `kalpas/index.html` 的 `startRage()`
+  加护栏 —— **这两个是行为变更，各单独一个 commit**
+- ⛔ **`index.html` 的点击涟漪：跳过不动。** 需求方已拍板（见 §5.4）。
+  **不要**给点击监听器补 `if (reducedMotion) return;`
+
+##### 验证协议（照这个走）
+
+```bash
+cd D:\claude-code\elysia-main
+
+# 1) 起服务器 —— ⚠ 起完**必须先验内容**再采样（见 §6.4 的 pkill 坑）
+python -m http.server 8500 &
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8500/assets/site.css   # 应为 200
+
+# 2) 快照 + 比对。Task 7–9 用 baseline-task6 当参照
+PYTHONIOENCODING=utf-8 python tools/snapshot.py after-task7
+PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py baseline-task6 after-task7; echo "退出码 $?"
+```
+
+**参照点分工**：
+
+| 快照目录 | 是什么 | 用来做什么 |
+|---|---|---|
+| `screenshots/snap/baseline` | **P1 动手前**（从 `origin/main` 的 worktree 取） | P1 最终验收 |
+| `screenshots/snap/baseline-task6` | **Task 6 之后** | Task 7–9 每步的参照 |
+
+⚠ **P1 最终验收的口径是「零差异，除已解释的星屑重洗」**：
+`baseline` vs 最终状态会报 **72 处差异，全部落在 `.ending-star` 一个选择器上**
+（`left` / `top` / `animation-delay` / `animation-duration` / `opacity`）。
+根因是 Task 6 统一了随机调用顺序，星屑必然重洗 —— 星星本来就是每次加载重新随机的。
+**除 `.ending-star` 外，任何选择器动一处都要停下来查。**
+
+##### 新页面怎么开（做完 7/8/9 之后）
+
+1. 参照一份现有子页当骨架 —— 建议从 `su/index.html` 或 `kevin/index.html` 起，
+   它们的专属模块较少，模板更干净
+2. 写自己的 `THEME`（此时它已长全）
+3. 写自己的**专属特效** —— 这正是每位英桀「性格」所在
+   （樱的瓣 / 科斯魔的影 / 梅比乌斯的蛇 / 格蕾修的画 / 华的剑 / 帕朵的铃……）
+4. 别忘了三件事：
+   - 加进 `.github/workflows/static.yml` 的 **`KEEP_FILES` / `KEEP_DIRS` 白名单**，
+     否则**不会上线**
+   - 加进 `sitemap.xml`
+   - 角色页用的是**子页那套** `.back-link` / `.ending-*`（**不是** armor 那套）
+
+> ⚠ **开工前先问清楚**：需求方说还有 **7** 位，但数出来是 **6** 位
+> （樱 / 科斯魔 / 梅比乌斯 / 格蕾修 / 华 / 帕朵菲莉丝）。
+> 差的那一位是「爱莉希雅也要单独做一页」，还是有谁被漏掉了？**这个数会影响排期。**
 
 ### 5.2 等需求方提供素材
 
