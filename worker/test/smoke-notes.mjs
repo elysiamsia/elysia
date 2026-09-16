@@ -134,6 +134,9 @@ let token = null;
   check('状态 201', r.status, 201);
   check('返回 ok', r.body && r.body.ok, true);
   check('返回 32 位十六进制 token', /^[0-9a-f]{32}$/.test(r.body.token || ''), true);
+  // 主站开了 Cache Rule 之后，接口必须显式禁缓存，否则
+  // 「刚通过的留言别人两分钟后才看得到」
+  check('响应禁缓存 Cache-Control: no-store', r.headers.get('Cache-Control'), 'no-store');
   token = r.body.token;
 }
 
