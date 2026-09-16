@@ -59,7 +59,8 @@
 | `eden/index.html` | 636 | 28,651 B |
 | `armor.html` | 233 | 12,711 B |
 
-已经因此产生一个真实的视觉 bug：`armor.html:82` 使用 `var(--gold-soft)`，但该文件的 `:root`（`armor.html:10-17`）**没有定义这个变量**——它只存在于 `index.html:17`。皮肤徽标的文字色静默失效。
+已经因此产生一个真实的视觉 bug：`armor.html` 的 `.type-badge.skin` 使用 `var(--gold-soft)`，但该文件的 `:root` **没有定义这个变量**——它只存在于 `index.html`。皮肤徽标的文字色静默失效（回退成继承 `body` 的 `#f0e6ff`）。
+**✅ 已于 2026-09-16 修掉**（不在 P1 里，见 `docs/HANDOVER.md` §4.4），行号随文件变动已不再引用。
 
 **动画降级缺失。** 8 个页面里 `prefers-reduced-motion` **只在 JS 的 canvas 与部分涟漪中处理**；所有 CSS 动画（`blink-cursor`、`chevron-bounce`、`card-rotate`、`glow-pulse`、`twinkle`、`hero-float`、`bdayFloat`、`bdayPulse`）无一处降级。`villv` 的「对凯文武装型号666」全屏白闪（`villv:339-341`）与 `kalpas` 的 `0.09s` 全页抖动（`kalpas:51-57`）**完全没有读取 `reducedMotion`**，属 WCAG 2.3.1 风险。
 
@@ -162,7 +163,7 @@ elysia-main/
    - 共享样式：`:root` 变量、玻璃拟态卡片、区块标题、时间轴、语录卡、`back-link`
    - 共享脚本：canvas 粒子系统、打字机、IntersectionObserver 滚动动画、语录卡逻辑、resize 处理
    - **各页面保留自己的主题色覆盖与专属模块**（`kalpas` 的怒气 HUD、`su` 的木鱼、`villv` 的八人格卡等一律不动）
-2. **顺带修掉 `armor.html:82` 的 `var(--gold-soft)` 未定义问题**
+2. ~~**顺带修掉 `armor.html` 的 `var(--gold-soft)` 未定义问题**~~ —— **已于 2026-09-16 单独修掉**，执行 P1 时不需要再做，快照比对也不应再出现这处变化
 3. **全站补齐 `prefers-reduced-motion`**：
    - 新增 `@media (prefers-reduced-motion: reduce)` 段，统一关闭 CSS 动画
    - 给 `villv` 的 `fireKevinKiller666()` 与 `kalpas` 的 `startRage()` 加 `reducedMotion` 判断——命中时跳过闪烁层，只保留文字与最终状态
@@ -447,7 +448,8 @@ http.sslverify = false                  # 全局关闭 HTTPS 证书校验，存�
 ## 十、验收清单
 
 - [ ] P0：`/tools/README.md`、`/docs/…`、`/images/raw/…` 返回 404；8 个页面与站点图片正常
-- [ ] P1：8 个页面在 1280×900 与 375×812 下改动前后**像素级一致**；`--gold-soft` 恢复正常；减动模式无闪烁动画
+- [ ] P1：8 个页面在 1280×900 与 375×812 下改动前后**像素级一致**；减动模式无闪烁动画
+  （`--gold-soft` 已于 2026-09-16 单独修好，比对时不该再有任何视觉变化）
 - [ ] P2：favicon 显示；分享卡片有预览图；404 显示自定义页；WebP 总体积 < 原 PNG 的 20%
 - [ ] P3：今日之语每日轮换且同日一致；献花计数全站共享；断网时献花降级不报错
 - [ ] P4：明信片双尺寸生成正常；giscus 登录后可留言

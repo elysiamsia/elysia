@@ -28,6 +28,7 @@
 | Cloudflare 后端（献花 + 花笺） | ✅ 已部署 |
 | Cloudflare 缓存优化 | ✅ 已配置 |
 | **献花在 QQ 浏览器上修好（同源 + 来源判定）** | ✅ 已修已部署，见 §4.3 |
+| **`armor.html` 皮肤徽章失色** | ✅ 已修已部署，见 §4.4 |
 | **P1 公共层抽取（12 个任务）** | ⬜ **计划已写，未开工** |
 
 ---
@@ -103,7 +104,7 @@ https://flowers.elysiad.top/notes/manage?key=<MANAGE_KEY>
 
 - **部署白名单**：`static.yml` 改成只打包 `_site/`，`tools/ docs/ worker/ images/raw/ .github/` **永不进产物**
 - **`.gitattributes`**：统一 LF（本机系统级 `core.autocrlf=true`）
-- **`worker/test/`**：81 项断言（献花 26 + 花笺 55），用内存版假 D1，`npm run smoke`
+- **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
 - **`tools/` 现有工具**：`cdp.py`（无头 Edge，支持 `size` 动作切换视口）、`pick_og.py`（分享卡片轮换）、`og_convert.py`（PNG→JPEG）、`to_webp.py`（图片转 WebP）
 
 > ⚠ **`tools/snapshot.py` 与 `tools/snapshot_diff.py` 目前不存在。**
@@ -166,6 +167,38 @@ https://flowers.elysiad.top/notes/manage?key=<MANAGE_KEY>
 > 别顺手开——那种情况下 POST 会先吃一个跳转，而跨 origin 跳转时浏览器可能把 `Origin`
 > 改成 `null`，会被同一道检查拦下。**要开得先在手机上实测。**
 
+### 4.4 修 `armor.html` 的 `--gold-soft` 未定义（皮肤徽章失色，2026-09-16）
+
+**症状**：`armor.html` 上「皮肤」类型徽章的**金色文字变成冷白**，只剩金色底还留着。
+和旁边三个徽章（`--pink-soft` / `--purple-glow` / `--text-dim`）并排一看就显「褪色」。
+
+**根因**：`.type-badge.skin` 写的是 `color: var(--gold-soft)`，而 `--gold-soft` 只定义在
+`index.html` 的 `:root`，`armor.html` 自己的 `:root` 里没有。CSS 变量不存在时，
+该声明**在计算值阶段**失效（不是解析阶段）——`color` 于是回退成**继承父元素**，
+也就是 `body` 的 `#f0e6ff`。**不报错、不提示，只是悄悄变白。**
+
+**复核**：写了个小脚本把 `armor.html` 的 `:root` 定义与 `var()` 引用对了一遍，
+结果 19 个定义 / **1 个缺失**，确认就是 `--gold-soft` 这一处，与 inventory 的结论一致。
+（另有 `--bg-mid`、`--pink-deep` 两个「定义了没用上」的死变量，无害，没动。）
+
+**修法**（计划 Task 11 Step 4 的**方案 A**）：在 `armor.html` 的 `:root` 补
+`--gold-soft:#ffe5a0;`，值与 `index.html:31` 的同名 token 一致 —— 让「皮肤」徽章全站一个颜色。
+
+#### 验证：像素级差分，不是「看着差不多」
+
+1. **计算样式**
+   `.type-badge.skin` 的 `color`：改前 `rgb(240, 230, 255)`（= `body` 的色，纯继承）
+   → 改后 **`rgb(255, 229, 160)`**（`#ffe5a0`）。
+   同页 `.armor` / `.story` / `.event` 三个徽章与 `body`，改前改后**完全一致**。
+2. **截图差分**：桌面 `1280×900` + 移动 `375×812`，各拍改动前后（滚动位置锁定一致：1690 / 1889），
+   逐像素比对。**两处视口都只有两块约 23×10 px 的区域不同**，且都**严格落在
+   `.type-badge.skin` 元素的矩形内** —— 确认变的就是徽章文字，全页零附带改动。
+   （页面共 21 个徽章，其中 5 个 `.skin`，视口内可见 2 个。）
+
+> ⚠ **测试中踩到的坑**：`tools/cdp.py` 用的是**持久 user-data-dir**（`C:/tmp/edge_cdp`），
+> 浏览器缓存**跨次留存**。改完 `armor.html` 后第一次测**读出来还是旧值**，差点误判成「没修好」。
+> **给 URL 加 `?cb=<时间戳>`** 再测。已记进 §6.4。
+
 ---
 
 ## 五、还没做的事
@@ -193,7 +226,14 @@ docs/superpowers/plans/2026-09-15-extraction-inventory.md    抽取分析（1173
 2. `--gold-warm` / `--flame` **同名不同值不同语义**，绝不提升为公共 token
 3. `index.html` 的点击涟漪原本**没有** `reducedMotion` 判断，统一它属于**行为变更**，要单独 commit 标明
 
-**顺带要修的 bug**：`armor.html:82` 的 `var(--gold-soft)` 未定义（该文件 `:root` 里没有）→ 皮肤徽章失色。这是分析确认的**唯一**一处同类问题。
+**~~顺带要修的 bug~~ 已于 2026-09-16 单独修掉（不在 P1 里）**：`armor.html` 的 `.type-badge.skin`
+用了 `var(--gold-soft)`，但该文件 `:root` 里没有定义 → 文字色回退成继承 `body` 的 `#f0e6ff`，
+金色文字静默变冷白。已在 `armor.html` 的 `:root` 补上 `--gold-soft:#ffe5a0`（与 `index.html` 同值）。
+详见 §4.4。这是分析确认的**唯一**一处同类问题。
+
+> ⚠ **给 P1 执行者的提醒**：P1 计划（Task 11 Step 4）里也安排了这一处修复，且预期
+> 「与 after-task11 相比，`--gold-soft` 是唯一已知变化」。**那一处现在已经修好了**，
+> 所以到时候快照比对**不该再出现任何变化**——若还看到徽章颜色变化，说明动坏了别的东西。
 
 ### 5.2 等需求方提供素材
 
@@ -251,7 +291,10 @@ docs/superpowers/plans/2026-09-15-extraction-inventory.md    抽取分析（1173
 |---|---|
 | **`cdp.py` 的 click 要先滚动** | 它用 `getBoundingClientRect()` 的视口坐标派发鼠标事件，元素在视口外会**静默无操作**。且站点有 `scroll-behavior:smooth`，必须 `scrollIntoView({behavior:'instant'})` |
 | **探测 `loading="lazy"` 的图片要把视口拉高** | 否则下面的图不加载，渲染盒 `0x0`——那是正常行为，不是回归 |
+| **`cdp.py` 的浏览器缓存跨次留存** | 它用固定的 `--user-data-dir=C:/tmp/edge_cdp`，所以**改了 CSS/JS 再测，读到的可能还是旧版本**——会让人误判成「改动没生效」或「修了还是坏的」。给 URL 加 `?cb=<时间戳>` 再测 |
 | **改视觉必须截图核对** | 项目纪律：不接受"看起来差不多"。桌面 `1280×900` + 移动 `375×812` 各一轮 |
+| **元素有入场动画时要等** | `.timeline-node` 是 `opacity:0` + IntersectionObserver 出 `.visible`。滚过去要 `sleep` 一两秒再截图，否则拍到一片空白——那不是页面坏了 |
+| **颜色类改动用像素差分** | 相近的浅色（`#ffe5a0` vs `#f0e6ff`）肉眼在徽章尺寸下分不出。用 `PIL.ImageChops` 比对前后截图，再拿元素 `getBoundingClientRect()` 交叉核对「差异是否落在目标元素内」 |
 | **Windows 跑 Python 要带 `PYTHONIOENCODING=utf-8`** | 否则中文输出 GBK 崩 |
 | **Bash 工具会吞内联字符串里的反斜杠** | `python - <<'PY'` 和 `node -e "..."` 常因此报错。把脚本写成临时文件再执行，**别写进仓库** |
 
@@ -271,7 +314,7 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py http://localhost:8500/index.html \
 PYTHONIOENCODING=utf-8 python tools/cdp.py http://localhost:8500/index.html \
   size 375x812 sleep 2000 shot screenshots/x-mobile.png
 
-# Worker 测试（81 项断言）
+# Worker 测试（93 项断言：献花 38 + 花笺 55）
 cd worker && npm run smoke
 
 # 部署 Worker
@@ -304,7 +347,7 @@ docs/superpowers/
     └── 2026-09-15-extraction-inventory.md       CSS/JS 抽取分析（1173 行）★ P1 的事实来源
 
 worker/README.md                                  Worker 部署手册
-                                                  §11 = KV 额度实测  §12 = 匿名花笺
+                                                  §11 = KV 额度实测  §12 = 匿名花笺  §13 = 同源路由 / 来源判定
 ```
 
 **三份必然要读的**：

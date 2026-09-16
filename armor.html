@@ -25,7 +25,12 @@
   --bg-abyss:#0a0612;--bg-deep:#12091f;--bg-purple:#1a0e2e;--bg-mid:#2d1b4e;
   --pink-mist:#ffc8dd;--pink-soft:#ffb3c1;--pink:#ff8fa3;--pink-deep:#ff5c8a;
   --purple-glow:#c77dff;--purple:#9b5de5;--purple-deep:#7b2cbf;
-  --gold:#ffd166;--text:#f0e6ff;--text-dim:#a89cc8;--text-muted:#7b6f99;
+  /* ⚠ --gold-soft 是本文件唯一一个「引用了却没定义」的变量（2026-09-16 实测复核：
+     19 个定义、1 个缺失）。.type-badge.skin 的 color 用它，变量不存在 → 该声明在
+     计算值阶段失效 → 回退成继承 body 的颜色，皮肤徽章的金色文字静默变成冷白
+     （#f0e6ff，和正文一个色），只剩金色底在，看着像褪色。
+     值取 index.html 里的同一个 token，让「皮肤」徽章全站一个颜色♥ */
+  --gold:#ffd166;--gold-soft:#ffe5a0;--text:#f0e6ff;--text-dim:#a89cc8;--text-muted:#7b6f99;
   --glass-bg:rgba(255,200,221,0.06);--glass-border:rgba(255,200,221,0.12);
   --glass-bg2:rgba(155,93,229,0.06);--glass-border2:rgba(155,93,229,0.12);
 }
