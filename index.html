@@ -21,9 +21,10 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#0a0612">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
+<link rel="stylesheet" href="/assets/site.css">
 <title>elysiad.top — 致爱莉希雅</title>
 <style>
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
   --bg-abyss:#0a0612;--bg-deep:#12091f;--bg-purple:#1a0e2e;--bg-mid:#2d1b4e;
   --pink-mist:#ffc8dd;--pink-soft:#ffb3c1;--pink:#ff8fa3;--pink-deep:#ff5c8a;--pink-hot:#ff2d78;
@@ -33,13 +34,10 @@
   --glass-bg:rgba(255,200,221,0.06);--glass-border:rgba(255,200,221,0.12);
   --glass-bg2:rgba(155,93,229,0.06);--glass-border2:rgba(155,93,229,0.12);
 }
-html{scroll-behavior:smooth}
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
   background:var(--bg-abyss);color:var(--text);overflow-x:hidden;line-height:1.7;
 }
-::-webkit-scrollbar{width:6px}
-::-webkit-scrollbar-track{background:var(--bg-abyss)}
 ::-webkit-scrollbar-thumb{background:var(--purple-deep);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:var(--purple)}
 
@@ -61,7 +59,6 @@ body{
   animation:blink-cursor 0.8s step-end infinite;
 }
 .typing-cursor.hidden{display:none}
-@keyframes blink-cursor{0%,100%{opacity:1}50%{opacity:0}}
 .opening-subtitle{
   font-size:clamp(0.9rem,2.5vw,1.3rem);color:var(--text-dim);letter-spacing:0.3em;
   margin-top:1.5rem;opacity:0;transition:opacity 1.5s ease;
@@ -77,7 +74,6 @@ body{
   width:20px;height:20px;border-right:2px solid var(--pink);border-bottom:2px solid var(--pink);
   transform:rotate(45deg);animation:chevron-bounce 2s ease-in-out infinite;
 }
-@keyframes chevron-bounce{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(6px)}}
 
 /* ===== COMMON SECTION ===== */
 .content-section{
@@ -113,7 +109,6 @@ body{
   background:conic-gradient(from 0deg,transparent,rgba(255,143,163,0.05),transparent,rgba(155,93,229,0.05),transparent);
   animation:card-rotate 20s linear infinite;
 }
-@keyframes card-rotate{to{transform:rotate(360deg)}}
 .profile-card-inner{position:relative;z-index:1}
 .profile-name{
   font-size:clamp(1.8rem,5vw,2.8rem);font-weight:200;letter-spacing:0.1em;
@@ -224,7 +219,6 @@ body{
   animation:twinkle var(--dur) ease-in-out infinite;
   animation-delay:var(--delay);
 }
-@keyframes twinkle{0%,100%{opacity:var(--min-o)}50%{opacity:var(--max-o)}}
 .ending-quote{
   font-size:clamp(1.1rem,3vw,1.6rem);font-weight:300;letter-spacing:0.12em;
   color:var(--pink-mist);line-height:2;text-shadow:0 0 25px rgba(255,200,221,0.3);
