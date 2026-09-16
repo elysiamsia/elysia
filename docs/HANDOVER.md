@@ -27,6 +27,7 @@
 | 十项功能整合 | ✅ 完成并上线 |
 | Cloudflare 后端（献花 + 花笺） | ✅ 已部署 |
 | Cloudflare 缓存优化 | ✅ 已配置 |
+| **献花改同源（修 QQ 浏览器静默降级）** | ✅ 已修，见 §4.3 |
 | **P1 公共层抽取（12 个任务）** | ⬜ **计划已写，未开工** |
 
 ---
@@ -59,7 +60,7 @@ main  ← push 即自动部署（static.yml）
 |---|---|
 | 账号 | `dongqm070731@gmail.com` |
 | Worker 名 | `elysia-flowers` |
-| Worker 路由 | `flowers.elysiad.top`（自定义域）+ **`elysiad.top/notes*`**（同源路由） |
+| Worker 路由 | `flowers.elysiad.top`（自定义域）+ **`elysiad.top/notes*`**、**`elysiad.top/count`**、**`elysiad.top/flower`**（同源路由） |
 | KV 命名空间 | `FLOWERS` / id `e2d964f0af9f4863820bcfa20a5aac7e`（献花计数） |
 | D1 数据库 | `elysia-notes` / id `7683cdcf-0897-46d2-9e5a-14a3fb0a7394` / **主区域 APAC** |
 | Secrets | `DAILY_SALT`（IP 哈希盐）、`MANAGE_KEY`（管理页密钥） |
@@ -108,6 +109,31 @@ https://flowers.elysiad.top/notes/manage?key=<MANAGE_KEY>
 > ⚠ **`tools/snapshot.py` 与 `tools/snapshot_diff.py` 目前不存在。**
 > 它们是 P1 计划里 Task 1 要产出的验证地基（8 页 × 3 视口的像素 + 计算样式比对），
 > **计划写了但从未执行**。做 P1 时第一步就是创建它们——没有这个，"重构不改变视觉"只能靠肉眼。
+
+### 4.3 献花改同源（2026-09-16）
+
+**症状**：需求方手机实拍——同一时间，QQ 浏览器点献花显示「你的花已送达 · 本机累计 3 朵」，
+桌面浏览器显示「这里已收到 7 朵花」。前者是 `assets/flowers.js` 的**静默降级**分支，
+意味着 POST 根本没到 Worker。
+
+**根因**：`assets/flowers.js:15` 把接口地址写死成 `https://flowers.elysiad.top`，
+页面却在 `elysiad.top` —— 两个域名就是跨域。§6.3 那条结论当初是为留言簿写的，
+**献花漏改了**。（`guestbook/index.html` 用的是「默认同源」写法，献花没有。）
+
+**为什么长期无人发现**：降级是**设计好的静默行为**——任何情况下都不给访客看错误提示。
+所以症状不是报错，而是「数字悄悄变成本机计数」，且只在特定浏览器上出现。
+
+**改了两处**：
+
+| 文件 | 改动 |
+|---|---|
+| `worker/wrangler.toml` | 路由加 `elysiad.top/count`、`elysiad.top/flower` |
+| `assets/flowers.js` | `var API = 'https://flowers.elysiad.top'` → 默认同源，只有本地开发才用远端 |
+
+`flowers.elysiad.top` **保留**：本地开发（`localhost:8500`）仍用它，它也已过一次大陆可达性验证。
+⚠ 加路由**不要**顺手改成 `elysiad.top/*`——那会把整站静态页面也吞进 Worker。
+
+完整部署与验证步骤见 `worker/README.md` §13。
 
 ---
 
@@ -182,7 +208,8 @@ docs/superpowers/plans/2026-09-15-extraction-inventory.md    抽取分析（1173
 
 | 坑 | 说明 |
 |---|---|
-| **接口必须与页面同源** | 实测：同一台手机同一个网络，Edge 正常，QQ 浏览器 / 系统自带浏览器**页面能开但跨域请求被拦**，夸克连页面都打不开。所以 `/notes` 挂在 `elysiad.top/notes*` 走同源，而不是 `flowers.elysiad.top` |
+| **接口必须与页面同源** | 实测：同一台手机同一个网络，Edge 正常，QQ 浏览器 / 系统自带浏览器**页面能开但跨域请求被拦**，夸克连页面都打不开。所以 `/notes` 挂在 `elysiad.top/notes*` 走同源，而不是 `flowers.elysiad.top`<br>⚠ 2026-09-16：**献花当时漏改了**，见 §4.3 |
+| **降级是静默的，所以漏改了很久没人发现** | 献花接口不通时不报错，只把文案从「这里已收到 N 朵花」换成「你的花已送达 · 本机累计 N 朵」。QQ 浏览器上一直是后者。**症状是数字不对，不是报错**——排查时先看文案，别看数字 |
 | **别用 `location.hostname === 'elysiad.top'` 判断环境** | 那些浏览器的云加速可能改写主机名。要写成「**默认同源，只有本地开发才用远端地址**」 |
 
 ### 6.4 工具与验证

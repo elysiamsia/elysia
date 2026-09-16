@@ -10,9 +10,17 @@ compatibility_date = "2026-09-15"
 #   实测有访客（手机网络）页面能打开、接口整个连不上——两个域名 = 两条独立的命。
 #   改成同源后，**只要页面能打开，接口就一定能连上**，而且不用跨域、
 #   不用发预检请求、少一次 DNS 解析。
+#
+# ⚠ 后两条（/count、/flower）是 2026-09-16 补的。留言簿当年改同源时，献花漏了——
+#   后果是 QQ 浏览器上点献花永远显示「你的花已送达 · 本机累计 N 朵」，
+#   而页面看起来完全正常（降级是静默的，设计如此），所以没人发现。
+#   需求方手机实拍：QQ 浏览器「本机累计 3 朵」 vs 桌面浏览器「这里已收到 7 朵花」。
+#   只加这两条就够了，**不要**改成 `elysiad.top/*`——那会把整站静态页面也吞进 Worker。
 routes = [
   { pattern = "flowers.elysiad.top", custom_domain = true },
-  { pattern = "elysiad.top/notes*", zone_name = "elysiad.top" }
+  { pattern = "elysiad.top/notes*", zone_name = "elysiad.top" },
+  { pattern = "elysiad.top/count", zone_name = "elysiad.top" },
+  { pattern = "elysiad.top/flower", zone_name = "elysiad.top" }
 ]
 
 # 献花计数
