@@ -462,6 +462,7 @@ body.raging{animation:rage-quake .09s linear infinite}
 <div id="kpToast" role="status"></div>
 
 <!-- SECTION: scripts -->
+<script src="/assets/site.js"></script>
 <script>
 (function(){
   /* SECTION: quotes data */
@@ -519,13 +520,14 @@ body.raging{animation:rage-quake .09s linear infinite}
   var emberColors = ['#ff6b35','#ff3b30','#ffa62b','#c1121f'];
   var ashColors = ['#9a8c82','#6f625a','#c4ada0'];
 
-  function resize(){
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-  }
+  // ⚠ 只抽「把 canvas 和视口尺寸对上」这三行。下面那个「把越界粒子拉回画布」的
+  //   匿名监听器**故意留着不动**——它碰的数组每页不一样，抽走会改行为。
+  const resize = ElysiaShared.makeResize(canvas, {
+    get W() { return W; }, set W(v) { W = v; },
+    get H() { return H; }, set H(v) { H = v; },
+  });
   resize();
   window.addEventListener('resize', resize);
-
   var embers = [];
   var emberCount = Math.min(40, Math.floor(window.innerWidth / 28));
   function createEmber(fromBottom){
@@ -861,24 +863,18 @@ body.raging{animation:rage-quake .09s linear infinite}
 
   /* SECTION: ending stars (余烬星空) */
   var starsContainer = document.getElementById('endingStars');
-  var endingStarCount = Math.min(70, Math.floor(window.innerWidth / 14));
-  var endStarColors = ['#fff','#ffa62b','#ff6b35'];
-  for (i = 0; i < endingStarCount; i++){
-    var star = document.createElement('div');
-    star.className = 'ending-star';
-    var size = 0.5 + Math.random() * 2;
-    star.style.width = size + 'px';
-    star.style.height = size + 'px';
-    star.style.left = (Math.random() * 100) + '%';
-    star.style.top = (Math.random() * 100) + '%';
-    star.style.setProperty('--min-o', (0.08 + Math.random() * 0.3).toFixed(2));
-    star.style.setProperty('--max-o', (0.45 + Math.random() * 0.5).toFixed(2));
-    star.style.setProperty('--dur', (2 + Math.random() * 4).toFixed(1) + 's');
-    star.style.setProperty('--delay', (Math.random() * 5).toFixed(1) + 's');
-    star.style.background = endStarColors[Math.floor(Math.random() * endStarColors.length)];
-    starsContainer.appendChild(star);
-  }
-
+  // 呀！星星的区间就是这一页的脾气，交给共享层的时候一个数都不敢动呢♥
+  // ⚠ 区间写法是 [起点, 跨度]，与原来的 `0.1 + Math.random() * 0.3` 一一对应。
+  var THEME = {
+    endingStars: {
+      count: [70, 14],
+      size: [0.5, 2],
+      minO: [0.08, 0.3], maxO: [0.45, 0.5],
+      dur: [2, 4], delay: [0, 5],
+      colors: { pool: ['#fff', '#ffa62b', '#ff6b35'] },
+    },
+  };
+  ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
   /* SECTION: resize guard */
   window.addEventListener('resize', function(){
     for (var j = 0; j < embers.length; j++){
