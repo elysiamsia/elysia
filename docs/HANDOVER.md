@@ -29,7 +29,7 @@
 | Cloudflare 缓存优化 | ✅ 已配置 |
 | **献花在 QQ 浏览器上修好（同源 + 来源判定）** | ✅ 已修已部署，见 §4.3 |
 | **`armor.html` 皮肤徽章失色** | ✅ 已修已部署，见 §4.4 |
-| **P1 公共层抽取（12 个任务）** | 🟡 **进行中：Task 1/12 完成**（验证地基已建） |
+| **P1 公共层抽取（12 个任务）** | 🟡 **进行中：Task 1–6 完成**（样式层已抽完，正在抽 JS 层） |
 
 ---
 
@@ -264,11 +264,13 @@ Task 1–5 是「✅ 无差异」。**Task 6 起不是了，而且以后也不�
 > `screenshots/snap/baseline-task6` 是 **Task 6 之后**的状态，给 Task 7–12 当参照，
 > 免得每次比对都被这 18 处已知差异淹没。
 
-> ⚠ **还欠一处工具改进**：`.ending-star` 的 `left` / `top` / `--delay` **不在快照的
-> 采样属性里**，所以「星屑位置整体变了」这类改动，工具只能通过 `--dur` 与
-> `opacity` 侧面察觉（这次正好察觉到了）。补 `animation-delay` / `left` / `top`
-> 到 `PROPS` 能堵上这个口子，但那要求重新生成参照点（且 pre-P1 那份得从
-> `origin/main` 的 worktree 里取），留到下一轮开工时做。
+> ✅ **那处工具缺口已补**（2026-09-16）：`left` / `top` / `animation-delay` 已加进 `PROPS`。
+> 效果立竿见影 —— 同一组对照（pre-P1 vs Task6）报出的差异从 **18 处涨到 72 处**，
+> 因为现在能把星屑重洗的**全部范围**照出来（之前只看得到 `--dur` 一条线）。
+> **72 处仍然全部落在 `.ending-star` 一个选择器上**，其余 7 个 × 8 页 × 3 视口零变化。
+>
+> 参照点已用新 `PROPS` 重新生成：`baseline`（取自 `origin/main` 的 worktree，
+> 真正的 pre-P1）与 `baseline-task6`，两者都验证过同码两次零差异。
 
 
 ```
@@ -363,6 +365,7 @@ docs/superpowers/plans/2026-09-15-extraction-inventory.md    抽取分析（1173
 |---|---|
 | **`cdp.py` 的 click 要先滚动** | 它用 `getBoundingClientRect()` 的视口坐标派发鼠标事件，元素在视口外会**静默无操作**。且站点有 `scroll-behavior:smooth`，必须 `scrollIntoView({behavior:'instant'})` |
 | **探测 `loading="lazy"` 的图片要把视口拉高** | 否则下面的图不加载，渲染盒 `0x0`——那是正常行为，不是回归 |
+| **⚠ `pkill` 杀不掉 Windows 原生 python 进程** | `python -m http.server 8500` 用 `pkill -f` 杀不干净——**多个服务器会同时监听同一端口**，请求落到哪个不确定。实测踩到过：为了生成 pre-P1 基线，起了一个服务 worktree 的服务器，但旧的（服务主仓库）仍在响应，于是采样出一份**内容完全错的「pre-P1 基线」**，差点当成真的用。查：`netstat -ano \| grep ":8500 " \| grep LISTENING`（同一 PID 出现两行是 IPv4/IPv6 双栈，正常）；杀：`taskkill //F //PID <pid>`。**起完服务器必须先验内容再采样**——例如请求一个只应存在于新目录的文件。 |
 | **`cdp.py` 的浏览器缓存跨次留存** | 它用固定的 `--user-data-dir=C:/tmp/edge_cdp`，所以**改了 CSS/JS 再测，读到的可能还是旧版本**——会让人误判成「改动没生效」或「修了还是坏的」。给 URL 加 `?cb=<时间戳>` 再测 |
 | **改视觉必须截图核对** | 项目纪律：不接受"看起来差不多"。桌面 `1280×900` + 移动 `375×812` 各一轮 |
 | **元素有入场动画时要等** | `.timeline-node` 是 `opacity:0` + IntersectionObserver 出 `.visible`。滚过去要 `sleep` 一两秒再截图，否则拍到一片空白——那不是页面坏了 |

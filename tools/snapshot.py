@@ -74,8 +74,16 @@ SELECTORS = [
 ]
 
 # 采样哪些计算属性
+#
+# ⚠ `left` / `top` / `animation-delay` 是 2026-09-16 补的。起因：
+#   Task 6 把 7 页的星屑生成抽进共享层时，各页的**随机数调用顺序**被统一，
+#   星屑位置整体重洗了一遍 —— 而工具当时只察觉到 `animation-duration`（即 --dur）
+#   和一处 `opacity`，**位置类属性根本不在采样列表里**。
+#   那次能察觉到纯属侥幸（正巧 --dur 的调用位置也变了）。
+#   补上这三个之后，「星屑被挪了位置」这类改动才会直接暴露出来。
 PROPS = [
     'display', 'position', 'width', 'height', 'margin', 'padding',
+    'left', 'top', 'animation-delay',
     'color', 'background-color', 'background-image',
     'font-size', 'font-weight', 'letter-spacing', 'line-height', 'text-align', 'text-shadow',
     'opacity', 'visibility', 'transform', 'border-radius', 'border-top-width', 'border-top-color',
