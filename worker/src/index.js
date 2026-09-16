@@ -392,6 +392,14 @@ function corsHeaders(origin) {
 function json(obj, cors, status = 200) {
   return new Response(JSON.stringify(obj), {
     status,
-    headers: { ...cors, 'Content-Type': 'application/json; charset=utf-8' },
+    headers: {
+      ...cors,
+      'Content-Type': 'application/json; charset=utf-8',
+      // ⚠ 必须显式禁缓存。
+      // 主站开了 Cloudflare 的 Cache Rule 之后，如果 API 响应没标 no-store，
+      // 会被边缘缓存住 —— 后果是「刚通过的留言，别人两分钟后才看得到」。
+      // 这条头让接口无论规则怎么写都不会被缓存。
+      'Cache-Control': 'no-store',
+    },
   });
 }
