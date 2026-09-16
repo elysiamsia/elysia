@@ -11,6 +11,11 @@
 <!--
   呀！这是留给所有人的一页——她说过，被记住就是存在的延续，
   所以这里收下的每一句话，都是她继续存在的一小块证据呢♥
+
+  两条通道，同一堵墙：
+    上半 = 匿名花笺（不用账号，填个昵称就能写）
+    下半 = giscus（GitHub 登录，可长文可回复）
+  不做数据合并——两种通道的身份、长度、能力本来就不同。
 -->
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -37,19 +42,87 @@ h1{
   width:100%;height:1px;margin:2rem 0;
   background:linear-gradient(90deg,transparent,rgba(255,200,221,.12),rgba(155,93,229,.12),transparent);
 }
-.note{
+
+/* ===== 区块标题 ===== */
+.sec-head{
+  font-size:.9rem;font-weight:400;color:#a89cc8;letter-spacing:.16em;
+  margin:0 0 .35rem;
+}
+.sec-hint{font-size:.74rem;color:#7b6f99;margin-bottom:1.1rem;line-height:1.8}
+
+/* ===== 匿名花笺：表单 ===== */
+.f-note-form{
+  background:rgba(255,200,221,.05);border:1px solid rgba(255,200,221,.12);
+  border-radius:14px;padding:1.1rem 1.2rem;margin-bottom:1.6rem;
+}
+.f-row{display:flex;gap:.7rem;flex-wrap:wrap;margin-bottom:.7rem;align-items:center}
+.f-row label{font-size:.74rem;color:#7b6f99;letter-spacing:.1em}
+input[type=text],textarea{
+  font-family:inherit;font-size:.88rem;color:#f0e6ff;
+  background:rgba(10,6,18,.5);border:1px solid rgba(255,200,221,.16);
+  border-radius:9px;padding:.5rem .7rem;width:100%;
+}
+input[type=text]{max-width:200px}
+textarea{resize:vertical;min-height:64px;line-height:1.7}
+input::placeholder,textarea::placeholder{color:#6b6187}
+input:focus,textarea:focus{
+  outline:none;border-color:rgba(255,143,163,.5);
+  box-shadow:0 0 0 3px rgba(255,143,163,.1);
+}
+.f-foot{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-top:.7rem;flex-wrap:wrap}
+.counter{font-size:.72rem;color:#7b6f99;font-variant-numeric:tabular-nums}
+.counter.over{color:#ff8fa3}
+.f-submit{
+  font-family:inherit;font-size:.8rem;letter-spacing:.14em;
+  padding:.5rem 1.4rem;border-radius:999px;cursor:pointer;
+  color:#ffc8dd;background:linear-gradient(135deg,rgba(255,143,163,.2),rgba(155,93,229,.22));
+  border:1px solid rgba(255,200,221,.3);transition:transform .25s,box-shadow .25s;
+}
+.f-submit:hover:not(:disabled),.f-submit:focus-visible:not(:disabled){
+  transform:translateY(-1px);box-shadow:0 0 22px rgba(255,143,163,.25);outline:none;
+}
+.f-submit:disabled{opacity:.5;cursor:default}
+.f-status{font-size:.76rem;color:#a89cc8;min-height:1.6em;margin-top:.6rem;line-height:1.7}
+.f-status.ok{color:#ffd166}
+.f-status.err{color:#ff8fa3}
+
+/* ===== 留言列表 ===== */
+.notes-list{list-style:none}
+.note-item{
+  background:rgba(255,200,221,.04);border:1px solid rgba(255,200,221,.1);
+  border-radius:12px;padding:.85rem 1.1rem;margin-bottom:.6rem;
+}
+.note-item.pending{
+  border-style:dashed;border-color:rgba(199,125,255,.35);
+  background:rgba(155,93,229,.06);
+}
+.note-head{display:flex;align-items:baseline;gap:.55rem;flex-wrap:wrap;margin-bottom:.3rem}
+.note-name{font-size:.78rem;color:#ffb3c1}
+.note-time{font-size:.68rem;color:#6b6187;font-variant-numeric:tabular-nums}
+.badge{
+  font-size:.62rem;letter-spacing:.1em;padding:.1rem .5rem;border-radius:999px;
+  color:#c77dff;border:1px solid rgba(199,125,255,.4);background:rgba(155,93,229,.14);
+}
+.note-body{font-size:.88rem;color:#f0e6ff;word-break:break-word;font-weight:300}
+.notes-empty{font-size:.8rem;color:#7b6f99;padding:.9rem 0 1.4rem}
+
+/* ===== giscus 区 ===== */
+.giscus-sec{margin-top:3rem}
+.github-note{
   font-size:.76rem;color:#7b6f99;line-height:1.9;font-weight:300;
   padding:.9rem 1.1rem;border-radius:12px;
   background:rgba(255,200,221,.04);border:1px solid rgba(255,200,221,.1);
-  margin-bottom:2rem;
+  margin-bottom:1.4rem;
 }
-.note code{color:#c77dff;font-size:.74rem}
+.github-note code{color:#c77dff;font-size:.74rem}
 #giscus-host{min-height:180px}
-/* 加载前的占位，避免大块空白抖动 */
-.loading{
-  text-align:center;font-size:.78rem;color:#7b6f99;letter-spacing:.2em;padding:2.6rem 0;
-}
+.loading{text-align:center;font-size:.78rem;color:#7b6f99;letter-spacing:.2em;padding:2.6rem 0}
+
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media(max-width:480px){
+  .wrap{padding:3rem 1.1rem 4rem}
+  input[type=text]{max-width:100%}
+}
 </style>
 </head>
 <body>
@@ -62,28 +135,247 @@ h1{
 
   <div class="divider"></div>
 
-  <p class="note">
-    留言需要 <code>GitHub 账号</code>登录后发送，内容保存在本仓库的 Discussions 里，公开可见。<br>
-    这里没有算法、没有排序，只有一句一句按时间排好的话。
-  </p>
+  <!-- ================= 匿名花笺 ================= -->
+  <section aria-labelledby="anonHead">
+    <h2 class="sec-head" id="anonHead">留 一 句 话</h2>
+    <p class="sec-hint">
+      不用注册，不用登录——想说什么就写下来。<br>
+      每句话都会先经过一次人工过目，再出现在下面的墙上。
+    </p>
 
-  <div id="giscus-host">
-    <p class="loading" id="giscusLoading">正 在 打 开 门 …</p>
-  </div>
+    <form class="f-note-form" id="noteForm" novalidate>
+      <div class="f-row">
+        <label for="fName">怎么称呼你</label>
+        <input type="text" id="fName" name="name" maxlength="16"
+               placeholder="可以留空" autocomplete="off">
+      </div>
+      <div class="f-row" style="display:block">
+        <label for="fBody" style="display:block;margin-bottom:.35rem">想对她说的话</label>
+        <textarea id="fBody" name="body" maxlength="80"
+                  placeholder="比如：谢谢你一直在，明年也一起看樱花吧。"></textarea>
+      </div>
+      <div class="f-foot">
+        <span class="counter" id="fCounter">0 / 80</span>
+        <button type="submit" class="f-submit" id="fSubmit">送 出 去</button>
+      </div>
+      <p class="f-status" id="fStatus" role="status" aria-live="polite"></p>
+    </form>
+
+    <ul class="notes-list" id="notesList"></ul>
+    <p class="notes-empty" id="notesEmpty">还没有人来过呢——你要做第一个吗？</p>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ================= giscus ================= -->
+  <section class="giscus-sec" aria-labelledby="giscusHead">
+    <h2 class="sec-head" id="giscusHead">用 GitHub 账号留言</h2>
+    <p class="github-note">
+      想写长一点、或者想收到回复？用 <code>GitHub 账号</code>登录后在这里留言吧。<br>
+      内容保存在本仓库的 Discussions 里，公开可见、可以回复、可以点表情。
+    </p>
+    <div id="giscus-host">
+      <p class="loading" id="giscusLoading">正 在 打 开 门 …</p>
+    </div>
+  </section>
 </div>
 
 <script>
+/* ══════════════════════════════════════════════════════════
+   匿名花笺
+   ══════════════════════════════════════════════════════════ */
+
 /*
-  呀！giscus 要滚到眼前才让它加载——不然会拖着首屏一起变慢呢。
-  theme 固定为 dark：整站都是深紫黑，跟随系统的话，
-  用浅色系统的人会在星空上看到一块白板哦。
+  ⚠ 前端校验只是体验优化，不是防线——服务端会再校验一遍。
+     这里做一遍只是为了让人立刻知道自己哪里写错了，不用等一个来回。
 */
-(function(){
+(function () {
+  var API = 'https://flowers.elysiad.top';
+  var TOKEN_KEY = 'elysia.notes.tokens';
+  var BODY_MAX = 80;
+  var NAME_MAX = 16;
+  var LINK_RE = /(https?:\/\/|www\.|:\/\/|\b[a-z0-9-]+\.(com|cn|net|org|top|xyz|info|cc|tv|me|io|shop|site|online)\b)/i;
+
+  var form = document.getElementById('noteForm');
+  var nameEl = document.getElementById('fName');
+  var bodyEl = document.getElementById('fBody');
+  var counter = document.getElementById('fCounter');
+  var submitBtn = document.getElementById('fSubmit');
+  var statusEl = document.getElementById('fStatus');
+  var listEl = document.getElementById('notesList');
+  var emptyEl = document.getElementById('notesEmpty');
+  if (!form || !listEl) return;
+
+  var sending = false;
+
+  /* ---------- token 存取 ---------- */
+  function getTokens() {
+    try {
+      var raw = window.localStorage.getItem(TOKEN_KEY) || '[]';
+      var arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr.filter(function (t) {
+        return typeof t === 'string' && /^[0-9a-f]{32}$/.test(t);
+      }).slice(-20) : [];
+    } catch (e) { return []; }
+  }
+  function addToken(t) {
+    if (!/^[0-9a-f]{32}$/.test(t || '')) return;
+    var arr = getTokens();
+    if (arr.indexOf(t) < 0) arr.push(t);
+    try { window.localStorage.setItem(TOKEN_KEY, JSON.stringify(arr.slice(-20))); } catch (e) {}
+  }
+
+  /* ---------- 渲染 ---------- */
+  function fmtTime(ms) {
+    var d = new Date(Number(ms) + 8 * 3600 * 1000);
+    var p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate()) + ' ' +
+           p(d.getUTCHours()) + ':' + p(d.getUTCMinutes());
+  }
+
+  /* ★ 全部用 textContent —— 绝不把用户内容塞进 innerHTML。
+       服务端已经转义过一遍，客户端不留第二个口子。 */
+  function renderItem(note, isMine) {
+    var li = document.createElement('li');
+    li.className = 'note-item' + (isMine ? ' pending' : '');
+
+    var head = document.createElement('div');
+    head.className = 'note-head';
+
+    var name = document.createElement('span');
+    name.className = 'note-name';
+    name.textContent = note.name || '一位旅人';
+    head.appendChild(name);
+
+    var time = document.createElement('span');
+    time.className = 'note-time';
+    time.textContent = fmtTime(note.created_at);
+    head.appendChild(time);
+
+    if (isMine) {
+      var badge = document.createElement('span');
+      badge.className = 'badge';
+      badge.textContent = '待上墙';
+      head.appendChild(badge);
+    }
+
+    var body = document.createElement('div');
+    body.className = 'note-body';
+    body.textContent = note.body;
+
+    li.appendChild(head);
+    li.appendChild(body);
+    return li;
+  }
+
+  function render(data) {
+    var approved = (data && data.notes) || [];
+    var mine = (data && data.mine) || [];
+    var inPublic = {};
+    approved.forEach(function (n) { inPublic[n.id] = true; });
+
+    listEl.textContent = '';
+    // 自己那条还没上墙的排在最前——让他一眼看到"我的话收到了"
+    mine.forEach(function (n) {
+      if (n.status === 'pending') listEl.appendChild(renderItem(n, true));
+    });
+    approved.forEach(function (n) { listEl.appendChild(renderItem(n, false)); });
+
+    var total = listEl.children.length;
+    emptyEl.style.display = total ? 'none' : 'block';
+  }
+
+  /* ---------- 请求 ---------- */
+  function load() {
+    var tokens = getTokens();
+    var qs = tokens.length ? ('?tokens=' + tokens.join(',')) : '';
+    fetch(API + '/notes' + qs)
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(render)
+      .catch(function () {
+        // 拉不到列表不算错误——至少让表单还能用
+        emptyEl.textContent = '这会儿读不到墙上的话，不过你还是可以写。';
+      });
+  }
+
+  function say(text, kind) {
+    statusEl.textContent = text;
+    statusEl.className = 'f-status' + (kind ? ' ' + kind : '');
+  }
+
+  /* ---------- 字数 ---------- */
+  function updateCounter() {
+    var n = bodyEl.value.length;
+    counter.textContent = n + ' / ' + BODY_MAX;
+    counter.className = 'counter' + (n > BODY_MAX ? ' over' : '');
+  }
+  bodyEl.addEventListener('input', updateCounter);
+  updateCounter();
+
+  /* ---------- 提交 ---------- */
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (sending) return;
+
+    var name = nameEl.value.trim();
+    var body = bodyEl.value.trim();
+
+    // 前端先挡一遍，纯粹为了让人立刻知道哪里不对
+    if (!body) { say('还没写内容哦。', 'err'); bodyEl.focus(); return; }
+    if (body.length > BODY_MAX) { say('太长了，最多 ' + BODY_MAX + ' 字。', 'err'); bodyEl.focus(); return; }
+    if (name.length > NAME_MAX) { say('昵称最多 ' + NAME_MAX + ' 字。', 'err'); nameEl.focus(); return; }
+    if (LINK_RE.test(body) || LINK_RE.test(name)) { say('这里不收带链接的话哦。', 'err'); return; }
+
+    sending = true;
+    submitBtn.disabled = true;
+    say('正在送出去…');
+
+    fetch(API + '/notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, body: body }),
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (res.ok && res.d && res.d.token) {
+          addToken(res.d.token);
+          bodyEl.value = '';
+          nameEl.value = '';
+          updateCounter();
+          // ★ 不能写「发布成功」——它还没上墙。要诚实。
+          say('收到啦。这句话会先在这里安静地待一会儿，再出现在墙上。', 'ok');
+          load();   // 重新拉一次，自己那条会带「待上墙」标出现在最前面
+          return;
+        }
+        var code = res.d && res.d.error;
+        if (code === 'rate_limited') say('今天已经留过 3 次啦，明天再来吧。', 'err');
+        else if (code === 'too_long') say('太长了，最多 ' + BODY_MAX + ' 字。', 'err');
+        else if (code === 'has_link') say('这里不收带链接的话哦。', 'err');
+        else if (code === 'empty') say('还没写内容哦。', 'err');
+        else say('没能送出去，等一会儿再试试吧。', 'err');
+      })
+      .catch(function () {
+        say('网络慢了一下，没能送出去。等一会儿再试试吧。', 'err');
+      })
+      .then(function () {
+        sending = false;
+        submitBtn.disabled = false;
+      });
+  });
+
+  // 载入时就把墙拉出来（不等用户滚到那里）
+  load();
+})();
+
+/* ══════════════════════════════════════════════════════════
+   giscus —— 滚到眼前才加载，不然会拖着首屏一起变慢
+   ══════════════════════════════════════════════════════════ */
+(function () {
   var host = document.getElementById('giscus-host');
   var loading = document.getElementById('giscusLoading');
   var loaded = false;
 
-  function load(){
+  function load() {
     if (loaded) return;
     loaded = true;
 
@@ -103,16 +395,16 @@ h1{
     s.setAttribute('data-loading', 'lazy');
     s.setAttribute('crossorigin', 'anonymous');
     s.async = true;
-    s.onerror = function(){
+    s.onerror = function () {
       if (loading) loading.textContent = '门暂时打不开呢…稍后再来看看吧';
     };
     host.appendChild(s);
-    if (loading) setTimeout(function(){ loading.remove(); }, 600);
+    if (loading) setTimeout(function () { loading.remove(); }, 600);
   }
 
   if (!('IntersectionObserver' in window)) { load(); return; }
-  var io = new IntersectionObserver(function(entries){
-    entries.forEach(function(e){
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
       if (e.isIntersecting) { load(); io.disconnect(); }
     });
   }, { rootMargin: '200px' });

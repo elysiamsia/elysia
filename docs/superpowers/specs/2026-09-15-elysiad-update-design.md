@@ -284,11 +284,32 @@ POST /flower  → {"count": 1248}
 
 | 变体 | 立绘 | 说明 |
 |---|---|---|
-| `og-1.png` | 粉色妖精小姐♪ | 初遇那位粉色妖精，缩略图可读性最好 |
-| `og-2.png` | 真我·人之律者 | 她的本质形态 |
-| `og-3.png` | 嗨♪爱愿妖精♥ | **原图自带两个 UI 截图浮层**，因此单张方案作废，但作为轮换变体保留 |
+| `og-1.jpg` | 粉色妖精小姐♪ | 初遇那位粉色妖精，缩略图可读性最好 |
+| `og-2.jpg` | 真我·人之律者 | 她的本质形态 |
+| `og-3.jpg` | 嗨♪爱愿妖精♥ | **原图自带两个 UI 截图浮层**，因此单张方案作废，但作为轮换变体保留 |
 
 由 `tools/pick_og.py` 随机轮换当前生效的那一张，并把 8 页的 `og:image` 同步改掉。
+
+**⚠ 格式从 PNG 改为 JPEG（2026-09-16 补充）**
+
+上线后实测：QQ / 微信分享不显示预览。排查结论是**服务端没问题**——第三方 OG 解析服务（Microlink）把 `title` / `description` / `image.url` / `image.size` / `logo` **全部正确读出**，三种爬虫 UA（微信、QQ、bytespider）访问也都返回 200 + 完整标签，robots 未拦截。
+
+剩下的两个可改因素里，**图片体积**是最可疑的一个：
+
+| | PNG | JPEG q92 | 省下 |
+|---|---|---|---|
+| og-1 | 537 KB | **89 KB** | 83.4% |
+| og-2 | 607 KB | 105 KB | 82.7% |
+| og-3 | 630 KB | 129 KB | 79.6% |
+| 合计 | 1774 KB | **323 KB** | **81.8%** |
+
+537 KB 的图下载要 1.79 秒（实测 307 KB/s），而爬虫的超时通常比人短。转成 JPEG 后画质**肉眼无差别**（已逐张目视确认：文字锐利、渐变无色带）。
+
+**结论：og:image 用 JPEG，不再用 PNG。** 规范里"不能用 WebP"这条依然成立（微信不认 WebP），JPEG 是允许的。
+
+出图流水线见 `tools/pick_og.py` 顶部注释；格式转换工具是 `tools/og_convert.py`。
+
+**另一个已排除的因素：主站托管。** 排查时发现 `elysiad.top` 当时**直连 GitHub Pages（Fastly），未走 Cloudflare 代理**，而大陆实测首字节 0.68~1.17s。已开启橙云代理（现解析到 `104.16.x.x`、响应头 `Server: cloudflare`），这对**所有大陆访客**的速度都有影响，不只是分享预览。
 
 > ⚠ **限制**：微信 / QQ 的预览图由平台自行抓取并缓存，缓存期可能数天到数周。因此「每次分享都随机」在这些平台上**做不到**——服务端随机对它们无效。本设计实现的是「**轮换当前生效的那一张**」。若改为 Worker 每请求随机，则分享卡片的可用性会绑在 Worker 上，Cloudflare 在中国大陆不通时是空白预览图，**不采用**。
 
@@ -471,3 +492,96 @@ http.sslverify = false                  # 全局关闭 HTTPS 证书校验，存�
 ### 11.6 一个已知的缓存行为
 
 GitHub Pages 的 `Cache-Control` 是 `max-age=600`。**改了 `assets/` 下的任何文件，访客最多 10 分钟后才会看到新版本。** 测试时若发现改动"没生效"，先怀疑浏览器缓存——加个 `?v=<时间戳>` 再试。
+
+### 11.7 匿名花笺（2026-09-16 新增需求）
+
+**背景**：giscus 要求 GitHub 账号，而访客大多从 QQ / 微信点进来。实测反馈是"找不到留言的地方"——补了入口之后，新问题是**没有 GitHub 账号的人根本留不了言**。
+
+**决策**：不换评论系统（换则现有 giscus 评论要迁移，且 Waline 等自建方案在大陆的可达性依赖备案或境外主机）。改为**在 giscus 之上加一条自建匿名通道**，两条通道在展示层合成一堵墙。
+
+**复用现有基础设施**：Cloudflare Worker + D1，域名复用 `flowers.elysiad.top`（**大陆可达性已由需求方手机实测确认**）。**不用 KV**——KV 有 1000 写/天的实测坑，且本需求要列表读取。
+
+#### 存储（D1）
+
+```sql
+CREATE TABLE notes (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at INTEGER NOT NULL,                     -- 毫秒时间戳
+  day        TEXT    NOT NULL,                     -- YYYY-MM-DD（北京时区），用于限流
+  name       TEXT,                                 -- 昵称，可空，≤16 字
+  body       TEXT    NOT NULL,                     -- 正文，≤80 字
+  status     TEXT    NOT NULL DEFAULT 'pending',   -- pending | approved | rejected
+  ip_hash    TEXT    NOT NULL,                     -- hash(IP + 每日盐)，不存原文
+  token      TEXT    NOT NULL                      -- 32 位随机十六进制，提交者自查用
+);
+CREATE INDEX idx_notes_status_id ON notes(status, id DESC);
+CREATE INDEX idx_notes_rate ON notes(day, ip_hash);
+```
+
+免费额度：500 MB/库、5,000,000 行读/天、100,000 行写/天——远超需求。
+
+#### 接口
+
+```
+POST /notes
+  body: {"name": "小星", "body": "谢谢你一直在。"}
+  → 201 {"ok": true, "token": "<32 位十六进制>"}
+  → 400 {"error": "too_long" | "empty" | "has_link"}
+  → 429 {"error": "rate_limited"}
+
+GET /notes[?tokens=a,b,c]
+  → 200 {
+      "notes": [{"id","name","body","created_at"}],              ← 已上墙的，最多 200 条
+      "mine":  [{"id","name","body","created_at","status"}]      ← 自己提交的，含待审
+    }
+
+GET  /notes/manage?key=<密钥>
+  → 200 极简 HTML 列表（待审在前），每条带「通过」「删除」两个表单按钮
+POST /notes/manage?key=<密钥>
+  body: {"id": 12, "action": "approve" | "reject"}
+  → 303 重定向回管理页（表单提交）；JSON 调用则回 {"ok":true,"id":12,"status":"approved"}
+```
+
+> **实现时的偏差**：规格初稿把「公开列表」和「自己那几条」设计成同一个 `notes` 字段的两种形态
+> （带不带 `tokens` 参数返回不同结构）。实现改成**始终同时返回 `notes` 与 `mine` 两个字段**——
+> 同一个接口两种形状会让前端必须分支，而且没法在显示公开列表的同时高亮自己那条。
+> `mine` 里带 `status`，`notes` 里不带（不需要给公开列表暴露审核状态）。
+
+#### 校验与限流（服务端，不可绕过）
+
+| 规则 | 处理 |
+|---|---|
+| `body` 去空白后为空 | 400 `empty` |
+| `body` 超 80 字 / `name` 超 16 字 | 400 `too_long` |
+| `body` 含 URL（`http://`、`www.`、`://`） | 400 `has_link` |
+| 同 `ip_hash` 当日已提交 ≥ 3 条 | 429 `rate_limited` |
+| 以上全过 | 入库，`status='pending'` |
+
+**注意**：匿名通道的校验必须**全部在服务端**做——前端校验只是体验优化，不是防线。
+
+#### 审核（需求方选定：先审后发）
+
+- 新提交一律 `status='pending'`，**不出现在公开列表里**
+- 需求方打开管理页（密钥存为 Worker secret `MANAGE_KEY`），点「通过」→ `status='approved'`；点「删除」→ `status='rejected'`
+- 管理页用密钥做凭证，**不做登录系统**；密钥走 URL 查询参数，服务端比对，不匹配返回 404（不是 403——不暴露这个入口存在）
+
+#### ⚠ 先审后发的体验补偿（必须实现）
+
+留言者提交后**看不到自己的话**，会以为失败——而"被记住"正是这个地方的全部意义。所以：
+
+1. **提交成功后立刻在页面上显示自己那条**，带一个灰标「待上墙」
+2. 实现方式：POST 返回的 `token` 存进 `localStorage`，之后 `GET /notes?tokens=…` 把它取回来（含 `status`）
+3. **别人看不到**这条——它不在公开列表里
+4. 审核通过后灰标消失（下次刷新时 `status` 变成 `approved`）
+5. 提交后的文案要诚实又温柔，不能是「发布成功」（它还没上墙）：
+   > 「收到啦。这句话会先在这里安静地待一会儿，再出现在墙上。」
+
+#### 无障碍与减动
+
+- 表单控件用原生 `<input>` / `<textarea>` / `<button>`，天然键盘可达
+- 提交状态用 `aria-live="polite"` 播报，读屏用户能听到「已收到」
+- 列表项的进场动画在 `prefers-reduced-motion: reduce` 下关闭
+
+#### 与 giscus 的关系
+
+giscus **原样保留**在匿名区下方，两者是同一页的两块。**不做数据合并**——两种通道的身份、长度、能力本来就不同，硬合并会造成"为什么这条能回复那条不能"的困惑。视觉上明确分区即可。

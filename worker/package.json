@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "smoke": "node test/smoke.mjs"
+    "smoke": "node test/smoke.mjs && node test/smoke-notes.mjs",
+    "smoke:flowers": "node test/smoke.mjs",
+    "smoke:notes": "node test/smoke-notes.mjs"
   }
 }

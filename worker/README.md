@@ -1,4 +1,7 @@
-# 献花后端 · Cloudflare Worker 部署手册
+# elysiad.top 后端 · Cloudflare Worker 部署手册
+
+> 两个功能共用这一个 Worker：**献花计数**（KV）与**匿名花笺**（D1）。
+> 献花部分见 §1–§10，匿名花笺见 §12，KV 的实测坑见 §11。
 
 > **状态：已部署 ✅（2026-09-15）**
 >
@@ -499,4 +502,95 @@ POST /flower  →  交给 DO 做原子递增，DO 再把新总数写回 KV
 | `flowers.elysiad.top`（自定义域名） | HTTP 200，0.84 秒 |
 
 **生产 Worker 必须用自定义域名，不能图省事用默认的 `workers.dev`**——否则大陆访客的献花数字永远不会出现。这条已由生产 Worker 的配置满足。
+
+---
+
+## 12. 匿名花笺（D1）部署与维护
+
+留言存在 Cloudflare D1 里。**不用 KV**——KV 有 1000 写/天的实测坑（见 §11），而且这里要的是列表读取。
+
+### 12.1 已经替你做完的部分
+
+| 项目 | 值 |
+|---|---|
+| D1 数据库 | `elysia-notes` |
+| database_id | `7683cdcf-0897-46d2-9e5a-14a3fb0a7394` |
+| 主区域 | **APAC**（首次误建到 EEUR，已删除重建） |
+| 表结构 | 已应用（`notes` 表 + 3 个索引） |
+
+⚠ **D1 的主区域在创建时就定死了**，建错了只能删库重建：
+
+```bash
+wrangler d1 create elysia-notes --location apac
+```
+
+### 12.2 你需要做的一件事：设置管理密钥
+
+管理页的凭证。**必须由你设置**——密钥是你进管理页的凭证，别人生成了就等于别人也知道。
+
+```bash
+cd worker
+wrangler secret put MANAGE_KEY
+```
+
+提示输入时敲一串长随机字符串（可以用 `openssl rand -hex 32` 生成）。
+
+**设完之后打开这个地址就是管理页：**
+
+```
+https://flowers.elysiad.top/notes/manage?key=<你设的那个>
+```
+
+> ⚠ 密钥是走 URL 查询参数的，会进浏览器历史和任何你粘贴过的地方。
+> 别把它分享出去。密钥不对时服务端一律返回 **404**（不是 403）——不暴露这个入口存在。
+
+### 12.3 部署
+
+```bash
+cd worker
+wrangler deploy
+```
+
+### 12.4 日常使用
+
+| 我想… | 怎么做 |
+|---|---|
+| 看看有没有新留言 | 打开管理页（建议存书签） |
+| 让一条上墙 | 管理页里点「通过」 |
+| 删掉一条 | 点「删除」（已上墙的也可以删） |
+| 改表结构 | 改 `schema.sql`，再 `wrangler d1 execute elysia-notes --remote --file=./schema.sql` |
+| 看库里有多少条 | `wrangler d1 execute elysia-notes --remote --command "SELECT status, COUNT(*) FROM notes GROUP BY status;"` |
+| 直接看某条 | `wrangler d1 execute elysia-notes --remote --command "SELECT * FROM notes WHERE id=1;"` |
+
+**审核是「先审后发」**：新留言一律 `pending`，**不出现在公开列表里**。
+
+> 提交者自己能看到他那条（带「待上墙」标），别人看不到——这是刻意的设计，
+> 否则他写完发现什么都没有，会以为失败了。实现方式是提交时发一个 32 位随机 token，
+> 浏览器存 localStorage，之后取列表时带上。
+
+### 12.5 本地测试
+
+不用连 Cloudflare 也能跑：
+
+```bash
+cd worker
+npm run smoke          # 两项一起
+npm run smoke:notes    # 只跑花笺（53 项断言）
+npm run smoke:flowers  # 只跑献花（26 项断言）
+```
+
+测试用的是**内存里的假 D1**——它按 SQL 文本分派到对应的内存操作，遇到不认识的 SQL 会直接报错，
+所以拼错的查询不会被静默放过。
+
+### 12.6 隐私与防滥用
+
+| 措施 | 说明 |
+|---|---|
+| IP 不落库 | 只存 `hash(IP + 每日盐)`，与献花同一套策略 |
+| 限流 | 每 IP 每天 3 条，超过返回 429 |
+| 长度 | 正文 ≤80 字，昵称 ≤16 字（**服务端强制**） |
+| 拒收链接 | 含 `http://` / `www.` / 裸域名（`xxx.com`）的**直接不收** |
+| XSS | 管理页会把留言拼进 HTML，所以用户内容全部经 `esc()` 转义；前端渲染一律用 `textContent`，不用 `innerHTML` |
+
+**所有校验都在服务端做。** 前端的校验只是为了让人立刻知道自己哪里写错了，不是防线。
 

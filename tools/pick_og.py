@@ -5,16 +5,25 @@
 #   python tools/pick_og.py --set 2    指定用第 2 张
 #
 # 它做的事：把 8 个页面 HTML 里 og:image 的 content 统一改成
-# https://elysiad.top/images/og-<n>.png。
+# https://elysiad.top/images/og-<n>.<ext>（.jpg 优先，也认 .png）。
 #
-# 为什么不是「每次分享都随机」：微信 / QQ 的预览图是平台抓取后自己缓存的，
-# 缓存期可能长达数天到数周，服务端随机对它们无效。所以做法是
+# 为什么是「轮换」而不是「每次分享都随机」：微信 / QQ 的预览图是平台抓取后
+# 自己缓存的，缓存期可能长达数天到数周，服务端随机对它们无效。所以做法是
 # 「轮换当前生效的那张」——跑一次，之后所有分享统一换成新的那张。
 #
-# 生成变体用：
+# ── 重新出图的完整流水线 ──────────────────────────────────────────
+# 卡片是 JPEG 而不是 PNG：PNG 一张 537~630 KB，QQ / 微信对缩略图体积容忍度低，
+# 下载慢就可能直接不出预览。转 JPEG q92 后每张只要 89~129 KB（省 82%）。
+#
 #   python -m http.server 8500
-#   python tools/cdp.py "http://localhost:8500/tools/og-card.html?art=armor-pink" \
-#     size 1200x630 sleep 2200 shot images/og-1.png
+#   i=1
+#   for art in armor-pink armor-ego armor-elf; do
+#     python tools/cdp.py "http://localhost:8500/tools/og-card.html?art=$art" \
+#       size 1200x630 sleep 2200 shot /tmp/og-render.png
+#     python tools/og_convert.py /tmp/og-render.png images/og-$i.jpg
+#     i=$((i+1))
+#   done
+#   python tools/pick_og.py --set 1
 import re
 import sys
 from pathlib import Path
@@ -35,22 +44,27 @@ LABELS = {
     3: '嗨♪爱愿妖精♥（黄金庭院再舞）',
 }
 
-PATTERN = re.compile(r'(property="og:image"\s+content="https://elysiad\.top/)images/og(?:-\d+)?\.png(")')
+PATTERN = re.compile(
+    r'(property="og:image"\s+content="https://elysiad\.top/)images/og(?:-\d+)?\.(?:png|jpg)(")'
+)
 
 
-def variants() -> list[Path]:
-    found = []
-    for p in sorted(IMAGES.glob('og-*.png')):
-        m = re.fullmatch(r'og-(\d+)', p.stem)
-        if m:
-            found.append(p)
-    return sorted(found, key=lambda p: int(p.stem.split('-')[1]))
+def variants() -> list:
+    """列出所有变体。`.jpg` 优先（体积小、平台友好），也兼容 `.png`。"""
+    by_num = {}
+    for ext in ('jpg', 'png'):
+        for p in sorted(IMAGES.glob('og-*.%s' % ext)):
+            m = re.fullmatch(r'og-(\d+)', p.stem)
+            if m:
+                n = int(m.group(1))
+                by_num.setdefault(n, p)   # jpg 先扫，png 不会覆盖它
+    return [by_num[n] for n in sorted(by_num)]
 
 
-def current() -> str | None:
+def current():
     """从 index.html 读出当前生效的变体文件名"""
     html = (ROOT / 'index.html').read_text(encoding='utf-8')
-    m = re.search(r'property="og:image"\s+content="https://elysiad\.top/images/(og[-\d]*\.png)"', html)
+    m = re.search(r'property="og:image"\s+content="https://elysiad\.top/images/(og[-\d]*\.\w+)', html)
     return m.group(1) if m else None
 
 
@@ -59,12 +73,12 @@ def apply(name: str) -> int:
     for rel in PAGES:
         f = ROOT / rel
         if not f.exists():
-            print(f'  ⚠ 跳过（不存在）：{rel}')
+            print('  ⚠ 跳过（不存在）：%s' % rel)
             continue
         text = f.read_text(encoding='utf-8')
-        new, n = PATTERN.subn(rf'\g<1>images/{name}\g<2>', text)
+        new, n = PATTERN.subn(r'\g<1>images/%s\g<2>' % name, text)
         if n == 0:
-            print(f'  ⚠ 未找到 og:image 行：{rel}')
+            print('  ⚠ 未找到 og:image 行：%s' % rel)
             continue
         if new != text:
             f.write_text(new, encoding='utf-8')
@@ -75,16 +89,16 @@ def apply(name: str) -> int:
 def main() -> None:
     vs = variants()
     if not vs:
-        raise SystemExit('images/ 下没有 og-*.png 变体。先按本文件顶部注释里的命令生成。')
+        raise SystemExit('images/ 下没有 og-*.jpg 变体。出图流水线见本文件顶部注释。')
 
     cur = current()
 
     if '--list' in sys.argv:
-        print(f'共 {len(vs)} 张变体：')
+        print('共 %d 张变体：' % len(vs))
         for p in vs:
             n = int(p.stem.split('-')[1])
             mark = ' ← 当前生效' if p.name == cur else ''
-            print(f'  og-{n}.png  {LABELS.get(n, "")}{mark}')
+            print('  %-12s %s%s' % (p.name, LABELS.get(n, ''), mark))
         return
 
     if '--set' in sys.argv:
@@ -92,17 +106,19 @@ def main() -> None:
             want = int(sys.argv[sys.argv.index('--set') + 1])
         except (IndexError, ValueError):
             raise SystemExit('用法：python tools/pick_og.py --set <编号>')
-        target = f'og-{want}.png'
-        if not (IMAGES / target).exists():
-            raise SystemExit(f'找不到 {target}')
+        match = [p for p in vs if int(p.stem.split('-')[1]) == want]
+        if not match:
+            raise SystemExit('找不到编号为 %d 的变体' % want)
+        target = match[0].name
     else:
         import random
         pool = [p.name for p in vs if p.name != cur] or [p.name for p in vs]
         target = random.choice(pool)
 
     n = apply(target)
-    print(f'当前生效：{target}  {LABELS.get(int(target.split("-")[1].split(".")[0]), "")}')
-    print(f'已更新 {n} 个页面。')
+    num = int(target.rsplit('.', 1)[0].split('-')[1])
+    print('当前生效：%s  %s' % (target, LABELS.get(num, '')))
+    print('已更新 %d 个页面。' % n)
     print('\n下次自动轮换：再跑一次不带参数的 python tools/pick_og.py')
 
 
