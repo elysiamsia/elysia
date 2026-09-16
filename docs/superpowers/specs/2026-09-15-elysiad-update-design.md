@@ -235,7 +235,10 @@ POST /flower  → {"count": 1248}
 - **域名前提已确认可行**：`elysiad.top` 的 NS 已是 `hank.ns.cloudflare.com` / `fish.ns.cloudflare.com`，DNS 本就托管在 Cloudflare，只需新增一条子域
 - 按 IP 限流（每 IP 每日 5 朵）
 - **只存 `hash(ip + 每日盐)` 的当日计数，不落 IP 原文**
-- CORS 仅允许 `https://elysiad.top`
+- CORS 的来源判定：**只比主机名**（`elysiad.top` / `www.elysiad.top` / 本地调试），不比协议。
+  ⚠ 原先写的是「仅允许 `https://elysiad.top`」这种**精确字符串**，2026-09-16 因此出过事故：
+  QQ 浏览器的云加速把页面降级成 http，送来的 Origin 是 `http://elysiad.top`，一字之差 → 403。
+  见 §6.2 实施后修正
 
 **降级（必须实现）**：页面侧请求超时 1.5 秒。接口不可用时静默切换为本地计数，文案变为「你的花已送达 · 本机累计 N 朵」。**任何情况下都不显示错误提示。**
 

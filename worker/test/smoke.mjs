@@ -169,6 +169,51 @@ console.log('\n【11】KV 读失败时不炸，返回 0');
   check('返回结构化错误', body.error, 'internal');
 }
 
+console.log('\n【12】来源判定：只比主机名（2026-09-16 回归用例）');
+{
+  // ⚠ 这一节是为一次真实事故补的，别再删掉。
+  //
+  //   QQ 浏览器的云加速把页面降级成 http 提供给访客，于是送来的 Origin 是
+  //   'http://elysiad.top'；而白名单当时只写了 'https://elysiad.top'，
+  //   字符串一比不等 → 403 → 点献花静默降级成「本机累计 N 朵」。
+  //   页面能开、接口也连得上，**只差一个字母 s**，而且降级不报错。
+  //
+  //   这一节第一条就是那个回归用例：**同一个站点、不同协议，必须放行。**
+  //   另外补了后缀伪装的用例 —— 如果判定写成 host.endsWith('elysiad.top')，
+  //   'elysiad.top.evil.com' 会被误放行，那是个经典坑。
+
+  const allow = [
+    ['http://elysiad.top', 'http 同站（QQ 浏览器云加速就是这种）'],
+    ['https://elysiad.top', 'https 同站'],
+    ['https://www.elysiad.top', 'www 子域'],
+    ['http://localhost:8500', '本地调试'],
+    ['http://127.0.0.1:8500', '本地调试（IP 形式）'],
+    ['https://elysiad.top:8443', '非默认端口'],
+  ];
+  for (let i = 0; i < allow.length; i++) {
+    const [o, why] = allow[i];
+    const r = await call('POST', '/flower', { origin: o, ip: `198.51.100.${i + 1}` });
+    check(`放行 ${why}`, r.status, 200);
+  }
+
+  const block = [
+    ['https://evil.example.com', '异站'],
+    ['https://elysiad.top.evil.com', '后缀伪装（endsWith 的经典漏洞）'],
+    ['https://notelysiad.top', '相似域名'],
+    ['null', '沙箱来源'],
+    ['not a url', '不是合法 URL'],
+  ];
+  for (let i = 0; i < block.length; i++) {
+    const [o, why] = block[i];
+    const r = await call('POST', '/flower', { origin: o, ip: `198.51.100.${i + 51}` });
+    check(`拦下 ${why}`, r.status, 403);
+  }
+
+  // 空 Origin 放行：同源请求在部分浏览器里不带这个头
+  const noOrigin = await call('POST', '/flower', { origin: '', ip: '198.51.100.99' });
+  check('空 Origin 放行（部分浏览器同源不带这个头）', noOrigin.status, 200);
+}
+
 console.log(`\n${'─'.repeat(46)}`);
 console.log(`  通过 ${pass} 项，失败 ${fail} 项`);
 console.log(`${'─'.repeat(46)}\n`);

@@ -652,3 +652,87 @@ curl -s https://flowers.elysiad.top/count
 应显示「这里已收到 N 朵花」，而**不是**「本机累计 N 朵」。
 
 > 别用数字判断，用**文案**判断——数字碰巧一样也能骗过去，文案骗不了。
+
+### 13.1 第二幕：同源之后，仍然被 403 挡住（同日）
+
+同源改完、路由也部署了，手机实测：**GET 通了**——QQ 浏览器上第一次出现了
+「这里已收到 8 朵花」。但**点击的 POST 仍然失败**，文案变成
+「你的这一朵先留在本机（共 5 朵），等下再来送一次吧」。
+
+这句话来自 `goLocal()` 里 `knownShared !== null` 的分支，翻译过来是：
+**载入成功、点击失败**。同源这条路已经通了，卡在别的环节。
+
+#### 怎么查出真相的
+
+`wrangler tail`（实时日志）走 WebSocket，需求方的网络连不上（ETIMEDOUT），
+所以改用**临时诊断**：在 403 分支把被拒的 `Origin` **原值**写进 KV，
+再用 `wrangler kv key get` 读出来。
+
+> 诊断只在值变化时才写，避免被刷时烧掉 KV 写额度（读 10 万/天免费，写只有 1000/天）。
+> **定位完已删除**，没留在生产里。
+
+读到的值：
+
+```
+flower | http://elysiad.top
+         ^^^^^^
+```
+
+#### 根因
+
+**QQ 浏览器的云加速把页面降级成 http 提供给访客**，于是页面的 origin 是
+`http://elysiad.top`；而白名单里写的是精确字符串 `https://elysiad.top`。
+
+字符串一比不等 → 403。页面能开、接口也连得上、同源也没问题——
+**只差一个字母 `s`**。
+
+旁证：`http://elysiad.top/` 本身返回 **200、不跳转**，站点的「始终使用 HTTPS」没开，
+所以明文 HTTP 那条路确实是通的。
+
+#### 修法：来源判定改成「只比主机名」
+
+| | 改前 | 改后 |
+|---|---|---|
+| 判定依据 | `ALLOWED_ORIGINS.includes(origin)` | `ALLOWED_HOSTS.includes(new URL(origin).hostname)` |
+| `http://elysiad.top` | ❌ 403 | ✅ 放行 |
+| `https://elysiad.top:8443` | ❌ 403 | ✅ 放行 |
+| `https://elysiad.top.evil.com` | ✅ 拦下 | ✅ 拦下 |
+| `Origin: null` | ✅ 拦下 | ✅ 拦下 |
+| 空 Origin | ✅ 放行 | ✅ 放行 |
+
+⚠ `ALLOWED_HOSTS` 用的是**精确主机名比对**，不是 `host.endsWith('elysiad.top')`——
+后者会把 `elysiad.top.evil.com` 误放行，是个经典坑。
+
+#### 回归用例
+
+`worker/test/smoke.mjs` 新增【12】共 12 项（献花 26 → **38** 项，加花笺 55 项共 93 项）。
+
+**已验证这 12 项在旧代码上会失败**（`http 同站`、`非默认端口` 两条 ❌ 403），
+在修复版上全绿——不然就是「比较表达式是恒真式，测了等于没测」。
+
+#### 第二幕的验证方式（**不改动任何数字**）
+
+```bash
+# 放行：Access-Control-Allow-Origin 会原样回显该来源
+curl -s -X OPTIONS http://elysiad.top/flower \
+  -H 'Origin: http://elysiad.top' -D - -o /dev/null \
+  | grep -i access-control-allow-origin
+# 期望：http://elysiad.top
+
+# 拦截：退回默认值
+curl -s -X OPTIONS http://elysiad.top/flower \
+  -H 'Origin: https://evil.example.com' -D - -o /dev/null \
+  | grep -i access-control-allow-origin
+# 期望：https://elysiad.top
+```
+
+> 用 `OPTIONS` 是因为**它不写 KV**。想验证「放行」又不想往总数里加一朵花，就这么测。
+
+#### ⚠ 留一个问题没动：整站可以用明文 HTTP 打开
+
+`http://elysiad.top/` 返回 200、**不跳转**，「始终使用 HTTPS」是关的。
+
+**没有顺手打开它**，因为它可能反而把 QQ 浏览器再次弄坏：那种情况下 POST 会先吃一个
+跳转，而跨 origin 跳转时浏览器可能把 `Origin` 改成 `null`——那会被同一道检查拦下。
+**要开的话，得先在手机上实测一遍再开。**
+
