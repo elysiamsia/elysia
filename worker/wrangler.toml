@@ -4,8 +4,15 @@ compatibility_date = "2026-09-15"
 
 # 自定义域名。因为 elysiad.top 的 DNS 已在 Cloudflare，这一行会自动建好解析记录
 # ⚠ 实测：默认的 *.workers.dev 在中国大陆连不上（HTTP 000），必须用自定义域名
+#
+# ⚠ 第二条路由把 /notes* 挂到**主站同源**上。
+#   为什么：页面在 elysiad.top、接口原本在 flowers.elysiad.top，是**两个不同的域名**。
+#   实测有访客（手机网络）页面能打开、接口整个连不上——两个域名 = 两条独立的命。
+#   改成同源后，**只要页面能打开，接口就一定能连上**，而且不用跨域、
+#   不用发预检请求、少一次 DNS 解析。
 routes = [
-  { pattern = "flowers.elysiad.top", custom_domain = true }
+  { pattern = "flowers.elysiad.top", custom_domain = true },
+  { pattern = "elysiad.top/notes*", zone_name = "elysiad.top" }
 ]
 
 # 献花计数

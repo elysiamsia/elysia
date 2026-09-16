@@ -188,11 +188,16 @@ console.log('\n【6】限流：每 IP 每天 3 条');
   check('换 IP 不受影响', (await call('POST', '/notes', { body: '换个 IP' }, { ip: '198.51.100.9' })).status, 201);
 }
 
-console.log('\n【7】异站来源被拒（和献花同一套防护）');
+console.log('\n【7】来源校验');
 {
   const r = await call('POST', '/notes', { body: '来自异站' }, { origin: 'https://evil.example.com' });
-  check('状态 403', r.status, 403);
+  check('异站来源 → 403', r.status, 403);
   check('错误码 forbidden origin', r.body.error, 'forbidden origin');
+
+  // 界面换到同源之后，线上请求是 elysiad.top/notes，部分浏览器不带 Origin。
+  // 放行空 Origin 是必须的，否则同源提交会被自己挡掉。
+  check('不带 Origin → 放行（同源请求）',
+    (await call('POST', '/notes', { body: '同源请求' }, { origin: false, ip: '192.0.2.77' })).status, 201);
 }
 
 console.log('\n【8】管理页：密钥不对一律 404（不暴露入口存在）');

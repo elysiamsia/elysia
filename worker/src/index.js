@@ -91,8 +91,10 @@ export default {
    ══════════════════════════════════════════════ */
 
 async function flower(request, env, cors, origin) {
-  // 只认同站来源，挡掉被别处盗刷
-  if (!ALLOWED_ORIGINS.includes(origin)) {
+  // 允许空 Origin：同源请求在部分浏览器里不带这个头。
+  // ⚠ Origin 检查本来就挡不住脚本（脚本可以随便伪造这个头），
+  //   它只防「别的网站拿访客的浏览器来刷」。真正的防线是限流。
+  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
     return json({ error: 'forbidden origin' }, cors, 403);
   }
 
@@ -137,7 +139,9 @@ function validateNote(rawName, rawBody) {
 }
 
 async function notesCreate(request, env, cors, origin) {
-  if (!ALLOWED_ORIGINS.includes(origin)) {
+  // 允许空 Origin：同源请求在部分浏览器里不带这个头（换到同源之后，
+  // 线上的请求就是这种情况）。理由同上：真正的防线是限流与校验。
+  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
     return json({ error: 'forbidden origin' }, cors, 403);
   }
 
