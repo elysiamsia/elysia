@@ -36,6 +36,7 @@
 | **P1 公共层抽取（12 个任务）** | 🟡 **进行中：Task 1–9 完成**（样式层 + 语录卡 / 滚动进场 / 打字机 + 全站减动）|
 | **`THEME` schema 定稿** | ✅ `docs/theme-schema.md`（13 页的模板，见 §5.1）|
 | **减动保护（WCAG 2.3.1）** | ✅ 7 页 CSS 总闸 + 两处最凶的演出加护栏，见 §5.1 |
+| **英桀名片可点进子页 + canonical/JSON-LD** | ✅ 见 §4.5（参照同主题站 `elysia.cc` 后的补课） |
 
 ---
 
@@ -105,6 +106,8 @@ https://flowers.elysiad.top/notes/manage?key=<MANAGE_KEY>
 | 分享卡片 | `images/og-1\|2\|3.jpg` + `tools/pick_og.py` | 三个立绘变体，随机轮换 |
 | favicon / 404 / robots / sitemap | 根目录 | 404 是引路版（一句话 + 三扇门） |
 | 图片优化 | `images/*.webp` | 5.0 MB → 0.86 MB |
+| **英桀名片可点进子页** | `index.html` + `data/timeline-data.js` | 见 §4.5 |
+| **`canonical` + JSON-LD** | 8 页 `<head>` | 见 §4.5 |
 
 ### 4.2 工程侧
 
@@ -254,6 +257,48 @@ PYTHONIOENCODING=utf-8 python tools/check_reduced_motion.py    # 退出码 0/1
 > ⚠ **测试中踩到的坑**：`tools/cdp.py` 用的是**持久 user-data-dir**（`C:/tmp/edge_cdp`），
 > 浏览器缓存**跨次留存**。改完 `armor.html` 后第一次测**读出来还是旧值**，差点误判成「没修好」。
 > **给 URL 加 `?cb=<时间戳>`** 再测。已记进 §6.4。
+
+### 4.5 首页英桀名片加页面入口 + 补 SEO 基础设施（2026-09-17）
+
+**起因**：参照 `elysia.cc`（同主题的粉丝站）做了一轮对比。
+它用一张**可缩放的「英桀关系网」**（`/rolemap/`，独立单文件 HTML，iframe 嵌入）
+把 13 位的关系画成一张图 —— 顺带就解决了「怎么走到各个角色页」这件事。
+
+**而我们的问题**：查下来 **6 个角色页从首页根本点不到**。
+`index.html` 只链了 `armor.html`；首页的英桀名片是 `createElement('div')`，
+点了只展开档案，不给出口。**在只有 6 页时还藏得住，等 13 页就刺眼了。**
+
+#### 改了什么
+
+| 改动 | 说明 |
+|---|---|
+| `data/timeline-data.js` | 给**已有页面**的 6 位加 `url` 字段（爱莉希雅是首页本身，不自链；其余 6 位页面未建，**不预填**） |
+| `index.html` | 有 `url` 的名片：① 右上角亮一颗呼吸的小星 ② 展开后出现「走进 TA 的页面 →」 |
+| 8 页 `<head>` | 补 `canonical`；首页加 `WebSite` JSON-LD，其余页加 `WebPage` + `BreadcrumbList` |
+
+**设计上的两个决定（都是踩出来的）**：
+
+1. **入口挂在卡片上，不挂进 `.hero-lore` 里。** lore 是 `max-height:420px` 的
+   **内滚动**面板，手机端档案正文很长 —— 放进去链接会被挤到面板底部，
+   得先在里面再滚一段才够得着。实测：375px 下链接落在 `1813px`，
+   而卡片只有 `576px` 高。改挂卡片外层后，两端都是「展开即见」。
+2. **`.hero-lore` 收起时加 `visibility:hidden`。** 光靠 `max-height:0 + opacity:0`，
+   里面的链接**仍在 Tab 顺序里** —— 键盘用户会停在一个看不见的东西上。
+
+> ⚠ **验收口径变化**：本轮**不是**「零差异」。
+> `baseline-task9 → after-seo` 报 **12 处差异，全部落在 `index` 的 `.hero-card`
+> 一个选择器上**（`border-top-color`、`position: static→relative`、
+> 以及 `relative` 带来的 `left`/`top: auto→0`）。**这是有意为之的视觉改动**，
+> 其余 7 页零差异。
+
+> 💡 **`elysia.cc` 还给了别的启发**（未采用，供参考）：
+> 它内置了**爱莉希雅 AI 聊天**（自建 `webchat.elysia.cc`，Next.js + HMAC 请求签名
+> + 流式响应，且按 `characterId` 参数化，**支持多角色**）、
+> 「我们相遇的第 1 天 · 已相伴 N 秒」陪伴计时器、自托管 Umami 统计。
+> 我们**不学**的：`user-scalable=no`（WCAG 1.4.4 失败）、
+> 客户端 bundle 里放密钥、微软 Clarity 会话录制、695KB 的 PNG 首图。
+> **体积上我们赢约 10 倍**（gzip 后 ~23KB + WebP vs 它 ~940KB）；**SEO 基本功也更好**
+> （它有完整 sitemap/robots，但 404 返回 HTTP 200 属软 404，sitemap 只有 1 条 URL）。
 
 ---
 
@@ -432,9 +477,9 @@ cd D:\claude-code\elysia-main
 python -m http.server 8500 &
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8500/assets/site.css   # 应为 200
 
-# 2) 快照 + 比对。下一步（开新页面 / Task 10-12）用 baseline-task9 当参照
+# 2) 快照 + 比对。下一步（开新页面 / Task 10-12）用 baseline-seo 当参照
 PYTHONIOENCODING=utf-8 python tools/snapshot.py after-<本步>
-PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py baseline-task9 after-<本步>; echo "退出码 $?"
+PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py baseline-seo after-<本步>; echo "退出码 $?"
 
 # 3) 属性断言 —— 快照**测不出来**的那一类（ARIA 等）
 #    ⚠ 改过语录卡相关的代码就一定要跑这个，见 §4.2
@@ -452,7 +497,8 @@ PYTHONIOENCODING=utf-8 python tools/check_reduced_motion.py
 | `screenshots/snap/baseline` | **P1 动手前**（从 `origin/main` 的 worktree 取） | P1 最终验收 |
 | `screenshots/snap/baseline-task6` | **Task 6 之后** | 已用过，保留备查 |
 | `screenshots/snap/baseline-task78` | **Task 7/8 之后** | 已用过，保留备查 |
-| `screenshots/snap/baseline-task9` | **Task 9 之后** | **开新页面时的参照** |
+| `screenshots/snap/baseline-task9` | **Task 9 之后** | 已用过，保留备查 |
+| `screenshots/snap/baseline-seo` | **英桀名片入口 + SEO 之后**（2026-09-17） | **开新页面时的参照** |
 
 > ✅ **2026-09-17：`snapshot.py` 已把「现在几点」钉死在 `2026-09-16 12:00 UTC`。**
 > 在此之前基线**随日历漂** —— 「今日之语」按本地日期取句，跨天复核必假失败
@@ -471,18 +517,28 @@ PYTHONIOENCODING=utf-8 python tools/check_reduced_motion.py
 > 💡 **这一条同时也是「工具没坏」的自检**：若某天 `baseline` vs 当前状态报**零差异**，
 > 别高兴 —— 先怀疑工具被缓存或日期问题弄成了恒真式（§4.2 那五个坑）。
 
-##### 新页面怎么开（做完 7/8/9 之后）
+##### 新页面怎么开（现在就是这一步）
 
 1. 参照一份现有子页当骨架 —— 建议从 `su/index.html` 或 `kevin/index.html` 起，
    它们的专属模块较少，模板更干净
-2. 写自己的 `THEME`（此时它已长全）
+2. 写自己的 `THEME`（见 `docs/theme-schema.md`）
 3. 写自己的**专属特效** —— 这正是每位英桀「性格」所在
    （樱的瓣 / 科斯魔的影 / 梅比乌斯的蛇 / 格蕾修的画 / 华的剑 / 帕朵的铃……）
-4. 别忘了三件事：
-   - 加进 `.github/workflows/static.yml` 的 **`KEEP_FILES` / `KEEP_DIRS` 白名单**，
-     否则**不会上线**
-   - 加进 `sitemap.xml`
-   - 角色页用的是**子页那套** `.back-link` / `.ending-*`（**不是** armor 那套）
+4. **必做清单**（漏一条就有后果）：
+   | 动作 | 漏了会怎样 |
+   |---|---|
+   | 加进 `.github/workflows/static.yml` 的 **`KEEP_FILES` / `KEEP_DIRS` 白名单** | **不会上线** |
+   | 加进 `sitemap.xml` | 搜索引擎找不到 |
+   | 加 `canonical` + JSON-LD（照现有子页复制改 URL） | 与首页「谁才是权威页」说不清 |
+   | **在 `data/timeline-data.js` 给这位补 `url`** | 首页名片不会亮小星、点不进去 —— **新页又成了孤岛** |
+   | 角色页用**子页那套** `.back-link` / `.ending-*`（**不是** armor 那套） | 样式对不上 |
+
+> 💡 **最后一条是 2026-09-17 新加的。** 在这之前，6 个角色页从首页**根本点不到**
+> （index 只链了 `armor.html`）—— 只有直接输网址或走 sitemap 才找得到。
+> 现在首页英桀名片会：① 右上角亮一颗小星 ② 展开后出现「走进 TA 的页面 →」。
+> **两者都只认数据里的 `h.url`** —— 没建页面的那几位自动不显示，不会造出死链。
+>
+> 所以：**给新页补 `url` 是「建页」的最后一步**，别忘。
 
 > ✅ **待做的英桀页确认为 6 位**（2026-09-17 需求方确认）：
 > **樱 / 科斯魔 / 梅比乌斯 / 格蕾修 / 华 / 帕朵菲莉丝**。
@@ -497,6 +553,14 @@ PYTHONIOENCODING=utf-8 python tools/check_reduced_motion.py
 ### 5.3 等需求方拍板
 
 - **`data/timeline-data.js` 里 12 位英桀的 `lore` 是两份稿子叠加**（旧稿未删、新稿续在后面），含 OCR 坏文（「凶笼」应为「囚笼」、「抓马」、「守难口磨去了金瞳」）与孤立的标点/姓名行。**点开首页名片就能看到**。13 位里只有樱是干净的。已记在设计文档 §2.4，未纳入任何计划
+- **两处「配音」数据疑似有问题**（2026-09-17 发现，**未改，等确认**）：
+
+  | 页 | 现状 | 疑点 |
+  |---|---|---|
+  | `kevin` | `秦且歌（汉语）` | 其余 6 页都是「汉语 / 日语」双语，**凯文缺日语** |
+  | `kalpas` | `kinsen / 金船（汉语）· 小林裕介（日语）` | 多出一个 `kinsen /` 前缀，格式与其余 6 页**不一致** |
+
+  > 按项目「绝不编造」的纪律，**没查到出处就不动**。要修的话请给权威来源。
 
 ### 5.4 已决定不改、另行跟踪的问题
 
@@ -554,7 +618,7 @@ PYTHONIOENCODING=utf-8 python tools/check_reduced_motion.py
 | **`cdp.py` 的 click 要先滚动** | 它用 `getBoundingClientRect()` 的视口坐标派发鼠标事件，元素在视口外会**静默无操作**。且站点有 `scroll-behavior:smooth`，必须 `scrollIntoView({behavior:'instant'})` |
 | **探测 `loading="lazy"` 的图片要把视口拉高** | 否则下面的图不加载，渲染盒 `0x0`——那是正常行为，不是回归 |
 | **⚠ `pkill` 杀不掉 Windows 原生 python 进程** | `python -m http.server 8500` 用 `pkill -f` 杀不干净——**多个服务器会同时监听同一端口**，请求落到哪个不确定。实测踩到过：为了生成 pre-P1 基线，起了一个服务 worktree 的服务器，但旧的（服务主仓库）仍在响应，于是采样出一份**内容完全错的「pre-P1 基线」**，差点当成真的用。查：`netstat -ano \| grep ":8500 " \| grep LISTENING`（同一 PID 出现两行是 IPv4/IPv6 双栈，正常）；杀：`taskkill //F //PID <pid>`。**起完服务器必须先验内容再采样**——例如请求一个只应存在于新目录的文件。 |
-| **`cdp.py` 的浏览器缓存跨次留存** | 它用固定的 `--user-data-dir=C:/tmp/edge_cdp`，所以**改了 CSS/JS 再测，读到的可能还是旧版本**——会让人误判成「改动没生效」或「修了还是坏的」。给 URL 加 `?cb=<时间戳>` 再测 |
+| **`cdp.py` 的浏览器缓存跨次留存** | 它用固定的 `--user-data-dir=C:/tmp/edge_cdp`，所以**改了 CSS/JS 再测，读到的可能还是旧版本**——会让人误判成「改动没生效」或「修了还是坏的」。给 URL 加 `?cb=<时间戳>` 再测<br>⚠ **2026-09-17 补充：`?cb=` 只能刷掉「顶层文档」，子资源照样走缓存。** 实测：给 `data/timeline-data.js` 加了字段，`index.html?cb=...` 里 `window.HEROS[0]` **仍然读不到新字段**。**改到 `assets/*.js`、`data/*.js`、`*.css` 时，光加 `?cb=` 不够**，要清缓存：<br>`rm -rf "/c/tmp/edge_cdp/Default/Cache" "/c/tmp/edge_cdp/Default/Code Cache"`<br>（`snapshot.py` 不受影响 —— 它用 `Network.setCacheDisabled`，是真正关掉了缓存。）|
 | **⚠ 快照基线会「随日历漂」（2026-09-17 已修）** | 页面有两处吃日期：「今日之语」按**本地日期**取句、`#bdayEgg` 生日倒计时每天换字。**同一个工作日内怎么复核都是零差异，跨过零点就报差异**——它会骗过一切当场自检。已把「现在几点」钉死在 `2026-09-16 12:00 UTC`。⚠ **改动 `snapshot.py` 时别把 `SEED_DATE_JS` 弄丢**，否则基线又开始跟着日历走 |
 | **快照测不出「属性」** | `snapshot.py` 采的是**计算样式**。`aria-label`、`title`、`alt`、`href` 这类**属性**不在采样范围内 —— 它们被改掉时快照会报「✅ 无差异」。所以有专门的 `tools/check_aria_labels.py`。**改属性类的改动，快照通过不算通过** |
 | **改视觉必须截图核对** | 项目纪律：不接受"看起来差不多"。桌面 `1280×900` + 移动 `375×812` 各一轮 |
