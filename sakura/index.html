@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<!-- 呀！标签页上也要有一枚小花呀，不然浏览器给的是个空白方块呢♥ -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<!-- 呀！分享出去的时候，要带着她的样子，而不是一行光秃秃的链接♥ -->
+<meta name="description" content="逐火十三英桀 · 位次 Ⅷ · 刻印「刹那」。">
+<link rel="canonical" href="https://elysiad.top/sakura/">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "elysiad.top/sakura — 致樱",
+  "url": "https://elysiad.top/sakura/",
+  "description": "逐火十三英桀 · 位次 Ⅷ · 刻印「刹那」。",
+  "inLanguage": "zh-CN",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "elysiad.top — 致爱莉希雅",
+    "url": "https://elysiad.top/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "首页",
+      "item": "https://elysiad.top/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "樱",
+      "item": "https://elysiad.top/sakura/"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="elysiad.top">
+<meta property="og:title" content="致樱 — elysiad.top">
+<meta property="og:description" content="逐火十三英桀 · 位次 Ⅷ · 刻印「刹那」。">
+<meta property="og:url" content="https://elysiad.top/sakura/">
+<meta property="og:image" content="https://elysiad.top/images/og-1.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#070a14">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
+<link rel="stylesheet" href="/assets/site.css">
+<meta name="referrer" content="same-origin">
+<title>elysiad.top/sakura — 致樱</title>
+<!-- SECTION: styles -->
+<style>
+:root{
+  /* 呀！这一页的底色是「夜」——冷靛黑，像落樱之前的那片天。
+     樱粉比爱莉那页更淡更冷：她是夜里的樱，不是白昼的花；
+     冰蓝是她那柄「寒狱冰天」，只作细细一道光，不抢樱色♥ */
+  --bg-abyss:#070a14;--bg-deep:#0b1020;--bg-slate:#131c33;--bg-mid:#1b2744;
+  --sakura:#ffb7c5;--sakura-soft:#ffd6e0;--sakura-deep:#e8788f;
+  --ice:#8fdcff;--ice-deep:#4fb8e8;--ice-ink:#2a7fa8;
+  --text:#eaf0ff;--text-dim:#aebbd8;--text-muted:#7686a6;
+  --glass-bg:rgba(255,183,197,.05);--glass-border:rgba(143,220,255,.14);
+  --glass-bg2:rgba(79,184,232,.05);--glass-border2:rgba(255,183,197,.14);
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg-abyss);color:var(--text);overflow-x:hidden;line-height:1.7;
+}
+::-webkit-scrollbar-thumb{background:var(--sakura-deep);border-radius:3px}
+
+#sakuraCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+
+/* SECTION: opening */
+.section-opening{
+  position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:2rem;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(ellipse 55% 38% at 50% 12%,rgba(143,220,255,.09),transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 100%,rgba(255,183,197,.07),transparent 70%),
+    linear-gradient(180deg,var(--bg-abyss) 0%,var(--bg-deep) 32%,var(--bg-slate) 62%,var(--bg-deep) 100%);
+}
+.opening-signet{
+  width:102px;height:102px;margin:0 auto 1.2rem;opacity:0;transition:opacity 2s ease;
+  filter:drop-shadow(0 0 22px rgba(143,220,255,.28));
+}
+.opening-signet.visible{opacity:.94}
+/* 鞘口那道光：一呼一吸——她一直在等，但不轻易出鞘 */
+.signet-glint{animation:signetGlint 3.6s ease-in-out infinite}
+@keyframes signetGlint{0%,100%{opacity:.25}50%{opacity:.85}}
+/* 自鞘口飘落的那一瓣：一瓣一瓣，很慢 */
+.signet-petal{transform-origin:96px 30px;animation:signetPetal 5.2s ease-in-out infinite}
+@keyframes signetPetal{
+  0%{transform:translateY(0) rotate(0deg);opacity:0}
+  22%{opacity:.8}
+  100%{transform:translateY(34px) rotate(58deg);opacity:0}
+}
+/* 前文明条目用它标色，与现文明区分开 */
+.profile-value .ice{color:var(--ice);font-weight:400}
+.opening-title{
+  font-size:clamp(1.35rem,4.2vw,2.5rem);font-weight:300;letter-spacing:.12em;
+  color:var(--sakura-soft);text-shadow:0 0 30px rgba(255,183,197,.25),0 0 60px rgba(143,220,255,.15);
+  min-height:2.6em;max-width:860px;
+}
+.typing-cursor{display:inline-block;font-weight:100;color:var(--sakura);animation:blink-cursor .8s step-end infinite}
+.opening-subtitle{
+  font-size:clamp(.9rem,2.5vw,1.25rem);color:var(--text-dim);letter-spacing:.4em;
+  margin-top:1.5rem;opacity:0;transition:opacity 1.5s ease;
+}
+.opening-hint{
+  font-size:.72rem;color:var(--text-muted);letter-spacing:.14em;margin-top:1rem;
+  opacity:0;transition:opacity 1.5s ease 1s;
+}
+.scroll-hint{
+  position:absolute;bottom:calc(2.5rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  opacity:0;transition:opacity 1s ease .5s;
+}
+.scroll-hint.visible{opacity:.6}
+.scroll-hint span{font-size:.75rem;color:var(--text-muted);letter-spacing:.2em}
+.scroll-chevron{
+  width:20px;height:20px;border-right:2px solid var(--sakura);border-bottom:2px solid var(--sakura);
+  transform:rotate(45deg);animation:chevron-bounce 2.4s ease-in-out infinite;
+}
+
+/* SECTION: common section */
+.content-section{
+  position:relative;z-index:2;padding:6rem 1.5rem;
+  background:linear-gradient(180deg,transparent 0%,rgba(5,11,16,.3) 20%,rgba(5,11,16,.3) 80%,transparent 100%);
+}
+.section-title{
+  font-size:clamp(1.5rem,4vw,2.2rem);font-weight:300;letter-spacing:.24em;
+  color:var(--sakura);text-shadow:0 0 20px rgba(255,183,197,.25);
+}
+.section-title-line{display:block;width:60px;height:1px;margin:1rem auto 0;background:linear-gradient(90deg,transparent,var(--ice-deep),transparent)}
+.section-title-mark{display:inline-block;font-size:.8em;color:var(--ice);margin:0 .8rem;opacity:.85}
+.section-sub{text-align:center;font-size:.78rem;color:var(--text-muted);letter-spacing:.12em;margin:-2.4rem auto 3rem}
+
+/* SECTION: profile */
+.profile-card{
+  max-width:720px;margin:0 auto;padding:clamp(2rem,5vw,3rem);
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--glass-border);border-radius:24px;
+  box-shadow:0 0 50px rgba(255,183,197,.06),0 0 100px rgba(143,220,255,.05),inset 0 1px 0 rgba(255,255,255,.05);
+  position:relative;overflow:hidden;animation:glow-pulse 8s ease-in-out infinite;
+}
+.profile-card::before{
+  content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+  background:conic-gradient(from 0deg,transparent,rgba(255,183,197,.04),transparent,rgba(143,220,255,.04),transparent);
+  animation:card-rotate 30s linear infinite;
+}
+@keyframes glow-pulse{
+  0%,100%{box-shadow:0 0 50px rgba(255,183,197,.06),0 0 100px rgba(143,220,255,.05)}
+  50%{box-shadow:0 0 65px rgba(255,183,197,.11),0 0 120px rgba(143,220,255,.08)}
+}
+.profile-name{
+  font-size:clamp(2rem,5.5vw,3rem);font-weight:200;letter-spacing:.3em;text-indent:.3em;cursor:pointer;user-select:none;
+  color:var(--sakura-soft);text-align:center;margin-bottom:.2em;
+  text-shadow:0 0 28px rgba(255,183,197,.3);transition:text-shadow .3s ease;
+}
+.profile-name:hover{text-shadow:0 0 40px rgba(255,183,197,.55)}
+.profile-name-en{
+  font-size:clamp(.85rem,1.9vw,1.05rem);font-weight:300;letter-spacing:.5em;text-indent:.5em;
+  color:var(--sakura-deep);text-align:center;margin-bottom:2rem;filter:brightness(1.35);
+}
+.profile-grid{display:grid;grid-template-columns:auto 1fr;gap:.6rem 1.5rem;font-size:.92rem}
+.profile-value .highlight{color:var(--sakura);font-weight:400}
+.profile-value .lamp{color:var(--ice);font-weight:400}
+.profile-desc{
+  margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--glass-border);
+  font-size:.9rem;color:var(--text-dim);line-height:1.9;font-weight:300;
+}
+
+/* SECTION: blade (鞘中刀) */
+.blade-wrap{max-width:560px;margin:0 auto;text-align:center}
+.blade-stage{
+  position:relative;display:inline-block;cursor:pointer;user-select:none;
+  -webkit-tap-highlight-color:transparent;padding:1.4rem .6rem .6rem;
+}
+.blade-stage svg{display:block;transition:transform .18s cubic-bezier(.2,.8,.3,1);
+  filter:drop-shadow(0 14px 30px rgba(0,0,0,.55))}
+/* 拔不动：整柄刀往左一顿，又弹回去 —— 那一下「拒」的动作 */
+.blade-stage.refused svg{transform:translateX(-9px) rotate(-1.2deg)}
+.blade-stage.settled svg{transform:none}
+.blade-hint{font-size:.75rem;color:var(--text-muted);letter-spacing:.15em;margin-top:1.1rem;opacity:.8}
+.blade-count{
+  margin-top:.7rem;font-size:.95rem;color:var(--ice);letter-spacing:.2em;
+  text-shadow:0 0 14px var(--ice-deep);font-variant-numeric:tabular-nums;
+}
+.blade-float{
+  position:absolute;left:50%;top:-6px;transform:translateX(-50%);pointer-events:none;
+  font-size:.9rem;color:var(--sakura);letter-spacing:.1em;text-shadow:0 0 10px var(--sakura-deep);
+  animation:blade-rise 1.1s ease-out forwards;white-space:nowrap;
+}
+@keyframes blade-rise{
+  0%{opacity:0;transform:translate(-50%,0) scale(.8)}
+  18%{opacity:1}
+  100%{opacity:0;transform:translate(-50%,-64px) scale(1.05)}
+}
+.blade-glow{
+  position:absolute;inset:-30px;border-radius:50%;pointer-events:none;opacity:0;
+  background:radial-gradient(circle,rgba(143,220,255,.26),transparent 65%);
+  transition:opacity .8s ease;
+}
+.blade-glow.lit{opacity:1}
+
+/* 勿忘我：她没出刀，给了这个。平时收着，得了才开 */
+.blade-flower{
+  position:absolute;left:50%;top:1.6rem;transform:translate(-50%,0) scale(.2) rotate(-40deg);
+  opacity:0;pointer-events:none;filter:drop-shadow(0 0 16px rgba(143,220,255,.6));
+  transition:opacity .9s ease,transform .9s cubic-bezier(.2,.9,.3,1.3);
+}
+.blade-flower.bloom{opacity:1;transform:translate(-50%,-6px) scale(1) rotate(0deg)}
+.fm-petals{transform-origin:50px 50px;animation:fmBreathe 4.5s ease-in-out infinite}
+@keyframes fmBreathe{0%,100%{opacity:.85}50%{opacity:1}}
+/* 鞘口那道光，一呼一吸——像她一直在等 */
+.saya-mouth{animation:sayaBreathe 3.6s ease-in-out infinite}
+@keyframes sayaBreathe{0%,100%{opacity:.45}50%{opacity:.95}}
+
+/* SECTION: timeline */
+.timeline{position:relative;max-width:800px;margin:0 auto;padding:2rem 0}
+.timeline-line{
+  position:absolute;left:50%;top:0;bottom:0;width:1px;
+  background:linear-gradient(180deg,transparent,var(--sakura-deep) 10%,var(--sakura) 50%,var(--ice-deep) 85%,transparent);
+  transform:translateX(-50%);
+}
+.timeline-node{
+  position:relative;display:flex;align-items:flex-start;margin-bottom:3rem;
+  opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;
+}
+.timeline-dot{
+  position:absolute;left:50%;top:.5rem;width:12px;height:12px;border-radius:50%;
+  border:2px solid var(--sakura);background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
+  box-shadow:0 0 12px rgba(255,183,197,.4);transition:background .3s;
+}
+.timeline-node.visible .timeline-dot{background:var(--sakura)}
+.timeline-card{
+  width:calc(50% - 2.5rem);padding:1.2rem 1.5rem;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 0 20px rgba(255,183,197,.04);
+}
+.timeline-card h3{font-size:1.05rem;font-weight:400;color:var(--sakura);margin-bottom:.5rem;letter-spacing:.12em}
+.timeline-card p{font-size:.85rem;color:var(--text-dim);line-height:1.8;font-weight:300}
+
+/* SECTION: quotes */
+.quote-card{
+  padding:1.5rem;min-height:140px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
+  box-shadow:0 0 20px rgba(255,183,197,.03);
+  transition:transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
+}
+.quote-card:hover{transform:translateY(-3px);box-shadow:0 0 30px rgba(255,183,197,.12),0 8px 30px rgba(0,0,0,.2)}
+.quote-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(circle at 30% 30%,rgba(143,220,255,.05),transparent 60%);pointer-events:none;
+}
+.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition:opacity .4s ease}
+.quote-hint{position:absolute;bottom:.6rem;right:.8rem;font-size:.65rem;color:var(--text-muted);opacity:.4}
+
+/* SECTION: ending */
+.ending-quote{
+  font-size:clamp(1.1rem,3vw,1.6rem);font-weight:300;letter-spacing:.14em;cursor:pointer;user-select:none;
+  color:var(--sakura-soft);line-height:2;text-shadow:0 0 25px rgba(143,220,255,.25);
+  max-width:640px;opacity:0;transform:translateY(20px);transition:opacity 1.5s ease,transform 1.5s ease;
+}
+.ending-attr{
+  margin-top:2.2rem;font-size:.85rem;color:var(--text-muted);letter-spacing:.25em;
+  opacity:0;transition:opacity 1.5s ease .8s;
+}
+.back-link{
+  display:inline-flex;align-items:center;gap:.5rem;margin-top:3rem;
+  min-height:44px;padding:.6rem 1.6rem;border-radius:999px;text-decoration:none;
+  color:var(--sakura);font-size:.85rem;letter-spacing:.15em;
+  border:1px solid var(--glass-border2);background:rgba(255,183,197,.05);
+  transition:background .3s ease,box-shadow .3s ease,transform .3s ease;opacity:0;
+}
+.back-link:hover{background:rgba(255,183,197,.12);box-shadow:0 0 24px rgba(255,183,197,.2);transform:translateY(-2px)}
+
+/* 结尾的勿忘我：没解锁时完全不存在（display:none），解锁了才慢慢开 */
+.ending-flower{
+  display:none;margin-top:1.6rem;
+  filter:drop-shadow(0 0 14px rgba(143,220,255,.55));
+}
+.ending-flower.bloom{
+  display:block;animation:endBloom 1.6s cubic-bezier(.2,.9,.3,1.25) both;
+}
+@keyframes endBloom{
+  0%{opacity:0;transform:scale(.2) rotate(-50deg)}
+  100%{opacity:.95;transform:scale(1) rotate(0deg)}
+}
+
+/* SECTION: toast */
+#skToast{
+  position:fixed;left:50%;bottom:15%;transform:translateX(-50%) translateY(10px);z-index:9995;
+  max-width:88vw;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;letter-spacing:.06em;
+  color:var(--text);background:linear-gradient(135deg,rgba(8,20,28,.94),rgba(18,52,64,.94));
+  border:1px solid var(--glass-border2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 24px rgba(255,183,197,.18);
+  opacity:0;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:opacity .35s ease,transform .35s ease;text-align:center;
+}
+#skToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#skToast.golden{color:#ffe9b8;border-color:rgba(143,220,255,.6);box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 36px rgba(143,220,255,.4)}
+@media(max-width:600px){#skToast{white-space:normal;line-height:1.6}}
+
+/* SECTION: ripple (水面圆环) */
+.water-ring{
+  position:fixed;pointer-events:none;z-index:9993;border-radius:50%;
+  border:1.5px solid rgba(255,183,197,.7);
+  transform:translate(-50%,-50%) scale(0);opacity:.9;
+  animation:ring-spread .9s cubic-bezier(.22,.61,.36,1) forwards;
+}
+@keyframes ring-spread{
+  to{transform:translate(-50%,-50%) scale(1);opacity:0}
+}
+/* 娑之凝视 */
+#sakuraVeil{
+  position:fixed;inset:0;z-index:9992;pointer-events:none;opacity:0;transition:opacity .6s ease;
+  background:radial-gradient(ellipse at center,transparent 40%,rgba(79,184,232,.4) 100%);
+}
+#sakuraVeil.lit{opacity:1}
+
+/* SECTION: responsive */
+@media(max-width:768px){
+  .timeline-line{left:1.5rem}
+  .timeline-node,.timeline-node:nth-child(odd),.timeline-node:nth-child(even){flex-direction:row}
+  .timeline-dot{left:1.5rem}
+  .timeline-card,.timeline-node:nth-child(odd) .timeline-card,.timeline-node:nth-child(even) .timeline-card{
+    width:calc(100% - 3.5rem);margin-left:3.5rem;margin-right:0;
+  }
+  .quotes-grid{grid-template-columns:1fr}
+  .profile-grid{grid-template-columns:auto 1fr;gap:.5rem 1rem;font-size:.85rem}
+}
+@media(max-width:480px){
+  .content-section{padding:4rem 1rem}
+  .profile-card{padding:1.5rem}
+  .quote-card{min-height:120px;padding:1.2rem}
+}
+</style>
+</head>
+<body>
+
+<canvas id="sakuraCanvas"></canvas>
+<div id="sakuraVeil"></div>
+
+<!-- SECTION: opening -->
+<section class="section-opening" id="opening">
+  <div class="opening-content">
+    <div class="opening-signet" id="openingSignet" aria-hidden="true">
+      <!-- 刻印「刹那」的意象：一截刀鞘静静搁着，樱自鞘口落下 -->
+      <svg viewBox="0 0 120 120" width="102" height="102">
+        <defs>
+          <linearGradient id="saySaya" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#2b3a5c"/><stop offset="55%" stop-color="#131c33"/>
+            <stop offset="100%" stop-color="#0a1122"/>
+          </linearGradient>
+          <linearGradient id="sayIce" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="rgba(143,220,255,0)"/>
+            <stop offset="50%" stop-color="#8fdcff"/>
+            <stop offset="100%" stop-color="rgba(143,220,255,0)"/>
+          </linearGradient>
+        </defs>
+        <g transform="rotate(-38 60 60)">
+          <rect x="52" y="16" width="16" height="74" rx="8" fill="url(#saySaya)"
+                stroke="rgba(143,220,255,.35)" stroke-width="1"/>
+          <rect x="50" y="30" width="20" height="2.6" rx="1.3" fill="#4fb8e8" opacity=".5"/>
+          <rect x="50" y="76" width="20" height="2.6" rx="1.3" fill="#4fb8e8" opacity=".5"/>
+          <rect x="46" y="88" width="28" height="6" rx="3" fill="#3a4a6e"
+                stroke="rgba(143,220,255,.4)" stroke-width="1"/>
+          <rect x="54" y="93" width="12" height="19" rx="5" fill="#1a2440"
+                stroke="rgba(143,220,255,.25)" stroke-width="1"/>
+        </g>
+        <rect x="16" y="24" width="88" height="1.6" rx="1" fill="url(#sayIce)"
+              opacity=".7" class="signet-glint"/>
+        <path class="signet-petal" d="M97 34 q6 5 0 -11 q-6 6 0 11" fill="#ffb7c5" opacity=".75"/>
+      </svg>
+    </div>
+    <h1 class="opening-title" id="typewriterText"></h1><span class="typing-cursor" id="typingCursor">|</span>
+    <p class="opening-subtitle" id="openingSub">落樱的追忆</p>
+    <p class="opening-hint" id="openingHint">……若你愿意等，花总会落的。</p>
+  </div>
+  <div class="scroll-hint" id="scrollHint">
+    <span>向下 · 落入樱色</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</section>
+
+<!-- SECTION: about -->
+<section class="content-section" id="about">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">☸</span>关于他<span class="section-title-mark">☸</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="profile-card">
+    <div class="profile-card-inner">
+      <div class="profile-name" id="profileName" role="button" tabindex="0">樱</div>
+      <div class="profile-name-en">S A K U R A</div>
+      <div class="profile-divider"></div>
+      <div class="profile-grid">
+        <span class="profile-label">别名</span>
+        <span class="profile-value">『夜叉』 · 代号 <span class="highlight">Setsuna</span> · 「勿忘我」</span>
+        <span class="profile-label">出处</span>
+        <span class="profile-value">《崩坏3》<span class="ice">前文明纪元</span> · 非现文明八重樱</span>
+        <span class="profile-label">身份</span>
+        <span class="profile-value">逐火之蛾 → 秘密行动部队「毒蛹」 → 逐火十三英桀</span>
+        <span class="profile-label">位次</span>
+        <span class="profile-value"><span class="highlight">Ⅷ</span>（第八位）</span>
+        <span class="profile-label">刻印</span>
+        <span class="profile-value"><span class="highlight">「刹那」</span></span>
+        <span class="profile-label">融合战士编号</span>
+        <span class="profile-value">CM-004 —— 第四位接受超变手术者。是<span class="ice">实验编号</span>，不是英桀座次</span>
+        <span class="profile-label">武器</span>
+        <span class="profile-value">超限「<span class="ice">御灵刀 · 寒狱冰天</span>」；另有一柄，从不轻易出鞘</span>
+        <span class="profile-label">象征花</span>
+        <span class="profile-value"><span class="highlight">勿忘我</span></span>
+        <span class="profile-label">配音</span>
+        <span class="profile-value">杜冥鸦（汉语）/ 佐仓绫音（日语）</span>
+        <span class="profile-label">外貌</span>
+        <span class="profile-value">粉发紫瞳；兽耳（超变手术的副作用）；戴耳机，佩双刀</span>
+        <span class="profile-label">生日 / 属性</span>
+        <span class="profile-value"><span class="ice">【待考】</span>前文明 NPC，官方未公布</span>
+      </div>
+      <div class="profile-desc">
+        故国崩陷，她与妹妹铃相依为命，而后成为逐火的飞蛾。在「毒蛹」的那些年里，她的生活只剩血与刀，连感情都必须封存——她学会了等待，那是她用以谋生最重要的技巧。可即使快至「刹那」之境，她也还是斩不断那恶徒心中的恶意。这柄刀记得每一条被它斩断的生命，也记得故乡那棵再也回不去的樱树。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: blade (鞘中刀) -->
+<section class="content-section" id="blade">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❀</span>鞘中刀<span class="section-title-mark">❀</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="blade-wrap">
+    <div class="blade-stage" id="bladeStage" role="button" tabindex="0"
+         aria-label="一柄鞘中之刀，点击尝试拔刀" data-primary-action>
+      <div class="blade-glow" id="bladeGlow"></div>
+      <svg viewBox="0 0 300 92" width="290" height="89" aria-hidden="true">
+        <defs>
+          <linearGradient id="saya" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#31405f"/><stop offset="42%" stop-color="#161f36"/>
+            <stop offset="100%" stop-color="#080d1a"/>
+          </linearGradient>
+          <linearGradient id="tsuka" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#243050"/><stop offset="100%" stop-color="#0d1424"/>
+          </linearGradient>
+          <linearGradient id="haE" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="rgba(143,220,255,0)"/>
+            <stop offset="45%" stop-color="#8fdcff"/><stop offset="100%" stop-color="rgba(143,220,255,0)"/>
+          </linearGradient>
+        </defs>
+        <!-- 柄（左） -->
+        <rect x="24" y="36" width="66" height="19" rx="9" fill="url(#tsuka)"
+              stroke="rgba(143,220,255,.28)" stroke-width="1"/>
+        <g stroke="#4fb8e8" stroke-width="1.1" opacity=".45">
+          <path d="M34 38 L42 53"/><path d="M46 38 L54 53"/><path d="M58 38 L66 53"/><path d="M70 38 L78 53"/>
+        </g>
+        <!-- 镡（护手） -->
+        <rect x="88" y="27" width="11" height="37" rx="5" fill="#3c4c70"
+              stroke="rgba(143,220,255,.5)" stroke-width="1"/>
+        <circle cx="93.5" cy="45.5" r="3.4" fill="#0b1020" stroke="rgba(143,220,255,.55)" stroke-width="1"/>
+        <!-- 鞘身（右）：微微上翘的弧 -->
+        <path d="M99 33 Q196 26 276 32 Q280 45 276 58 Q196 64 99 57 Z" fill="url(#saya)"
+              stroke="rgba(143,220,255,.3)" stroke-width="1"/>
+        <g stroke="#4fb8e8" stroke-width="1.6" opacity=".4" fill="none">
+          <path d="M118 32 Q120 45 118 58"/><path d="M150 30 Q152 45 150 59"/>
+        </g>
+        <!-- 鞘口那道蓝：它一直亮着，等着——但今天不出鞘 -->
+        <path d="M99 34 Q101 45 99 56" stroke="#8fdcff" stroke-width="2.4" fill="none"
+              opacity=".85" class="saya-mouth"/>
+        <ellipse cx="278" cy="45" rx="5" ry="13" fill="#0d1424" stroke="rgba(143,220,255,.35)" stroke-width="1"/>
+        <!-- 栗形（鞘尾） -->
+        <circle cx="283" cy="45" r="4.5" fill="#3c4c70" stroke="rgba(143,220,255,.4)" stroke-width="1"/>
+      </svg>
+      <div class="blade-flower" id="bladeFlower" aria-hidden="true">
+        <!-- 呀，这朵就是「勿忘我」——她最终没有拔刀，而是给了这个♥ -->
+        <svg viewBox="0 0 100 100" width="86" height="86">
+          <defs>
+            <radialGradient id="fmCore" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ffeeb0"/><stop offset="100%" stop-color="#e8b931"/>
+            </radialGradient>
+          </defs>
+          <g class="fm-petals" fill="#8fdcff" opacity=".92">
+            <ellipse cx="50" cy="26" rx="11" ry="15"/>
+            <ellipse cx="73" cy="43" rx="11" ry="15" transform="rotate(72 73 43)"/>
+            <ellipse cx="64" cy="70" rx="11" ry="15" transform="rotate(144 64 70)"/>
+            <ellipse cx="36" cy="70" rx="11" ry="15" transform="rotate(216 36 70)"/>
+            <ellipse cx="27" cy="43" rx="11" ry="15" transform="rotate(288 27 43)"/>
+          </g>
+          <circle cx="50" cy="50" r="9" fill="url(#fmCore)"/>
+        </svg>
+      </div>
+    </div>
+    <p class="blade-count" id="bladeCount">已伸手 × 0</p>
+    <p class="blade-hint" id="bladeHint">刀在鞘里。你可以试试。</p>
+  </div>
+</section>
+
+<!-- SECTION: journey -->
+<section class="content-section" id="journey">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❀</span>她的刹那<span class="section-title-mark">❀</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="timeline">
+    <div class="timeline-line"></div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>故国崩陷</h3>
+        <p>东方岛国倾覆于崩坏，她与妹妹铃从此相依为命。那棵故乡的樱树，是她们共有的记忆。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>一场交易</h3>
+        <p>为了守护铃，她与逐火之蛾达成交易，加入秘密行动部队「毒蛹」。从此她的生活只剩血与刀，连感情都必须封存。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>CM-004</h3>
+        <p>她接受了超变手术，成为第四位融合战士——编号 CM-004。代价是那对兽耳，还有不再完全属于人的身体。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>黄昏街</h3>
+        <p>一次任务里，她与千劫相遇。两个都生于杀意阴影中的人，就此结识——这大概是她少有的、称得上「朋友」的关系。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>约束之惨剧</h3>
+        <p>她驰援约束之律者的战场。后来的许多年里，她都希望自己能再早一点赶到——那一次，她没能救下所有人。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>第八位</h3>
+        <p>惨剧之后，逐火之蛾仅存的十三位融合战士结成「逐火十三英桀」。樱列第 Ⅷ 位，刻印「刹那」。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>铃</h3>
+        <p>第十二次崩坏。爱莉希雅告诉她：下一个律者，就是铃。她赶去关押地，却先被自己人当成了入侵者。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>落樱</h3>
+        <p>她为侵蚀律者争取了片刻犹豫，也为此战死。临终前，她把遗体托付给凯文——葬回故乡的樱树下。只是那棵树，早已被核弹波及。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: quotes -->
+<section class="content-section" id="quotes">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❀</span>刹那之言<span class="section-title-mark">❀</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="quotes-grid" id="quotesGrid" data-primary-action></div>
+</section>
+
+<!-- SECTION: ending -->
+<section class="section-ending" id="ending">
+  <div class="ending-stars" id="endingStars"></div>
+  <p class="ending-quote" id="endingQuote" role="button" tabindex="0">就像是一场葬礼……给那些被我斩杀的人……给我自己。</p>
+  <!-- 呀，这朵花开不开，取决于你有没有在那柄刀前面留下来过♥ -->
+  <div class="ending-flower" id="endingFlower" aria-hidden="true">
+    <svg viewBox="0 0 100 100" width="58" height="58">
+      <g fill="#8fdcff" opacity=".92">
+        <ellipse cx="50" cy="26" rx="11" ry="15"/>
+        <ellipse cx="73" cy="43" rx="11" ry="15" transform="rotate(72 73 43)"/>
+        <ellipse cx="64" cy="70" rx="11" ry="15" transform="rotate(144 64 70)"/>
+        <ellipse cx="36" cy="70" rx="11" ry="15" transform="rotate(216 36 70)"/>
+        <ellipse cx="27" cy="43" rx="11" ry="15" transform="rotate(288 27 43)"/>
+      </g>
+      <circle cx="50" cy="50" r="9" fill="#e8b931"/>
+    </svg>
+  </div>
+  <p class="ending-sub" id="endingSub"></p>
+  <p class="ending-attr" id="endingAttr">致樱 · elysiad.top/sakura</p>
+  <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
+  <div class="ending-fade"></div>
+</section>
+
+<div id="skToast" role="status"></div>
+
+<!-- SECTION: scripts -->
+<script src="/assets/site.js"></script>
+<script>
+(function(){
+  /* SECTION: quotes data */
+  // 全部逐字摘自官方「圣芙蕾雅档案馆」事件-樱 原文页，未做任何改写。
+  var quotes = [
+    '「因为即使快至『刹那』之境，你也还是无法斩断那恶徒心中的恶意。」',
+    '「等待，曾经那是我用以谋生最重要的技巧，却不再是我现在的目的了。」',
+    '「就像是一场葬礼……给那些被我斩杀的人……给我自己。」',
+    '「存在于此的我们，早已无法像你一样再去改变些什么。一切已成定局。」',
+    '「对绝大多数人来说，朋友是被彼此身上的微光所吸引，进而聚集在一起的人们。但我和千劫……我们在一片满是杀意的阴影中结识。」',
+    '「加入『毒蛹』后，我的生活就只剩下了血与刀，没有丝毫喘息的时间，连感情都必须封存。」',
+    '「逐火者追逐着流火前行，而流火也在逐火者的身后投下了他们的阴影。你要小心……逐火之蛾的『阴影』，她就存在于这里。」',
+    '「因为不管我怎么做，樱花和酒，都不会再是当初的味道了。」',
+    '「只不过我们所要面对的敌人，除了崩坏以外……还有『人类』。」',
+    '「在与乐土中的敌人战斗时，你甚至可能会观察到我们曾经的恐惧……和内心的阴翳。那是远比敌人本身更为可怕的东西，你一定要多加小心。」'
+  ];
+
+  /* SECTION: quotes build —— 交给共享层
+     ★ 闭包 O(1) 索引：不再每次点击都重扫一遍 DOM，只为问「我是第几张卡片」。
+     ⚠ ariaLabel 必填，且必须传本页原文案：它是 Lore，不是通用 UI 标签。
+       而快照工具只采计算样式，抹掉了也测不出「✅ 无差异」。见 docs/theme-schema.md §四。 */
+  ElysiaShared.buildQuoteCards({
+    grid: document.getElementById('quotesGrid'),
+    quotes: quotes,
+    ariaLabel: '刹那之言，点击切换',
+  });
+
+  /* SECTION: canvas particles (落樱 + 冰尘 + 刹那刀光) */
+  var canvas = document.getElementById('sakuraCanvas');
+  var ctx = canvas.getContext('2d');
+  var W, H;
+  // 呀！落樱分四色：两瓣新粉、一瓣将谢的淡紫、一瓣近白——
+  //   像一棵树上不同时候的花，不是同一个颜色刷四遍♥
+  var petalColors = ['#ffb7c5','#ffd6e0','#e8a7c0','#f6e3ee'];
+  var moteColors = ['#8fdcff','#e8f4ff','#4fb8e8'];
+
+  // ⚠ 只抽「把 canvas 和视口尺寸对上」这三行。下面那个「把越界粒子拉回画布」的
+  //   匿名监听器**故意留着不动**——它碰的数组每页不一样，抽走会改行为。
+  const resize = ElysiaShared.makeResize(canvas, {
+    get W() { return W; }, set W(v) { W = v; },
+    get H() { return H; }, set H(v) { H = v; },
+  });
+  resize();
+  window.addEventListener('resize', resize);
+  var petals = [];
+  var petalCount = Math.min(26, Math.floor(window.innerWidth / 48));
+  function createPetal(fromTop){
+    return {
+      x: Math.random() * W,
+      y: fromTop ? -20 - Math.random() * 100 : Math.random() * H,
+      size: 4 + Math.random() * 8,
+      speedY: 0.2 + Math.random() * 0.45,
+      drift: (Math.random() - 0.5) * 0.3,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.012,
+      swayAmp: 16 + Math.random() * 30,
+      swaySpd: 0.004 + Math.random() * 0.008,
+      swayOff: Math.random() * Math.PI * 2,
+      opacity: 0.16 + Math.random() * 0.34,
+      color: petalColors[Math.floor(Math.random() * petalColors.length)]
+    };
+  }
+  for (var i = 0; i < petalCount; i++) petals.push(createPetal(false));
+
+  var motes = [];
+  var moteCount = Math.min(34, Math.floor(window.innerWidth / 34));
+  function createMote(){
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      size: 0.4 + Math.random() * 1.8,
+      speedY: -(0.05 + Math.random() * 0.18),
+      baseOpacity: 0.1 + Math.random() * 0.35,
+      twinkleSpd: 0.006 + Math.random() * 0.02,
+      twinkleOff: Math.random() * Math.PI * 2,
+      color: moteColors[Math.floor(Math.random() * moteColors.length)]
+    };
+  }
+  for (i = 0; i < moteCount; i++) motes.push(createMote());
+
+  var scrollRatio = 0;
+  window.addEventListener('scroll', function(){
+    var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    scrollRatio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+  });
+
+  var time = 0;
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function animate(){
+    if (reducedMotion) return;
+    time++;
+    ctx.clearRect(0, 0, W, H);
+    var fadeFactor = 1 - scrollRatio * 0.55;
+    var i, l, d, tw;
+
+    for (i = 0; i < motes.length; i++){
+      d = motes[i];
+      d.y += d.speedY;
+      if (d.y < -10){ d.y = H + 10; d.x = Math.random() * W; }
+      tw = 0.5 + 0.5 * Math.sin(time * d.twinkleSpd + d.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = d.baseOpacity * tw * fadeFactor;
+      ctx.fillStyle = d.color;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, Math.max(0.25, d.size), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (i = 0; i < petals.length; i++){
+      l = petals[i];
+      l.y += l.speedY;
+      l.x += l.drift + Math.sin(time * l.swaySpd + l.swayOff) * 0.4;
+      l.rotation += l.rotSpeed;
+      if (l.y > H + 25){ petals[i] = createPetal(true); l = petals[i]; }
+      ctx.save();
+      ctx.translate(l.x, l.y);
+      ctx.rotate(l.rotation);
+      ctx.globalAlpha = l.opacity * fadeFactor;
+      ctx.fillStyle = l.color;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, Math.max(0.6, l.size * 0.3), Math.max(0.8, l.size * 0.62), 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (i = bursts.length - 1; i >= 0; i--){
+      var b = bursts[i];
+      b.x += b.vx;
+      b.y += b.vy;
+      b.vy += 0.03;
+      b.vx *= 0.99;
+      b.rotation += b.rotSpeed;
+      b.life -= 0.015;
+      if (b.life <= 0){ bursts.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, b.life * 0.9);
+      ctx.fillStyle = b.color;
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.rotation);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, b.w * 0.4, b.w, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    /* 呀！偶尔，一道极细的刀光斜掠而过 —— 那是「刹那」。
+       不快、不亮、不多，就一瞬。全站只有这一页会这样♥ */
+    if (!reducedMotion){
+      glintTimer++;
+      if (glintTimer > 400 + Math.random() * 520){   // 约 7~15 秒一次
+        glintTimer = 0;
+        glints.push({
+          x: Math.random() < 0.5 ? -0.2 : 1.2,
+          y: 0.12 + Math.random() * 0.76,
+          dir: Math.random() < 0.5 ? 1 : -1,
+          len: 0.42 + Math.random() * 0.42,
+          life: 1
+        });
+      }
+      for (i = glints.length - 1; i >= 0; i--){
+        var g = glints[i];
+        g.x += g.dir * 0.011;
+        g.life -= 0.028;
+        if (g.life <= 0 || g.x < -0.45 || g.x > 1.45){ glints.splice(i, 1); continue; }
+        var gx = g.x * W, gy = g.y * H, half = g.len * W * 0.5, tilt = half * 0.16;
+        var grd = ctx.createLinearGradient(gx - half, gy - tilt, gx + half, gy + tilt);
+        grd.addColorStop(0, 'rgba(143,220,255,0)');
+        grd.addColorStop(0.5, 'rgba(143,220,255,' + (g.life * 0.42).toFixed(3) + ')');
+        grd.addColorStop(1, 'rgba(143,220,255,0)');
+        ctx.save();
+        ctx.strokeStyle = grd;
+        ctx.lineWidth = 1.15;
+        ctx.beginPath();
+        ctx.moveTo(gx - half, gy - tilt);
+        ctx.lineTo(gx + half, gy + tilt);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    requestAnimationFrame(animate);
+  }
+  var bursts = [];
+  function petalBurst(cx, cy, count, colors){
+    var palette = colors || petalColors;
+    for (var k = 0; k < count; k++){
+      var angle = (k / count) * Math.PI * 2 + Math.random() * 0.6;
+      var speed = 1 + Math.random() * 3;
+      bursts.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1,
+        w: 3 + Math.random() * 5,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.12,
+        life: 1,
+        color: palette[Math.floor(Math.random() * palette.length)]
+      });
+    }
+  }
+  var glints = [];
+  var glintTimer = 0;
+  animate();
+
+  /* SECTION: toast */
+  var toastEl = document.getElementById('skToast');
+  var toastTimer = null;
+  function showToast(text, golden){
+    clearTimeout(toastTimer);
+    toastEl.textContent = text;
+    toastEl.classList.toggle('golden', !!golden);
+    toastEl.classList.remove('show');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, golden ? 4200 : 3000);
+  }
+
+  /* SECTION: blade (鞘中刀 —— 她不肯拔的那一柄)
+   *
+   * 呀，这一节是樱特有的：全站没有第二个人是「你越用力，她越不肯」的。
+   * 两次拒绝、第三次……她没有出刀，而是给了你一朵「勿忘我」♥
+   *
+   * 用的两句话**都是有出处的**（官方档案馆事件-樱）：
+   *   拒绝 ——「关于自身·其二」；赠花 ——「落樱的追忆·其三」。
+   */
+  var bladeStage = document.getElementById('bladeStage');
+  var bladeGlow = document.getElementById('bladeGlow');
+  var bladeFlower = document.getElementById('bladeFlower');
+  var bladeCountEl = document.getElementById('bladeCount');
+  var bladeHintEl = document.getElementById('bladeHint');
+  var tries = 0;
+  var gifted = false;
+  try { gifted = localStorage.getItem('sakuraFlower') === '1'; } catch(err){ gifted = false; }
+  renderBlade();
+
+  var audioCtx = null;
+  /* 鞘鸣：一声很轻的、金属被按住的声音。不是出鞘的锐响。 */
+  function bladeSound(){
+    try{
+      if (!audioCtx){
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        audioCtx = new AC();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var t = audioCtx.currentTime;
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(1180, t);
+      osc.frequency.exponentialRampToValueAtTime(420, t + 0.14);
+      gain.gain.setValueAtTime(0.16, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.25);
+    } catch(err){ /* 静音失败不影响视觉 */ }
+  }
+
+  function renderBlade(){
+    bladeCountEl.textContent = gifted ? '她给了你一朵花' : ('已伸手 × ' + tries);
+    bladeHintEl.textContent = gifted
+      ? '刀还在鞘里。你没有再伸手——这样很好。'
+      : '刀在鞘里。你可以试试。';
+    if (gifted) bladeFlower.classList.add('bloom');
+  }
+
+  /* 拔不动的那一下：整柄刀往左一顿、又弹回来 —— 「拒」是有形状的 */
+  function refuseShake(){
+    bladeStage.classList.add('refused');
+    setTimeout(function(){ bladeStage.classList.remove('refused'); }, 190);
+  }
+
+  function tryDraw(){
+    if (gifted){ showToast('……嗯。花还开着。', false); return; }
+
+    tries++;
+    try { localStorage.setItem('sakuraTries', String(tries)); } catch(err){}
+    renderBlade();
+    bladeSound();
+    refuseShake();
+
+    var floatEl = document.createElement('div');
+    floatEl.className = 'blade-float';
+    floatEl.textContent = '纹丝不动';
+    floatEl.style.left = (38 + Math.random() * 24) + '%';
+    bladeStage.appendChild(floatEl);
+    setTimeout(function(){ floatEl.remove(); }, 1200);
+
+    var r = bladeStage.getBoundingClientRect();
+    if (!reducedMotion){
+      petalBurst(r.left + r.width * 0.62, r.top + r.height * 0.5, 5, ['#8fdcff','#4fb8e8']);
+    }
+
+    if (tries >= 3){
+      /* 呀，第三次了 —— 她没有拔刀。她说的是另一件事♥ */
+      gifted = true;
+      try { localStorage.setItem('sakuraFlower', '1'); } catch(err){}
+      renderBlade();
+      bladeGlow.classList.add('lit');
+      showToast('「别来无恙。……啊，差点忘记了。我今天来，是准备了一份礼物给你。请收下它吧，温柔的女孩。」', true);
+      if (!reducedMotion){
+        petalBurst(r.left + r.width / 2, r.top + r.height / 2, 26,
+                   ['#ffb7c5','#ffd6e0','#8fdcff','#e8f4ff']);
+      }
+    } else if (tries === 1){
+      showToast('「你是说『寒狱冰天』？……很抱歉，它决不能就这样轻易出鞘。对我来说，这是『戒律』的一部分。」', false);
+    } else {
+      showToast('她只是看着你。鞘口那道光，亮了一下。', false);
+    }
+  }
+  bladeStage.addEventListener('click', tryDraw);
+  bladeStage.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tryDraw(); }
+  });
+
+  /* 呀，这里本来该有个「点名字」的小彩蛋——但千劫、苏、维尔薇都用过那一套了。
+     樱要有她自己的一份，所以这一页不点名字：她的彩蛋在那柄刀上，在结尾那朵花上♥ */
+
+  /* SECTION: easter egg - 结尾的勿忘我（**跨彩蛋解锁**）
+   *
+   * 呀，这一页的两个彩蛋是**连着的**：只有你真的在「鞘中刀」那儿
+   * 收下了那朵花，结尾才会多留一句话、多开一朵花。
+   * —— 全站没有第二页这么做。这是樱一个人的。
+   *
+   * ⚠ 那句留下的台词同样**有出处**（官方档案馆事件-樱「关于自身·其四」），
+   *   不是我写的。彩蛋可以设计，话不能编。
+   */
+  var endingSub = document.getElementById('endingSub');
+  var endingFlower = document.getElementById('endingFlower');
+
+  var gotFlower = false;
+  try { gotFlower = localStorage.getItem('sakuraFlower') === '1'; } catch(err){ gotFlower = false; }
+
+  if (gotFlower){
+    endingSub.textContent = '「她一直是个怕寂寞的孩子……真希望她迎来的，是一个平静安稳的结局啊。」';
+    endingSub.classList.add('visible');
+    if (endingFlower) endingFlower.classList.add('bloom');
+  }
+
+  /* SECTION: click ripple (水面圆环) */
+  document.addEventListener('click', function(e){
+    if (reducedMotion) return;
+    if (e.target.closest && (e.target.closest('#bladeStage') || e.target.closest('#profileName') || e.target.closest('#endingQuote'))) return;
+    for (var n = 0; n < 2; n++){
+      var ring = document.createElement('div');
+      ring.className = 'water-ring';
+      var size = 60 + n * 46 + Math.random() * 20;
+      ring.style.width = size + 'px';
+      ring.style.height = size + 'px';
+      ring.style.left = e.clientX + 'px';
+      ring.style.top = e.clientY + 'px';
+      ring.style.animationDelay = (n * 0.14) + 's';
+      ring.style.borderColor = n === 0 ? 'rgba(255,183,197,.7)' : 'rgba(143,220,255,.5)';
+      document.body.appendChild(ring);
+      setTimeout(function(el){ el.remove(); }.bind(null, ring), 1300);
+    }
+  });
+
+  /* SECTION: typewriter */
+  /* SECTION: opening typewriter —— 交给共享层
+     ⚠ 五个时间数值**逐页不同**，全部照本页原值传入，不要依赖默认值。
+       漏传就会悄悄改变这一页的节奏。对照表见 docs/theme-schema.md §5.1。 */
+  ElysiaShared.makeTypewriter({
+    // 出自官方档案馆事件-樱「关于自身·其一」。
+    // 数值按 docs/theme-schema.md §七 的性格锚点定：她是剑士 ——
+    // **快、利落**，所以 delay 取低、jitter 取全站最小的 45（少犹豫）。
+    text: '等待，曾经那是我用以谋生最重要的技巧，却不再是我现在的目的了。',
+    delay: 120, jitter: 45, startDelay: 700, tailDelay: 550, hintDelay: 1000,
+    hintEl: true,
+    preReveal: 'openingSignet',
+  });
+
+  /* SECTION: scroll animations */
+  /* SECTION: scroll animations —— 交给共享层
+     ⚠ 结尾目标改用带判空的写法（Inventory R11）：元素齐全时表现与原先完全一致，
+       缺元素时不再抛异常。属**行为改善**，非纯重构。 */
+  ElysiaShared.observeReveal('.timeline-node');
+  ElysiaShared.observeReveal('#ending', {
+    threshold: 0.3,
+    reveal: ['endingQuote', 'endingAttr', 'backLink'],
+  });
+
+  /* SECTION: ending stars */
+  var starsContainer = document.getElementById('endingStars');
+  // 呀！星星的区间就是这一页的脾气，交给共享层的时候一个数都不敢动呢♥
+  // ⚠ 区间写法是 [起点, 跨度]，与原来的 `0.1 + Math.random() * 0.3` 一一对应。
+  var THEME = {
+    endingStars: {
+      count: [80, 12],
+      size: [0.5, 2],
+      minO: [0.08, 0.3], maxO: [0.45, 0.5],
+      dur: [2.4, 4], delay: [0, 5],
+      colors: { pool: ['#fff', '#ffb7c5', '#8fdcff'] },
+    },
+  };
+  ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+  /* SECTION: resize guard */
+  window.addEventListener('resize', function(){
+    for (var j = 0; j < motes.length; j++){
+      if (motes[j].x > W) motes[j].x = Math.random() * W;
+    }
+    for (j = 0; j < petals.length; j++){
+      if (petals[j].x > W) petals[j].x = Math.random() * W;
+    }
+  });
+})();
+</script>
+</body>
+</html>
