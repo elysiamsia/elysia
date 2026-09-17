@@ -270,7 +270,10 @@ body.raging{animation:rage-quake .09s linear infinite}
 <div id="rageOverlay"></div>
 
 <!-- SECTION: rage hud -->
-<div id="rageHud" title="怒气">
+<!-- 呀，这条怒气条看着像个进度条，可它只是个 div——读屏的人完全不知道它在说什么。
+     补上 progressbar 语义，让「怒气 45%」这件事也能被听见♥ -->
+<div id="rageHud" title="怒气" role="progressbar"
+     aria-label="怒气" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
   <span class="rage-label">怒气</span>
   <div class="rage-bar"><div class="rage-fill" id="rageFill"></div></div>
 </div>
@@ -667,6 +670,8 @@ body.raging{animation:rage-quake .09s linear infinite}
   function updateRage(){
     rageFill.style.width = Math.min(100, rage) + '%';
     rageHud.classList.toggle('hot', rage > 55);
+    // 视觉条在动，语义值也要跟着动 —— 否则读屏听到的永远停在 0
+    rageHud.setAttribute('aria-valuenow', Math.round(Math.min(100, rage)));
     rageBoost = 1 + Math.min(1, rage / 100) * 1.6;
     rageOverlay.style.opacity = (Math.max(0, rage - 40) / 60 * 0.45).toFixed(2);
     if (rage >= 100 && !raging) startRage();
@@ -674,8 +679,19 @@ body.raging{animation:rage-quake .09s linear infinite}
 
   function startRage(){
     raging = true;
-    document.body.classList.add('raging');
-    rageOverlay.classList.add('lit');
+    // ⚠ 减动偏好下**不加这两个类**：
+    //     body.raging      → rage-quake .09s 的**全页高频抖动**
+    //     #rageOverlay.lit → rage-pulse .5s 的红色脉冲
+    //   共享层的总闸（assets/site.css §9）虽然会把它们压到一帧，但「一帧全页抖动」
+    //   对光敏/前庭敏感的人仍有风险（WCAG 2.3.1），索性连类都不加。
+    //
+    //   演出的其余部分**照常** —— 吼声、粒子迸发、怒气条、结束语都还在，只是不晃。
+    //   （`.lit` 的 `opacity:1` 本来就被 updateRage() 的内联 style 压过，
+    //     它实际只贡献动画，所以跳过它不影响那个红罩的可见性。）
+    if (!reducedMotion) {
+      document.body.classList.add('raging');
+      rageOverlay.classList.add('lit');
+    }
     showToast(roarLines[Math.floor(Math.random() * roarLines.length)], true);
     var boomCount = 0;
     var boomTimer = setInterval(function(){
