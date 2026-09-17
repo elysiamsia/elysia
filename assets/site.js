@@ -5,12 +5,13 @@
  *
  * ── 这一层怎么用（**新的英桀页请照这个写**）─────────────────────────────
  *
- *   每页只声明一个 THEME —— 这一页的「性格」，其余交给共享层：
+ *   每页只声明一个 THEME —— 这一页的「性格」，其余交给共享层。
+ *   📖 **完整 schema 与逐页数值总表见 `docs/theme-schema.md`**，那是权威规格。
  *
  *     <script src="/assets/site.js"></script>
  *     <script>
  *     var THEME = {
- *       accent: '#c77dff',
+ *       // ── 结尾星屑 ── 逐页不同：配色 / 粒子数 / 时长 ──────────
  *       endingStars: {
  *         count: [80, 12],                            // min(80, floor(innerWidth / 12))
  *         size:  [0.5, 2.5],                          // 0.5 + rnd * 2
@@ -18,10 +19,39 @@
  *         dur:   [2, 6],      delay: [0, 5],
  *         colors: { base: '#fff', alt: '#c77dff', altChance: 0.3 },
  *       },
+ *
+ *       // ── 语录卡 ── ariaLabel 必填，它是 Lore 不是 UI 标签 ────
+ *       quotes: {
+ *         list: ['「…」', '「…」'],
+ *         ariaLabel: '救世铭文，点击切换',             // ⚠ 逐页不同的专属文案
+ *       },
+ *
+ *       // ── 打字机 ── 五个时间数值**逐页抄原值**，别依赖默认 ────
+ *       typewriter: {
+ *         text: '……',
+ *         delay: 130, jitter: 70, startDelay: 800,
+ *         tailDelay: 600, hintDelay: 1200,
+ *         hintEl: false,                              // 该页若无 #openingHint 就 false
+ *         preReveal: 'openingOrn',                    // 无则传 null（string | null）
+ *       },
  *     };
+ *
  *     ElysiaShared.spawnEndingStars(
  *       document.getElementById('endingStars'), THEME.endingStars);
+ *     ElysiaShared.buildQuoteCards({
+ *       grid: document.getElementById('quotesGrid'),
+ *       quotes: THEME.quotes.list,
+ *       ariaLabel: THEME.quotes.ariaLabel,
+ *     });
+ *     ElysiaShared.observeReveal('.timeline-node');
+ *     ElysiaShared.observeReveal('#ending', {
+ *       threshold: 0.3, reveal: ['endingQuote', 'endingAttr', 'backLink'] });
+ *     ElysiaShared.makeTypewriter(THEME.typewriter);
  *     </script>
+ *
+ *   ⚠ **THEME 只装「逐页不同」的东西。** 逐页相同的（提示文案「点击切换」、
+ *     淡出 400ms、进场阈值 0.15 / -50px……）一律留在这层当默认值 ——
+ *     否则 13 页每页抄一遍，P1 就白做了。完整清单见 theme-schema.md §二。
  *
  *   页面专属的东西（千劫的怒气 HUD、苏的木鱼、维尔薇的八人格卡……）
  *   仍然写在页面自己里，**不进这个文件**。
@@ -136,10 +166,221 @@
     }
   }
 
+  /**
+   * 构建语录卡并绑定「点击换一句」。
+   *
+   * ✨ 呀，6 个子页原本每次点击都要
+   *   `Array.prototype.indexOf.call(grid.querySelectorAll('.quote-card'), card)`
+   *   —— **重扫一遍 DOM** 只为问「我是第几张」。index 早就是闭包写法了。
+   *   这里统一成**闭包 O(1)**：索引在创建时就固化在 card 自己的作用域里。
+   *   （设计文档 §5-P1 明确要求的一项。）
+   *
+   * ⚠ `ariaLabel` 是**必填**，而且**必须传该页原本的文案**。
+   *   「低语卡片」「黄金诗句」「救世铭文」这些是**世界观设定（Lore）**，
+   *   不是通用 UI 标签 —— 统一成「语录」是对角色塑造的破坏。
+   *   更要命的是：`snapshot.py` 采的是**计算样式，不含属性**，
+   *   所以这种回归它会报「✅ 无差异」。详见 `docs/theme-schema.md` §四。
+   *
+   * @param {object}   opts
+   * @param {HTMLElement} opts.grid       容器（如 #quotesGrid）
+   * @param {string[]}    opts.quotes     语录数组
+   * @param {string}      opts.ariaLabel  该页专属的 aria-label（必传原值）
+   * @param {string}     [opts.hintText]  卡片右下角提示，默认「点击切换」
+   * @param {number}     [opts.fadeMs]    淡出到换字的等待，默认 400
+   * @param {function}   [opts.onShow]    切换后回调 (newIndex) => void
+   *                                      ← 预留扩展点，index 的配音用
+   */
+  function buildQuoteCards(opts) {
+    var grid = opts.grid;
+    var quotes = opts.quotes || [];
+    if (!grid || !quotes.length) return;
+
+    var hintText = opts.hintText != null ? opts.hintText : '点击切换';
+    var fadeMs = opts.fadeMs != null ? opts.fadeMs : 400;
+
+    quotes.forEach(function (q, i) {
+      var card = document.createElement('div');
+      card.className = 'quote-card';
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('aria-label', opts.ariaLabel || hintText);
+
+      var textEl = document.createElement('div');
+      textEl.className = 'quote-text';
+      textEl.textContent = q;
+
+      var hint = document.createElement('span');
+      hint.className = 'quote-hint';
+      hint.textContent = hintText;
+
+      card.appendChild(textEl);
+      card.appendChild(hint);
+
+      // ★ 闭包固化索引 —— O(1)，且不重扫 DOM。
+      //   刻意**不放在模块级**：跨多次初始化会串味。
+      //
+      // ⚠ `cur` 必须在**点击时同步推进**，不能挪进下面那个 setTimeout 里。
+      //   原写法是 `cardIndices[idxPos] = nextIdx;`（同步），然后才 setTimeout 换字。
+      //   若写成「在 setTimeout 里才 cur = next」，连点 17 次会**全部算出同一个 next**
+      //   —— 因为每次点击读到的都是同一个还没更新的 cur。
+      var cur = i;
+      function advance() {
+        cur = (cur + 1) % quotes.length;
+        var next = cur;                    // 本次点击的目标，闭包捕获
+        textEl.classList.add('fading');
+        setTimeout(function () {
+          textEl.textContent = quotes[next];
+          textEl.classList.remove('fading');
+          if (opts.onShow) opts.onShow(next);
+        }, fadeMs);
+      }
+
+      card.addEventListener('click', advance);
+      card.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          advance();
+        }
+      });
+
+      grid.appendChild(card);
+    });
+  }
+
+  /**
+   * 滚动进场观察器 —— 元素进入视口时加上 `visible`。
+   *
+   * ⚠ **本函数一律带判空**。6 个子页原本的结尾观察器是
+   *   `document.getElementById('endingQuote').classList.add('visible')` 直取，
+   *   元素若缺失就抛异常。统一采用带判空的写法是**行为改善**（元素齐全时
+   *   表现完全一致）—— Inventory §3 R11，**非纯重构**，已在 commit 里标明。
+   *
+   * 两种用法：
+   *   1. 给被观察元素自己加类（时间轴节点）——
+   *        observeReveal('.timeline-node')
+   *   2. 观察到 A、点亮的是 B / C / D（结尾区）——
+   *        observeReveal('#ending', { threshold: 0.3,
+   *                                   reveal: ['endingQuote', 'endingAttr', 'backLink'] })
+   *
+   * @param {string} selector
+   * @param {object}   [opts]
+   * @param {number}   [opts.threshold]   默认 0.15
+   * @param {string}   [opts.rootMargin]  默认 '0px 0px -50px 0px'
+   * @param {string[]} [opts.classes]     要加的类名，默认 ['visible']
+   * @param {string[]} [opts.reveal]      改点亮这几个 id（元素不存在就跳过）
+   * @param {function} [opts.onReveal]    命中回调 (target) => void
+   * @returns {IntersectionObserver|null}
+   */
+  function observeReveal(selector, opts) {
+    var o = opts || {};
+    var nodes = document.querySelectorAll(selector);
+    if (!nodes.length) return null;
+
+    var classes = o.classes || ['visible'];
+
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+
+        if (o.reveal) {
+          // 观察到的是「舞台」，点亮的是台上几盏灯
+          o.reveal.forEach(function (id) {
+            var target = document.getElementById(id);
+            if (!target) return;
+            classes.forEach(function (c) { target.classList.add(c); });
+          });
+        } else {
+          classes.forEach(function (c) { entry.target.classList.add(c); });
+        }
+
+        if (o.onReveal) o.onReveal(entry.target);
+      });
+    }, {
+      threshold: o.threshold != null ? o.threshold : 0.15,
+      rootMargin: o.rootMargin || '0px 0px -50px 0px',
+    });
+
+    nodes.forEach(function (n) { obs.observe(n); });
+    return obs;
+  }
+
+  /**
+   * 开场打字机。
+   *
+   * ⚠ **五个时间数值逐页不同，调用方必须传该页原值 —— 不要依赖默认值。**
+   *   实测（2026-09-17）：kalpas/villv 的 `startDelay` 是 700 而不是 800、
+   *   kalpas 的 `tailDelay` 是 550、villv 是 500、kalpas/su/villv 的
+   *   `hintDelay` 是 1000。漏传就会悄悄改变那几页的节奏。
+   *   完整对照表见 `docs/theme-schema.md` §5.1。
+   *
+   * ⚠ `preReveal` 是**打字开始前同步点亮**的装饰（aponnia/eden/kalpas/kevin/villv
+   *   的 #openingOrn、su 的 #openingMoon）。它不在这儿就没人点 —— 6 页的
+   *   入场装饰会集体不亮。index 没有这个元素，传 null。
+   *
+   * 涉及的 DOM id（7 页共有，实测）：#typewriterText / #typingCursor /
+   *   #openingSub / #scrollHint；#openingHint 只有 kalpas/su/villv 有。
+   *
+   * @param {object} o
+   * @param {string}      o.text         要打出来的文本
+   * @param {number}     [o.delay]       每字基础延迟，默认 160
+   * @param {number}     [o.jitter]      每字额外随机幅度，默认 80
+   * @param {number}     [o.startDelay]  开打前等待，默认 800
+   * @param {number}     [o.tailDelay]   打完 → 光标隐藏 / 副标题显示，默认 600
+   * @param {number}     [o.hintDelay]   副标题 → 滚动提示，默认 1200
+   * @param {boolean}    [o.hintEl]      是否点亮 #openingHint，默认 false
+   * @param {string|null}[o.preReveal]   打字前点亮的元素 id，无则 null
+   */
+  function makeTypewriter(o) {
+    var el = document.getElementById('typewriterText');
+    if (!el) return;
+
+    var text = o.text || '';
+    var delay = o.delay != null ? o.delay : 160;
+    var jitter = o.jitter != null ? o.jitter : 80;
+    var hintDelay = o.hintDelay != null ? o.hintDelay : 1200;
+    var tailDelay = o.tailDelay != null ? o.tailDelay : 600;
+    var startDelay = o.startDelay != null ? o.startDelay : 800;
+
+    var cursorEl = document.getElementById('typingCursor');
+    var subEl = document.getElementById('openingSub');
+    var hintEl = o.hintEl ? document.getElementById('openingHint') : null;
+    var scrollHintEl = document.getElementById('scrollHint');
+
+    var charIndex = 0;
+    function typeNext() {
+      if (charIndex < text.length) {
+        el.textContent += text[charIndex];
+        charIndex++;
+        setTimeout(typeNext, delay + Math.random() * jitter);
+        return;
+      }
+      setTimeout(function () {
+        if (cursorEl) cursorEl.classList.add('hidden');
+        if (subEl) subEl.classList.add('visible');
+        if (hintEl) hintEl.classList.add('visible');
+        setTimeout(function () {
+          if (scrollHintEl) scrollHintEl.classList.add('visible');
+        }, hintDelay);
+      }, tailDelay);
+    }
+
+    // ⚠ 装饰是**同步**点亮的（早于 startDelay），与原始写法一致 ——
+    //   别挪进 setTimeout 里，那会让它晚于打字出现。
+    if (o.preReveal) {
+      var preEl = document.getElementById(o.preReveal);
+      if (preEl) preEl.classList.add('visible');
+    }
+
+    setTimeout(typeNext, startDelay);
+  }
+
   global.ElysiaShared = {
     makeResize: makeResize,
     spawnEndingStars: spawnEndingStars,
     pickColor: pickColor,
+    buildQuoteCards: buildQuoteCards,
+    observeReveal: observeReveal,
+    makeTypewriter: makeTypewriter,
   };
 
 })(window);

@@ -382,38 +382,14 @@ body{
     '「美丽的事物，那也是我的追求。」'
   ];
 
-  /* SECTION: quotes build */
-  var grid = document.getElementById('quotesGrid');
-  var cardIndices = [];
-  quotes.forEach(function(q, i){
-    var card = document.createElement('div');
-    card.className = 'quote-card';
-    card.setAttribute('role','button');
-    card.setAttribute('tabindex','0');
-    card.setAttribute('aria-label','黄金诗句，点击切换');
-    var textEl = document.createElement('div');
-    textEl.className = 'quote-text';
-    textEl.textContent = q;
-    var hint = document.createElement('span');
-    hint.className = 'quote-hint';
-    hint.textContent = '点击切换';
-    card.appendChild(textEl);
-    card.appendChild(hint);
-    cardIndices.push(i);
-    card.addEventListener('click', function(){
-      var idxPos = Array.prototype.indexOf.call(grid.querySelectorAll('.quote-card'), card);
-      var nextIdx = (cardIndices[idxPos] + 1) % quotes.length;
-      cardIndices[idxPos] = nextIdx;
-      textEl.classList.add('fading');
-      setTimeout(function(){
-        textEl.textContent = quotes[nextIdx];
-        textEl.classList.remove('fading');
-      }, 400);
-    });
-    card.addEventListener('keydown', function(e){
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
-    });
-    grid.appendChild(card);
+  /* SECTION: quotes build —— 交给共享层
+     ★ 闭包 O(1) 索引：不再每次点击都重扫一遍 DOM，只为问「我是第几张卡片」。
+     ⚠ ariaLabel 必填，且必须传本页原文案：它是 Lore，不是通用 UI 标签。
+       而快照工具只采计算样式，抹掉了也测不出「✅ 无差异」。见 docs/theme-schema.md §四。 */
+  ElysiaShared.buildQuoteCards({
+    grid: document.getElementById('quotesGrid'),
+    quotes: quotes,
+    ariaLabel: '黄金诗句，点击切换',
   });
 
   /* SECTION: canvas particles */
@@ -516,51 +492,25 @@ body{
   animate();
 
   /* SECTION: typewriter */
-  var typewriterEl = document.getElementById('typewriterText');
-  var cursorEl = document.getElementById('typingCursor');
-  var subEl = document.getElementById('openingSub');
-  var ornEl = document.getElementById('openingOrn');
-  var scrollHintEl = document.getElementById('scrollHint');
-  var typeText = '我的时代已经一曲终了，愿你们的未来能够长颂不休。';
-  var charIndex = 0;
-
-  function typeNext(){
-    if (charIndex < typeText.length){
-      typewriterEl.textContent += typeText[charIndex];
-      charIndex++;
-      setTimeout(typeNext, 140 + Math.random() * 70);
-    } else {
-      setTimeout(function(){
-        cursorEl.classList.add('hidden');
-        subEl.classList.add('visible');
-        setTimeout(function(){ scrollHintEl.classList.add('visible'); }, 1200);
-      }, 600);
-    }
-  }
-  ornEl.classList.add('visible');
-  setTimeout(typeNext, 800);
-
-  /* SECTION: scroll animations */
-  var observerOptions = { threshold: 0.15, rootMargin: '0px 0px -50px 0px' };
-  var scrollObserver = new IntersectionObserver(function(entries){
-    entries.forEach(function(entry){
-      if (entry.isIntersecting) entry.target.classList.add('visible');
-    });
-  }, observerOptions);
-  document.querySelectorAll('.timeline-node').forEach(function(node){
-    scrollObserver.observe(node);
+  /* SECTION: opening typewriter —— 交给共享层
+     ⚠ 五个时间数值**逐页不同**，全部照本页原值传入，不要依赖默认值。
+       漏传就会悄悄改变这一页的节奏。对照表见 docs/theme-schema.md §5.1。 */
+  ElysiaShared.makeTypewriter({
+    text: '我的时代已经一曲终了，愿你们的未来能够长颂不休。',
+    delay: 140, jitter: 70, startDelay: 800, tailDelay: 600, hintDelay: 1200,
+    hintEl: false,
+    preReveal: 'openingOrn',
   });
 
-  var endingObserver = new IntersectionObserver(function(entries){
-    entries.forEach(function(entry){
-      if (entry.isIntersecting){
-        document.getElementById('endingQuote').classList.add('visible');
-        document.getElementById('endingAttr').classList.add('visible');
-        document.getElementById('backLink').classList.add('visible');
-      }
-    });
-  }, { threshold: 0.3 });
-  endingObserver.observe(document.getElementById('ending'));
+  /* SECTION: scroll animations */
+  /* SECTION: scroll animations —— 交给共享层
+     ⚠ 结尾目标改用带判空的写法（Inventory R11）：元素齐全时表现与原先完全一致，
+       缺元素时不再抛异常。属**行为改善**，非纯重构。 */
+  ElysiaShared.observeReveal('.timeline-node');
+  ElysiaShared.observeReveal('#ending', {
+    threshold: 0.3,
+    reveal: ['endingQuote', 'endingAttr', 'backLink'],
+  });
 
   /* SECTION: ending stars */
   var starsContainer = document.getElementById('endingStars');

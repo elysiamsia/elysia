@@ -950,29 +950,15 @@ body{
   animate();
 
   // ===== TYPEWRITER =====
-  var typewriterEl = document.getElementById('typewriterText');
-  var cursorEl = document.getElementById('typingCursor');
-  var subEl = document.getElementById('openingSub');
-  var scrollHintEl = document.getElementById('scrollHint');
-  var typeText = '嗨，想我了吗？';
-  var charIndex = 0;
-
-  function typeNext() {
-    if (charIndex < typeText.length) {
-      typewriterEl.textContent += typeText[charIndex];
-      charIndex++;
-      setTimeout(typeNext, 160 + Math.random() * 80);
-    } else {
-      setTimeout(function() {
-        cursorEl.classList.add('hidden');
-        subEl.classList.add('visible');
-        setTimeout(function() {
-          scrollHintEl.classList.add('visible');
-        }, 1200);
-      }, 600);
-    }
-  }
-  setTimeout(typeNext, 800);
+  /* SECTION: opening typewriter —— 交给共享层
+     ⚠ 五个时间数值**逐页不同**，全部照本页原值传入，不要依赖默认值。
+       漏传就会悄悄改变这一页的节奏。对照表见 docs/theme-schema.md §5.1。 */
+  ElysiaShared.makeTypewriter({
+    text: '嗨，想我了吗？',
+    delay: 160, jitter: 80, startDelay: 800, tailDelay: 600, hintDelay: 1200,
+    hintEl: false,
+    preReveal: null,
+  });
 
   // ===== SCROLL ANIMATIONS =====
   var observerOptions = { threshold: 0.15, rootMargin: '0px 0px -50px 0px' };
