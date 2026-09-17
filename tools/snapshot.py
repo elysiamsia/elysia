@@ -14,7 +14,7 @@
 #   避免和 cdp.py 抢（它用 9320 / edge_cdp，这里用 9321 / edge_snapshot）。
 #
 # ── 为什么还要「确定性处理」（2026-09-16 实测后补的）─────────────────────────
-# 第一版直接采样，同一份代码跑两次报出 119 处差异，全是噪音。三个来源，逐一封掉：
+# 第一版直接采样，同一份代码跑两次报出 119 处差异，全是噪音。四个来源，逐一封掉：
 #
 #   ① 星星是随机生成的 —— .ending-star 的尺寸/颜色/时长/延迟都是 Math.random()
 #      的产物，两次跑必然不同。→ 固定随机种子（见 SEED_RANDOM_JS）。注意这只影响
@@ -25,8 +25,12 @@
 #   ③ 无限动画停在随机相位 —— twinkle / chevron-bounce / glow-pulse 都是 infinite，
 #      采到哪一帧全凭运气（opacity、box-shadow 小数尾数每次都不同）。
 #      → 采样前把无限动画钉在 t=0，有限的动画直接推到结束态（见 SETTLE_JS 末步）。
+#   ④ **日期在变**（2026-09-17 补，比 ①②③ 更隐蔽）—— 「今日之语」按本地日期取句、
+#      生日倒计时每天换数字，于是**同一天内怎么跑都零差异，跨过零点就报差异**。
+#      → 把「现在几点」钉死（见 SEED_DATE_JS）。
+#      ⚠ 这条最坑的地方在于：它骗过了一切当场自检 —— 当天复核永远是对的。
 #
-# 这三条不是「等久一点」能解决的：等再久，无限动画仍然在转。
+# 这四条都不是「等久一点」能解决的：等再久，无限动画仍然在转、日期仍然在走。
 #
 # ── ⚠ PNG 不是逐字节可复现的，别拿它当判据 ──────────────────────────────────
 # 实测（2026-09-16）：同一份代码跑两次，24 张截图里 22 张逐像素完全相同，
@@ -169,6 +173,46 @@ SEED_RANDOM_JS = """
 })();
 """
 
+# 钉死「现在几点」。同样必须在页面脚本之前注入。
+#
+# ⚠ 为什么非要钉它（2026-09-17 抓到的真事故）：
+#   本工具原先只固定了 Math.random，**没有固定时间**，于是基线**跟日历走**——
+#   跨过零点复核，同一份代码会报出差异。实测：index 在 9/16 采得 8902.92px，
+#   9/17 采得 8862.92px，**整页矮 40px，而 38 个采样选择器的计算样式分毫未动**。
+#
+#   两个日期相关的来源，各自都能动高度/宽度：
+#     ① `assets/daily.js`「今日之语」——按访客本地日期取句。9/16 那句 56 字、
+#        9/17 那句 17 字，折行数不同 → `#dailyQuote` 所在的 `.daily-band` 高度变。
+#        而 `.daily-band` **不在 SELECTORS 里**，所以只体现为 __docHeight__ 漂移。
+#     ② `index.html` 的 `#bdayEgg` 生日倒计时——文字每天在变，`position:fixed`
+#        元素的宽度随之变。
+#   → 只固定随机数、不固定日期，等于留了半边地基没打。
+#
+#   为什么钉到 **2026-09-16 12:00 UTC**：
+#     · 12:00 UTC 在 UTC-12 ~ UTC+12 的所有时区里**本地日期都是 9/16**，
+#       不会因为跑工具的人所在时区不同而漂。
+#     · 它正是 P1 那批基线当年被拍下的那天 —— 所以钉住之后，
+#       `baseline` / `baseline-task6` 的**旧数值能被复现**（index 应回到 8902.92px）。
+#       这既是「钉对了」的证据，也让新旧基线之间可比。
+SEED_DATE_JS = """
+(() => {
+  const RealDate = Date;
+  const FIXED = RealDate.UTC(2026, 8, 16, 12, 0, 0);   // 注意月份从 0 起：8 = 九月
+
+  function FrozenDate(...args) {
+    // 无参 `new Date()` → 恒定时刻；带参构造照常走真实行为
+    // （guestbook 与首页生日彩蛋都有 `new Date(y, M, D, …)` 这种调用）
+    if (args.length === 0) return new RealDate(FIXED);
+    return new RealDate(...args);
+  }
+  FrozenDate.prototype = RealDate.prototype;   // 保住 instanceof 与原型方法
+  FrozenDate.now = () => FIXED;
+  FrozenDate.UTC = RealDate.UTC;               // daily.js 依赖 Date.UTC
+  FrozenDate.parse = RealDate.parse;
+  window.Date = FrozenDate;
+})();
+"""
+
 # 让页面「落定」再采样。三步，见文件头 ①②③ 的说明。
 SETTLE_JS = """
 (async () => {
@@ -271,6 +315,9 @@ def main():
         # ⚠ 必须在任何导航之前注册：它要抢在页面脚本之前把 Math.random 换掉，
         #   否则星星已经用真随机生成好了，注入就晚了。
         cdp.send('Page.addScriptToEvaluateOnNewDocument', {'source': SEED_RANDOM_JS})
+        # ⚠ 同理，时间也要在页面脚本前钉死 —— 否则基线**跟日历走**，跨天复核必假失败。
+        #   详见 SEED_DATE_JS 上方那段。
+        cdp.send('Page.addScriptToEvaluateOnNewDocument', {'source': SEED_DATE_JS})
 
         for page in PAGES:
             for (w, h) in SIZES:
