@@ -33,8 +33,9 @@
 | Cloudflare 缓存优化 | ✅ 已配置 |
 | **献花在 QQ 浏览器上修好（同源 + 来源判定）** | ✅ 已修已部署，见 §4.3 |
 | **`armor.html` 皮肤徽章失色** | ✅ 已修已部署，见 §4.4 |
-| **P1 公共层抽取（12 个任务）** | 🟡 **进行中：Task 1–8 完成**（样式层 + 语录卡 / 滚动进场 / 打字机已抽完）|
+| **P1 公共层抽取（12 个任务）** | 🟡 **进行中：Task 1–9 完成**（样式层 + 语录卡 / 滚动进场 / 打字机 + 全站减动）|
 | **`THEME` schema 定稿** | ✅ `docs/theme-schema.md`（13 页的模板，见 §5.1）|
+| **减动保护（WCAG 2.3.1）** | ✅ 7 页 CSS 总闸 + 两处最凶的演出加护栏，见 §5.1 |
 
 ---
 
@@ -110,7 +111,7 @@ https://flowers.elysiad.top/notes/manage?key=<MANAGE_KEY>
 - **部署白名单**：`static.yml` 改成只打包 `_site/`，`tools/ docs/ worker/ images/raw/ .github/` **永不进产物**
 - **`.gitattributes`**：统一 LF（本机系统级 `core.autocrlf=true`）
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
-- **`tools/` 现有工具**：`cdp.py`（无头 Edge，支持 `size` 动作切换视口）、`pick_og.py`（分享卡片轮换）、`og_convert.py`（PNG→JPEG）、`to_webp.py`（图片转 WebP）、**`snapshot.py` / `snapshot_diff.py`（双基线验证，见下）**、**`check_aria_labels.py`（属性断言，见下）**
+- **`tools/` 现有工具**：`cdp.py`（无头 Edge，支持 `size` 动作切换视口）、`pick_og.py`（分享卡片轮换）、`og_convert.py`（PNG→JPEG）、`to_webp.py`（图片转 WebP）、**`snapshot.py` / `snapshot_diff.py`（双基线验证，见下）**、**`check_aria_labels.py`（属性断言，见下）**、**`check_reduced_motion.py`（减动双向断言，见下）**
 
 **快照验证工具（2026-09-16 建立）**：
 
@@ -143,6 +144,26 @@ PYTHONIOENCODING=utf-8 python tools/check_aria_labels.py    # 7 页语录卡的 
 > 被重构悄悄统一成通用文案」这种回归，**快照会报「✅ 无差异」**。
 > 详见 `docs/theme-schema.md` §四。
 > 自带服务器（端口 **8501**，刻意避开 8500），并做过了负向测试。
+
+**减动断言工具（2026-09-17 建立）**：
+
+```bash
+PYTHONIOENCODING=utf-8 python tools/check_reduced_motion.py    # 退出码 0/1
+```
+
+> 计划原本把「验证减动路径」列为**人工步骤**（手动去浏览器里打开「减少动态效果」）。
+> 其实 CDP 有 `Emulation.setEmulatedMedia`，已经自动化，而且**顺手把反面也测了**：
+>
+> | | 验什么 |
+> |---|---|
+> | **减动偏好** | 装饰停了 / 光标仍可见 / 星屑停在各自中间亮度 / 平滑滚动关掉 / 白闪 = 0 |
+> | **正常偏好** | 动画**照旧还在** —— 证明减动段没泄漏到正常路径 |
+> | **两处最凶的演出** | 用**真实用户路径**触发（连按三次「6」、连点点满怒气） |
+>
+> ⚠ 第 ② 条才是这个工具存在的主要理由：「动画停了」和「动画本来就没跑」
+> 在只测减动时**长得一模一样**，一段写错作用域的 `@media` 会同时满足两边。
+> 工具也因此**不写死期望值**，而是拿正常态当基准做相对比较 ——
+> kalpas 的 `.profile-card` 本来就没有动画，写死会把「原本就没有」误报成「泄漏」。
 
 另外 `armor.html` 的 `body` 用了 `background-attachment:fixed`（全站唯一），整页截图时**视口以外不绘背景 → 80% 全白**。截图前注入 `background-attachment:scroll` 覆盖解决（只影响截图，不碰采样属性）。
 
@@ -252,8 +273,8 @@ PYTHONIOENCODING=utf-8 python tools/check_aria_labels.py    # 7 页语录卡的 
 > 新英桀页 = 写一个 THEME + 各自的专属特效，不再复制实现。
 > 详见 P1 计划 Task 6 开头的形状决定。
 
-**Task 1–8 已完成**（Task 7/8 于 2026-09-17 完成）。**接下来做 Task 9**，
-做完立刻开新页面；10 / 11 / 12 留到新页面之后补 —— 见本节末尾的「🎯 下一步做什么」。
+**Task 1–9 已完成**（Task 7/8/9 于 2026-09-17 完成）。**接下来开新页面**（6 位英桀）；
+10 / 11 / 12 留到新页面之后补 —— 见本节末尾的「🎯 下一步做什么」。
 
 | Task | 内容 | 结果 |
 |---|---|---|
@@ -265,6 +286,7 @@ PYTHONIOENCODING=utf-8 python tools/check_aria_labels.py    # 7 页语录卡的 
 | 6 | 抽出 `assets/site.js`（resize 工厂 + 星屑生成） | ✅ 7 页改用 `ElysiaShared`，见下 |
 | 7 | 语录卡 + 滚动进场（`buildQuoteCards` / `observeReveal`） | ✅ 6 子页接入；删 66 行/页 |
 | 8 | 打字机（`makeTypewriter`） | ✅ 7 页接入；五个数值逐页参数化 |
+| 9 | 全站减动保护（WCAG 2.3.1） | ✅ 见下 |
 
 Task 1–5 全部以「✅ 无差异」通过（24 张快照 × 30+ 选择器 × 30+ 计算属性逐字段比对）。
 
@@ -335,21 +357,38 @@ docs/superpowers/plans/2026-09-15-extraction-inventory.md    抽取分析（1173
 
 #### 🎯 下一步做什么（2026-09-17 更新）
 
-> **顺序：Task 9，做完立刻开新页面；10 / 11 / 12 留到新页面之后补。**
-> Task 7 / 8 已于 2026-09-17 完成。
-
-**为什么把 9 排在开新页面之前**：Task 9（全站减动保护）是**每一个英桀页都要遵循**的东西。
-先做，新页面就直接按减动规范写；后做，就得回头补 13 页。
+> **Task 1–9 全部完成。接下来：开新英桀页。**
+> 10 / 11 / 12 留到新页面之后补。
 
 | 任务 | 对新页面的意义 | 何时做 |
 |---|---|---|
-| **9** 全站减动保护 | ⭐ 每页都要遵循 | **本轮** |
+| **新英桀页 ×6** | ⭐ 本体 | **下一步** |
 | 10 index 专项 | ❌ 首页专属 | 新页面之后 |
 | 11 armor 专项 | ❌ 异形页专属 | 新页面之后 |
 | 12 收尾清理 | ➖ 好看 | 最后 |
 
 **10/11/12 也要做**，只是排在后面 —— 别让新页面从一个「半迁移」的仓库起步：
 那时 armor 还挂着自己那套、首页还挂着自己那套，「到底该照谁写」会变成问题。
+
+##### ✅ Task 9 已完成 —— 减动保护落地在哪
+
+| 位置 | 做了什么 |
+|---|---|
+| `assets/site.css` **§9** | 全站总闸（`prefers-reduced-motion` 段）+ 光标/星屑/装饰的末帧修正 |
+| `villv/index.html` | 666 演出：`kk-shaking`（全页高频抖动）加减动护栏 + 本页 `<style>` 里单独关掉**整屏白闪** |
+| `kalpas/index.html` | `startRage()` 的 `body.raging` / `#rageOverlay.lit` 加减动护栏；怒气条补 `role="progressbar"` 并同步 `aria-valuenow` |
+
+⛔ **`index.html` 的点击涟漪按需求方决定「不改」**（§5.4），本轮同样没动 —— 别顺手补。
+
+> 📌 **三个实施时才知道的坑**（计划里都没写）：
+> 1. **`.phase-boom` 不能整个跳过** —— 它不只是白闪，还负责把倒计时元素
+>    （`.kk-banner/.kk-count/.kk-vignette`）变透明。跳过它「3·2·1」会**留在画面上**，
+>    那是视觉 bug 不是减动。只关 `.kk-flash`。
+> 2. **`fireKevinKiller666` / `startRage` 不是全局函数** —— 两个页面的脚本都是
+>    `(function(){…})()` 包裹的。计划 Step 6 那条 `typeof … === 'function'`
+>    期望「函数存在」，实际会得到 `undefined`。验证要**走用户路径**触发。
+> 3. **减动断言不能写死期望值** —— kalpas 的 `.profile-card` 本来就没有动画，
+>    写死会把「原本就没有」误报成「泄漏」。要**拿正常态当基准做相对比较**。
 
 ##### ✅ `THEME` schema 已定稿（Task 7 开工前的那件事，已完成）
 
@@ -393,13 +432,17 @@ cd D:\claude-code\elysia-main
 python -m http.server 8500 &
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8500/assets/site.css   # 应为 200
 
-# 2) 快照 + 比对。Task 9 用 baseline-task78 当参照
-PYTHONIOENCODING=utf-8 python tools/snapshot.py after-task9
-PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py baseline-task78 after-task9; echo "退出码 $?"
+# 2) 快照 + 比对。下一步（开新页面 / Task 10-12）用 baseline-task9 当参照
+PYTHONIOENCODING=utf-8 python tools/snapshot.py after-<本步>
+PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py baseline-task9 after-<本步>; echo "退出码 $?"
 
 # 3) 属性断言 —— 快照**测不出来**的那一类（ARIA 等）
 #    ⚠ 改过语录卡相关的代码就一定要跑这个，见 §4.2
 PYTHONIOENCODING=utf-8 python tools/check_aria_labels.py
+
+# 4) 减动断言 —— 快照同样测不出来（它不模拟媒体特性），见 §4.2
+#    ⚠ 动过 site.css 的减动段、或动过 villv/kalpas 的演出，就一定要跑这个
+PYTHONIOENCODING=utf-8 python tools/check_reduced_motion.py
 ```
 
 **参照点分工**：
@@ -408,7 +451,8 @@ PYTHONIOENCODING=utf-8 python tools/check_aria_labels.py
 |---|---|---|
 | `screenshots/snap/baseline` | **P1 动手前**（从 `origin/main` 的 worktree 取） | P1 最终验收 |
 | `screenshots/snap/baseline-task6` | **Task 6 之后** | 已用过，保留备查 |
-| `screenshots/snap/baseline-task78` | **Task 7/8 之后** | **Task 9 每步的参照** |
+| `screenshots/snap/baseline-task78` | **Task 7/8 之后** | 已用过，保留备查 |
+| `screenshots/snap/baseline-task9` | **Task 9 之后** | **开新页面时的参照** |
 
 > ✅ **2026-09-17：`snapshot.py` 已把「现在几点」钉死在 `2026-09-16 12:00 UTC`。**
 > 在此之前基线**随日历漂** —— 「今日之语」按本地日期取句，跨天复核必假失败
@@ -568,7 +612,7 @@ docs/superpowers/
 │                                                  ★ 改功能前先读这份
 └── plans/
     ├── 2026-09-15-elysiad-update.md             计划 A：14 个任务（已全部执行）
-    ├── 2026-09-15-elysiad-extraction.md         计划 B：P1 公共层抽取，12 个任务（Task 1–8 完成）
+    ├── 2026-09-15-elysiad-extraction.md         计划 B：P1 公共层抽取，12 个任务（Task 1–9 完成）
     └── 2026-09-15-extraction-inventory.md       CSS/JS 抽取分析（1173 行）★ P1 的事实来源
 
 tools/README.md                                   本地工具说明
