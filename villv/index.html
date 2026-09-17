@@ -376,6 +376,20 @@ body.kk-shaking{animation:kk-quake .1s linear infinite}
   .quote-card{min-height:120px;padding:1.2rem}
   .persona-grid{grid-template-columns:1fr}
 }
+
+/* ---------- 减动保护（本页专属的那一条） ----------
+   共享层 assets/site.css §9 的总闸已经覆盖了本页绝大多数动画，这里只补一条
+   **总闸管不好**的：
+
+   `#kkOverlay.phase-boom .kk-flash` 就是 kk-flash —— **整屏纯白闪烁**，
+   属 WCAG 2.3.1 的闪烁风险。总闸把它压成「瞬间跑完一帧」，但闪烁这种东西
+   最好一帧都不要有，所以在这里显式关掉。
+
+   ⚠ 只关 `.kk-flash`，**不要**连 `.phase-boom` 一起关 —— 那个类还负责把
+     倒计时元素隐藏掉（见 JS 里的说明）。 */
+@media (prefers-reduced-motion: reduce){
+  #kkOverlay.phase-boom .kk-flash{animation:none!important;opacity:0!important}
+}
 </style>
 </head>
 <body>
@@ -1039,8 +1053,14 @@ body.kk-shaking{animation:kk-quake .1s linear infinite}
     }, 2400);
     setTimeout(function(){
       kkOverlay.classList.remove('phase-count');
+      // ⚠ `phase-boom` **必须照加** —— 它不只是「白闪」，还负责把倒计时那几个
+      //   元素（.kk-banner / .kk-count / .kk-vignette）变成 opacity:0。
+      //   跳过它会让「3·2·1」**留在画面上**盖住后面的状态 —— 那是视觉 bug，
+      //   不是减动。闪烁本身由本页 <style> 里的减动段单独关掉。
       kkOverlay.classList.add('phase-boom');
-      document.body.classList.add('kk-shaking');
+      // ⚠ 这个才是纯动作：body.kk-shaking → kk-quake .1s 的**全页高频抖动**。
+      //   WCAG 2.3.1 风险，减动偏好下干脆不加这个类。
+      if (!reducedMotion) document.body.classList.add('kk-shaking');
       explosionBurst();
       setTimeout(explosionBurst, 150);
       setTimeout(explosionBurst, 320);
