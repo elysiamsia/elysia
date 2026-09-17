@@ -53,6 +53,10 @@
 > （README + `text_materials.md` 台词 + `visual_assets.md` / `audio_assets.md` 清单）
 > **建页前先读那份 `text_materials.md`** —— 有出处的台词已经整理好了，还标了「待考/待核」。
 >
+> ⚠ **`materials/` 不在仓库里** —— 仓库根是 `elysia-main`，材料在**它的上一级**
+> （`D:\claude-code\materials`）。只拿到仓库的人**看不到材料**，要另外要。
+> 建站产物在仓库、素材在仓库外，这是有意的（素材体积大、且不属于站点资源）。
+>
 > ⚠ 但**材料包不是唯一权威**：需求方可能另有依据（樱的生日/装甲就是如此，见 §10.3）。
 
 ### 2.2 站点功能一览
@@ -97,6 +101,23 @@
    > 排在后面是有理由的：**别让新页面从一个「半迁移」的仓库起步** ——
    > 那时 armor 还挂着自己那套、首页还挂着自己那套，「到底该照谁写」会变成问题。
 3. ⚠ **彩蛋要在第一版里一起做掉**（见 §4.2）—— aponia/eden/kevin 就是因为先上线再补，空了很久
+
+#### 开工第一条命令
+
+```bash
+cd D:\claude-code\elysia-main
+git status                  # 确认在 dev 分支、工作区干净
+git pull origin dev         # 拉到最新的
+git log --oneline -5        # 看看上一轮做到哪了
+
+# 材料（⚠ 在仓库外）
+ls D:\claude-code\materials\          # 找你要建的那位
+cat D:\claude-code\materials\科斯魔\README.md     # 先读这个，再读 text_materials.md
+```
+
+然后按 **§4.1** 走。**第一页建议从 `su/index.html` 复制骨架**（它的专属模块最少、模板最干净）。
+
+> 💡 **开工前把 §六 扫一遍** —— 那里每一条都是真踩过的，能省你好几个小时。
 
 ---
 
@@ -220,10 +241,12 @@ https://flowers.elysiad.top/notes/manage?key=<MANAGE_KEY>
 | **在 `data/timeline-data.js` 给这位补 `url`** | 首页名片不会亮小星、点不进去 —— **新页又成了孤岛** |
 | 加进 `tools/check_aria_labels.py` 的 **`EXPECTED`** | 新页的语录卡文案**没人守**（快照测不出属性） |
 | 加进 `tools/snapshot.py` 的 **`PAGES`** | 快照**根本不拍这一页**，改动无从验证 |
+| 加进 `tools/check_reduced_motion.py` 的 **`PAGES`** | 新页的减动**没人验**（该表只覆盖 5 页，是抽样） |
 | 角色页用**子页那套** `.back-link` / `.ending-*`（**不是** armor 那套） | 样式对不上 |
 
-> 💡 **后两条最容易忘**（樱那一轮实测）：**工具不会自己知道多了一个页面。**
-> 补上之后 `check_aria_labels.py` 的覆盖才从 7 页变成 8 页。
+> 💡 **后三条最容易忘**（樱那一轮实测）：**工具不会自己知道多了一个页面。**
+> 三个工具各自有一张页面清单，**要逐个补**：
+> `check_aria_labels.EXPECTED` · `snapshot.PAGES` · `check_reduced_motion.PAGES`。
 
 > 💡 **`url` 是「建页的最后一步」**。首页那两种入口（小星 + 「走进 TA 的页面 →」）
 > **都只认数据里的 `h.url`** —— 没建页面的那几位自动不显示，不会造出死链。
