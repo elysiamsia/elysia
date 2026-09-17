@@ -214,6 +214,81 @@ body{
 }
 .back-link:hover{background:rgba(168,212,245,.12);box-shadow:0 0 24px rgba(168,212,245,.22);transform:translateY(-2px)}
 
+/* SECTION: blade (他的剑 —— 专属互动) */
+.sw-wrap{max-width:540px;margin:0 auto;text-align:center}
+.sw-stage{position:relative;display:inline-block;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
+.sw-stage svg{display:block;filter:drop-shadow(0 12px 30px rgba(0,0,0,.55))}
+.sw-stage.hit svg{animation:swHit .26s ease}
+@keyframes swHit{0%,100%{transform:translateX(0)}35%{transform:translateX(-4px) rotate(-.6deg)}
+  70%{transform:translateX(3px) rotate(.4deg)}}
+/* 裂痕：点一次多一道，越到后面越密 */
+.sw-crack{opacity:0;transition:opacity .35s ease}
+.sw-crack.on{opacity:1}
+/* 断了以后：上下两截各自错开 */
+.sw-upper,.sw-lower{transition:transform 1.1s cubic-bezier(.3,.7,.3,1),opacity 1.1s ease}
+.sw-stage.broken .sw-upper{transform:translate(-26px,-30px) rotate(-16deg)}
+.sw-stage.broken .sw-lower{transform:translate(22px,44px) rotate(11deg)}
+.sw-stage.broken .sw-ice{opacity:0;transition:opacity .9s ease}
+.sw-hint{font-size:.75rem;color:var(--text-muted);letter-spacing:.15em;margin-top:1.1rem;opacity:.8}
+.sw-count{margin-top:.7rem;font-size:.95rem;color:var(--ice);letter-spacing:.2em;
+  font-variant-numeric:tabular-nums;text-shadow:0 0 14px rgba(168,212,245,.5)}
+.sw-float{position:absolute;left:50%;top:-6px;transform:translateX(-50%);pointer-events:none;
+  font-size:.9rem;color:#dceeff;letter-spacing:.1em;text-shadow:0 0 10px rgba(168,212,245,.7);
+  animation:swRise 1.1s ease-out forwards;white-space:nowrap}
+@keyframes swRise{0%{opacity:0;transform:translate(-50%,0) scale(.8)}18%{opacity:1}
+  100%{opacity:0;transform:translate(-50%,-64px) scale(1.05)}}
+
+/* 「鸟儿」：从画面一侧飞到另一侧 */
+.fly-bird{
+  position:fixed;z-index:9994;pointer-events:none;width:34px;height:22px;
+  filter:drop-shadow(0 0 10px rgba(220,238,255,.8));
+  animation:birdFly 5.6s linear forwards;
+}
+@keyframes birdFly{
+  0%{opacity:0;transform:translate(-60px,0) scale(.85)}
+  12%{opacity:1}
+  50%{transform:translate(50vw,-34px) scale(1)}
+  88%{opacity:1}
+  100%{opacity:0;transform:translate(105vw,-10px) scale(.9)}
+}
+.fly-bird path{animation:birdFlap .5s ease-in-out infinite alternate}
+@keyframes birdFlap{from{transform:scaleY(.55)}to{transform:scaleY(1)}}
+
+/* 结尾：冰面上的字 */
+.frost-line{
+  position:absolute;left:50%;top:12%;transform:translateX(-50%);
+  max-width:min(600px,86vw);text-align:center;pointer-events:none;
+  font-size:clamp(.82rem,2.4vw,1rem);line-height:1.9;letter-spacing:.05em;
+  color:#e8f4ff;text-shadow:0 0 22px rgba(168,212,245,.7);
+  opacity:0;transition:opacity 2s ease;
+}
+.frost-line.lit{opacity:.92}
+#frostVeil{
+  position:fixed;inset:0;z-index:9992;pointer-events:none;opacity:0;transition:opacity .8s ease;
+  background:radial-gradient(ellipse at center,transparent 38%,rgba(91,155,212,.34) 100%);
+}
+#frostVeil.lit{opacity:1}
+
+/* 碎冰：点剑时溅出来的 —— 这页没有现成的迸发函数，用他自己的冰晶补一个 */
+.ice-shard{
+  position:fixed;pointer-events:none;z-index:9993;border-radius:1px;
+}
+
+/* SECTION: toast */
+#kvToast{
+  position:fixed;left:50%;bottom:15%;transform:translateX(-50%) translateY(10px);z-index:9995;
+  max-width:88vw;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;letter-spacing:.06em;
+  color:var(--text);background:linear-gradient(135deg,rgba(6,8,14,.94),rgba(26,39,64,.94));
+  border:1px solid var(--glass-border2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 24px rgba(168,212,245,.2);
+  opacity:0;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:opacity .35s ease,transform .35s ease;text-align:center;
+}
+#kvToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#kvToast.golden{color:#e8f4ff;border-color:rgba(168,212,245,.65);
+  box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 40px rgba(168,212,245,.45)}
+@media(max-width:600px){#kvToast{white-space:normal;line-height:1.6}}
+
 /* SECTION: ripple */
 .ripple-shard{
   position:fixed;pointer-events:none;z-index:9999;
@@ -242,6 +317,7 @@ body{
 <body>
 
 <canvas id="frostCanvas"></canvas>
+<div id="frostVeil" aria-hidden="true"></div>
 
 <!-- SECTION: opening -->
 <section class="section-opening" id="opening">
@@ -379,6 +455,74 @@ body{
   </div>
 </section>
 
+<!-- SECTION: blade (他的剑) -->
+<section class="content-section" id="blade">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❄</span>他的剑<span class="section-title-mark">❄</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="sw-wrap">
+    <div class="sw-stage" id="swStage" role="button" tabindex="0"
+         aria-label="一柄封在冰里的剑，点击尝试折断" data-primary-action>
+      <svg viewBox="0 0 180 300" width="170" height="283" aria-hidden="true">
+        <defs>
+          <linearGradient id="swSteel" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#8fb6d8"/><stop offset="42%" stop-color="#e8f4ff"/>
+            <stop offset="58%" stop-color="#c3ddf2"/><stop offset="100%" stop-color="#5b7fa6"/>
+          </linearGradient>
+          <linearGradient id="swIce" x1="0" y1="0" x2="0.4" y2="1">
+            <stop offset="0%" stop-color="rgba(220,238,255,.5)"/>
+            <stop offset="55%" stop-color="rgba(168,212,245,.26)"/>
+            <stop offset="100%" stop-color="rgba(91,155,212,.42)"/>
+          </linearGradient>
+        </defs>
+
+        <!-- 上截（剑身） -->
+        <g class="sw-upper">
+          <path d="M90 22 L104 58 L104 138 L76 138 L76 58 Z" fill="url(#swSteel)"/>
+          <path d="M90 26 L90 136" stroke="rgba(255,255,255,.55)" stroke-width="1.2"/>
+        </g>
+        <!-- 下截（护手 + 柄 + 剑身下段） -->
+        <g class="sw-lower">
+          <path d="M76 138 L104 138 L104 190 L76 190 Z" fill="url(#swSteel)"/>
+          <rect x="46" y="188" width="88" height="12" rx="5" fill="#3f4f66"
+                stroke="rgba(168,212,245,.5)" stroke-width="1"/>
+          <rect x="78" y="200" width="24" height="62" rx="10" fill="#1b2740"
+                stroke="rgba(168,212,245,.35)" stroke-width="1"/>
+          <g stroke="#a8d4f5" stroke-width="1.1" opacity=".45">
+            <path d="M80 206 L100 218"/><path d="M80 220 L100 232"/><path d="M80 234 L100 246"/>
+          </g>
+          <circle cx="90" cy="272" r="8" fill="#3f4f66" stroke="rgba(168,212,245,.5)" stroke-width="1"/>
+        </g>
+
+        <!-- 冰：封着它 -->
+        <g class="sw-ice">
+          <path d="M64 16 L118 26 L120 200 L112 286 L62 282 L56 190 Z" fill="url(#swIce)"
+                stroke="rgba(220,238,255,.6)" stroke-width="1.2"/>
+          <path d="M66 40 L116 34 M62 96 L118 92 M60 152 L118 150 M64 214 L114 212"
+                stroke="rgba(255,255,255,.35)" stroke-width="1" fill="none"/>
+        </g>
+
+        <!-- 裂痕：点一次多一道 -->
+        <g class="sw-crack" id="swCrack0" stroke="#eaf6ff" stroke-width="1.4" fill="none" opacity="0">
+          <path d="M90 60 L78 92 L96 118 L82 150"/>
+        </g>
+        <g class="sw-crack" id="swCrack1" stroke="#eaf6ff" stroke-width="1.4" fill="none" opacity="0">
+          <path d="M112 74 L94 104 L110 132"/>
+        </g>
+        <g class="sw-crack" id="swCrack2" stroke="#eaf6ff" stroke-width="1.5" fill="none" opacity="0">
+          <path d="M70 120 L88 146 L68 174"/>
+        </g>
+        <g class="sw-crack" id="swCrack3" stroke="#eaf6ff" stroke-width="1.6" fill="none" opacity="0">
+          <path d="M100 158 L84 186 L104 208"/>
+        </g>
+      </svg>
+    </div>
+    <p class="sw-count" id="swCount">冰封着</p>
+    <p class="sw-hint">点它。想折的话，得多点几次。</p>
+  </div>
+</section>
+
 <!-- SECTION: quotes -->
 <section class="content-section" id="quotes">
   <div class="section-title-wrap">
@@ -396,6 +540,8 @@ body{
   <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
   <div class="ending-fade"></div>
 </section>
+
+<div id="kvToast" role="status"></div>
 
 <!-- SECTION: scripts -->
 <script src="/assets/site.js"></script>
@@ -596,10 +742,174 @@ body{
     },
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+  /* 呀，这一页原本没有「粒子迸发」那个工具函数 —— 从别的页抄名字会直接报错。
+     用他自己的冰晶写一个：点剑时溅出碎冰♥ */
+  function shardBurst(cx, cy, count, colors){
+    var pal = colors || ['#dceeff','#a8d4f5','#5b9bd4'];
+    for (var i = 0; i < count; i++){
+      (function(i){
+        var s = document.createElement('div');
+        s.className = 'ice-shard';
+        s.style.width = (2 + Math.random() * 4) + 'px';
+        s.style.height = (6 + Math.random() * 12) + 'px';
+        s.style.left = cx + 'px';
+        s.style.top = cy + 'px';
+        var col = pal[i % pal.length];
+        s.style.background = col;
+        s.style.boxShadow = '0 0 8px ' + col;
+        var ang = (i / count) * Math.PI * 2 + Math.random() * 0.7;
+        var deg = ang * 180 / Math.PI;
+        s.style.transform = 'translate(-50%,-50%) rotate(' + deg + 'deg)';
+        document.body.appendChild(s);
+        void s.offsetWidth;
+        var dist = 30 + Math.random() * 72;
+        s.style.transition = 'transform .95s cubic-bezier(.2,.6,.35,1), opacity .95s ease';
+        s.style.transform = 'translate(calc(-50% + ' + (Math.cos(ang) * dist) + 'px), calc(-50% + ' + (Math.sin(ang) * dist) + 'px)) rotate(' + (deg + 140 + Math.random() * 90) + 'deg)';
+        s.style.opacity = '0';
+        setTimeout(function(){ s.remove(); }, 1100);
+      })(i);
+    }
+  }
+
+  /* SECTION: toast */
+  var toastEl = document.getElementById('kvToast');
+  var toastTimer = null;
+  function showToast(text, golden){
+    clearTimeout(toastTimer);
+    toastEl.textContent = text;
+    toastEl.classList.toggle('golden', !!golden);
+    toastEl.classList.remove('show');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, golden ? 4600 : 3000);
+  }
+
+  /* ══ 他的专属互动：「他的剑」══
+   * 「一把剑之所以能成为我的武器，是因为只有我能亲手折断它。」
+   * —— 所以它**不会一碰就断**。点一次裂一道，点够五次才真的断开。
+   * 这份执拗是凯文自己的，别的页没有。台词全部有出处。 */
+  var swStage = document.getElementById('swStage');
+  var swCountEl = document.getElementById('swCount');
+  var swHits = 0;
+  try { swHits = parseInt(localStorage.getItem('kevinHits') || '0', 10) || 0; } catch(err){ swHits = 0; }
+  var SW_NEED = 5;
+  renderSw();
+
+  function renderSw(){
+    for (var i = 0; i < 4; i++){
+      var c = document.getElementById('swCrack' + i);
+      if (c) c.classList.toggle('on', swHits > i);
+    }
+    if (swHits >= SW_NEED){
+      swStage.classList.add('broken');
+      swCountEl.textContent = '断了';
+    } else if (swHits === 0){
+      swCountEl.textContent = '冰封着';
+    } else {
+      swCountEl.textContent = '裂了 ' + swHits + ' 道 · 还差 ' + (SW_NEED - swHits) + ' 次';
+    }
+  }
+
+  function strikeSword(){
+    if (swHits >= SW_NEED){
+      showToast('「属于我的罪责，都将由我一人背负。」', false);
+      return;
+    }
+    swHits++;
+    try { localStorage.setItem('kevinHits', String(swHits)); } catch(err){}
+    renderSw();
+
+    swStage.classList.remove('hit');
+    void swStage.offsetWidth;
+    swStage.classList.add('hit');
+
+    var r = swStage.getBoundingClientRect();
+    if (!reducedMotion){
+      shardBurst(r.left + r.width / 2, r.top + r.height * 0.4, 6, ['#dceeff','#a8d4f5','#e8f4ff']);
+    }
+
+    var floatEl = document.createElement('div');
+    floatEl.className = 'sw-float';
+    floatEl.textContent = swHits >= SW_NEED ? '断了' : ('第 ' + swHits + ' 道裂痕');
+    floatEl.style.left = (36 + Math.random() * 28) + '%';
+    swStage.appendChild(floatEl);
+    setTimeout(function(){ floatEl.remove(); }, 1200);
+
+    if (swHits === 1){
+      showToast('「一把剑之所以能成为我的武器，是因为只有我能亲手折断它。关于力量，我只能言尽于此。」', false);
+    } else if (swHits >= SW_NEED){
+      var veil = document.getElementById('frostVeil');
+      veil.classList.add('lit');
+      setTimeout(function(){ veil.classList.remove('lit'); }, 1400);
+      if (!reducedMotion){
+        shardBurst(r.left + r.width / 2, r.top + r.height * 0.45, 30,
+                   ['#dceeff','#a8d4f5','#5b9bd4','#e8f4ff']);
+      }
+      showToast('「属于我的罪责，都将由我一人背负。」', true);
+    }
+  }
+  swStage.addEventListener('click', strikeSword);
+  swStage.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); strikeSword(); }
+  });
+
+  /* ══ 彩蛋 ② 「鸟儿为什么会飞」══
+   * 点开场那枚 ❄ —— 一只冰鸟从画面左侧飞到右侧。
+   * 这是他那句最出名的话，也是他唯一一次谈起「想要」。 */
+  var ornEl = document.getElementById('openingOrn');
+  var birdFlying = false;
+  function releaseBird(){
+    if (birdFlying) return;
+    birdFlying = true;
+    var b = document.createElement('div');
+    b.className = 'fly-bird';
+    b.style.top = (26 + Math.random() * 26) + 'vh';
+    b.innerHTML = '<svg viewBox="0 0 34 22" width="34" height="22" aria-hidden="true">' +
+      '<path d="M2 12 Q10 2 17 11 Q24 2 32 12" stroke="#dceeff" stroke-width="1.6" ' +
+      'fill="none" stroke-linecap="round"/></svg>';
+    b.querySelector('path').style.transformOrigin = 'center';
+    document.body.appendChild(b);
+    setTimeout(function(){
+      showToast('「鸟儿为什么会飞？不是因为它必须飞翔，也不是因为它想要飞翔——而是因为它们，都想要飞翔。」', true);
+    }, 2400);
+    setTimeout(function(){ b.remove(); birdFlying = false; }, 6000);
+  }
+  if (ornEl){
+    ornEl.style.cursor = 'pointer';
+    ornEl.addEventListener('click', releaseBird);
+    ornEl.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); releaseBird(); }
+    });
+  }
+
+  /* ══ 彩蛋 ③ 结尾：冰面上的承诺 ══
+   * 滚到结尾，那句话从冰面下浮出来 —— 他许过的、唯一一次许给所有人的承诺。 */
+  var endingEl = document.getElementById('ending');
+  var frostLine = null;
+  function showVow(){
+    if (frostLine) return;
+    frostLine = document.createElement('p');
+    frostLine.className = 'frost-line';
+    frostLine.textContent = '「在燃尽的大地上，我向她，向所有人许下承诺——无论付出多少代价，人类，一定会战胜崩坏。」';
+    endingEl.appendChild(frostLine);
+    var veil = document.getElementById('frostVeil');
+    veil.classList.add('lit');
+    setTimeout(function(){ veil.classList.remove('lit'); }, 1600);
+    setTimeout(function(){ frostLine.classList.add('lit'); }, 260);
+  }
+  if (endingEl && 'IntersectionObserver' in window){
+    var endingObs = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if (en.isIntersecting) showVow(); });
+    }, { threshold: 0.35 });
+    endingObs.observe(endingEl);
+  }
+
   /* SECTION: click ripple (冰晶碎片涟漪) */
   var shardColors = ['#dceeff','#a8d4f5','#5b9bd4','#e8935c'];
   document.addEventListener('click', function(e){
     if (reducedMotion) return;
+    /* 呀，剑上已经有它自己的回应了，别再叠一层冰晶 */
+    if (e.target.closest && e.target.closest('#swStage')) return;
     var count = 7 + Math.floor(Math.random() * 4);
     for (var k = 0; k < count; k++){
       var shard = document.createElement('div');
