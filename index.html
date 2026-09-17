@@ -1232,24 +1232,19 @@ body{
 </style>
 <script>
 (function(){
-  /* 地址预留表：约定 elysiad.top/<拼音>/，主页即爱莉希雅的乐土 */
-  var HERO_SITES = {
-    '爱莉希雅': '/',
-    '凯文': '/kevin/',
-    '阿波尼亚': '/aponia/',
-    '伊甸': '/eden/',
-    '维尔薇': '/villv/',
-    '千劫': '/kalpas/',
-    '苏': '/su/',
-    '樱': '/sakura/',
-    '科斯魔': '/kosma/',
-    '梅比乌斯': '/mobius/',
-    '格蕾修': '/griseo/',
-    '华': '/hua/',
-    '帕朵菲莉丝': '/pardofelis/'
-  };
-  /* 上线开关：哪位英桀的个人网站建好了，把名字改成 true 即可 */
-  var BUILT = { '爱莉希雅': true, '伊甸': true, '阿波尼亚': true ,'凯文': true, '维尔薇': true,'千劫': true ,'苏': true};
+  /* 地址约定：elysiad.top/<拼音>/ —— 主页即爱莉希雅的乐土。
+     还没建页面的这几位，路径先记在这儿备查：
+       科斯魔 /kosma/ · 梅比乌斯 /mobius/ · 格蕾修 /griseo/ · 华 /hua/ · 帕朵菲莉丝 /pardofelis/
+
+     ⚠ **「这位建好了没有」不在这张表里判** —— 直接读 data/timeline-data.js
+       每个英桀自己的 `url` 字段。建好一页就在那儿补一行，**只改一处**。
+
+     （2026-09-17 改。在这之前这里是两张表：地址表 + 一个单独的 BUILT 开关。
+       樱那一页上线时就漏了改 BUILT —— 两处维护同一件事，漏一次就够呛。）*/
+  var heroUrls = {};
+  (window.HEROS || []).forEach(function(h){
+    if (h.url) heroUrls[h.name] = h.url;
+  });
 
   var toast = null, toastTimer = null;
   function showToast(text){
@@ -1278,8 +1273,8 @@ body{
       showToast('你已经在她的乐土里啦♪');
       return;
     }
-    if (BUILT[name] && HERO_SITES[name]){
-      location.href = HERO_SITES[name];
+    if (heroUrls[name]){
+      location.href = heroUrls[name];
       return;
     }
     showToast('「' + name + '」的乐土尚在建设中，敬请期待…');
