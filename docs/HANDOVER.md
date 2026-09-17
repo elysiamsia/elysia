@@ -1,10 +1,10 @@
 # elysiad.top 项目交接文档
 
 > 写给下一个接手的人（或 agent）。**动手前请通读一遍**，尤其是 §六 的坑。
-> 最后更新：2026-09-16
+> 最后更新：2026-09-17
 >
 > 🎯 **如果你是接手 P1 的下一个 agent，直接跳 §5.1 末尾的「🎯 下一步做什么」。**
-> 那里写清了：先做哪三个任务、每个任务的注意事项、验证协议怎么跑、
+> 那里写清了：下一步做 Task 9、注意事项、验证协议怎么跑、
 > 以及**开新页面之前必须先向需求方确认的一件事**。
 
 ---
@@ -33,7 +33,8 @@
 | Cloudflare 缓存优化 | ✅ 已配置 |
 | **献花在 QQ 浏览器上修好（同源 + 来源判定）** | ✅ 已修已部署，见 §4.3 |
 | **`armor.html` 皮肤徽章失色** | ✅ 已修已部署，见 §4.4 |
-| **P1 公共层抽取（12 个任务）** | 🟡 **进行中：Task 1–6 完成**（样式层已抽完，正在抽 JS 层） |
+| **P1 公共层抽取（12 个任务）** | 🟡 **进行中：Task 1–8 完成**（样式层 + 语录卡 / 滚动进场 / 打字机已抽完）|
+| **`THEME` schema 定稿** | ✅ `docs/theme-schema.md`（13 页的模板，见 §5.1）|
 
 ---
 
@@ -109,7 +110,7 @@ https://flowers.elysiad.top/notes/manage?key=<MANAGE_KEY>
 - **部署白名单**：`static.yml` 改成只打包 `_site/`，`tools/ docs/ worker/ images/raw/ .github/` **永不进产物**
 - **`.gitattributes`**：统一 LF（本机系统级 `core.autocrlf=true`）
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
-- **`tools/` 现有工具**：`cdp.py`（无头 Edge，支持 `size` 动作切换视口）、`pick_og.py`（分享卡片轮换）、`og_convert.py`（PNG→JPEG）、`to_webp.py`（图片转 WebP）、**`snapshot.py` / `snapshot_diff.py`（双基线验证，见下）**
+- **`tools/` 现有工具**：`cdp.py`（无头 Edge，支持 `size` 动作切换视口）、`pick_og.py`（分享卡片轮换）、`og_convert.py`（PNG→JPEG）、`to_webp.py`（图片转 WebP）、**`snapshot.py` / `snapshot_diff.py`（双基线验证，见下）**、**`check_aria_labels.py`（属性断言，见下）**
 
 **快照验证工具（2026-09-16 建立）**：
 
@@ -121,7 +122,7 @@ PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py <旧> <新>   # 有差异�
 
 机械判据是**计算样式 JSON 的差分**；PNG 只供人眼确认「不是白屏」。
 
-⚠ **写这个工具时踩了四个坑，都修掉了，别再退回**（细节见工具内注释）：
+⚠ **写这个工具时踩了五个坑，都修掉了，别再退回**（细节见工具内注释）：
 
 | 坑 | 后果 |
 |---|---|
@@ -129,6 +130,19 @@ PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py <旧> <新>   # 有差异�
 | 无限动画停在随机相位 | 星星的 opacity、名片呼吸光的 box-shadow 每次都不同，全是噪音 |
 | 星星是 `Math.random()` 生成的 | 尺寸/颜色/时长随机，两次跑必然不同。已用 `addScriptToEvaluateOnNewDocument` 固定种子 |
 | 页面会去连线上献花接口 | 接口通/不通 → 文案不同 → **整页高度差 8px**。基线测的是网络不是代码。已 `setBlockedURLs` 屏蔽 |
+| **日期在变**（2026-09-17 补） | 「今日之语」按本地日期取句、生日倒计时每天换字 → **同一天内怎么跑都零差异，跨过零点就报差异**。已把「现在几点」钉死在 `2026-09-16 12:00 UTC` |
+
+**属性断言工具（2026-09-17 建立）**：
+
+```bash
+PYTHONIOENCODING=utf-8 python tools/check_aria_labels.py    # 7 页语录卡的 aria-label，退出码 0/1
+```
+
+> 补的是快照的**盲区**：`snapshot.py` 采的是**计算样式，不含属性**。
+> 所以「6 页各有一段专属 `aria-label`（低语卡片 / 黄金诗句 / 救世铭文……）
+> 被重构悄悄统一成通用文案」这种回归，**快照会报「✅ 无差异」**。
+> 详见 `docs/theme-schema.md` §四。
+> 自带服务器（端口 **8501**，刻意避开 8500），并做过了负向测试。
 
 另外 `armor.html` 的 `body` 用了 `background-attachment:fixed`（全站唯一），整页截图时**视口以外不绘背景 → 80% 全白**。截图前注入 `background-attachment:scroll` 覆盖解决（只影响截图，不碰采样属性）。
 
@@ -238,18 +252,32 @@ PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py <旧> <新>   # 有差异�
 > 新英桀页 = 写一个 THEME + 各自的专属特效，不再复制实现。
 > 详见 P1 计划 Task 6 开头的形状决定。
 
-**Task 1–6 已完成**（2026-09-16）。**接下来做 Task 7 → 8 → 9，做完立刻开新页面 —— 见本节末尾的「🎯 下一步做什么」**（那是给下一个 agent 的交接）。
+**Task 1–8 已完成**（Task 7/8 于 2026-09-17 完成）。**接下来做 Task 9**，
+做完立刻开新页面；10 / 11 / 12 留到新页面之后补 —— 见本节末尾的「🎯 下一步做什么」。
 
 | Task | 内容 | 结果 |
 |---|---|---|
-| 1 | 验证地基（`snapshot.py` / `snapshot_diff.py`） | ✅ 见 §4.2——**计划给的代码是坏的，修了四个坑** |
+| 1 | 验证地基（`snapshot.py` / `snapshot_diff.py`） | ✅ 见 §4.2——**计划给的代码是坏的，先后修了五个坑**（第 5 个「日期漂移」是 2026-09-17 补的） |
 | 2 | 新建 `assets/site.css`（A 组 31 条） | ✅ |
 | 3 | 7 页接入基础重置 + keyframes | ✅ 删 55 条（+14/−55） |
 | 4 | 7 页接入几何中性规则 | ✅ 删 **153** 条（+9/−201） |
 | 5 | 归一化前导零写法（不动数值） | ✅ index 79 处；JS 里的 43 处一个没碰 |
 | 6 | 抽出 `assets/site.js`（resize 工厂 + 星屑生成） | ✅ 7 页改用 `ElysiaShared`，见下 |
+| 7 | 语录卡 + 滚动进场（`buildQuoteCards` / `observeReveal`） | ✅ 6 子页接入；删 66 行/页 |
+| 8 | 打字机（`makeTypewriter`） | ✅ 7 页接入；五个数值逐页参数化 |
 
 Task 1–5 全部以「✅ 无差异」通过（24 张快照 × 30+ 选择器 × 30+ 计算属性逐字段比对）。
+
+#### ⚠ Task 7 起`THEME` 的形状要照着 `docs/theme-schema.md` 写
+
+`THEME` **现在是定型了的**（星屑 / 语录 / 打字机三块），
+**完整 schema、逐页数值总表、共享层默认值清单全在 `docs/theme-schema.md`** ——
+新页面照它写，不要再从别处抄。
+
+> 📌 **Task 7/8 动手时发现计划有 6 处与现场对不上**（`aria-label` 会被抹掉、
+> `hintEl` 是 3 页不是 2 页、`tailDelay` 逐页不同、漏了打字前的装饰元素点亮……）。
+> 逐条记录在 `docs/theme-schema.md` **§八**。**计划在这两处有「过度泛化」倾向，
+> 遇到类似表述请先实测再动手。**
 
 #### ⚠ Task 6 起，验收口径要改一句话
 
@@ -305,22 +333,16 @@ docs/superpowers/plans/2026-09-15-extraction-inventory.md    抽取分析（1173
 > 「与 after-task11 相比，`--gold-soft` 是唯一已知变化」。**那一处现在已经修好了**，
 > 所以到时候快照比对**不该再出现任何变化**——若还看到徽章颜色变化，说明动坏了别的东西。
 
-#### 🎯 下一步做什么（2026-09-16 需求方拍板）
+#### 🎯 下一步做什么（2026-09-17 更新）
 
-> **顺序：Task 7 → 8 → 9，做完立刻开新页面；10 / 11 / 12 留到新页面之后补。**
+> **顺序：Task 9，做完立刻开新页面；10 / 11 / 12 留到新页面之后补。**
+> Task 7 / 8 已于 2026-09-17 完成。
 
-**这个顺序是硬要求，理由不是洁癖**：Task 7（语录卡 + 滚动进场）与 Task 8（打字机）
-抽的正是**每一个英桀页都要用**的两段代码，而且 inventory 已查实那 6 个子页的这两段
-**逐字节一致**。
-
-> 若先建新页面：新页会把这两段再抄一遍 → Task 7/8 之后要改 **13 页而不是 7 页**，
-> 工作量差不多翻倍；更糟的是，新页面会写成「即将被改掉的形状」。
-> **一句话：现在建一页，就等于给未来的自己多留一份待办。**
+**为什么把 9 排在开新页面之前**：Task 9（全站减动保护）是**每一个英桀页都要遵循**的东西。
+先做，新页面就直接按减动规范写；后做，就得回头补 13 页。
 
 | 任务 | 对新页面的意义 | 何时做 |
 |---|---|---|
-| **7** 语录卡 + IntersectionObserver | ⭐ 每页都要 | **本轮** |
-| **8** 打字机 | ⭐ 每页都要 | **本轮** |
 | **9** 全站减动保护 | ⭐ 每页都要遵循 | **本轮** |
 | 10 index 专项 | ❌ 首页专属 | 新页面之后 |
 | 11 armor 专项 | ❌ 异形页专属 | 新页面之后 |
@@ -329,36 +351,30 @@ docs/superpowers/plans/2026-09-15-extraction-inventory.md    抽取分析（1173
 **10/11/12 也要做**，只是排在后面 —— 别让新页面从一个「半迁移」的仓库起步：
 那时 armor 还挂着自己那套、首页还挂着自己那套，「到底该照谁写」会变成问题。
 
-##### ⚠ 开始 Task 7 之前必须先做的一件事
+##### ✅ `THEME` schema 已定稿（Task 7 开工前的那件事，已完成）
 
-**把 `THEME` 的完整 schema 摊给需求方过目。**
+**`docs/theme-schema.md` 就是那份完整 schema** —— 13 页的模板，Task 7/8 已按它落地。
+新页面**照它写**，不要再从别处抄。
 
-现在 `THEME` 只有 `endingStars` 一个字段。Task 7/8 会往里加**语录列表**与
-**打字速度** —— 也就是说，**这个对象现在还没长完**。
-若现在开新页面，每页写的都是残缺版 `THEME`，等 Task 7/8 做完还得回头补。
+其中 **§二「共享层默认值清单」** 尤其要看：它列了**哪些值被刻意不在 `THEME` 里**、为什么。
+免得后来人以为是漏写，又加回去 —— 那等于把 13 份复制粘贴请回来。
 
-> Task 7 一开工就把完整 schema 写出来给需求方确认，再往下写。
-> **它是 13 页的模板，值得多花这十分钟。**
+##### ⚠ Task 7 / 8 的注意事项（**已归档，动手时无需再读**）
 
-##### Task 7 注意事项（6 个子页，**不含 index**）
+两处都已完成。**但有一条要留给后面的人**：
 
-- index **不参与**：它的语录卡有配音逻辑（`window.QUOTE_AUDIO`），
-  结尾观察器用 `epilogueQuote` 且没有 `backLink`
-- **顺带修掉的正事**：6 个子页现在是
-  `Array.prototype.indexOf.call(grid.querySelectorAll('.quote-card'), card)`
-  —— **每次点击都重扫 DOM**。index 早就是闭包索引了。统一成**闭包 O(1)** 版本，
-  这是设计文档 §5-P1 明确要求的一项
-- ⚠ **R9**：`cardIndices` 必须封装在工厂函数**内部**，绝不能变成模块级全局
-  —— 否则跨多次初始化的索引会串味
-- ⚠ **R11**：子页的 `endingObserver` **没有判空**，index 有。
-  统一采用**带判空**的写法属于**行为改善**（元素齐全时表现完全一致），
-  但要**单独 commit 并写明**
+> 📌 **计划在 Task 7 / 8 上有「过度泛化」倾向** —— 实测发现 **6 处与现场对不上**：
+> `aria-label` 会被抹掉（快照还测不出来）、`hintEl` 是 3 页不是 2 页、
+> `tailDelay` / `hintDelay` / `startDelay` 都是逐页不同的、还漏了「打字前的装饰元素点亮」。
+> **逐条记录在 `docs/theme-schema.md` §八。**
+>
+> **教训**：计划里凡出现「各页相同」「某页独有」这类断言，**先实测再动手**。
+
+其余仍有效的两条：
+
 - ⚠ **R10**：villv 缺粒子 resize 守卫 —— **保持现状，不要顺手补**
-
-##### Task 8 注意事项（7 页）
-
-- 各页的**起始延迟 / 每字延迟 / 随机幅度三个数值都不同**，逐页抄，**不要依赖默认值**
-- kalpas / su 独有 `hintEl.classList.add('visible')`
+- ⚠ **R11 的写法已经确立了**：观察器一律**带判空**（元素缺失不再抛异常）。
+  这是**行为改善**，不是纯重构 —— 后续遇到同类情况照此办理并单独 commit
 
 ##### Task 9 注意事项（全站减动保护）
 
@@ -377,9 +393,13 @@ cd D:\claude-code\elysia-main
 python -m http.server 8500 &
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8500/assets/site.css   # 应为 200
 
-# 2) 快照 + 比对。Task 7–9 用 baseline-task6 当参照
-PYTHONIOENCODING=utf-8 python tools/snapshot.py after-task7
-PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py baseline-task6 after-task7; echo "退出码 $?"
+# 2) 快照 + 比对。Task 9 用 baseline-task78 当参照
+PYTHONIOENCODING=utf-8 python tools/snapshot.py after-task9
+PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py baseline-task78 after-task9; echo "退出码 $?"
+
+# 3) 属性断言 —— 快照**测不出来**的那一类（ARIA 等）
+#    ⚠ 改过语录卡相关的代码就一定要跑这个，见 §4.2
+PYTHONIOENCODING=utf-8 python tools/check_aria_labels.py
 ```
 
 **参照点分工**：
@@ -387,13 +407,25 @@ PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py baseline-task6 after-task7;
 | 快照目录 | 是什么 | 用来做什么 |
 |---|---|---|
 | `screenshots/snap/baseline` | **P1 动手前**（从 `origin/main` 的 worktree 取） | P1 最终验收 |
-| `screenshots/snap/baseline-task6` | **Task 6 之后** | Task 7–9 每步的参照 |
+| `screenshots/snap/baseline-task6` | **Task 6 之后** | 已用过，保留备查 |
+| `screenshots/snap/baseline-task78` | **Task 7/8 之后** | **Task 9 每步的参照** |
+
+> ✅ **2026-09-17：`snapshot.py` 已把「现在几点」钉死在 `2026-09-16 12:00 UTC`。**
+> 在此之前基线**随日历漂** —— 「今日之语」按本地日期取句，跨天复核必假失败
+> （实测 index 一夜之间矮了 40px，而所有采样选择器分毫未动）。
+>
+> 钉到这个时刻有个额外好处：`baseline` / `baseline-task6` 的**旧数值能被复现**
+> （index 应回到 `8902.92px`）。**所以现存旧基线仍然有效，不必重采。**
+> 已实测：未改动的 HEAD 用新工具采，得到的正是 8902.92。
 
 ⚠ **P1 最终验收的口径是「零差异，除已解释的星屑重洗」**：
 `baseline` vs 最终状态会报 **72 处差异，全部落在 `.ending-star` 一个选择器上**
 （`left` / `top` / `animation-delay` / `animation-duration` / `opacity`）。
 根因是 Task 6 统一了随机调用顺序，星屑必然重洗 —— 星星本来就是每次加载重新随机的。
 **除 `.ending-star` 外，任何选择器动一处都要停下来查。**
+
+> 💡 **这一条同时也是「工具没坏」的自检**：若某天 `baseline` vs 当前状态报**零差异**，
+> 别高兴 —— 先怀疑工具被缓存或日期问题弄成了恒真式（§4.2 那五个坑）。
 
 ##### 新页面怎么开（做完 7/8/9 之后）
 
@@ -479,6 +511,8 @@ PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py baseline-task6 after-task7;
 | **探测 `loading="lazy"` 的图片要把视口拉高** | 否则下面的图不加载，渲染盒 `0x0`——那是正常行为，不是回归 |
 | **⚠ `pkill` 杀不掉 Windows 原生 python 进程** | `python -m http.server 8500` 用 `pkill -f` 杀不干净——**多个服务器会同时监听同一端口**，请求落到哪个不确定。实测踩到过：为了生成 pre-P1 基线，起了一个服务 worktree 的服务器，但旧的（服务主仓库）仍在响应，于是采样出一份**内容完全错的「pre-P1 基线」**，差点当成真的用。查：`netstat -ano \| grep ":8500 " \| grep LISTENING`（同一 PID 出现两行是 IPv4/IPv6 双栈，正常）；杀：`taskkill //F //PID <pid>`。**起完服务器必须先验内容再采样**——例如请求一个只应存在于新目录的文件。 |
 | **`cdp.py` 的浏览器缓存跨次留存** | 它用固定的 `--user-data-dir=C:/tmp/edge_cdp`，所以**改了 CSS/JS 再测，读到的可能还是旧版本**——会让人误判成「改动没生效」或「修了还是坏的」。给 URL 加 `?cb=<时间戳>` 再测 |
+| **⚠ 快照基线会「随日历漂」（2026-09-17 已修）** | 页面有两处吃日期：「今日之语」按**本地日期**取句、`#bdayEgg` 生日倒计时每天换字。**同一个工作日内怎么复核都是零差异，跨过零点就报差异**——它会骗过一切当场自检。已把「现在几点」钉死在 `2026-09-16 12:00 UTC`。⚠ **改动 `snapshot.py` 时别把 `SEED_DATE_JS` 弄丢**，否则基线又开始跟着日历走 |
+| **快照测不出「属性」** | `snapshot.py` 采的是**计算样式**。`aria-label`、`title`、`alt`、`href` 这类**属性**不在采样范围内 —— 它们被改掉时快照会报「✅ 无差异」。所以有专门的 `tools/check_aria_labels.py`。**改属性类的改动，快照通过不算通过** |
 | **改视觉必须截图核对** | 项目纪律：不接受"看起来差不多"。桌面 `1280×900` + 移动 `375×812` 各一轮 |
 | **元素有入场动画时要等** | `.timeline-node` 是 `opacity:0` + IntersectionObserver 出 `.visible`。滚过去要 `sleep` 一两秒再截图，否则拍到一片空白——那不是页面坏了 |
 | **颜色类改动用像素差分** | 相近的浅色（`#ffe5a0` vs `#f0e6ff`）肉眼在徽章尺寸下分不出。用 `PIL.ImageChops` 比对前后截图，再拿元素 `getBoundingClientRect()` 交叉核对「差异是否落在目标元素内」 |
@@ -524,24 +558,30 @@ curl -sI https://elysiad.top/ | grep -i cf-cache-status
 ## 八、文档地图
 
 ```
+docs/HANDOVER.md                                  本文档
+docs/theme-schema.md                              ★ THEME 的完整 schema（13 页的模板）
+                                                  §二 = 共享层默认值清单  §八 = 与计划的 6 处偏差
+
 docs/superpowers/
 ├── specs/
 │   └── 2026-09-15-elysiad-update-design.md      设计文档（十项功能 + 匿名花笺 + 上线后待办）
 │                                                  ★ 改功能前先读这份
 └── plans/
     ├── 2026-09-15-elysiad-update.md             计划 A：14 个任务（已全部执行）
-    ├── 2026-09-15-elysiad-extraction.md         计划 B：P1 公共层抽取，12 个任务（Task 1 完成）
+    ├── 2026-09-15-elysiad-extraction.md         计划 B：P1 公共层抽取，12 个任务（Task 1–8 完成）
     └── 2026-09-15-extraction-inventory.md       CSS/JS 抽取分析（1173 行）★ P1 的事实来源
 
+tools/README.md                                   本地工具说明
 worker/README.md                                  Worker 部署手册
                                                   §11 = KV 额度实测  §12 = 匿名花笺  §13 = 同源路由 / 来源判定
 ```
 
-**三份必然要读的**：
+**四份必然要读的**：
 
 1. **本文档**（你正在读）
 2. `docs/superpowers/specs/2026-09-15-elysiad-update-design.md` —— 规格与决策的唯一准绳
-3. `docs/superpowers/plans/2026-09-15-extraction-inventory.md` —— 只在做 P1 时读
+3. `docs/theme-schema.md` —— **只要动到 `THEME` 或要开新页面，先读这份**
+4. `docs/superpowers/plans/2026-09-15-extraction-inventory.md` —— 只在做 P1 时读
 
 ---
 
