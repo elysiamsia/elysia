@@ -300,6 +300,39 @@ body{
   100%{opacity:.95;transform:scale(1) rotate(0deg)}
 }
 
+/* 「等待」—— 你在这页待够久、不动，会有一瓣樱慢慢落下来。
+   呀，这是樱最像她自己的那个彩蛋：她什么都没做，只是在等♥ */
+.idle-petal{
+  position:fixed;left:50%;top:-40px;width:26px;height:34px;z-index:9994;
+  pointer-events:none;opacity:0;
+  background:radial-gradient(ellipse at 40% 30%,#ffd6e0,#ffb7c5 55%,#e8788f);
+  border-radius:52% 48% 46% 54% / 62% 66% 34% 38%;
+  box-shadow:0 0 20px rgba(255,183,197,.5);
+}
+.idle-petal.falling{animation:idleFall 6.2s cubic-bezier(.35,.06,.6,.95) forwards}
+@keyframes idleFall{
+  0%{opacity:0;top:-40px;transform:translateX(-50%) rotate(0deg) scale(.85)}
+  14%{opacity:.95}
+  72%{opacity:.95}
+  100%{top:62vh;opacity:0;transform:translateX(-50%) rotate(320deg) scale(1)}
+}
+.idle-line{
+  position:fixed;left:50%;bottom:20vh;z-index:9994;pointer-events:none;
+  max-width:min(560px,86vw);text-align:center;
+  font-size:clamp(.82rem,2.4vw,1rem);line-height:1.9;letter-spacing:.06em;
+  color:var(--sakura-soft);text-shadow:0 0 20px rgba(255,183,197,.4);
+  transform:translateX(-50%) translateY(10px);opacity:0;
+  transition:opacity 1.2s ease,transform 1.2s ease;
+  /* 呀，它可能浮在任何一段内容上面 —— 得给它一层磨砂底，
+     不然压着时间轴的卡片就看不清了♥ */
+  padding:1rem 1.4rem;border-radius:16px;
+  background:linear-gradient(135deg,rgba(11,16,32,.86),rgba(19,28,51,.86));
+  border:1px solid rgba(255,183,197,.18);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 30px rgba(255,183,197,.1);
+}
+.idle-line.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
 /* SECTION: toast */
 #skToast{
   position:fixed;left:50%;bottom:15%;transform:translateX(-50%) translateY(10px);z-index:9995;
@@ -963,6 +996,61 @@ body{
     endingSub.classList.add('visible');
     if (endingFlower) endingFlower.classList.add('bloom');
   }
+
+  /* SECTION: easter egg - 「等待」
+   *
+   * 呀，这是三个彩蛋里最像樱自己的那一个 —— 因为她什么都没做，只是在等。
+   * 你在这页待够久、手不动，就会有一瓣樱从顶上慢慢落下来，然后她开口。
+   *
+   * 用的还是她那句「关于自身·其一」（也是开场那句）——
+   * 但这次不是打给你看的，是**等到了你**之后才说的。
+   * ⚠ script 层的全站减动总闸只压 CSS 动画；所以这里显式判断：
+   *   减动偏好下**不放花瓣**（不动的图也是动效），只让那句话浮出来。
+   */
+  var IDLE_MS = 25000;
+  var idleTimer = null, idleDone = false, idlePetal = null, idleLine = null;
+
+  function idleFire(){
+    if (idleDone) return;
+    idleDone = true;
+
+    if (!reducedMotion){
+      idlePetal = document.createElement('div');
+      idlePetal.className = 'idle-petal';
+      document.body.appendChild(idlePetal);
+      idlePetal.classList.add('falling');
+    }
+
+    idleLine = document.createElement('p');
+    idleLine.className = 'idle-line';
+    idleLine.textContent = '「等待，曾经那是我用以谋生最重要的技巧，却不再是我现在的目的了。」';
+    document.body.appendChild(idleLine);
+
+    setTimeout(function(){
+      idleLine.classList.add('show');
+      if (!reducedMotion && idlePetal){
+        var r = idlePetal.getBoundingClientRect();
+        petalBurst(r.left + r.width / 2, r.top + r.height / 2, 12, ['#ffb7c5','#ffd6e0','#8fdcff']);
+      }
+    }, reducedMotion ? 300 : 4400);
+
+    setTimeout(function(){ idleLine.classList.remove('show'); }, 16000);
+  }
+
+  function idleReset(){
+    clearTimeout(idleTimer);
+    if (idleDone) return;
+    /* ⚠ 还停在开场那一屏时**不启动计时**。
+       否则开场打字机刚打完那句「等待…」，等一会儿又原样浮出一遍 ——
+       同一句话同时出现在屏幕上，看着像 bug。
+       反正她等的是「你走进来」，那就等访客真的往下滚了再开始算。 */
+    if (window.scrollY < window.innerHeight * 0.55) return;
+    idleTimer = setTimeout(idleFire, IDLE_MS);
+  }
+  ['mousemove','scroll','click','keydown','touchstart'].forEach(function(ev){
+    window.addEventListener(ev, idleReset, { passive: true });
+  });
+  idleReset();
 
   /* SECTION: click ripple (水面圆环) */
   document.addEventListener('click', function(e){

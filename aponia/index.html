@@ -214,6 +214,62 @@ body{
 }
 .back-link:hover{background:rgba(157,143,208,.12);box-shadow:0 0 24px rgba(157,143,208,.22);transform:translateY(-2px)}
 
+/* SECTION: fate (命运之丝 —— 她的专属互动) */
+.fate-wrap{max-width:520px;margin:0 auto;text-align:center}
+.fate-stage{position:relative;display:inline-block;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
+.fate-stage svg{display:block;filter:drop-shadow(0 0 18px rgba(157,143,208,.35));
+  transition:transform .5s cubic-bezier(.2,.8,.3,1)}
+.fate-stage.tight svg{transform:scale(.93) rotate(7deg)}
+.fate-stage.woven svg{transform:scale(1.04) rotate(-4deg)}
+.fate-hint{font-size:.75rem;color:var(--text-muted);letter-spacing:.15em;margin-top:1.1rem;opacity:.8}
+.fate-count{margin-top:.7rem;font-size:.95rem;color:var(--violet);letter-spacing:.2em;
+  font-variant-numeric:tabular-nums;text-shadow:0 0 14px rgba(157,143,208,.5)}
+.fate-float{position:absolute;left:50%;top:-6px;transform:translateX(-50%);pointer-events:none;
+  font-size:.9rem;color:var(--candle);letter-spacing:.1em;text-shadow:0 0 10px rgba(232,201,138,.6);
+  animation:fateRise 1.1s ease-out forwards;white-space:nowrap}
+@keyframes fateRise{0%{opacity:0;transform:translate(-50%,0) scale(.8)}18%{opacity:1}
+  100%{opacity:0;transform:translate(-50%,-64px) scale(1.05)}}
+/* 环上那缕丝的呼吸：很慢，像她看着你时的耐心 */
+.fate-ring-a{transform-origin:110px 110px;animation:fateSpin 34s linear infinite}
+.fate-ring-b{transform-origin:110px 110px;animation:fateSpin 22s linear infinite reverse}
+@keyframes fateSpin{to{transform:rotate(360deg)}}
+
+/* 「戒律」落下那一下：丝线从四面八方收进来把你缚住 */
+.binding-thread{
+  position:fixed;pointer-events:none;z-index:9993;border-radius:2px;
+  background:var(--violet);box-shadow:0 0 10px var(--violet);
+  animation:bindIn 1.15s cubic-bezier(.25,.7,.3,1) forwards;
+}
+@keyframes bindIn{0%{opacity:0}18%{opacity:.95}100%{opacity:0}}
+#shuVeil{
+  position:fixed;inset:0;z-index:9992;pointer-events:none;opacity:0;transition:opacity .7s ease;
+  background:radial-gradient(ellipse at center,transparent 34%,rgba(107,92,168,.42) 100%);
+}
+#shuVeil.lit{opacity:1}
+
+/* 结尾：丝线垂下来 */
+.ending-thread{
+  position:absolute;top:0;width:1px;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(157,143,208,.9),transparent);
+  opacity:0;transition:opacity 1.6s ease;
+}
+.ending-thread.lit{opacity:.7}
+
+/* SECTION: toast */
+#apToast{
+  position:fixed;left:50%;bottom:15%;transform:translateX(-50%) translateY(10px);z-index:9995;
+  max-width:88vw;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;letter-spacing:.06em;
+  color:var(--text);background:linear-gradient(135deg,rgba(14,10,24,.94),rgba(42,28,66,.94));
+  border:1px solid var(--glass-border2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 24px rgba(157,143,208,.2);
+  opacity:0;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:opacity .35s ease,transform .35s ease;text-align:center;
+}
+#apToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#apToast.golden{color:#ffe9b8;border-color:rgba(232,201,138,.6);
+  box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 36px rgba(232,201,138,.4)}
+@media(max-width:600px){#apToast{white-space:normal;line-height:1.6}}
+
 /* SECTION: ripple */
 .ripple-thread{
   position:fixed;pointer-events:none;z-index:9999;
@@ -242,6 +298,7 @@ body{
 <body>
 
 <canvas id="fateCanvas"></canvas>
+<div id="shuVeil" aria-hidden="true"></div>
 
 <!-- SECTION: opening -->
 <section class="section-opening" id="opening">
@@ -381,6 +438,45 @@ body{
   </div>
 </section>
 
+<!-- SECTION: fate (命运之丝) -->
+<section class="content-section" id="fate">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">✧</span>她的丝<span class="section-title-mark">✧</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="fate-wrap">
+    <div class="fate-stage" id="fateStage" role="button" tabindex="0"
+         aria-label="一缕命运之丝，点击触碰" data-primary-action>
+      <svg viewBox="0 0 220 220" width="196" height="196" aria-hidden="true">
+        <defs>
+          <linearGradient id="fateG" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#c8c2dc"/>
+            <stop offset="48%" stop-color="#9d8fd0"/>
+            <stop offset="100%" stop-color="#e8c98a"/>
+          </linearGradient>
+        </defs>
+        <!-- 三圈丝：一圈银、一圈紫、一圈烛金 -->
+        <g fill="none" stroke="url(#fateG)">
+          <circle class="fate-ring-a" cx="110" cy="110" r="86" stroke-width="1.1" opacity=".55"/>
+          <circle class="fate-ring-b" cx="110" cy="110" r="68" stroke-width="1" opacity=".42"/>
+          <circle cx="110" cy="110" r="50" stroke-width="1" opacity=".3"/>
+        </g>
+        <!-- 几缕连缀的丝：像命运把人连起来 -->
+        <g stroke="#9d8fd0" stroke-width=".9" opacity=".38" fill="none">
+          <path d="M110 24 Q150 70 110 110"/>
+          <path d="M196 110 Q150 150 110 110"/>
+          <path d="M110 196 Q70 150 110 110"/>
+          <path d="M24 110 Q70 70 110 110"/>
+        </g>
+        <!-- 中心：她的记号 -->
+        <text x="110" y="122" text-anchor="middle" font-size="30" fill="#c8c2dc" opacity=".85">✧</text>
+      </svg>
+    </div>
+    <p class="fate-count" id="fateCount">尚未触碰</p>
+    <p class="fate-hint">命运也是丝。碰一碰，它会动。</p>
+  </div>
+</section>
+
 <!-- SECTION: quotes -->
 <section class="content-section" id="quotes">
   <div class="section-title-wrap">
@@ -398,6 +494,8 @@ body{
   <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
   <div class="ending-fade"></div>
 </section>
+
+<div id="apToast" role="status"></div>
 
 <!-- SECTION: scripts -->
 <script src="/assets/site.js"></script>
@@ -594,10 +692,145 @@ body{
     },
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+  /* SECTION: toast */
+  var toastEl = document.getElementById('apToast');
+  var toastTimer = null;
+  function showToast(text, golden){
+    clearTimeout(toastTimer);
+    toastEl.textContent = text;
+    toastEl.classList.toggle('golden', !!golden);
+    toastEl.classList.remove('show');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, golden ? 4200 : 3000);
+  }
+
+  /* ══ 她的专属互动：「命运之丝」══
+   * 三圈丝绕着一个记号。碰它，它会紧一点、缠一点 ——
+   * 她说的话也跟着换。全部逐字出自她自己的台词池（有出处，见 quotes 区）。 */
+  var fateStage = document.getElementById('fateStage');
+  var fateCountEl = document.getElementById('fateCount');
+  var fateLines = [
+    '「多么漂亮的一双手呀，我可以握住它们吗？我无法给予你救赎，但至少可以向你诉说……你并非孤独一人。」',
+    '「命运对于我来说不再『无常』，因此，它才被镀上了『残忍』的光泽。」',
+    '「于藩篱之中，我们拥获文明；唯驻足之时，我们得见未来。」',
+    '「我憎恨命运，因为它将带你离去。我感激命运，因为它让你我相遇。」'
+  ];
+  var fateIdx = 0;
+  var fateTouch = 0;
+  try { fateTouch = parseInt(localStorage.getItem('aponiaFate') || '0', 10) || 0; } catch(err){ fateTouch = 0; }
+  renderFate();
+
+  function renderFate(){
+    if (fateTouch === 0) fateCountEl.textContent = '尚未触碰';
+    else fateCountEl.textContent = '已触碰 × ' + fateTouch;
+  }
+
+  function touchFate(){
+    fateTouch++;
+    try { localStorage.setItem('aponiaFate', String(fateTouch)); } catch(err){}
+    renderFate();
+    fateStage.classList.remove('tight');
+    void fateStage.offsetWidth;
+    fateStage.classList.add('tight');
+    setTimeout(function(){ fateStage.classList.remove('tight'); }, 520);
+    if (fateTouch >= 3) fateStage.classList.add('woven');
+
+    var floatEl = document.createElement('div');
+    floatEl.className = 'fate-float';
+    floatEl.textContent = '丝动了';
+    floatEl.style.left = (38 + Math.random() * 24) + '%';
+    fateStage.appendChild(floatEl);
+    setTimeout(function(){ floatEl.remove(); }, 1200);
+
+    showToast(fateLines[fateIdx % fateLines.length], fateIdx % fateLines.length === 3);
+    fateIdx++;
+  }
+  fateStage.addEventListener('click', touchFate);
+  fateStage.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); touchFate(); }
+  });
+
+  /* ══ 彩蛋 ① 「戒律」—— 全站独一份的**连点**彩蛋 ══
+   *
+   * 你点得太急了，她就会按住你。
+   * 极贴「戒律」这个词：她要做的从来不是惩罚，是「保护你自己」。
+   * 台词有出处（官方档案馆 · 阿波尼亚）。
+   */
+  var tapTimes = [];
+  var boundCooldown = 0;
+  function imposeCommandment(){
+    var now = Date.now();
+    if (now - boundCooldown < 12000) return;   // 别一直绑，给她留点耐心
+    boundCooldown = now;
+    var veil = document.getElementById('shuVeil');
+    veil.classList.add('lit');
+    setTimeout(function(){ veil.classList.remove('lit'); }, 1500);
+
+    /* 丝线从四面八方收进来 —— 和她那圈「命运丝线涟漪」正好反向 */
+    for (var k = 0; k < 26; k++){
+      (function(k){
+        var t = document.createElement('div');
+        t.className = 'binding-thread';
+        var ang = (k / 26) * Math.PI * 2 + Math.random() * 0.25;
+        var dist = Math.max(window.innerWidth, window.innerHeight) * 0.62;
+        var cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+        var len = 90 + Math.random() * 150;
+        t.style.width = (1 + Math.random() * 1.6) + 'px';
+        t.style.height = len + 'px';
+        t.style.left = (cx + Math.cos(ang) * dist) + 'px';
+        t.style.top = (cy + Math.sin(ang) * dist) + 'px';
+        t.style.transformOrigin = 'center';
+        t.style.transform = 'translate(-50%,-50%) rotate(' + (ang * 180 / Math.PI + 90) + 'deg)';
+        document.body.appendChild(t);
+        var back = 110 + Math.random() * 70;
+        setTimeout(function(){
+          t.style.transition = 'transform 1.05s cubic-bezier(.25,.7,.3,1), opacity 1.05s ease';
+          t.style.transform = 'translate(calc(-50% - ' + Math.cos(ang) * back + 'px), calc(-50% - ' + Math.sin(ang) * back + 'px)) rotate(' + (ang * 180 / Math.PI + 90) + 'deg)';
+          t.style.opacity = '0.9';
+        }, 20);
+        setTimeout(function(){ t.remove(); }, 1400);
+      })(k);
+    }
+    showToast('「如果有一天我不得不向你施以『戒律』，请相信，我首先考虑的……是保护你自己。」', true);
+  }
+  document.addEventListener('click', function(){
+    var now = Date.now();
+    tapTimes.push(now);
+    tapTimes = tapTimes.filter(function(t){ return now - t < 1200; });
+    if (tapTimes.length >= 6){ tapTimes = []; imposeCommandment(); }
+  });
+
+  /* ══ 彩蛋 ③ 结尾：丝线垂下来，命运的两面并排给你看 ══
+   * 滚到结尾时才发生 —— 不是点出来的，是走到那里自然会遇见的。 */
+  var endingEl = document.getElementById('ending');
+  var endingThreads = [];
+  function hangThreads(){
+    if (endingThreads.length) return;
+    for (var i = 0; i < 9; i++){
+      var th = document.createElement('div');
+      th.className = 'ending-thread';
+      th.style.left = (8 + i * 10.5 + Math.random() * 4) + '%';
+      th.style.height = (110 + Math.random() * 190) + 'px';
+      endingEl.appendChild(th);
+      endingThreads.push(th);
+      (function(el, d){ setTimeout(function(){ el.classList.add('lit'); }, d); })(th, i * 130);
+    }
+    showToast('「我憎恨命运，因为它将带你离去。我感激命运，因为它让你我相遇。」', false);
+  }
+  if (endingEl && 'IntersectionObserver' in window){
+    var endingObs = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if (en.isIntersecting) hangThreads(); });
+    }, { threshold: 0.35 });
+    endingObs.observe(endingEl);
+  }
+
   /* SECTION: click ripple (命运丝线涟漪) */
   var rippleColors = ['#c8c2dc','#9d8fd0','#e8c98a','#e8e4f2'];
   document.addEventListener('click', function(e){
     if (reducedMotion) return;
+    /* 呀，别在丝环上再叠一层涟漪 —— 那里已经有它自己的回应了 */
+    if (e.target.closest && e.target.closest('#fateStage')) return;
     var count = 7 + Math.floor(Math.random() * 4);
     for (var k = 0; k < count; k++){
       var threadEl = document.createElement('div');

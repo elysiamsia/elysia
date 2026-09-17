@@ -214,6 +214,68 @@ body{
 }
 .back-link:hover{background:rgba(255,209,102,.12);box-shadow:0 0 24px rgba(255,209,102,.2);transform:translateY(-2px)}
 
+/* SECTION: record (她的歌 —— 专属互动) */
+.rec-wrap{max-width:520px;margin:0 auto;text-align:center}
+.rec-stage{position:relative;display:inline-block;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
+.rec-stage svg{display:block;filter:drop-shadow(0 10px 28px rgba(0,0,0,.55))}
+.rec-disc{transform-origin:110px 110px}
+.rec-stage.spinning .rec-disc{animation:recSpin 2.6s linear infinite}
+@keyframes recSpin{to{transform:rotate(360deg)}}
+.rec-stage.spinning .rec-arm{transform:rotate(19deg)}
+.rec-arm{transform-origin:188px 40px;transition:transform .7s cubic-bezier(.3,.8,.3,1)}
+.rec-hint{font-size:.75rem;color:var(--text-muted);letter-spacing:.15em;margin-top:1.1rem;opacity:.8}
+.rec-count{margin-top:.7rem;font-size:.95rem;color:var(--gold);letter-spacing:.2em;
+  font-variant-numeric:tabular-nums;text-shadow:0 0 14px rgba(232,201,138,.5)}
+.rec-float{position:absolute;left:50%;top:-6px;transform:translateX(-50%);pointer-events:none;
+  font-size:.9rem;color:var(--gold);letter-spacing:.1em;text-shadow:0 0 10px rgba(232,201,138,.6);
+  animation:recRise 1.1s ease-out forwards;white-space:nowrap}
+@keyframes recRise{0%{opacity:0;transform:translate(-50%,0) scale(.8)}18%{opacity:1}
+  100%{opacity:0;transform:translate(-50%,-64px) scale(1.05)}}
+
+/* 「敬你一杯」：金色的光从底下升起来 */
+.gold-rise{
+  position:fixed;left:50%;bottom:-40px;width:2px;border-radius:2px;pointer-events:none;z-index:9993;
+  background:linear-gradient(180deg,transparent,var(--gold));
+  box-shadow:0 0 10px var(--gold);
+  animation:goldUp 1.5s cubic-bezier(.2,.7,.3,1) forwards;
+}
+@keyframes goldUp{0%{opacity:0;transform:translateY(0) scaleY(.4)}
+  22%{opacity:.9}100%{opacity:0;transform:translateY(-72vh) scaleY(1.6)}}
+#toastVeil{
+  position:fixed;inset:0;z-index:9992;pointer-events:none;opacity:0;transition:opacity .8s ease;
+  background:radial-gradient(ellipse at 50% 100%,rgba(232,201,138,.28),transparent 62%);
+}
+#toastVeil.lit{opacity:1}
+
+/* 结尾：那颗陨落的星 */
+.fallen-star{
+  position:absolute;left:50%;top:8%;width:9px;height:9px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#fff8e0,#ffd166 55%,#e8b931);
+  box-shadow:0 0 22px rgba(255,209,102,.9),0 0 48px rgba(255,209,102,.5);
+  opacity:0;pointer-events:none;
+}
+.fallen-star.falling{animation:starFall 3.4s cubic-bezier(.45,.05,.6,.95) forwards}
+@keyframes starFall{
+  0%{opacity:0;transform:translate(-50%,0) scale(.6)}
+  18%{opacity:1}
+  100%{opacity:.95;transform:translate(-50%,46vh) scale(1.25)}
+}
+
+/* SECTION: toast */
+#edToast{
+  position:fixed;left:50%;bottom:15%;transform:translateX(-50%) translateY(10px);z-index:9995;
+  max-width:88vw;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;letter-spacing:.06em;
+  color:var(--text);background:linear-gradient(135deg,rgba(21,10,16,.94),rgba(58,26,38,.94));
+  border:1px solid var(--glass-border2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 24px rgba(232,201,138,.18);
+  opacity:0;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:opacity .35s ease,transform .35s ease;text-align:center;
+}
+#edToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#edToast.golden{color:#ffe9b8;border-color:rgba(232,201,138,.65);
+  box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 40px rgba(232,201,138,.45)}
+@media(max-width:600px){#edToast{white-space:normal;line-height:1.6}}
+
 /* SECTION: ripple */
 .ripple-note{
   position:fixed;pointer-events:none;z-index:9999;color:var(--gold);
@@ -243,6 +305,7 @@ body{
 <body>
 
 <canvas id="goldCanvas"></canvas>
+<div id="toastVeil" aria-hidden="true"></div>
 
 <!-- SECTION: opening -->
 <section class="section-opening" id="opening">
@@ -382,6 +445,57 @@ body{
   </div>
 </section>
 
+<!-- SECTION: record (她的歌) -->
+<section class="content-section" id="record">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">♪</span>她的歌<span class="section-title-mark">♪</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="rec-wrap">
+    <div class="rec-stage" id="recStage" role="button" tabindex="0"
+         aria-label="一张唱片，点击播放" data-primary-action>
+      <svg viewBox="0 0 220 220" width="196" height="196" aria-hidden="true">
+        <defs>
+          <radialGradient id="recBody" cx="42%" cy="34%" r="72%">
+            <stop offset="0%" stop-color="#2a1b12"/><stop offset="60%" stop-color="#170d0a"/>
+            <stop offset="100%" stop-color="#0d0705"/>
+          </radialGradient>
+          <linearGradient id="recGold" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#ffe9b8"/><stop offset="55%" stop-color="#ffd166"/>
+            <stop offset="100%" stop-color="#c9a45c"/>
+          </linearGradient>
+        </defs>
+        <g class="rec-disc">
+          <circle cx="110" cy="110" r="88" fill="url(#recBody)" stroke="rgba(232,201,138,.28)" stroke-width="1"/>
+          <!-- 纹槽：一圈一圈，像她唱过的那些年 -->
+          <g fill="none" stroke="rgba(232,201,138,.12)" stroke-width=".7">
+            <circle cx="110" cy="110" r="78"/><circle cx="110" cy="110" r="70"/>
+            <circle cx="110" cy="110" r="61"/><circle cx="110" cy="110" r="52"/>
+            <circle cx="110" cy="110" r="43"/>
+          </g>
+          <!-- 标签：黄金 -->
+          <circle cx="110" cy="110" r="33" fill="url(#recGold)" opacity=".92"/>
+          <circle cx="110" cy="110" r="33" fill="none" stroke="rgba(21,10,16,.5)" stroke-width="1"/>
+          <text x="110" y="105" text-anchor="middle" font-size="15" fill="#3a1a26" opacity=".85"
+                font-family="inherit">黄金</text>
+          <text x="110" y="121" text-anchor="middle" font-size="9" fill="#3a1a26" opacity=".65"
+                font-family="inherit" letter-spacing="1">EDEN</text>
+          <circle cx="110" cy="110" r="4" fill="#170d0a"/>
+        </g>
+        <!-- 唱臂 -->
+        <g class="rec-arm">
+          <rect x="182" y="30" width="12" height="12" rx="6" fill="#4a3a2a"
+                stroke="rgba(232,201,138,.4)" stroke-width="1"/>
+          <path d="M186 40 L150 96" stroke="#7a6a52" stroke-width="4" stroke-linecap="round"/>
+          <rect x="144" y="94" width="12" height="8" rx="2" fill="#c9a45c"/>
+        </g>
+      </svg>
+    </div>
+    <p class="rec-count" id="recCount">唱片静着</p>
+    <p class="rec-hint">她的歌，还有一段没唱完。</p>
+  </div>
+</section>
+
 <!-- SECTION: quotes -->
 <section class="content-section" id="quotes">
   <div class="section-title-wrap">
@@ -399,6 +513,8 @@ body{
   <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
   <div class="ending-fade"></div>
 </section>
+
+<div id="edToast" role="status"></div>
 
 <!-- SECTION: scripts -->
 <script src="/assets/site.js"></script>
@@ -562,10 +678,149 @@ body{
     },
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+  /* SECTION: toast */
+  var toastEl = document.getElementById('edToast');
+  var toastTimer = null;
+  function showToast(text, golden){
+    clearTimeout(toastTimer);
+    toastEl.textContent = text;
+    toastEl.classList.toggle('golden', !!golden);
+    toastEl.classList.remove('show');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, golden ? 4200 : 3000);
+  }
+
+  /* ══ 她的专属互动：「她的歌」══
+   * 一张唱片。点它，它会转起来，并且**真的发声** ——
+   * 三个振荡器合成一个很轻的和弦（与苏那一页敲木鱼同一路数，不加载任何音频文件）。
+   * 她说的话在她自己的台词池里轮换，全部有出处。 */
+  var recStage = document.getElementById('recStage');
+  var recCountEl = document.getElementById('recCount');
+  var recLines = [
+    '「我不过是舞台上的一介歌者、一抹为观众而闪耀的星光罢了。」',
+    '「天星之所以闪耀，不是因为它想要去闪耀，而是因为它生来如此。」',
+    '「既然要活，那就要活得绚烂璀璨，一如往昔。」',
+    '「愿你我永不离别。愿时光永驻此刻。」',
+    '「属于我们的时代，或许终将如尘烟一般消散。但这座『黄金庭园』，却将永远于此等待。」'
+  ];
+  var recIdx = 0, recPlays = 0;
+  try { recPlays = parseInt(localStorage.getItem('edenPlays') || '0', 10) || 0; } catch(err){ recPlays = 0; }
+  renderRec();
+
+  function renderRec(){
+    recCountEl.textContent = recPlays === 0 ? '唱片静着' : ('已放 × ' + recPlays);
+  }
+
+  var audioCtx = null;
+  /* 一小段很轻的和弦：主音 + 三度 + 五度，缓慢衰减 */
+  function playChord(){
+    try{
+      if (!audioCtx){
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        audioCtx = new AC();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var t0 = audioCtx.currentTime;
+      var root = 261.63;                       // 中央 C
+      [1, 5 / 4, 3 / 2].forEach(function(ratio, i){
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = i === 0 ? 'sine' : 'triangle';
+        osc.frequency.setValueAtTime(root * ratio, t0);
+        gain.gain.setValueAtTime(0.0001, t0);
+        gain.gain.exponentialRampToValueAtTime(0.10, t0 + 0.12 + i * 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 2.1);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(t0);
+        osc.stop(t0 + 2.2);
+      });
+    } catch(err){ /* 静音失败不影响视觉 */ }
+  }
+
+  function playRecord(){
+    recPlays++;
+    try { localStorage.setItem('edenPlays', String(recPlays)); } catch(err){}
+    renderRec();
+    recStage.classList.add('spinning');
+    playChord();
+
+    var floatEl = document.createElement('div');
+    floatEl.className = 'rec-float';
+    floatEl.textContent = '♪';
+    floatEl.style.left = (44 + Math.random() * 12) + '%';
+    recStage.appendChild(floatEl);
+    setTimeout(function(){ floatEl.remove(); }, 1200);
+
+    showToast(recLines[recIdx % recLines.length], recIdx % recLines.length === 4);
+    recIdx++;
+  }
+  recStage.addEventListener('click', function(){
+    playRecord();
+    setTimeout(function(){ recStage.classList.remove('spinning'); }, 5200);
+  });
+  recStage.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); recStage.click(); }
+  });
+
+  /* ══ 彩蛋 ① 「敬你一杯」—— 全站独一份的**双击**彩蛋 ══
+   * 伊甸是会举杯的那一个。「愿文明，如星火般延续。愿此世，如黄金般辉煌。」
+   * —— 这是她自己的祝酒词，不是我编的。
+   */
+  var lastToast = 0;
+  document.addEventListener('dblclick', function(e){
+    var now = Date.now();
+    if (now - lastToast < 9000) return;
+    lastToast = now;
+
+    var veil = document.getElementById('toastVeil');
+    veil.classList.add('lit');
+    setTimeout(function(){ veil.classList.remove('lit'); }, 1800);
+
+    for (var i = 0; i < 34; i++){
+      (function(i){
+        var s = document.createElement('div');
+        s.className = 'gold-rise';
+        s.style.left = (Math.random() * 100) + 'vw';
+        s.style.height = (60 + Math.random() * 130) + 'px';
+        s.style.animationDelay = (Math.random() * 0.55) + 's';
+        document.body.appendChild(s);
+        setTimeout(function(){ s.remove(); }, 2300);
+      })(i);
+    }
+    showToast('「愿文明，如星火般延续。愿此世，如黄金般辉煌。」', true);
+  });
+
+  /* ══ 彩蛋 ③ 结尾：一颗陨落的星 ══
+   * 「最璀璨的星光，正是在陨落时才落入人们眼中的。」
+   * 滚到结尾时它自己落下来 —— 不用点。 */
+  var endingEl = document.getElementById('ending');
+  var fallStar = null;
+  function dropStar(){
+    if (fallStar) return;
+    fallStar = document.createElement('div');
+    fallStar.className = 'fallen-star';
+    endingEl.appendChild(fallStar);
+    fallStar.classList.add('falling');
+    setTimeout(function(){
+      showToast('「最璀璨的星光，正是在陨落时才落入人们眼中的。」', false);
+    }, 2600);
+  }
+  if (endingEl && 'IntersectionObserver' in window){
+    var endingObs = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if (en.isIntersecting) dropStar(); });
+    }, { threshold: 0.35 });
+    endingObs.observe(endingEl);
+  }
+
   /* SECTION: click ripple (金色音符涟漪) */
   var noteChars = ['♪','♫','✦','♩'];
   document.addEventListener('click', function(e){
     if (reducedMotion) return;
+    /* 呀，唱片上已经有它自己的声音了，别再叠一层音符 ♪ */
+    if (e.target.closest && e.target.closest('#recStage')) return;
     var count = 6 + Math.floor(Math.random() * 4);
     for (var k = 0; k < count; k++){
       var note = document.createElement('div');
