@@ -10,6 +10,17 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <!-- 呀！分享出去的时候，要带着她的样子，而不是一行光秃秃的链接♥ -->
 <meta name="description" content="往世乐土 · 她的旅途 · 十三英桀 · 飞花寄语。一位如飞花般绚丽的少女，和她的十三位同伴。">
+<link rel="canonical" href="https://elysiad.top/">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "elysiad.top — 致爱莉希雅",
+  "url": "https://elysiad.top/",
+  "description": "往世乐土 · 她的旅途 · 十三英桀 · 飞花寄语。一位如飞花般绚丽的少女，和她的十三位同伴。",
+  "inLanguage": "zh-CN"
+}
+</script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="elysiad.top">
 <meta property="og:title" content="elysiad.top — 致爱莉希雅">
@@ -283,7 +294,7 @@ body{
 }
 /* 每张名片：竖版小卡，玻璃拟态，像一枚枚被星空托起的徽章呢 */
 .hero-card{
-  width:148px;min-height:170px;padding:1rem .9rem;cursor:pointer;
+  width:148px;min-height:170px;padding:1rem .9rem;cursor:pointer;position:relative;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;
   background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
@@ -293,6 +304,18 @@ body{
   animation:hero-float 3.6s ease-in-out var(--float-delay) infinite;
   /* 每一张都用自己的节拍轻轻晃——「错峰」，才像是活的星空群像呢 */
 }
+/* 呀！已经有独立页面的英桀，名片右上角会亮起一颗小星星——
+   悄悄告诉访客「这位的故事，还有更远的地方可以走哦」♥ */
+.hero-card.has-page::after{
+  content:'';position:absolute;top:.55rem;right:.55rem;
+  width:5px;height:5px;border-radius:50%;
+  background:var(--pink-soft);
+  box-shadow:0 0 8px rgba(255,143,163,.85);
+  animation:hero-dot 2.4s ease-in-out infinite;
+  /* 一呼一吸的，像在说「我在哦」 */
+}
+@keyframes hero-dot{0%,100%{opacity:.4}50%{opacity:1}}
+.hero-card.has-page{border-color:rgba(255,143,163,.22)}
 /* 上下小幅飘动：像花瓣在风里轻轻晃，又像星星在呼吸 */
 @keyframes hero-float{
   0%,100%{transform:translateY(0)}
@@ -317,16 +340,42 @@ body{
 .hero-lore{
   margin-top:.5rem;max-height:0;overflow:hidden;opacity:0;
   font-size:.76rem;color:var(--text-dim);line-height:1.7;text-align:center;
-  transition:max-height .5s ease,opacity .4s ease;
+  /* ⚠ 收着的时候必须 `visibility:hidden` —— 光靠 max-height:0 + opacity:0，
+    里面的链接**仍然在 Tab 顺序里**，键盘用户会停在一个看不见的东西上。
+    延迟 .5s 再切换，是为了让收起动画播完才真正藏起来。 */
+  visibility:hidden;
+  transition:max-height .5s ease,opacity .4s ease,visibility 0s linear .5s;
   /* 平时把「档案待补」和回忆都好好收着，点击才愿意打开心门哦 */
 }
-.hero-card.open .hero-lore{max-height:420px;overflow-y:auto;opacity:1}
+.hero-card.open .hero-lore{
+  max-height:420px;overflow-y:auto;opacity:1;visibility:visible;
+  transition:max-height .5s ease,opacity .4s ease,visibility 0s linear 0s;
+}
 /* 呀！档案开头的英桀名标题行呀——那是官方截图里档案扉页的真实标题，
    点开后用稍大一点的字把它温柔地标出来，像烫金的签名，与正文悄悄拉开层次呢♥ */
 .hero-lore-title{
   font-size:.82rem;color:var(--pink-soft);font-weight:400;letter-spacing:.14em;
   margin-bottom:.5rem;text-shadow:0 0 12px rgba(255,143,163,.3);
 }
+/* 呀！档案读到这里，如果她另有自己的页面，就递上一扇小门♥
+   用真正的 <a>，键盘和读屏都能用——不是又一个可点的 div 呀。
+   ⚠ **挂在卡片上，不挂进 .hero-lore 里**：lore 是 420px 的内滚动面板，
+     手机端档案正文很长，放进去会被挤到面板底部 —— 得在里面再滚一段
+     才够得着，嵌套滚动很难受。放外面 + 只在展开时显示，一打开就看得见。
+   `display:none` 也顺带解决了 Tab 顺序问题（未展开时不可聚焦）。 */
+.hero-more{
+  display:none;margin-top:.7rem;padding:.32rem .85rem;
+  font-size:.72rem;color:var(--pink-soft);letter-spacing:.08em;text-decoration:none;
+  border:1px solid rgba(255,143,163,.3);border-radius:999px;
+  background:rgba(255,143,163,.06);
+  transition:background .25s,box-shadow .25s,border-color .25s;
+}
+.hero-card.open .hero-more{display:inline-block}
+.hero-more:hover{
+  background:rgba(255,143,163,.16);border-color:rgba(255,200,221,.5);
+  box-shadow:0 0 16px rgba(255,143,163,.3);
+}
+.hero-more:focus-visible{outline:2px solid var(--pink-soft);outline-offset:2px}
 /* 寄语区：星与花下，一句收束——还能点击切换的两句寄语呢 */
 .epilogue{
   position:relative;z-index:3;max-width:620px;margin:0 auto 2rem;cursor:pointer;
@@ -1077,6 +1126,20 @@ body{
         (loreTitle ? '<div class="hero-lore-title">' + loreTitle + '</div>' : '') +
         loreBody +
       '</div>';
+    // 呀！要是这位英桀已经有自己的页面了，就在档案末尾递上一扇门♥
+    // URL 只从数据里的 h.url 来 —— 没建页面的那几位**不写死**，
+    // 免得造出点不通的链接（建页时在 timeline-data.js 补一行就行）。
+    if (h.url) {
+      card.classList.add('has-page');
+      var more = document.createElement('a');
+      more.className = 'hero-more';
+      more.href = h.url;
+      more.textContent = '走进 ' + h.name + ' 的页面 →';
+      // 别让「推门」的这一次点击顺手把抽屉关上呀
+      more.addEventListener('click', function(e){ e.stopPropagation(); });
+      // ⚠ 追加到**卡片**上，不是 .hero-lore 里（原因见上方 CSS 注释）
+      card.appendChild(more);
+    }
     // 点击：如果我开着另一张，先温柔地关上再打开我——「一个鞠躬，另一张才登台」呢
     card.addEventListener('click', function(){
       if (openHeroCard && openHeroCard !== card) {
