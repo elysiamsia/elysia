@@ -203,3 +203,65 @@ html {
   opacity: 1;
   transition: opacity 1.5s ease 1.2s, background .3s ease, box-shadow .3s ease, transform .3s ease;
 }
+
+/* ---------- 9. 减动保护（减弱动效偏好） ----------
+ *
+ * 呀，有些访客看不了太多晃动的画面呢 —— 那我们就安安静静地美♥
+ *
+ * 现状（2026-09-17 实测）：`prefers-reduced-motion` 此前只在 JS 的 canvas
+ * 与少数几个**具体功能**里处理过（首页的献花按钮 / 留言入口 / 彩蛋花瓣 /
+ * 明信片按钮各有一小段窄规则）。**装饰性动画一条都没有降级** ——
+ * 打字机光标一直在闪、名片一直在呼吸、齿轮一直在转、星屑一直在眨眼。
+ *
+ * 这一段放在共享层，一次覆盖加载 site.css 的 7 页。
+ * （404.html 与 guestbook 各自已有等价处理；armor.html 压根没有 animation
+ *   声明；三者都不加载本文件，所以不在射程内 —— 这不是遗漏。）
+ *
+ * ⚠ 它**只在系统偏好 = 减弱动效时生效**，默认（无偏好）下零影响。
+ *   快照比对正是靠这一点：改完必须复核 baseline-task78 零差异。
+ */
+@media (prefers-reduced-motion: reduce) {
+
+  /* 总闸：动画只跑完一帧就停，过渡瞬间完成，平滑滚动关掉。
+     `scroll-behavior: auto` 是必须的 —— 站点默认 smooth，
+     开着减弱动效的人点锚点跳转时不该再滑一段。 */
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* ⚠ 总闸的语义是「让动画瞬间跑完」，所以元素会停在**末帧**上。
+     下面几条用来把末帧修正成真正想要的样子 —— 光有总闸是不够的。 */
+
+  /* 打字机光标：不闪，但**必须保持可见**。
+     光标是「还在打字」的提示，让它消失是功能损失，不是减动。
+     （blink-cursor 的 0%/100% 本来就是 opacity:1，这里是显式保底 ——
+       别指望每个浏览器对「.01ms 跑完一帧」的处理都一致。） */
+  .typing-cursor {
+    animation: none !important;
+    opacity: 1;
+  }
+
+  /* 结尾星屑：定格在**每一页自己的中间亮度**。
+     ⚠ 刻意不用写死的 .5 —— 星屑的明暗是各页「性格」的一部分
+       （kalpas 偏烈、su 偏冷），写死就等于把这个性格抹平了。
+     ⚠ 带 fallback 是因为：变量缺失时整条声明会在**计算值阶段**静默失效、
+       退回 opacity:1（更亮，更刺眼）—— 正是 §4.4 那个 --gold-soft 的坑。
+     （404.html 用的是写死的 `opacity:.4`；那边是单色星星，不需要这层。） */
+  .ending-star, .star {
+    animation: none !important;
+    opacity: calc((var(--min-o, .3) + var(--max-o, .5)) / 2);
+  }
+
+  /* 一直在动、且**停在哪一帧都不影响信息传达**的纯装饰。
+     显式列出来，是为了让「这一类被考虑过」在代码里看得见 ——
+     而不是靠上面那个通配符蒙混过去。 */
+  .profile-card, .profile-card::before,
+  .hero-card, .scroll-chevron,
+  .opening-ornament .gear,
+  #bdayEgg, .bday-dot {
+    animation: none !important;
+  }
+}
