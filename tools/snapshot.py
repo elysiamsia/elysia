@@ -62,6 +62,7 @@ PAGES = [
     'kevin/index.html', 'eden/index.html', 'aponia/index.html',
     'villv/index.html', 'kalpas/index.html', 'su/index.html',
     'sakura/index.html',
+    'kosma/index.html',
 ]
 SIZES = [(1920, 1080), (768, 1024), (375, 812)]
 

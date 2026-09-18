@@ -51,6 +51,7 @@ EXPECTED = {
     'su/index.html':     ('觉者之言，点击切换',           'shared'),
     'villv/index.html':  ('台词卡片，点击切换',           'shared'),
     'sakura/index.html': ('刹那之言，点击切换',           'shared'),
+    'kosma/index.html':  ('旭光之言，点击切换',           'shared'),
 }
 
 
