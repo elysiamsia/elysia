@@ -33,7 +33,7 @@ EDGE = r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
 # 逐页检查「减动生效」的目标：选择器 → 期望的 animation-name
 #   （'none' 表示应当被关掉）
 PAGES = ['index.html', 'kevin/index.html', 'kalpas/index.html', 'villv/index.html',
-         'sakura/index.html']
+         'sakura/index.html', 'kosma/index.html']
 
 # 两处「最凶」的演出 —— 全屏白闪 / 全页高频抖动，WCAG 2.3.1 风险点。
 # 用真实用户路径触发（见下方循环里的说明）。

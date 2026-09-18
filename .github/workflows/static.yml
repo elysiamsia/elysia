@@ -44,7 +44,7 @@ jobs:
             [ -e "$f" ] && cp "$f" _site/
           done
 
-          KEEP_DIRS="assets data images aponia eden kalpas kevin su villv sakura guestbook"
+          KEEP_DIRS="assets data images aponia eden kalpas kevin su villv sakura kosma guestbook"
           for d in $KEEP_DIRS; do
             [ -e "$d" ] && cp -r "$d" _site/
           done

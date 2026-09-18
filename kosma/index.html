@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<!-- 呀！标签页上也要有一枚小花呀，不然浏览器给的是个空白方块呢♥ -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<!-- 呀！分享出去的时候，要带着她的样子，而不是一行光秃秃的链接♥ -->
+<meta name="description" content="逐火十三英桀 · 位次 Ⅸ · 刻印「旭光」。">
+<link rel="canonical" href="https://elysiad.top/kosma/">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "elysiad.top/kosma — 致科斯魔",
+  "url": "https://elysiad.top/kosma/",
+  "description": "逐火十三英桀 · 位次 Ⅸ · 刻印「旭光」。",
+  "inLanguage": "zh-CN",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "elysiad.top — 致爱莉希雅",
+    "url": "https://elysiad.top/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "首页",
+      "item": "https://elysiad.top/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "科斯魔",
+      "item": "https://elysiad.top/kosma/"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="elysiad.top">
+<meta property="og:title" content="致科斯魔 — elysiad.top">
+<meta property="og:description" content="逐火十三英桀 · 位次 Ⅸ · 刻印「旭光」。">
+<meta property="og:url" content="https://elysiad.top/kosma/">
+<meta property="og:image" content="https://elysiad.top/images/og-1.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#070a08">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
+<link rel="stylesheet" href="/assets/site.css">
+<meta name="referrer" content="same-origin">
+<title>elysiad.top/kosma — 致科斯魔</title>
+<!-- SECTION: styles -->
+<style>
+:root{
+  /* 呀！这一页的底是「黎明前的林地」——墨绿近黑。
+     注意别和千劫撞：他那边是**红黑**（--bg-abyss:#0c0503），橙也是红橙；
+     科斯魔是**墨绿**底，暖色取的是官方立绘上那抹旭光橙，偏金、偏日出。
+     橄榄绿只作结构色，像他身上那件灰绿的斗篷♥ */
+  --bg-abyss:#070a08;--bg-deep:#0d1512;--bg-moss:#16241c;--bg-mid:#1e3226;
+  --dawn:#f9a152;--dawn-soft:#ffc98f;--dawn-deep:#d97b2e;
+  --amber:#e89264;--olive:#5a6355;--olive-lt:#8fa082;--mist:#7c7d7a;
+  --text:#eef3ee;--text-dim:#a9b8a8;--text-muted:#6f8073;
+  --glass-bg:rgba(249,161,82,.05);--glass-border:rgba(249,161,82,.15);
+  --glass-bg2:rgba(143,160,130,.05);--glass-border2:rgba(143,160,130,.14);
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg-abyss);color:var(--text);overflow-x:hidden;line-height:1.7;
+}
+::-webkit-scrollbar-thumb{background:var(--dawn-deep);border-radius:3px}
+
+#dawnCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+
+/* SECTION: opening */
+.section-opening{
+  position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:2rem;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(ellipse 58% 40% at 50% 88%,rgba(249,161,82,.10),transparent 72%),
+    radial-gradient(ellipse 55% 34% at 50% 8%,rgba(143,160,130,.07),transparent 70%),
+    linear-gradient(180deg,var(--bg-abyss) 0%,var(--bg-deep) 30%,var(--bg-moss) 68%,var(--bg-mid) 100%);
+}
+/* 呀，开场这块是「旭光徽记」——一轮刚从地平线升起半截的日轮，
+   两侧各一只他头上的弯角。黎明正是明暗交界的地方，所以日轮只画半轮：
+   他从来不觉得自己是完整的那道光♥ */
+.opening-crest{
+  width:138px;height:99px;margin:0 auto 1.2rem;opacity:0;transition:opacity 2s ease;
+  filter:drop-shadow(0 0 24px rgba(249,161,82,.3));
+}
+.opening-crest.visible{opacity:.94}
+/* 地平线那道光：一天里最暖也最短的一段，缓缓亮起、又暗下去 */
+.crest-horizon{animation:crestGlow 5.4s ease-in-out infinite}
+@keyframes crestGlow{0%,100%{opacity:.35}50%{opacity:.9}}
+/* 日轮底下那点光尘：很慢地往上升一下，就没了 —— 和这一页的粒子是同一个意思 */
+.crest-mote{animation:crestMote 6.6s ease-in-out infinite}
+@keyframes crestMote{
+  0%{transform:translateY(6px);opacity:0}
+  30%{opacity:.85}
+  100%{transform:translateY(-14px);opacity:0}
+}
+.opening-title{
+  font-size:clamp(1.35rem,4.2vw,2.5rem);font-weight:300;letter-spacing:.12em;
+  color:var(--dawn-soft);text-shadow:0 0 30px rgba(249,161,82,.22),0 0 60px rgba(143,160,130,.14);
+  min-height:2.6em;max-width:860px;
+}
+.typing-cursor{display:inline-block;font-weight:100;color:var(--dawn);animation:blink-cursor .8s step-end infinite}
+.opening-subtitle{
+  font-size:clamp(.9rem,2.5vw,1.25rem);color:var(--text-dim);letter-spacing:.4em;
+  margin-top:1.5rem;opacity:0;transition:opacity 1.5s ease;
+}
+.opening-hint{
+  font-size:.72rem;color:var(--text-muted);letter-spacing:.14em;margin-top:1rem;
+  opacity:0;transition:opacity 1.5s ease 1s;
+}
+.scroll-hint{
+  position:absolute;bottom:calc(2.5rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  opacity:0;transition:opacity 1s ease .5s;
+}
+.scroll-hint.visible{opacity:.6}
+.scroll-hint span{font-size:.75rem;color:var(--text-muted);letter-spacing:.2em}
+.scroll-chevron{
+  width:20px;height:20px;border-right:2px solid var(--dawn);border-bottom:2px solid var(--dawn);
+  transform:rotate(45deg);animation:chevron-bounce 2.4s ease-in-out infinite;
+}
+
+/* SECTION: common section */
+.content-section{
+  position:relative;z-index:2;padding:6rem 1.5rem;
+  background:linear-gradient(180deg,transparent 0%,rgba(7,10,8,.3) 20%,rgba(7,10,8,.3) 80%,transparent 100%);
+}
+.section-title{
+  font-size:clamp(1.5rem,4vw,2.2rem);font-weight:300;letter-spacing:.24em;
+  color:var(--dawn);text-shadow:0 0 20px rgba(249,161,82,.25);
+}
+.section-title-line{display:block;width:60px;height:1px;margin:1rem auto 0;background:linear-gradient(90deg,transparent,var(--dawn-deep),transparent)}
+.section-title-mark{display:inline-block;font-size:.8em;color:var(--olive-lt);margin:0 .8rem;opacity:.85}
+.section-sub{text-align:center;font-size:.78rem;color:var(--text-muted);letter-spacing:.12em;margin:-2.4rem auto 3rem}
+
+/* SECTION: profile */
+.profile-card{
+  max-width:720px;margin:0 auto;padding:clamp(2rem,5vw,3rem);
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--glass-border);border-radius:24px;
+  box-shadow:0 0 50px rgba(249,161,82,.06),0 0 100px rgba(143,160,130,.05),inset 0 1px 0 rgba(255,255,255,.05);
+  position:relative;overflow:hidden;animation:glow-pulse 8s ease-in-out infinite;
+}
+.profile-card::before{
+  content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+  background:conic-gradient(from 0deg,transparent,rgba(249,161,82,.04),transparent,rgba(143,160,130,.04),transparent);
+  animation:card-rotate 30s linear infinite;
+}
+@keyframes glow-pulse{
+  0%,100%{box-shadow:0 0 50px rgba(249,161,82,.06),0 0 100px rgba(143,160,130,.05)}
+  50%{box-shadow:0 0 65px rgba(249,161,82,.11),0 0 120px rgba(143,160,130,.08)}
+}
+.profile-name{
+  font-size:clamp(2rem,5.5vw,3rem);font-weight:200;letter-spacing:.3em;text-indent:.3em;cursor:pointer;user-select:none;
+  color:var(--dawn-soft);text-align:center;margin-bottom:.2em;
+  text-shadow:0 0 28px rgba(249,161,82,.3);transition:text-shadow .3s ease;
+}
+.profile-name:hover{text-shadow:0 0 40px rgba(249,161,82,.55)}
+.profile-name-en{
+  font-size:clamp(.85rem,1.9vw,1.05rem);font-weight:300;letter-spacing:.5em;text-indent:.5em;
+  color:var(--dawn-deep);text-align:center;margin-bottom:2rem;filter:brightness(1.35);
+}
+.profile-grid{display:grid;grid-template-columns:auto 1fr;gap:.6rem 1.5rem;font-size:.92rem}
+.profile-value .highlight{color:var(--dawn);font-weight:400}
+.profile-value .lamp{color:var(--olive-lt);font-weight:400}
+/* 官方未公布的字段用它标一下，不写成正文那样确定 */
+.profile-value .dim{color:var(--text-muted);font-weight:300}
+.profile-desc{
+  margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--glass-border);
+  font-size:.9rem;color:var(--text-dim);line-height:1.9;font-weight:300;
+}
+
+/* SECTION: harmonica (他的口琴) */
+.harmonica-wrap{max-width:560px;margin:0 auto;text-align:center}
+.harmonica-stage{
+  position:relative;display:inline-block;cursor:pointer;user-select:none;
+  -webkit-tap-highlight-color:transparent;padding:1.2rem 1rem .4rem;
+}
+.harmonica-stage svg{display:block;transition:transform .16s cubic-bezier(.2,.8,.3,1);
+  filter:drop-shadow(0 12px 26px rgba(0,0,0,.55))}
+/* 吹一下：琴身轻轻一仰 —— 像真有人对着它送了一口气 */
+.harmonica-stage.blown svg{transform:translateY(-4px) rotate(-1.4deg)}
+.harmonica-hint{font-size:.75rem;color:var(--text-muted);letter-spacing:.15em;margin-top:1.1rem;opacity:.8}
+.harmonica-count{
+  margin-top:.7rem;font-size:.95rem;color:var(--dawn);letter-spacing:.2em;
+  text-shadow:0 0 14px rgba(249,161,82,.35);font-variant-numeric:tabular-nums;
+}
+.harmonica-float{
+  position:absolute;left:50%;top:-6px;transform:translateX(-50%);pointer-events:none;
+  font-size:.9rem;color:var(--dawn);letter-spacing:.1em;text-shadow:0 0 10px rgba(249,161,82,.6);
+  animation:harmonica-rise 1.1s ease-out forwards;white-space:nowrap;
+}
+@keyframes harmonica-rise{
+  0%{opacity:0;transform:translate(-50%,0) scale(.8)}
+  18%{opacity:1}
+  100%{opacity:0;transform:translate(-50%,-64px) scale(1.05)}
+}
+.harmonica-glow{
+  position:absolute;inset:-30px;border-radius:50%;pointer-events:none;opacity:0;
+  background:radial-gradient(circle,rgba(249,161,82,.26),transparent 65%);
+  transition:opacity .8s ease;
+}
+.harmonica-glow.lit{opacity:1}
+/* 呀！他吹的时候，心里其实一直在说话 —— 那些话就这样浮出来一句♥
+   这一块才是「沉默寡言、内心丰富」这八个字的样子。 */
+.harmonica-inner{
+  max-width:520px;min-height:5.6em;margin:1.6rem auto 0;padding:1rem 1.3rem;
+  border-radius:16px;text-align:left;
+  font-size:.88rem;line-height:1.9;font-weight:300;letter-spacing:.04em;
+  color:var(--text-dim);
+  background:linear-gradient(135deg,rgba(13,21,18,.72),rgba(22,36,28,.72));
+  border:1px solid var(--glass-border);
+  opacity:.42;transition:opacity .7s ease;
+}
+.harmonica-inner.show{opacity:1}
+.harmonica-inner::before{
+  content:'（他心里的话）';display:block;font-size:.7rem;letter-spacing:.2em;
+  color:var(--text-muted);margin-bottom:.45rem;
+}
+
+/* SECTION: seals (善恶两分) */
+.seal-row{
+  display:flex;gap:1.1rem;justify-content:center;align-items:center;margin-top:2.6rem;
+  font-size:.75rem;color:var(--text-muted);letter-spacing:.2em;
+}
+.seal{
+  position:relative;width:56px;height:56px;border-radius:12px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.35rem;font-weight:300;letter-spacing:0;color:var(--text-dim);
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  border:1px solid var(--glass-border);
+  transition:transform .3s ease,box-shadow .3s ease,color .3s ease,border-color .3s ease;
+}
+.seal:hover{transform:translateY(-3px)}
+.seal.lit{
+  color:var(--bg-abyss);border-color:rgba(249,161,82,.7);
+  background:linear-gradient(135deg,var(--dawn),var(--dawn-deep));
+  box-shadow:0 0 26px rgba(249,161,82,.5);
+}
+.seal-row-tip{margin-top:1rem;font-size:.72rem;color:var(--text-muted);letter-spacing:.14em;opacity:.75}
+
+/* SECTION: timeline */
+.timeline{position:relative;max-width:800px;margin:0 auto;padding:2rem 0}
+.timeline-line{
+  position:absolute;left:50%;top:0;bottom:0;width:1px;
+  background:linear-gradient(180deg,transparent,var(--olive) 10%,var(--dawn) 50%,var(--dawn-deep) 85%,transparent);
+  transform:translateX(-50%);
+}
+.timeline-node{
+  position:relative;display:flex;align-items:flex-start;margin-bottom:3rem;
+  opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;
+}
+.timeline-dot{
+  position:absolute;left:50%;top:.5rem;width:12px;height:12px;border-radius:50%;
+  border:2px solid var(--dawn);background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
+  box-shadow:0 0 12px rgba(249,161,82,.4);transition:background .3s;
+}
+.timeline-node.visible .timeline-dot{background:var(--dawn)}
+.timeline-card{
+  width:calc(50% - 2.5rem);padding:1.2rem 1.5rem;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 0 20px rgba(249,161,82,.04);
+}
+.timeline-card h3{font-size:1.05rem;font-weight:400;color:var(--dawn);margin-bottom:.5rem;letter-spacing:.12em}
+.timeline-card p{font-size:.85rem;color:var(--text-dim);line-height:1.8;font-weight:300}
+
+/* SECTION: quotes */
+.quote-card{
+  padding:1.5rem;min-height:140px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
+  box-shadow:0 0 20px rgba(249,161,82,.03);
+  transition:transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
+}
+.quote-card:hover{transform:translateY(-3px);box-shadow:0 0 30px rgba(249,161,82,.12),0 8px 30px rgba(0,0,0,.2)}
+.quote-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(circle at 30% 30%,rgba(249,161,82,.05),transparent 60%);pointer-events:none;
+}
+.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition:opacity .4s ease}
+.quote-hint{position:absolute;bottom:.6rem;right:.8rem;font-size:.65rem;color:var(--text-muted);opacity:.4}
+
+/* SECTION: ending */
+.ending-quote{
+  font-size:clamp(1.1rem,3vw,1.6rem);font-weight:300;letter-spacing:.14em;cursor:pointer;user-select:none;
+  color:var(--dawn-soft);line-height:2;text-shadow:0 0 25px rgba(249,161,82,.25);
+  max-width:640px;opacity:0;transform:translateY(20px);transition:opacity 1.5s ease,transform 1.5s ease;
+}
+.ending-attr{
+  margin-top:2.2rem;font-size:.85rem;color:var(--text-muted);letter-spacing:.25em;
+  opacity:0;transition:opacity 1.5s ease .8s;
+}
+.back-link{
+  display:inline-flex;align-items:center;gap:.5rem;margin-top:3rem;
+  min-height:44px;padding:.6rem 1.6rem;border-radius:999px;text-decoration:none;
+  color:var(--dawn);font-size:.85rem;letter-spacing:.15em;
+  border:1px solid var(--glass-border2);background:rgba(249,161,82,.05);
+  transition:background .3s ease,box-shadow .3s ease,transform .3s ease;opacity:0;
+}
+.back-link:hover{background:rgba(249,161,82,.12);box-shadow:0 0 24px rgba(249,161,82,.2);transform:translateY(-2px)}
+
+/* 呀！这份礼物不是一开始就有的 —— 你得陪他待够久，他才拿得出来♥ */
+.ending-gift{
+  display:none;margin-top:1.8rem;padding:1rem 1.4rem;border-radius:16px;
+  max-width:min(560px,88vw);
+  font-size:.85rem;line-height:2;font-weight:300;letter-spacing:.04em;
+  color:var(--dawn-soft);text-align:center;
+  background:linear-gradient(135deg,rgba(13,21,18,.88),rgba(30,50,38,.88));
+  border:1px solid rgba(249,161,82,.22);
+  box-shadow:0 8px 30px rgba(0,0,0,.45),0 0 30px rgba(249,161,82,.1);
+}
+.ending-gift.show{display:block;animation:giftIn 1.4s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes giftIn{
+  0%{opacity:0;transform:translateY(14px) scale(.96)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
+}
+
+/* SECTION: toast */
+#kmToast{
+  position:fixed;left:50%;bottom:15%;transform:translateX(-50%) translateY(10px);z-index:9995;
+  max-width:88vw;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;letter-spacing:.06em;
+  color:var(--text);background:linear-gradient(135deg,rgba(13,21,18,.94),rgba(30,50,38,.94));
+  border:1px solid var(--glass-border2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 24px rgba(249,161,82,.18);
+  opacity:0;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:opacity .35s ease,transform .35s ease;text-align:center;
+}
+#kmToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#kmToast.golden{color:#ffe0b8;border-color:rgba(249,161,82,.6);box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 36px rgba(249,161,82,.4)}
+@media(max-width:600px){#kmToast{white-space:normal;line-height:1.6}}
+
+/* SECTION: ripple (水面圆环) */
+.water-ring{
+  position:fixed;pointer-events:none;z-index:9993;border-radius:50%;
+  border:1.5px solid rgba(249,161,82,.7);
+  transform:translate(-50%,-50%) scale(0);opacity:.9;
+  animation:ring-spread .9s cubic-bezier(.22,.61,.36,1) forwards;
+}
+@keyframes ring-spread{
+  to{transform:translate(-50%,-50%) scale(1);opacity:0}
+}
+/* 「他被晨光泡住了」—— 送礼物那一刻，整页从底下暖上来 */
+#dawnVeil{
+  position:fixed;inset:0;z-index:9992;pointer-events:none;opacity:0;transition:opacity 1.4s ease;
+  background:radial-gradient(ellipse 90% 55% at 50% 100%,rgba(249,161,82,.3),transparent 72%);
+}
+#dawnVeil.lit{opacity:1}
+
+/* SECTION: responsive */
+@media(max-width:768px){
+  .timeline-line{left:1.5rem}
+  .timeline-node,.timeline-node:nth-child(odd),.timeline-node:nth-child(even){flex-direction:row}
+  .timeline-dot{left:1.5rem}
+  .timeline-card,.timeline-node:nth-child(odd) .timeline-card,.timeline-node:nth-child(even) .timeline-card{
+    width:calc(100% - 3.5rem);margin-left:3.5rem;margin-right:0;
+  }
+  .quotes-grid{grid-template-columns:1fr}
+  .profile-grid{grid-template-columns:auto 1fr;gap:.5rem 1rem;font-size:.85rem}
+}
+@media(max-width:480px){
+  .content-section{padding:4rem 1rem}
+  .profile-card{padding:1.5rem}
+  .quote-card{min-height:120px;padding:1.2rem}
+  .opening-crest{width:112px;height:80px}
+  .harmonica-stage svg{width:250px;height:auto}
+  .harmonica-inner{font-size:.82rem;padding:.9rem 1rem;min-height:6.4em}
+  .seal{width:50px;height:50px;font-size:1.2rem}
+}
+</style>
+</head>
+<body>
+
+<canvas id="dawnCanvas"></canvas>
+<div id="dawnVeil"></div>
+
+<!-- SECTION: opening -->
+<section class="section-opening" id="opening">
+  <div class="opening-content">
+    <div class="opening-crest" id="openingCrest" aria-hidden="true">
+      <!-- 刻印「旭光」的意象：一轮刚升起半截的日轮，两侧是他头上的弯角 -->
+      <svg viewBox="14 20 92 66" width="138" height="99">
+        <defs>
+          <linearGradient id="crestSun" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" stop-color="#f9a152"/><stop offset="100%" stop-color="#ffc98f"/>
+          </linearGradient>
+          <linearGradient id="crestHornL" x1="1" y1="1" x2="0" y2="0">
+            <stop offset="0%" stop-color="#5a6355"/><stop offset="100%" stop-color="#e8a86a"/>
+          </linearGradient>
+          <linearGradient id="crestHornR" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0%" stop-color="#5a6355"/><stop offset="100%" stop-color="#e8a86a"/>
+          </linearGradient>
+          <linearGradient id="crestLine" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="rgba(249,161,82,0)"/>
+            <stop offset="50%" stop-color="#f9a152"/>
+            <stop offset="100%" stop-color="rgba(249,161,82,0)"/>
+          </linearGradient>
+        </defs>
+        <!-- 他头上那四只角里，最好认的两只：根粗、尖细，从日轮后面伸出来 -->
+        <path d="M44 80 C32 64 21 46 24 30 C29 48 40 66 52 76 Z" fill="url(#crestHornL)"/>
+        <path d="M76 80 C88 64 99 46 96 30 C91 48 80 66 68 76 Z" fill="url(#crestHornR)"/>
+        <!-- 半升的日轮 -->
+        <path d="M33 80 A27 27 0 0 1 87 80" fill="url(#crestSun)" opacity=".95"/>
+        <path d="M33 80 A27 27 0 0 1 87 80" fill="none" stroke="#ffc98f" stroke-width="1.3" opacity=".75"/>
+        <!-- 地平线 -->
+        <rect x="14" y="79.4" width="92" height="1.8" rx="1" fill="url(#crestLine)" class="crest-horizon"/>
+        <!-- 一线光尘，正从地平线上浮起来 -->
+        <circle class="crest-mote" cx="60" cy="74" r="2" fill="#ffc98f"/>
+      </svg>
+    </div>
+    <h1 class="opening-title" id="typewriterText"></h1><span class="typing-cursor" id="typingCursor">|</span>
+    <p class="opening-subtitle" id="openingSub">旭光的追忆</p>
+    <p class="opening-hint" id="openingHint">……想听点什么的话，他的口琴就在那里。</p>
+  </div>
+  <div class="scroll-hint" id="scrollHint">
+    <span>向下 · 天将破晓</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</section>
+
+<!-- SECTION: about -->
+<section class="content-section" id="about">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">✧</span>关于他<span class="section-title-mark">✧</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="profile-card">
+    <div class="profile-card-inner">
+      <div class="profile-name" id="profileName" role="button" tabindex="0">科斯魔</div>
+      <div class="profile-name-en">K O S M A</div>
+      <div class="profile-divider"></div>
+      <div class="profile-grid">
+        <span class="profile-label">别名</span>
+        <span class="profile-value">『<span class="highlight">义警</span>』 · 帕朵菲莉丝叫他「阿魔」</span>
+        <span class="profile-label">出处</span>
+        <span class="profile-value">《崩坏3》第一文明纪元（逐火之蛾）</span>
+        <span class="profile-label">身份</span>
+        <span class="profile-value">隐瞒身份的少年 → 融合战士 → 凯文第一小队 → 逐火十三英桀</span>
+        <span class="profile-label">位次</span>
+        <span class="profile-value"><span class="highlight">Ⅸ</span>（第九位）</span>
+        <span class="profile-label">刻印</span>
+        <span class="profile-value"><span class="highlight">「旭光」</span></span>
+        <span class="profile-label">融合崩坏兽</span>
+        <span class="profile-value">末法级「毗湿奴」——他接受手术时，它只是审判级</span>
+        <span class="profile-label">特性</span>
+        <span class="profile-value">「<span class="lamp">二次吸收</span>」：吞噬崩坏兽，取得它们的特性与力量</span>
+        <span class="profile-label">代价</span>
+        <span class="profile-value">必须持续摄入崩坏兽的因子以维持理性，否则将被「腐化」</span>
+        <span class="profile-label">配音</span>
+        <span class="profile-value">初华峥（汉语）/ 小林千晃（日语）</span>
+        <span class="profile-label">外貌</span>
+        <span class="profile-value">绿发橙瞳；头生四角、背有锐翼——超变手术留下的痕迹</span>
+        <span class="profile-label">喜好</span>
+        <span class="profile-value"><span class="lamp">口琴</span>——「不通音律，吹奏也完全拿不出手，只是单纯的喜欢」</span>
+        <span class="profile-label">可操控</span>
+        <span class="profile-value"><span class="dim">否</span>——游戏内以 BOSS 与刻印持有者身份登场，无可玩装甲</span>
+        <span class="profile-label">生日</span>
+        <span class="profile-value"><span class="dim">官方未公布</span></span>
+      </div>
+      <div class="profile-desc">
+        他隐瞒身份做过义警，信奉「善恶两分，不可让渡」——直到真正的灾厄来临，才发现那样单薄的信念有多不堪一击。他融合了末法级的「毗湿奴」，靠吞噬崩坏兽取得力量，也为此一直付着代价。他话很少，心里的事却很多；不通音律，却随身带着一支口琴。他说，所谓「旭光」就在那些孩子身上，而不在他自己身上。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: harmonica -->
+<section class="content-section" id="harmonica">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">✧</span>他的口琴<span class="section-title-mark">✧</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="harmonica-wrap">
+    <div class="harmonica-stage" id="harmonicaStage" role="button" tabindex="0"
+         aria-label="一支口琴，点击听他吹一声" data-primary-action>
+      <div class="harmonica-glow" id="harmonicaGlow"></div>
+      <svg viewBox="10 26 310 100" width="310" height="100" aria-hidden="true">
+        <defs>
+          <linearGradient id="hmTop" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#6f7f60"/><stop offset="55%" stop-color="#48563d"/>
+            <stop offset="100%" stop-color="#2d3827"/>
+          </linearGradient>
+          <linearGradient id="hmBody" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#3a472f"/><stop offset="42%" stop-color="#232e1e"/>
+            <stop offset="100%" stop-color="#0f170e"/>
+          </linearGradient>
+          <linearGradient id="hmEnd" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#5c6a4e"/><stop offset="100%" stop-color="#2b3524"/>
+          </linearGradient>
+          <linearGradient id="hmSheen" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="rgba(249,161,82,0)"/>
+            <stop offset="45%" stop-color="#f9a152"/>
+            <stop offset="60%" stop-color="#ffc98f"/>
+            <stop offset="100%" stop-color="rgba(249,161,82,0)"/>
+          </linearGradient>
+        </defs>
+        <!-- 上盖板：吹得再难听，他也一直把它擦得很干净，所以留着一道暖光 -->
+        <path d="M50 30 L288 30 L310 58 L72 58 Z" fill="url(#hmTop)"/>
+        <path d="M64 35 L280 35 L290 45 L74 45 Z" fill="url(#hmSheen)" opacity=".45"/>
+        <!-- 左端盖：吹口那一头 -->
+        <path d="M22 30 L50 30 L72 58 L44 58 Z" fill="url(#hmEnd)"/>
+        <!-- 正面：木板与一整排音孔 -->
+        <path d="M44 58 L310 58 L310 112 L44 112 Z" fill="url(#hmBody)"/>
+        <g fill="#0a1108">
+          <rect x="74" y="70" width="9" height="30" rx="3"/><rect x="88" y="70" width="9" height="30" rx="3"/>
+          <rect x="102" y="70" width="9" height="30" rx="3"/><rect x="116" y="70" width="9" height="30" rx="3"/>
+          <rect x="130" y="70" width="9" height="30" rx="3"/><rect x="144" y="70" width="9" height="30" rx="3"/>
+          <rect x="158" y="70" width="9" height="30" rx="3"/><rect x="172" y="70" width="9" height="30" rx="3"/>
+          <rect x="186" y="70" width="9" height="30" rx="3"/><rect x="200" y="70" width="9" height="30" rx="3"/>
+          <rect x="214" y="70" width="9" height="30" rx="3"/><rect x="228" y="70" width="9" height="30" rx="3"/>
+          <rect x="242" y="70" width="9" height="30" rx="3"/><rect x="256" y="70" width="9" height="30" rx="3"/>
+          <rect x="270" y="70" width="9" height="30" rx="3"/><rect x="284" y="70" width="9" height="30" rx="3"/>
+        </g>
+        <!-- 底沿：让正面有一点厚度，不像一块平板 -->
+        <path d="M44 112 L310 112 L300 122 L54 122 Z" fill="#0c140b"/>
+        <!-- 系在琴上的旧绳：从上纪元一路带到这儿 -->
+        <path d="M24 62 Q14 86 24 116" fill="none" stroke="#7c7d7a" stroke-width="1.8" opacity=".5"/>
+        <path d="M308 62 Q318 86 308 116" fill="none" stroke="#7c7d7a" stroke-width="1.8" opacity=".5"/>
+      </svg>
+    </div>
+    <p class="harmonica-count" id="harmonicaCount">已吹 × 0</p>
+    <p class="harmonica-hint" id="harmonicaHint">他其实不太会吹。但他吹的时候，心里是在跟人说话的。</p>
+    <p class="harmonica-inner" id="harmonicaInner" role="status">……</p>
+    <div class="seal-row">
+      <span class="seal" id="sealGood" role="button" tabindex="0" aria-label="刻着「善」字的印记">善</span>
+      <span class="seal-row-label">善恶两分</span>
+      <span class="seal" id="sealEvil" role="button" tabindex="0" aria-label="刻着「恶」字的印记">恶</span>
+    </div>
+    <p class="seal-row-tip" id="sealTip">他随身带着的两枚印记。顺序，是他自己的顺序。</p>
+  </div>
+</section>
+
+<!-- SECTION: journey -->
+<section class="content-section" id="journey">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">✧</span>他的旭光<span class="section-title-mark">✧</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="timeline">
+    <div class="timeline-line"></div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>义警</h3>
+        <p>还只是个少年时，他在崩坏带来的灾厄里做过一些「微不足道的小事」——隐瞒着身份。有人因此把他视为义警。他自己说，那算不上惩恶扬善。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>毗湿奴</h3>
+        <p>他接受了超变手术，融合的还是审判级的「毗湿奴」——它是后来才被修正为末法级的。由此他成为最初的融合战士之一，也获得了「二次吸收」。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>二选一</h3>
+        <p>他隐瞒身份参与了征召，可他们还是找到了他过去的蛛丝马迹。他们给了他选择：成为囚徒，或是就此加入。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>第一小队</h3>
+        <p>他是因为凯文才加入第一小队的。他的入队徽章由凯文队长配发——两次，都是。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>决裂</h3>
+        <p>某次事件之后，他与凯文彻底决裂，退出了第一小队。但他仍然说：「凯文是一位英雄——如此认为便好。」</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>痕</h3>
+        <p>格蕾修的父亲「痕」曾是他的前辈、也是同一支部队的战友。痕牺牲之前，最后的请求是让他们代他照顾好格蕾修。从那以后，他就一直站在那间画室外面。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>黛丝多比娅</h3>
+        <p>每年生日，他的友人黛丝多比娅都会挑选礼物送给所有自己认识的人。后来她比其他人更早牺牲了，就在他面前。于是他把这个习惯接了下来。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>方舟</h3>
+        <p>他被选为方舟计划最初的执行者——理由之一是，他不适合前往新生的时代。最终他没有登船。至于代替他做出那个选择的人是谁，没有人能告诉你。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>旭光</h3>
+        <p>仅存的十三位融合战士结成了逐火十三英桀，他列第Ⅸ位，刻印「旭光」。许多年后，在侵蚀之律者闯入乐土的那一战里，他把自己当作颜料，留在了格蕾修的画中。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: quotes -->
+<section class="content-section" id="quotes">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">✧</span>旭光之言<span class="section-title-mark">✧</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="quotes-grid" id="quotesGrid" data-primary-action></div>
+</section>
+
+<!-- SECTION: ending -->
+<section class="section-ending" id="ending">
+  <div class="ending-stars" id="endingStars"></div>
+  <p class="ending-quote" id="endingQuote" role="button" tabindex="0">职责所在，仅此而已。</p>
+  <p class="ending-sub" id="endingSub"></p>
+  <!-- 呀！这份礼物不是一开始就有的 —— 你得陪他待够久，他才拿得出来♥ -->
+  <div class="ending-gift" id="endingGift" role="status">
+    你在这一页待了很久，久到他觉得，应该给你点什么。<br>
+    「后来她比其他人更早牺牲了，就在我面前。所以我延续了她的习惯，继续给那些人准备礼物。」<br>
+    「我希望他们依然能长久地记住她的存在。」
+  </div>
+  <p class="ending-attr" id="endingAttr">致科斯魔 · elysiad.top/kosma</p>
+  <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
+  <div class="ending-fade"></div>
+</section>
+
+<div id="kmToast" role="status"></div>
+
+<!-- SECTION: scripts -->
+<script src="/assets/site.js"></script>
+<script>
+(function(){
+  /* SECTION: quotes data */
+  // 全部逐字摘自官方「圣芙蕾雅档案馆」事件-科斯魔 原文页，未做任何改写。
+  var quotes = [
+    '「我无法给予你指引，除非你想要的是来自失败者的教训。『旭光』之途是从无数条末路中走出的小径……就只是这样而已。」',
+    '「不要让力量吞噬了你的身体和心灵……虽然，我有一方已被吞噬……」',
+    '「迷茫者跟随英雄的余晖，而他们，也是英雄得以前进的道标。」',
+    '「我只是做到了在任何情况下都绝不违背原则——『善恶两分，不可让渡』。但在真正的灾厄面前，如此单薄的信念……自然不堪一击。」',
+    '「每一个孩子的降生，都代表着世界还没有对人类彻底失望」……「所谓的『旭光』就在那里，而不是在我的身上。」',
+    '「亲密的人……我曾经也有过很多。但不是每一个都能活下来，并成为英桀。」',
+    '「我希望他们依然能长久地记住她的存在。」',
+    '「我敬重他，和与他站在不同的立场，这二者并不冲突。」',
+    '「不要想着一个人去承受所有，团队的胜利才是真正的胜利……对，这曾是凯文告诉我的话。」',
+    '「或许在未来的某一天，新世代的人们会突然接收到方舟返航的信号。那时你就能知道答案了。」'
+  ];
+
+  /* SECTION: quotes build —— 交给共享层
+     ★ 闭包 O(1) 索引：不再每次点击都重扫一遍 DOM，只为问「我是第几张卡片」。
+     ⚠ ariaLabel 必填，且必须传本页原文案：它是 Lore，不是通用 UI 标签。
+       而快照工具只采计算样式，抹掉了也测不出「✅ 无差异」。见 docs/theme-schema.md §四。 */
+  ElysiaShared.buildQuoteCards({
+    grid: document.getElementById('quotesGrid'),
+    quotes: quotes,
+    ariaLabel: '旭光之言，点击切换',
+  });
+
+  /* SECTION: canvas particles (旭光尘 + 被吞掉的光)
+   *
+   * 呀，这一页的粒子是**往上飘**的 —— 全站唯一一份。
+   * 别人的花瓣、樱、雪、余烬都在往下落，只有他的光在往上升：
+   * 因为「旭光」就是黎明，而光本来就是从地平线升上来的♥
+   *
+   * 还有一件事：偶尔会有几颗尘被某个**看不见的东西**吸走、吞掉。
+   * 那是「二次吸收」—— 他靠吞噬崩坏兽活着，这就是代价长什么样。 */
+  var canvas = document.getElementById('dawnCanvas');
+  var ctx = canvas.getContext('2d');
+  var W, H;
+  var moteColors = ['#f9a152','#ffc98f','#e89264','#8fa082'];
+  var emberColors = ['#e89264','#d97b2e'];
+
+  // ⚠ 只抽「把 canvas 和视口尺寸对上」这三行。下面那个「把越界粒子拉回画布」的
+  //   匿名监听器**故意留着不动**——它碰的数组每页不一样，抽走会改行为。
+  const resize = ElysiaShared.makeResize(canvas, {
+    get W() { return W; }, set W(v) { W = v; },
+    get H() { return H; }, set H(v) { H = v; },
+  });
+  resize();
+  window.addEventListener('resize', resize);
+  var motes = [];
+  var moteCount = Math.min(36, Math.floor(window.innerWidth / 34));
+  function createMote(fromBottom){
+    return {
+      x: Math.random() * W,
+      y: fromBottom ? H + 20 + Math.random() * 100 : Math.random() * H,
+      size: 0.6 + Math.random() * 2.2,
+      speedY: -(0.14 + Math.random() * 0.42),      // 负的：往上飘
+      drift: (Math.random() - 0.5) * 0.22,
+      swaySpd: 0.003 + Math.random() * 0.007,
+      swayOff: Math.random() * Math.PI * 2,
+      opacity: 0.12 + Math.random() * 0.34,
+      pulseSpd: 0.008 + Math.random() * 0.022,
+      pulseOff: Math.random() * Math.PI * 2,
+      shrink: 1,                                    // 被吞的时候缩到 0
+      color: moteColors[Math.floor(Math.random() * moteColors.length)]
+    };
+  }
+  for (var i = 0; i < moteCount; i++) motes.push(createMote(false));
+
+  var embers = [];
+  var emberCount = Math.min(16, Math.floor(window.innerWidth / 78));
+  function createEmber(fromBottom){
+    return {
+      x: Math.random() * W,
+      y: fromBottom ? H + 30 + Math.random() * 120 : Math.random() * H,
+      size: 2.5 + Math.random() * 4.5,
+      speedY: -(0.06 + Math.random() * 0.16),
+      drift: (Math.random() - 0.5) * 0.14,
+      swaySpd: 0.002 + Math.random() * 0.005,
+      swayOff: Math.random() * Math.PI * 2,
+      opacity: 0.06 + Math.random() * 0.16,
+      color: emberColors[Math.floor(Math.random() * emberColors.length)]
+    };
+  }
+  for (i = 0; i < emberCount; i++) embers.push(createEmber(false));
+
+  /* 「吞」—— 每隔一阵，某处会出现一个看不见的东西，把附近的光吸走 */
+  var swallows = [];
+  var swallowTimer = 200;
+
+  var scrollRatio = 0;
+  window.addEventListener('scroll', function(){
+    var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    scrollRatio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+  });
+
+  var time = 0;
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function animate(){
+    if (reducedMotion) return;
+    time++;
+    ctx.clearRect(0, 0, W, H);
+    var fadeFactor = 1 - scrollRatio * 0.55;
+    var i, l, d, tw;
+
+    /* 先决定这一轮「吞」发生在哪儿（约 5~12 秒一次） */
+    swallowTimer--;
+    if (swallowTimer <= 0){
+      swallowTimer = 300 + Math.floor(Math.random() * 420);
+      swallows.push({
+        x: W * (0.12 + Math.random() * 0.76),
+        y: H * (0.34 + Math.random() * 0.56),
+        r: 64 + Math.random() * 58,
+        life: 1
+      });
+    }
+
+    for (i = 0; i < motes.length; i++){
+      d = motes[i];
+      d.y += d.speedY;
+      d.x += d.drift + Math.sin(time * d.swaySpd + d.swayOff) * 0.3;
+      if (d.y < -14){ motes[i] = createMote(true); continue; }
+      if (d.shrink < 1){
+        d.shrink -= 0.034;
+        if (d.shrink <= 0){ motes[i] = createMote(true); continue; }
+      }
+      tw = 0.55 + 0.45 * Math.sin(time * d.pulseSpd + d.pulseOff);
+      ctx.save();
+      ctx.globalAlpha = d.opacity * tw * fadeFactor * d.shrink;
+      ctx.fillStyle = d.color;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, Math.max(0.25, d.size * d.shrink), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (i = 0; i < embers.length; i++){
+      l = embers[i];
+      l.y += l.speedY;
+      l.x += l.drift + Math.sin(time * l.swaySpd + l.swayOff) * 0.25;
+      if (l.y < -30){ embers[i] = createEmber(true); continue; }
+      ctx.save();
+      ctx.globalAlpha = l.opacity * fadeFactor;
+      ctx.fillStyle = l.color;
+      ctx.beginPath();
+      ctx.arc(l.x, l.y, Math.max(0.6, l.size), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    /* 那个看不见的东西：几乎不画，只留一圈很淡的、往里收的光晕 */
+    for (i = swallows.length - 1; i >= 0; i--){
+      var sw = swallows[i];
+      sw.life -= 0.006;
+      if (sw.life <= 0){ swallows.splice(i, 1); continue; }
+      var sx = sw.x, sy = sw.y, sr = sw.r;
+      for (var q = 0; q < motes.length; q++){
+        var mm = motes[q];
+        if (mm.shrink >= 1){
+          var mdx = sx - mm.x, mdy = sy - mm.y;
+          if (Math.sqrt(mdx * mdx + mdy * mdy) < sr) mm.shrink = 0.999;
+        }
+      }
+      var sglow = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr * 0.55);
+      sglow.addColorStop(0, 'rgba(7,10,8,' + (0.5 * sw.life).toFixed(3) + ')');
+      sglow.addColorStop(0.65, 'rgba(249,161,82,' + (0.07 * sw.life).toFixed(3) + ')');
+      sglow.addColorStop(1, 'rgba(7,10,8,0)');
+      ctx.save();
+      ctx.globalAlpha = fadeFactor;
+      ctx.fillStyle = sglow;
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr * 0.55, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (i = bursts.length - 1; i >= 0; i--){
+      var b = bursts[i];
+      b.x += b.vx;
+      b.y += b.vy;
+      b.vy += 0.03;
+      b.vx *= 0.99;
+      b.rotation += b.rotSpeed;
+      b.life -= 0.015;
+      if (b.life <= 0){ bursts.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, b.life * 0.9);
+      ctx.fillStyle = b.color;
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.rotation);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, b.w * 0.4, b.w, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    requestAnimationFrame(animate);
+  }
+  var bursts = [];
+  function moteBurst(cx, cy, count, colors){
+    var palette = colors || moteColors;
+    for (var k = 0; k < count; k++){
+      var angle = (k / count) * Math.PI * 2 + Math.random() * 0.6;
+      var speed = 1 + Math.random() * 3;
+      bursts.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1,
+        w: 3 + Math.random() * 5,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.12,
+        life: 1,
+        color: palette[Math.floor(Math.random() * palette.length)]
+      });
+    }
+  }
+  animate();
+
+  /* SECTION: toast */
+  var toastEl = document.getElementById('kmToast');
+  var toastTimer = null;
+  function showToast(text, golden){
+    clearTimeout(toastTimer);
+    toastEl.textContent = text;
+    toastEl.classList.toggle('golden', !!golden);
+    toastEl.classList.remove('show');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, golden ? 4200 : 3000);
+  }
+
+  /* SECTION: harmonica (他的口琴 —— 不通音律，只是单纯的喜欢)
+   *
+   * 呀，这一节是这一页最重要的地方：**他的外面和里面，是两回事。**
+   * 你在外面只听到一声不成调的吹奏；可屋里，他其实一直在说话。
+   *
+   * 那些「心里的话」全部出自官方档案馆的**内心独白**
+   * （往世乐土 · 事件-科斯魔 · 给予刻印 · 其十四~十九）——
+   * 它们在游戏里本来就是**不显示在对话框、只以内心 OS 呈现**的文本。
+   * 拿来做这一页的彩蛋，出处是干净的，一个字都没改♥
+   */
+  var harmonicaStage = document.getElementById('harmonicaStage');
+  var harmonicaGlow = document.getElementById('harmonicaGlow');
+  var harmonicaCountEl = document.getElementById('harmonicaCount');
+  var harmonicaHintEl = document.getElementById('harmonicaHint');
+  var harmonicaInnerEl = document.getElementById('harmonicaInner');
+
+  /* 那些他只放在心里的话 —— 原文，六条 */
+  var innerLines = [
+    '她是个律者，战斗方式和我们有什么不同？算了，还是不问了，万一她比较在意这一点呢。',
+    '她的头发乱了，要不要告诉她？不过……这种事由我来说真的合适吗？算了，大概待会儿自然就好了。',
+    '如果是凯文，这种时候会说什么？有些在意，但真的问了，会显得我很奇怪吧？算了……',
+    '她会怎么看待我的锐角和翅膀……会在意吗？会恐惧吗？不过，她自己似乎也有类似的烦恼……',
+    '爱莉希雅似乎对她很感兴趣，我要提醒她不要骄傲自满吗？算了，爱莉希雅自己会说的。',
+    '我应该直接把刻印给她，还是提出一些关于技巧的建议？算了，时间不多了。'
+  ];
+
+  var blown = 0;
+  try { blown = parseInt(localStorage.getItem('kosmaBlown') || '0', 10) || 0; } catch(err){ blown = 0; }
+  renderHarmonica();
+
+  var audioCtx = null;
+  /* 口琴声：**气声比音准重要** —— 所以是一段很短、会走音的滑音，
+     而不是一个干干净净的正弦。他吹得不准，这一点得听得出来。 */
+  function harmonicaSound(){
+    try{
+      if (!audioCtx){
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        audioCtx = new AC();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var t = audioCtx.currentTime;
+      var base = 300 + Math.random() * 260;         // 每一次都不一样，就是不成调
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      var lp = audioCtx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.setValueAtTime(2400, t);
+      lp.frequency.exponentialRampToValueAtTime(700, t + 0.5);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(base * 0.92, t);
+      osc.frequency.linearRampToValueAtTime(base, t + 0.1);
+      osc.frequency.linearRampToValueAtTime(base * 0.86, t + 0.5);
+      gain.gain.setValueAtTime(0.001, t);
+      gain.gain.linearRampToValueAtTime(0.2, t + 0.07);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.62);
+      osc.connect(lp);
+      lp.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.66);
+    } catch(err){ /* 静音失败不影响视觉 */ }
+  }
+
+  function renderHarmonica(){
+    harmonicaCountEl.textContent = '已吹 × ' + blown;
+    if (blown >= 6){
+      harmonicaHintEl.textContent = '……他吹得还是不太准。但他一直在吹。';
+    }
+  }
+
+  function blowHarmonica(){
+    blown++;
+    renderHarmonica();
+    try { localStorage.setItem('kosmaBlown', String(blown)); } catch(err){}
+    harmonicaSound();
+    harmonicaStage.classList.remove('blown');
+    void harmonicaStage.offsetWidth;
+    harmonicaStage.classList.add('blown');
+    setTimeout(function(){ harmonicaStage.classList.remove('blown'); }, 170);
+
+    var floatEl = document.createElement('div');
+    floatEl.className = 'harmonica-float';
+    floatEl.textContent = '不成调';
+    floatEl.style.left = (38 + Math.random() * 22) + '%';
+    harmonicaStage.appendChild(floatEl);
+    setTimeout(function(){ floatEl.remove(); }, 1200);
+
+    if (!reducedMotion){
+      var r = harmonicaStage.getBoundingClientRect();
+      moteBurst(r.left + r.width / 2, r.top + r.height * 0.45, 6, ['#f9a152','#e89264','#ffc98f']);
+    }
+
+    /* 心里那句：六条内心独白，一句一句轮着来 */
+    harmonicaInnerEl.textContent = innerLines[(blown - 1) % innerLines.length];
+    harmonicaInnerEl.classList.remove('show');
+    void harmonicaInnerEl.offsetWidth;
+    harmonicaInnerEl.classList.add('show');
+
+    if (blown === 6){
+      harmonicaGlow.classList.add('lit');
+      showToast('他停下来看了你一会儿，好像想说什么，最后只是把口琴递了过来。', false);
+    }
+  }
+  harmonicaStage.addEventListener('click', blowHarmonica);
+  harmonicaStage.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); blowHarmonica(); }
+  });
+
+  /* SECTION: easter egg - 「善恶两分，不可让渡」（**顺序**）
+   *
+   * 他随身带着两枚印记。他自己说那句话的时候，顺序就是「善」在前、「恶」在后 ——
+   * 你要是照他的顺序按下去，他会把整句话给你；按反了，他就重新盖回去。
+   *
+   * ⚠ 机制是**顺序**，不是「点够几次」—— 全站没有第二页这样。
+   * 台词出处：官方档案馆 · 往世乐土 · 事件-科斯魔 · 少年的追忆 · 其五。
+   */
+  var sealGood = document.getElementById('sealGood');
+  var sealEvil = document.getElementById('sealEvil');
+  var sealTipEl = document.getElementById('sealTip');
+  var goodLit = false;
+  var creedRead = false;
+  try { creedRead = localStorage.getItem('kosmaCreed') === '1'; } catch(err){ creedRead = false; }
+  if (creedRead){
+    goodLit = true;
+    sealGood.classList.add('lit');
+    sealEvil.classList.add('lit');
+    sealTipEl.textContent = '「善恶两分，不可让渡。」';
+  }
+
+  function tapSeal(which){
+    if (creedRead){
+      showToast('「善恶两分，不可让渡。」——你已经记住了。', false);
+      return;
+    }
+
+    if (which === 'good'){
+      goodLit = true;
+      sealGood.classList.add('lit');
+      sealEvil.classList.remove('lit');
+      sealTipEl.textContent = '「善」按下了。还有一枚。';
+      return;
+    }
+
+    if (goodLit){
+      creedRead = true;
+      try { localStorage.setItem('kosmaCreed', '1'); } catch(err){}
+      sealEvil.classList.add('lit');
+      sealTipEl.textContent = '「善恶两分，不可让渡。」';
+      showToast('「我只是做到了在任何情况下都绝不违背原则——『善恶两分，不可让渡』。」', true);
+      if (!reducedMotion){
+        var rs = sealEvil.getBoundingClientRect();
+        moteBurst(rs.left + rs.width / 2, rs.top + rs.height / 2, 18, ['#f9a152','#ffc98f','#8fa082']);
+      }
+      return;
+    }
+
+    goodLit = false;
+    sealGood.classList.remove('lit');
+    sealEvil.classList.remove('lit');
+    sealTipEl.textContent = '……他重新盖了回去。顺序不对。';
+  }
+  sealGood.addEventListener('click', function(){ tapSeal('good'); });
+  sealEvil.addEventListener('click', function(){ tapSeal('evil'); });
+  sealGood.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tapSeal('good'); }
+  });
+  sealEvil.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tapSeal('evil'); }
+  });
+
+  /* 呀，这一页不点名字得禅语 —— 那是苏的。千劫、维尔薇也用过「点名字」那一套。
+     科斯魔要有他自己的一份，而他的那一份，恰恰是**不说话**。往下看♥ */
+
+  /* SECTION: easter egg - 「……算了。」（**两次点击之间的间隔**）
+   *
+   * 呀，这是这一页最像他的一个彩蛋：**你叫他，他一时答不上来。**
+   * 第一次点他的名字，只有一声「……」；你要是就那样等着，隔一会儿再叫，
+   * 他才会把后半句补上来 —— 就是那句「······算了。」
+   * （出处：官方档案馆 · 往世乐土 · 事件-科斯魔 · 给予刻印 · 其二）
+   *
+   * ⚠ 机制是「两次点击的**间隔**」，不是「点够几次」—— 全站没有第二页这样。
+   *   点太快（不到 2.5 秒）就把计时重置：他还没想好怎么说。
+   */
+  var nameEl = document.getElementById('profileName');
+  var SILENCE_GAP = 2500;
+  var nameArmed = false;
+  var lastCall = 0;
+
+  function callHim(){
+    var now = Date.now();
+    if (nameArmed && now - lastCall >= SILENCE_GAP){
+      nameArmed = false;
+      showToast('「······算了。」', true);
+      if (!reducedMotion){
+        var rn = nameEl.getBoundingClientRect();
+        moteBurst(rn.left + rn.width / 2, rn.top + rn.height / 2, 16,
+                  ['#f9a152','#e89264','#ffc98f','#8fa082']);
+      }
+      return;
+    }
+    nameArmed = true;
+    lastCall = now;
+    showToast('「······」', false);
+  }
+  nameEl.addEventListener('click', callHim);
+  nameEl.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); callHim(); }
+  });
+
+  /* SECTION: ending - 点那句话，他会多说一句（四句，轮着来）
+   *
+   * 呀，这四句**全是他自己的话，一句都没编**：
+   *   ① 方舟计划（少年的追忆·其十）  ② 黛丝多比娅（其九）
+   *   ③ 与凯文（其八）               ④ 临别赠言（致爱莉希雅）
+   * 他平时话少，所以这里不算彩蛋 —— 这是他愿意多说几句的地方♥
+   */
+  var endingQuote = document.getElementById('endingQuote');
+  var endingSub = document.getElementById('endingSub');
+  var moreLines = [
+    '「或许在未来的某一天，新世代的人们会突然接收到方舟返航的信号。那时你就能知道答案了。」',
+    '「我希望他们依然能长久地记住她的存在。」',
+    '「我敬重他，和与他站在不同的立场，这二者并不冲突。」',
+    '「……应该无需多言了吧。你会比我们走得更远，你们会战胜我们没能跨越的阻碍。所以，一路保重。」'
+  ];
+  var heartIdx = 0;
+  endingQuote.addEventListener('click', function(){
+    endingSub.textContent = moreLines[heartIdx % moreLines.length];
+    endingSub.classList.add('visible');
+    heartIdx++;
+    if (!reducedMotion){
+      var r = endingQuote.getBoundingClientRect();
+      moteBurst(r.left + r.width / 2, r.top + r.height / 2, 10, ['#f9a152','#e89264','#ffc98f']);
+    }
+  });
+  endingQuote.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); endingQuote.click(); }
+  });
+
+  /* SECTION: easter egg - 「他的礼物」（**累计陪伴时长**）
+   *
+   * 呀，这不是「你不动」的彩蛋（那是樱的），是「你待了多久」的彩蛋：
+   * 你可以一直点、一直滚、一直吹口琴 —— 只要你还在这页上，时间就在算。
+   *
+   * 因为「送礼物」本来就是他的习惯：那是黛丝多比娅留下的，
+   * 她走之后，他把它接了下来 ——「我希望他们依然能长久地记住她的存在。」
+   * （出处：官方档案馆 · 事件-科斯魔 · 少年的追忆 · 其九）
+   *
+   * ⚠ 只在页面**可见**时累加：切去别的标签页不算，
+   *   免得「开着没看」也把礼物送出去，那就没意思了。
+   */
+  var GIFT_MS = 90000;
+  var endingGiftEl = document.getElementById('endingGift');
+  var dawnVeil = document.getElementById('dawnVeil');
+  var dwell = 0, giftTimer = null, giftGiven = false;
+  try { giftGiven = localStorage.getItem('kosmaGift') === '1'; } catch(err){ giftGiven = false; }
+
+  if (giftGiven && endingGiftEl) endingGiftEl.classList.add('show');
+
+  function giveGift(){
+    if (giftGiven) return;
+    giftGiven = true;
+    try { localStorage.setItem('kosmaGift', '1'); } catch(err){}
+    if (endingGiftEl) endingGiftEl.classList.add('show');
+    dawnVeil.classList.add('lit');
+    showToast('他翻了很久，递过来一样东西。「……给你的。」', true);
+    setTimeout(function(){ dawnVeil.classList.remove('lit'); }, 4200);
+    if (!reducedMotion){
+      var rg = endingQuote.getBoundingClientRect();
+      moteBurst(rg.left + rg.width / 2, rg.top + rg.height / 2, 22, ['#f9a152','#e89264','#ffc98f']);
+    }
+  }
+
+  function dwellTick(){
+    if (giftGiven) return;
+    if (document.hidden) return;
+    dwell += 500;
+    if (dwell >= GIFT_MS) giveGift();
+  }
+  if (!giftGiven) giftTimer = setInterval(dwellTick, 500);
+
+  /* SECTION: click ripple (水面圆环) */
+  document.addEventListener('click', function(e){
+    if (reducedMotion) return;
+    if (e.target.closest && (e.target.closest('#harmonicaStage') || e.target.closest('#sealGood') || e.target.closest('#sealEvil') || e.target.closest('#profileName') || e.target.closest('#endingQuote'))) return;
+    for (var n = 0; n < 2; n++){
+      var ring = document.createElement('div');
+      ring.className = 'water-ring';
+      var size = 60 + n * 46 + Math.random() * 20;
+      ring.style.width = size + 'px';
+      ring.style.height = size + 'px';
+      ring.style.left = e.clientX + 'px';
+      ring.style.top = e.clientY + 'px';
+      ring.style.animationDelay = (n * 0.14) + 's';
+      ring.style.borderColor = n === 0 ? 'rgba(249,161,82,.7)' : 'rgba(143,160,130,.5)';
+      document.body.appendChild(ring);
+      setTimeout(function(el){ el.remove(); }.bind(null, ring), 1300);
+    }
+  });
+
+  /* SECTION: typewriter */
+  /* SECTION: opening typewriter —— 交给共享层
+     ⚠ 五个时间数值**逐页不同**，全部照本页原值传入，不要依赖默认值。
+       漏传就会悄悄改变这一页的节奏。对照表见 docs/theme-schema.md §5.1。 */
+  ElysiaShared.makeTypewriter({
+    // 出自官方档案馆事件-科斯魔「给予刻印·其十一」。
+    // 数值按 docs/theme-schema.md §七 的性格锚点定：他是**沉、缓、断续**的少年 ——
+    // 所以 delay 取全站最高、jitter 也最大（犹豫），startDelay 拉到 1400。
+    // 开场之后会有整整 1.4 秒的空白才响起第一个字 —— 那一段就是他♥
+    text: '所谓「旭光」……只不过是「救世」黎明中微不足道的一缕。',
+    delay: 175, jitter: 105, startDelay: 1400, tailDelay: 750, hintDelay: 1300,
+    hintEl: true,
+    preReveal: 'openingCrest',
+  });
+
+  /* SECTION: scroll animations */
+  /* SECTION: scroll animations —— 交给共享层
+     ⚠ 结尾目标改用带判空的写法（Inventory R11）：元素齐全时表现与原先完全一致，
+       缺元素时不再抛异常。属**行为改善**，非纯重构。 */
+  ElysiaShared.observeReveal('.timeline-node');
+  ElysiaShared.observeReveal('#ending', {
+    threshold: 0.3,
+    reveal: ['endingQuote', 'endingAttr', 'backLink'],
+  });
+
+  /* SECTION: ending stars */
+  var starsContainer = document.getElementById('endingStars');
+  // 呀！星星的区间就是这一页的脾气，交给共享层的时候一个数都不敢动呢♥
+  // ⚠ 区间写法是 [起点, 跨度]，与原来的 `0.1 + Math.random() * 0.3` 一一对应。
+  var THEME = {
+    endingStars: {
+      count: [80, 12],
+      size: [0.5, 2],
+      minO: [0.08, 0.3], maxO: [0.45, 0.5],
+      dur: [2.4, 4], delay: [0, 5],
+      colors: { pool: ['#fff', '#f9a152', '#8fa082'] },
+    },
+  };
+  ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+  /* SECTION: resize guard */
+  window.addEventListener('resize', function(){
+    for (var j = 0; j < motes.length; j++){
+      if (motes[j].x > W) motes[j].x = Math.random() * W;
+    }
+    for (j = 0; j < embers.length; j++){
+      if (embers[j].x > W) embers[j].x = Math.random() * W;
+    }
+  });
+})();
+</script>
+</body>
+</html>
