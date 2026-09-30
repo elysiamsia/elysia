@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="same-origin">
+<title>elysiad.top/mobius — 致梅比乌斯</title>
+<!-- SECTION: styles -->
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-abyss:#04100b;--bg-deep:#071a12;--bg-lab:#0c2a1c;--bg-mid:#123a26;
+  --serpent:#3ddc84;--serpent-deep:#1fa860;--serpent-dark:#0e5c36;
+  --eye:#ffd166;--eye-deep:#e8a93c;
+  --pinkish:#ff7bac;
+  --text:#e2f2e8;--text-dim:#a5c4b0;--text-muted:#6f9080;
+  --glass-bg:rgba(61,220,132,.05);--glass-border:rgba(61,220,132,.16);
+  --glass-bg2:rgba(255,209,102,.04);--glass-border2:rgba(255,209,102,.12);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg-abyss);color:var(--text);overflow-x:hidden;line-height:1.7;
+  transition:background 1.2s ease;
+}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg-abyss)}
+::-webkit-scrollbar-thumb{background:var(--serpent-dark);border-radius:3px}
+
+#serpentCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+#fallenVeil{
+  position:fixed;inset:0;z-index:9991;pointer-events:none;opacity:0;transition:opacity 1.4s ease;
+  background:radial-gradient(ellipse at center,transparent 35%,rgba(10,40,20,.55) 100%);
+}
+#fallenVeil.lit{opacity:1}
+body.fallen{--serpent:#7dff5a;--serpent-deep:#2fbf4f;--eye:#ff4d2d;--eye-deep:#c1121f;--bg-abyss:#020a05}
+body.fallen{background:#020a05}
+body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
+
+/* SECTION: opening */
+.section-opening{
+  position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:2rem;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(ellipse 65% 42% at 50% 8%,rgba(61,220,132,.1),transparent 70%),
+    radial-gradient(ellipse 45% 30% at 82% 30%,rgba(255,209,102,.05),transparent 70%),
+    linear-gradient(180deg,var(--bg-abyss) 0%,var(--bg-deep) 32%,var(--bg-lab) 62%,var(--bg-deep) 100%);
+}
+.opening-ornament{font-size:1.1rem;color:var(--serpent-deep);letter-spacing:.7em;opacity:0;transition:opacity 1.2s ease;margin-bottom:1.3rem}
+.opening-ornament.visible{opacity:.9}
+.opening-title{
+  font-size:clamp(1.5rem,4.8vw,3rem);font-weight:400;letter-spacing:.1em;
+  color:var(--serpent);text-shadow:0 0 30px rgba(61,220,132,.4),0 0 60px rgba(61,220,132,.18);
+  min-height:1.6em;max-width:880px;
+}
+.typing-cursor{display:inline-block;font-weight:100;color:var(--eye);animation:blink-cursor .8s step-end infinite}
+.typing-cursor.hidden{display:none}
+@keyframes blink-cursor{0%,100%{opacity:1}50%{opacity:0}}
+.opening-subtitle{
+  font-size:clamp(.9rem,2.5vw,1.25rem);color:var(--text-dim);letter-spacing:.35em;
+  margin-top:1.5rem;opacity:0;transition:opacity 1.5s ease;
+}
+.opening-subtitle.visible{opacity:1}
+.opening-hint{
+  font-size:.72rem;color:var(--text-muted);letter-spacing:.14em;margin-top:1rem;
+  opacity:0;transition:opacity 1.5s ease 1s;
+}
+.opening-hint.visible{opacity:.7}
+.scroll-hint{
+  position:absolute;bottom:calc(2.5rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  opacity:0;transition:opacity 1s ease .5s;
+}
+.scroll-hint.visible{opacity:.6}
+.scroll-hint span{font-size:.75rem;color:var(--text-muted);letter-spacing:.2em}
+.scroll-chevron{
+  width:20px;height:20px;border-right:2px solid var(--serpent);border-bottom:2px solid var(--serpent);
+  transform:rotate(45deg);animation:chevron-bounce 2s ease-in-out infinite;
+}
+@keyframes chevron-bounce{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(6px)}}
+
+/* SECTION: common section */
+.content-section{
+  position:relative;z-index:2;padding:6rem 1.5rem;
+  background:linear-gradient(180deg,transparent 0%,rgba(4,16,11,.3) 20%,rgba(4,16,11,.3) 80%,transparent 100%);
+}
+.section-title-wrap{text-align:center;margin-bottom:3.5rem}
+.section-title{
+  font-size:clamp(1.5rem,4vw,2.2rem);font-weight:400;letter-spacing:.2em;cursor:pointer;user-select:none;
+  color:var(--serpent);text-shadow:0 0 20px rgba(61,220,132,.3);transition:text-shadow .3s ease;
+}
+.section-title:hover{text-shadow:0 0 30px rgba(61,220,132,.55)}
+.section-title-line{display:block;width:60px;height:1px;margin:1rem auto 0;background:linear-gradient(90deg,transparent,var(--serpent-deep),transparent)}
+.section-title-mark{display:inline-block;font-size:.8em;color:var(--eye-deep);margin:0 .8rem}
+
+/* SECTION: profile */
+.profile-card{
+  max-width:720px;margin:0 auto;padding:clamp(2rem,5vw,3rem);
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--glass-border);border-radius:24px;
+  box-shadow:0 0 50px rgba(61,220,132,.08),0 0 100px rgba(255,209,102,.04),inset 0 1px 0 rgba(255,255,255,.05);
+  position:relative;overflow:hidden;
+}
+.profile-card-inner{position:relative;z-index:1}
+.snake-eye-wrap{display:flex;justify-content:center;margin-bottom:1.2rem}
+.snake-eye{cursor:pointer;transition:transform .3s ease;user-select:none}
+.snake-eye:hover{transform:scale(1.07)}
+.snake-eye .pupil{transition:transform .25s ease}
+.snake-eye.stare .pupil{transform:scaleX(.45)}
+.profile-name{
+  font-size:clamp(1.8rem,5vw,2.8rem);font-weight:400;letter-spacing:.14em;cursor:pointer;user-select:none;
+  color:var(--text);text-align:center;margin-bottom:.2em;text-shadow:0 0 24px rgba(61,220,132,.3);
+}
+.profile-name-en{
+  font-size:clamp(.9rem,2vw,1.1rem);font-weight:300;letter-spacing:.45em;
+  color:var(--serpent-deep);text-align:center;margin-bottom:2rem;filter:brightness(1.3);
+}
+.profile-divider{width:100%;height:1px;margin:1.5rem 0;background:linear-gradient(90deg,transparent,var(--glass-border),var(--glass-border2),transparent)}
+.profile-grid{display:grid;grid-template-columns:auto 1fr;gap:.6rem 1.5rem;font-size:.92rem}
+.profile-label{color:var(--text-muted);white-space:nowrap;font-weight:400}
+.profile-value{color:var(--text);font-weight:300}
+.profile-value .highlight{color:var(--serpent);font-weight:400}
+.profile-value .golden{color:var(--eye);font-weight:400}
+.profile-value .rose{color:var(--pinkish);font-weight:400}
+.profile-desc{
+  margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--glass-border);
+  font-size:.9rem;color:var(--text-dim);line-height:1.9;font-weight:300;
+}
+
+/* SECTION: creations */
+.creation-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1.1rem;max-width:1000px;margin:0 auto}
+.creation-card{
+  padding:1.3rem 1.4rem;cursor:pointer;user-select:none;min-height:120px;
+  background:linear-gradient(150deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--glass-border);border-radius:16px;
+  transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;
+}
+.creation-card:hover{transform:translateY(-3px);box-shadow:0 0 26px rgba(61,220,132,.14)}
+.creation-card.open{border-color:var(--serpent-deep);box-shadow:0 0 22px rgba(61,220,132,.18)}
+.creation-icon{font-size:1.5rem;margin-bottom:.5rem;display:block}
+.creation-name{font-size:1rem;color:var(--serpent);letter-spacing:.08em;margin-bottom:.3rem}
+.creation-sub{font-size:.75rem;color:var(--text-muted);letter-spacing:.05em}
+.creation-detail{
+  max-height:0;overflow:hidden;opacity:0;font-size:.8rem;color:var(--text-dim);line-height:1.8;font-weight:300;
+  transition:max-height .45s ease,opacity .45s ease,margin .45s ease;
+}
+.creation-card.open .creation-detail{max-height:260px;opacity:1;margin-top:.7rem}
+
+/* SECTION: timeline */
+.timeline{position:relative;max-width:800px;margin:0 auto;padding:2rem 0}
+.timeline-line{
+  position:absolute;left:50%;top:0;bottom:0;width:2px;
+  background:linear-gradient(180deg,transparent,var(--serpent-dark) 8%,var(--serpent-deep) 45%,var(--eye-deep) 80%,transparent);
+  transform:translateX(-50%);
+}
+.timeline-node{
+  position:relative;display:flex;align-items:flex-start;margin-bottom:3rem;
+  opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;
+}
+.timeline-node.visible{opacity:1;transform:translateY(0)}
+.timeline-node:nth-child(odd){flex-direction:row}
+.timeline-node:nth-child(even){flex-direction:row-reverse}
+.timeline-dot{
+  position:absolute;left:50%;top:.5rem;width:13px;height:13px;border-radius:50%;
+  border:2px solid var(--serpent);background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
+  box-shadow:0 0 12px rgba(61,220,132,.4);transition:background .3s;
+}
+.timeline-node.visible .timeline-dot{background:var(--serpent)}
+.timeline-card{
+  width:calc(50% - 2.5rem);padding:1.2rem 1.5rem;cursor:pointer;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 0 20px rgba(61,220,132,.04);
+  transition:box-shadow .3s ease;
+}
+.timeline-card:hover{box-shadow:0 0 28px rgba(61,220,132,.12)}
+.timeline-node:nth-child(odd) .timeline-card{margin-right:auto}
+.timeline-node:nth-child(even) .timeline-card{margin-left:auto}
+.timeline-card h3{font-size:1.05rem;font-weight:500;color:var(--serpent);margin-bottom:.5rem;letter-spacing:.1em}
+.timeline-card p{font-size:.85rem;color:var(--text-dim);line-height:1.8;font-weight:300}
+
+/* SECTION: quotes */
+.quotes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;max-width:1000px;margin:0 auto}
+.quote-card{
+  padding:1.5rem;min-height:140px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
+  transition:transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
+}
+.quote-card:hover{transform:translateY(-3px) rotate(-.3deg);box-shadow:0 0 30px rgba(61,220,132,.14),0 8px 30px rgba(0,0,0,.2)}
+.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition:opacity .4s ease}
+.quote-text.fading{opacity:0}
+.quote-hint{position:absolute;bottom:.6rem;right:.8rem;font-size:.65rem;color:var(--text-muted);opacity:.4}
+
+/* SECTION: daily */
+.daily-wrap{max-width:620px;margin:0 auto;text-align:center}
+.daily-card{
+  padding:2rem 1.8rem;border-radius:20px;position:relative;overflow:hidden;
+  background:linear-gradient(150deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border:1px solid var(--glass-border2);box-shadow:0 0 34px rgba(255,209,102,.08);
+}
+.daily-label{font-size:.72rem;color:var(--eye-deep);letter-spacing:.35em;margin-bottom:1rem}
+.daily-quote{font-size:1rem;color:var(--text);line-height:2;font-weight:300;min-height:3.4em;transition:opacity .35s ease}
+.daily-quote.fading{opacity:0}
+.daily-btn{
+  margin-top:1.4rem;min-height:44px;padding:.6rem 1.8rem;border-radius:999px;cursor:pointer;
+  border:1px solid var(--glass-border);background:rgba(61,220,132,.08);
+  color:var(--serpent);font-size:.82rem;letter-spacing:.15em;font-family:inherit;
+  transition:background .3s ease,box-shadow .3s ease,transform .3s ease;
+}
+.daily-btn:hover{background:rgba(61,220,132,.16);box-shadow:0 0 20px rgba(61,220,132,.2);transform:translateY(-2px)}
+
+/* SECTION: ending */
+.section-ending{
+  position:relative;z-index:2;min-height:70vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:4rem 2rem;
+  background:linear-gradient(180deg,transparent,var(--bg-abyss) 30%,var(--bg-abyss));
+}
+.ending-stars{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.ending-star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--dur) ease-in-out infinite;animation-delay:var(--delay)}
+@keyframes twinkle{0%,100%{opacity:var(--min-o)}50%{opacity:var(--max-o)}}
+.ending-quote{
+  font-size:clamp(1.05rem,3vw,1.5rem);font-weight:300;letter-spacing:.1em;cursor:pointer;user-select:none;
+  color:var(--serpent);line-height:2;text-shadow:0 0 25px rgba(61,220,132,.35);
+  max-width:660px;opacity:0;transform:translateY(20px);transition:opacity 1.5s ease,transform 1.5s ease;
+}
+.ending-quote.visible{opacity:1;transform:translateY(0)}
+.ending-sub{
+  margin-top:1.6rem;font-size:.85rem;color:var(--text-muted);letter-spacing:.08em;line-height:2;
+  max-width:560px;opacity:0;transition:opacity 1s ease;min-height:1.4em;
+}
+.ending-sub.visible{opacity:.85}
+.ending-attr{
+  margin-top:2.2rem;font-size:.85rem;color:var(--text-muted);letter-spacing:.25em;
+  opacity:0;transition:opacity 1.5s ease .8s;
+}
+.ending-attr.visible{opacity:.7}
+.back-link{
+  display:inline-flex;align-items:center;gap:.5rem;margin-top:3rem;
+  min-height:44px;padding:.6rem 1.6rem;border-radius:999px;text-decoration:none;
+  color:var(--serpent);font-size:.85rem;letter-spacing:.15em;
+  border:1px solid var(--glass-border);background:rgba(61,220,132,.05);
+  transition:background .3s ease,box-shadow .3s ease,transform .3s ease;opacity:0;
+}
+.back-link.visible{opacity:1;transition:opacity 1.5s ease 1.2s,background .3s ease,box-shadow .3s ease,transform .3s ease}
+.back-link:hover{background:rgba(61,220,132,.12);box-shadow:0 0 24px rgba(61,220,132,.22);transform:translateY(-2px)}
+.ending-fade{position:absolute;bottom:0;left:0;right:0;height:120px;background:linear-gradient(transparent,var(--bg-abyss));pointer-events:none}
+
+/* SECTION: birthday egg */
+#bdayEgg{
+  position:fixed;right:1.2rem;bottom:1.2rem;z-index:9990;display:flex;align-items:center;gap:.55rem;
+  padding:.55rem 1rem;border-radius:999px;cursor:pointer;user-select:none;
+  background:linear-gradient(135deg,rgba(61,220,132,.14),rgba(255,209,102,.1));
+  border:1px solid var(--glass-border);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 0 18px rgba(61,220,132,.16);color:var(--text);font-size:.8rem;letter-spacing:.08em;
+  transition:transform .25s,box-shadow .25s;animation:bdayFloat 3.5s ease-in-out infinite;
+}
+#bdayEgg:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 0 26px rgba(61,220,132,.3)}
+@keyframes bdayFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.bday-dot{width:8px;height:8px;border-radius:50%;background:var(--serpent);box-shadow:0 0 10px var(--serpent);animation:bdayPulse 1.6s ease-in-out infinite}
+@keyframes bdayPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+#bdayPanel{
+  position:fixed;right:1.2rem;bottom:4.4rem;z-index:9990;width:min(300px,calc(100vw - 2.4rem));
+  padding:1.4rem 1.3rem;border-radius:20px;opacity:0;pointer-events:none;transform:translateY(12px) scale(.97);
+  transition:opacity .35s,transform .35s;text-align:center;
+  background:linear-gradient(150deg,rgba(7,26,18,.94),rgba(18,58,38,.94));
+  border:1px solid var(--glass-border);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  box-shadow:0 8px 40px rgba(0,0,0,.45),0 0 40px rgba(61,220,132,.1);
+}
+#bdayPanel.open{opacity:1;pointer-events:auto;transform:translateY(0) scale(1)}
+.bday-cake{display:block;font-size:1.5rem;margin-bottom:.4rem}
+.bday-title{font-size:.72rem;color:var(--text-muted);letter-spacing:.3em;margin-bottom:.3rem}
+.bday-date{font-size:.95rem;color:var(--serpent);letter-spacing:.12em;margin-bottom:1rem}
+.bday-timer{display:flex;justify-content:center;gap:.6rem}
+.bday-cell{min-width:3.4rem;padding:.55rem .3rem;border-radius:12px;background:rgba(61,220,132,.06);border:1px solid var(--glass-border)}
+.bday-num{display:block;font-size:1.35rem;font-weight:300;color:var(--eye);font-variant-numeric:tabular-nums}
+.bday-unit{display:block;font-size:.62rem;color:var(--text-muted);margin-top:.2rem;letter-spacing:.15em}
+.bday-msg{margin-top:1rem;font-size:.78rem;color:var(--text-dim);line-height:1.9}
+
+/* SECTION: game button */
+#gameFab{
+  position:fixed;left:1.2rem;bottom:1.2rem;z-index:9990;
+  width:52px;height:52px;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:1.4rem;
+  background:linear-gradient(150deg,rgba(12,42,28,.92),rgba(18,58,38,.92));
+  border:1px solid var(--glass-border);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  box-shadow:0 0 20px rgba(61,220,132,.2);
+  transition:transform .25s ease,box-shadow .25s ease;
+  animation:fab-breathe 3s ease-in-out infinite;
+}
+#gameFab:hover{transform:scale(1.1) rotate(-8deg);box-shadow:0 0 30px rgba(61,220,132,.4)}
+@keyframes fab-breathe{0%,100%{box-shadow:0 0 16px rgba(61,220,132,.18)}50%{box-shadow:0 0 28px rgba(61,220,132,.35)}}
+
+/* SECTION: game overlay */
+#gameOverlay{
+  position:fixed;inset:0;z-index:9997;display:none;align-items:center;justify-content:center;flex-direction:column;gap:.8rem;
+  background:rgba(2,8,5,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:1rem;
+}
+#gameOverlay.on{display:flex}
+.game-head{display:flex;align-items:center;gap:1.2rem;color:var(--text-dim);font-size:.85rem;letter-spacing:.1em}
+.game-head .score{color:var(--eye);font-variant-numeric:tabular-nums}
+#snakeCanvas{
+  border:1px solid var(--serpent-dark);border-radius:12px;background:#031008;
+  box-shadow:0 0 40px rgba(61,220,132,.15);max-width:92vw;max-height:56vh;touch-action:none;
+}
+.game-msg{color:var(--serpent);font-size:.9rem;letter-spacing:.08em;min-height:1.6em;text-align:center}
+.game-btns{display:flex;gap:.8rem;margin-top:.3rem}
+.game-btn{
+  min-height:44px;padding:.55rem 1.5rem;border-radius:999px;cursor:pointer;font-family:inherit;
+  border:1px solid var(--glass-border);background:rgba(61,220,132,.1);color:var(--serpent);
+  font-size:.85rem;letter-spacing:.12em;transition:background .3s,box-shadow .3s;
+}
+.game-btn:hover{background:rgba(61,220,132,.2);box-shadow:0 0 16px rgba(61,220,132,.25)}
+.game-btn.ghost{color:var(--text-muted);background:transparent}
+#dpad{display:none;grid-template-columns:repeat(3,56px);grid-template-rows:repeat(2,52px);gap:6px;margin-top:.5rem}
+#dpad button{
+  border-radius:12px;border:1px solid var(--glass-border);background:rgba(61,220,132,.08);
+  color:var(--serpent);font-size:1.1rem;cursor:pointer;min-height:48px;
+}
+#dpad button:active{background:rgba(61,220,132,.22)}
+#dpad .up{grid-column:2;grid-row:1}
+#dpad .left{grid-column:1;grid-row:2}
+#dpad .down{grid-column:2;grid-row:2}
+#dpad .right{grid-column:3;grid-row:2}
+@media(hover:none) and (pointer:coarse){#dpad{display:grid}}
+
+/* SECTION: mouse pet */
+.lab-mouse{
+  position:fixed;z-index:9989;font-size:26px;cursor:pointer;user-select:none;
+  transition:transform .2s ease;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));
+}
+.lab-mouse:hover{transform:scale(1.25)}
+.lab-mouse.caught{animation:mouse-poof .5s ease forwards;pointer-events:none}
+@keyframes mouse-poof{to{opacity:0;transform:scale(2) rotate(20deg)}}
+
+/* SECTION: toast */
+#mbToast{
+  position:fixed;left:50%;bottom:16%;transform:translateX(-50%) translateY(10px);z-index:9996;
+  max-width:88vw;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;letter-spacing:.06em;
+  color:var(--text);background:linear-gradient(135deg,rgba(7,26,18,.95),rgba(18,58,38,.95));
+  border:1px solid var(--glass-border);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 6px 30px rgba(0,0,0,.5),0 0 24px rgba(61,220,132,.2);
+  opacity:0;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:opacity .35s ease,transform .35s ease;text-align:center;
+}
+#mbToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#mbToast.hiss{color:#c9ffd9;border-color:rgba(125,255,90,.6);box-shadow:0 6px 30px rgba(0,0,0,.5),0 0 34px rgba(125,255,90,.4)}
+@media(max-width:600px){#mbToast{white-space:normal;line-height:1.6}}
+
+/* SECTION: ripple */
+.scale-ripple{
+  position:fixed;pointer-events:none;z-index:9993;border-radius:50% 50% 50% 8%;opacity:.9;
+  transition:all .8s cubic-bezier(.22,.61,.36,1);
+}
+
+/* SECTION: responsive */
+@media(max-width:768px){
+  .timeline-line{left:1.5rem}
+  .timeline-node,.timeline-node:nth-child(odd),.timeline-node:nth-child(even){flex-direction:row}
+  .timeline-dot{left:1.5rem}
+  .timeline-card,.timeline-node:nth-child(odd) .timeline-card,.timeline-node:nth-child(even) .timeline-card{
+    width:calc(100% - 3.5rem);margin-left:3.5rem;margin-right:0;
+  }
+  .quotes-grid{grid-template-columns:1fr}
+  .creation-grid{grid-template-columns:1fr 1fr}
+  .profile-grid{grid-template-columns:auto 1fr;gap:.5rem 1rem;font-size:.85rem}
+}
+@media(max-width:480px){
+  .content-section{padding:4rem 1rem}
+  .profile-card{padding:1.5rem}
+  .quote-card{min-height:120px;padding:1.2rem}
+  .creation-grid{grid-template-columns:1fr}
+  #gameFab{width:46px;height:46px;font-size:1.2rem;left:.8rem;bottom:.8rem}
+  #bdayEgg{right:.8rem;bottom:.8rem}
+  #bdayPanel{bottom:4rem;right:.8rem}
+}
+</style>
+</head>
+<body>
+
+<canvas id="serpentCanvas"></canvas>
+<div id="fallenVeil"></div>
+
+<!-- SECTION: opening -->
+<section class="section-opening" id="opening">
+  <div class="opening-content">
+    <div class="opening-ornament" id="openingOrn">∞ ── ∞ ── ∞</div>
+    <h1 class="opening-title" id="typewriterText"></h1><span class="typing-cursor" id="typingCursor">|</span>
+    <p class="opening-subtitle" id="openingSub">欢迎来到梅比乌斯的实验室</p>
+    <p class="opening-hint" id="openingHint">温馨提示：进入实验室的一切素材，概不退还。……开玩笑的，大概。</p>
+  </div>
+  <div class="scroll-hint" id="scrollHint">
+    <span>深入实验</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</section>
+
+<!-- SECTION: about -->
+<section class="content-section" id="about">
+  <div class="section-title-wrap">
+    <h2 class="section-title" data-snark="about"><span class="section-title-mark">∞</span>关于她<span class="section-title-mark">∞</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="profile-card">
+    <div class="profile-card-inner">
+      <div class="snake-eye-wrap">
+        <div class="snake-eye" id="snakeEye" role="button" tabindex="0" aria-label="蛇瞳，凝视它试试">
+          <svg viewBox="0 0 120 70" width="112" height="66" aria-hidden="true">
+            <defs>
+              <radialGradient id="irisG" cx="50%" cy="50%" r="60%">
+                <stop offset="0%" stop-color="#ffe9a8"/>
+                <stop offset="45%" stop-color="#ffd166"/>
+                <stop offset="80%" stop-color="#e8a93c"/>
+                <stop offset="100%" stop-color="#7a5410"/>
+              </radialGradient>
+            </defs>
+            <path d="M4 35 Q60 -6 116 35 Q60 76 4 35 Z" fill="#0a1f14" stroke="#1fa860" stroke-width="2"/>
+            <ellipse cx="60" cy="35" rx="34" ry="26" fill="url(#irisG)"/>
+            <ellipse class="pupil" cx="60" cy="35" rx="6" ry="24" fill="#05130b"/>
+            <ellipse cx="48" cy="24" rx="7" ry="4" fill="#fff" opacity=".55" transform="rotate(-24 48 24)"/>
+          </svg>
+        </div>
+      </div>
+      <div class="profile-name" id="profileName" role="button" tabindex="0">梅比乌斯</div>
+      <div class="profile-name-en">M O B I U S</div>
+      <div class="profile-divider"></div>
+      <div class="profile-grid">
+        <span class="profile-label">名字来源</span>
+        <span class="profile-value">数学家莫比乌斯——莫比乌斯环，即「<span class="golden">∞</span>」</span>
+        <span class="profile-label">出处</span>
+        <span class="profile-value">《崩坏3》第一文明纪元</span>
+        <span class="profile-label">身份</span>
+        <span class="profile-value">穆大陆著名学者 · 基因科学权威 · 逐火之蛾元老</span>
+        <span class="profile-label">位次</span>
+        <span class="profile-value"><span class="highlight">Ⅹ</span></span>
+        <span class="profile-label">刻印</span>
+        <span class="profile-value"><span class="highlight">「无限」</span>——人类无尽的求知欲</span>
+        <span class="profile-label">生日</span>
+        <span class="profile-value"><span class="golden">4月30日</span></span>
+        <span class="profile-label">身体数据</span>
+        <span class="profile-value">173cm / 54.7kg（原身高体重——蛇蜕之后嘛，你懂的）</span>
+        <span class="profile-label">融合崩坏兽</span>
+        <span class="profile-value">审判级「舍沙」——千头蛇王，第三律者的伴生兽</span>
+        <span class="profile-label">能力</span>
+        <span class="profile-value"><span class="highlight">蛇蜕</span>：死亡后复活，每次复活身体都更「年轻」一点</span>
+        <span class="profile-label">配音</span>
+        <span class="profile-value">蔡书瑾 / 林簌（汉语）· 大久保瑠美（日语）</span>
+        <span class="profile-label">外貌</span>
+        <span class="profile-value">绿发蛇瞳，瞳色<span class="highlight">绿</span>→<span class="rose">粉</span>渐变</span>
+        <span class="profile-label">爱好</span>
+        <span class="profile-value">实验、研究、「云养小动物」</span>
+        <span class="profile-label">珍视之物</span>
+        <span class="profile-value"><span class="golden">「克莱茵……」</span></span>
+      </div>
+      <div class="profile-desc">
+        正如那对深不见底的蛇瞳，「女孩」的真正面目罕有人知。那双眼睛见证了崩坏一次又一次降临。在进化的路途上，为穷尽世间真理，她从不介意任何代价——包括她自己。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: creations -->
+<section class="content-section" id="creations">
+  <div class="section-title-wrap">
+    <h2 class="section-title" data-snark="creations"><span class="section-title-mark">∞</span>她的造物<span class="section-title-mark">∞</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="creation-grid" id="creationGrid" data-primary-action></div>
+</section>
+
+<!-- SECTION: journey -->
+<section class="content-section" id="journey">
+  <div class="section-title-wrap">
+    <h2 class="section-title" data-snark="journey"><span class="section-title-mark">∞</span>她的无限<span class="section-title-mark">∞</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="timeline">
+    <div class="timeline-line"></div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>降生</h3>
+        <p>母亲难产而逝，临终前留下一对耳坠，为她取名「梅比乌斯」——象征无限。离奇的是，她出生时没有哭，只是喃喃自语：「梅比乌斯……这是我的名字吗？」</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>九岁</h3>
+        <p>父亲感染崩坏病后性情暴戾。九岁生日那天，又一次被打之后，她离开家，立下誓言——绝不允许人类退化成那样的怪物，她要让人类「进化」。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>学者</h3>
+        <p>她成为穆大陆首屈一指的基因科学权威，受邀加入逐火之蛾，成为组织元老。那篇量子力学论文让她注意到了梅——她把这位天才引荐进了逐火之蛾。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>融合战士计划</h3>
+        <p>与梅共同主导「融合战士」计划。凯文、爱莉希雅、樱……一位位战士从她的手术台上获得力量。第七次崩坏后，她用「舍沙」的基因改造了自己——第三位融合战士。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>蛇蜕</h3>
+        <p>死亡不再是终点。她一遍遍试探复活的极限，一次次被千劫「杀死」又醒来——身体却越来越小，直到变成孩童的模样。「所谓进化，不过是抛弃过去那个不够完美的自己。」</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>过重超变</h3>
+        <p>她发现了融合战士的下一道极限——「过重超变」，并引导少年科斯魔成为第一个跨越它的人。为了验证，她甚至拿自己做了实验。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>灰蛇</h3>
+        <p>复活技术实验的副产物被她丢进销毁池——第二天，「它」还活着，丑陋而顽强。她从未在人类眼中见过那样的求生之光，于是给了它一个机会。它后来成了世界蛇实际的建立者。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>克莱茵</h3>
+        <p>千人律者事件中，助手克莱茵被律者核心选中，杀死了她。而她在复活的过程中，无意识地吞噬了自己最珍视的人。此后，实验室里多了一具名为「克莱茵」的武装人偶。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>乐土</h3>
+        <p>记忆体栖身往世乐土，曾想借芽衣的身体离开，计划失败。侵蚀之律者入侵时，她本可借机重生回到现世——最终却把希望留给了陪伴她五万年的克莱茵。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>下落不明</h3>
+        <p>终焉之战后，她的本体没有进入休眠舱，而是孤身去寻找超级人工智能普罗米修斯——从此下落不明。有人说，她骇入了终焉之律者的核心。蛇的行踪，谁也说不准。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: quotes -->
+<section class="content-section" id="quotes">
+  <div class="section-title-wrap">
+    <h2 class="section-title" data-snark="quotes"><span class="section-title-mark">∞</span>无限之言<span class="section-title-mark">∞</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="quotes-grid" id="quotesGrid"></div>
+</section>
+
+<!-- SECTION: daily -->
+<section class="content-section" id="daily-sec">
+  <div class="section-title-wrap">
+    <h2 class="section-title" data-snark="daily"><span class="section-title-mark">∞</span>今日实验<span class="section-title-mark">∞</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="daily-wrap">
+    <div class="daily-card">
+      <div class="daily-label">今日观察对象：你</div>
+      <p class="daily-quote" id="dailyQuote"></p>
+      <button class="daily-btn" id="dailyBtn">换一个实验对象</button>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: ending -->
+<section class="section-ending" id="ending">
+  <div class="ending-stars" id="endingStars"></div>
+  <p class="ending-quote" id="endingQuote" role="button" tabindex="0">所以……出去之后好好干吧，小白鼠。<br>可别辜负了梅比乌斯的期待。</p>
+  <p class="ending-sub" id="endingSub"></p>
+  <p class="ending-attr" id="endingAttr">致梅比乌斯 · elysiad.top/mobius</p>
+  <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
+  <div class="ending-fade"></div>
+</section>
+
+<!-- SECTION: birthday egg -->
+<div id="bdayEgg" role="button" tabindex="0" aria-label="生日倒计时">
+  <span class="bday-dot"></span><span id="bdayEggText"></span>
+</div>
+<div id="bdayPanel" aria-hidden="true">
+  <span class="bday-cake" id="bdayCake">🧪</span>
+  <div class="bday-title">她 的 诞 生 日</div>
+  <div class="bday-date">4月30日</div>
+  <div class="bday-timer" id="bdayTimer">
+    <div class="bday-cell"><span class="bday-num" id="bdD">--</span><span class="bday-unit">天</span></div>
+    <div class="bday-cell"><span class="bday-num" id="bdH">--</span><span class="bday-unit">时</span></div>
+    <div class="bday-cell"><span class="bday-num" id="bdM">--</span><span class="bday-unit">分</span></div>
+    <div class="bday-cell"><span class="bday-num" id="bdS">--</span><span class="bday-unit">秒</span></div>
+  </div>
+  <div class="bday-msg" id="bdayMsg"></div>
+</div>
+
+<!-- SECTION: game -->
+<button id="gameFab" aria-label="隐藏实验：贪吃蛇" title="隐藏实验">🧪</button>
+<div id="gameOverlay" aria-hidden="true">
+  <div class="game-head">
+    <span>「噬界之蛇」实验体 No.666</span>
+    <span class="score">鳞片 <b id="gameScore">0</b></span>
+    <span class="score">最高 <b id="gameBest">0</b></span>
+  </div>
+  <canvas id="snakeCanvas" width="320" height="320"></canvas>
+  <p class="game-msg" id="gameMsg">方向键 / WASD / 滑动屏幕，吞下金色鳞片——别咬到自己哦。</p>
+  <div id="dpad">
+    <button class="up" aria-label="上">▲</button>
+    <button class="left" aria-label="左">◀</button>
+    <button class="down" aria-label="下">▼</button>
+    <button class="right" aria-label="右">▶</button>
+  </div>
+  <div class="game-btns">
+    <button class="game-btn" id="gameStart">开始实验</button>
+    <button class="game-btn ghost" id="gameClose">逃离实验室</button>
+  </div>
+</div>
+
+<div id="mbToast" role="status"></div>
+
+<!-- SECTION: scripts -->
+<script>
+(function(){
+  /* SECTION: quotes data */
+  var quotes = [
+    '「进化的过程并不美丽。正相反，它非常丑陋，丑陋至极。但只有经历过这个丑陋的过程，我们才能真正理解……生命的美丽。」',
+    '「死亡并不是生命的终点。生命将因死亡而得到进化，并由此重获新生。」',
+    '「不要畏惧死亡。接受它，习惯它，战胜它，然后……超越它，成为全新的自己。」',
+    '「此即为，登神之刻！」',
+    '「我可爱的小白鼠，你可千万别死了哦。」',
+    '「以我之手，扬升登神。」',
+    '「肉体不过是思想的枷锁……冲破它，你就能看到更广阔的世界，与无限的可能性。」',
+    '「所谓进化，不过是抛弃了过去那个不够完美的自己罢了。只是……我可能比别人抛弃的都多了一点。」',
+    '「可不要逃走哦。」',
+    '「所以……出去之后好好干吧，小白鼠。可别辜负了梅比乌斯的期待。」'
+  ];
+
+  /* SECTION: daily pool */
+  var dailyPool = [
+    '「诶嘿嘿，实验开始了。」',
+    '「小白鼠，让我们继续来做些有趣的事情吧～」',
+    '「哎呦，不小心玩坏了呢……但没关系，我还有你呀。」',
+    '「别害怕，实验很快就结束了！」',
+    '「想和我做个交易吗？我来教你使用自己的力量，你来配合我进行实验。」',
+    '「猜猜我在哪？」',
+    '「抓住你咯！」',
+    '「年龄于我而言，毫无意义。」',
+    '「打蛇要打七寸——小白鼠，你想对我做什么？」',
+    '「我啊，就只是一个普通的科研人员而已哦。」'
+  ];
+  var dailyIdx = (function(){
+    var now = new Date();
+    var start = new Date(now.getFullYear(), 0, 0);
+    var doy = Math.floor((now - start) / 86400000);
+    return (now.getFullYear() * 7 + doy * 13) % dailyPool.length;
+  })();
+  var dailyEl = document.getElementById('dailyQuote');
+  function renderDaily(){
+    dailyEl.classList.add('fading');
+    setTimeout(function(){
+      dailyEl.textContent = dailyPool[dailyIdx % dailyPool.length];
+      dailyEl.classList.remove('fading');
+    }, 350);
+  }
+  dailyEl.textContent = dailyPool[dailyIdx % dailyPool.length];
+  document.getElementById('dailyBtn').addEventListener('click', function(){
+    dailyIdx = (dailyIdx + 1 + Math.floor(Math.random() * 3)) % dailyPool.length;
+    renderDaily();
+    showToast('换好了。上一位实验对象的去向嘛……你确定想知道？', false);
+  });
+
+  /* SECTION: quotes build */
+  var grid = document.getElementById('quotesGrid');
+  var cardIndices = [];
+  quotes.forEach(function(q, i){
+    var card = document.createElement('div');
+    card.className = 'quote-card';
+    card.setAttribute('role','button');
+    card.setAttribute('tabindex','0');
+    card.setAttribute('aria-label','无限之言，点击切换');
+    var textEl = document.createElement('div');
+    textEl.className = 'quote-text';
+    textEl.textContent = q;
+    var hint = document.createElement('span');
+    hint.className = 'quote-hint';
+    hint.textContent = '点击切换';
+    card.appendChild(textEl);
+    card.appendChild(hint);
+    cardIndices.push(i);
+    card.addEventListener('click', function(){
+      var idxPos = Array.prototype.indexOf.call(grid.querySelectorAll('.quote-card'), card);
+      var nextIdx = (cardIndices[idxPos] + 1) % quotes.length;
+      cardIndices[idxPos] = nextIdx;
+      textEl.classList.add('fading');
+      setTimeout(function(){
+        textEl.textContent = quotes[nextIdx];
+        textEl.classList.remove('fading');
+      }, 400);
+    });
+    card.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+    });
+    grid.appendChild(card);
+  });
+
+  /* SECTION: creations */
+  var creations = [
+    { icon:'🐍', name:'灰蛇', sub:'第一个有自我意识的人工生命',
+      detail:'复活技术实验的副产物，一度被丢进销毁池——却以惊人的求生意志活了下来。她给了它机会。如今它通过「灰蛇网络」共享意识，是世界蛇实际的建立者。' },
+    { icon:'🤖', name:'克莱茵', sub:'武装人偶 · 乐土管理员',
+      detail:'以逝去助手为原型制造的人偶。她陪着博士做实验、管档案、守着往世乐土——五万年。博士最珍视之物，从来只有一个名字。' },
+    { icon:'💉', name:'融合战士计划', sub:'与梅共同主导',
+      detail:'将崩坏兽基因融入人体的疯狂构想。凯文、爱莉希雅、樱……人类对抗律者的底气，一台台从她的实验室里走了出来。' },
+    { icon:'♾️', name:'蛇蜕', sub:'死而复生的能力',
+      detail:'审判级崩坏兽「舍沙」的馈赠：死亡后复活，代价是身体不断「年轻」。她用千劫的爪子反复丈量生死之间的刻度——这是她最得意也最孤独的造物。' },
+    { icon:'🧬', name:'过重超变', sub:'融合战士的下一道极限',
+      detail:'解放更多崩坏兽能量的禁忌改造，代价是长出不属于人的躯体。科斯魔是第一个跨过界限的人——而她，也悄悄在自己身上验证过。' }
+  ];
+  var cGrid = document.getElementById('creationGrid');
+  creations.forEach(function(c){
+    var card = document.createElement('div');
+    card.className = 'creation-card';
+    card.setAttribute('role','button');
+    card.setAttribute('tabindex','0');
+    var iconEl = document.createElement('span');
+    iconEl.className = 'creation-icon';
+    iconEl.textContent = c.icon;
+    var nameEl = document.createElement('div');
+    nameEl.className = 'creation-name';
+    nameEl.textContent = c.name;
+    var subEl = document.createElement('div');
+    subEl.className = 'creation-sub';
+    subEl.textContent = c.sub;
+    var detailEl = document.createElement('div');
+    detailEl.className = 'creation-detail';
+    detailEl.textContent = c.detail;
+    card.appendChild(iconEl);
+    card.appendChild(nameEl);
+    card.appendChild(subEl);
+    card.appendChild(detailEl);
+    card.addEventListener('click', function(){
+      var open = card.classList.toggle('open');
+      if (open) showToast('「来吧，我可爱的造物～」', false);
+    });
+    card.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+    });
+    cGrid.appendChild(card);
+  });
+
+  /* SECTION: toast */
+  var toastEl = document.getElementById('mbToast');
+  var toastTimer = null;
+  function showToast(text, hiss){
+    clearTimeout(toastTimer);
+    toastEl.textContent = text;
+    toastEl.classList.toggle('hiss', !!hiss);
+    toastEl.classList.remove('show');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, hiss ? 4000 : 3000);
+  }
+
+  /* SECTION: audio (Web Audio 合成) */
+  var audioCtx = null;
+  function blip(freq, dur, type, vol){
+    try{
+      if (!audioCtx){
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        audioCtx = new AC();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var t = audioCtx.currentTime;
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.setValueAtTime(freq, t);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(40, freq * 0.4), t + dur);
+      gain.gain.setValueAtTime(vol || 0.3, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + dur + 0.05);
+    } catch(err){}
+  }
+
+  /* SECTION: easter egg A - 蛇瞳凝视 → 人为崩落 */
+  var snakeEye = document.getElementById('snakeEye');
+  var fallenVeil = document.getElementById('fallenVeil');
+  var eyeClicks = 0;
+  var eyeTimer = null;
+  var fallen = false;
+  var eyeLines = [
+    '「嗯？对我的眼睛很感兴趣？」',
+    '「……你的眼神，很有意思。」',
+    '「再盯着看，我可要收观察费了哦。」',
+    '「最后一次警告，小白鼠——你知道自己在做什么吗？」'
+  ];
+  function eyeTap(){
+    if (fallen){
+      unFall();
+      return;
+    }
+    eyeClicks++;
+    clearTimeout(eyeTimer);
+    eyeTimer = setTimeout(function(){ eyeClicks = 0; }, 3000);
+    snakeEye.classList.add('stare');
+    setTimeout(function(){ snakeEye.classList.remove('stare'); }, 400);
+    blip(180, 0.18, 'sine', 0.25);
+    if (eyeClicks < 5){
+      showToast(eyeLines[eyeClicks - 1], false);
+    } else {
+      eyeClicks = 0;
+      goFallen();
+    }
+  }
+  function goFallen(){
+    fallen = true;
+    document.body.classList.add('fallen');
+    fallenVeil.classList.add('lit');
+    showToast('「此即为——登神之刻！」', true);
+    blip(90, 0.5, 'sawtooth', 0.3);
+    if (!reducedMotion){
+      scaleBurst(window.innerWidth / 2, window.innerHeight * 0.3, 26, ['#7dff5a','#ff4d2d','#ffd166']);
+    }
+  }
+  function unFall(){
+    fallen = false;
+    document.body.classList.remove('fallen');
+    fallenVeil.classList.remove('lit');
+    showToast('「……呵，看在你这么好玩的份上，变回来吧。」', false);
+    blip(320, 0.25, 'sine', 0.2);
+  }
+  snakeEye.addEventListener('click', eyeTap);
+  snakeEye.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); eyeTap(); }
+  });
+
+  /* SECTION: easter egg B - 点名字 */
+  var nameEl = document.getElementById('profileName');
+  var nameLines = [
+    '「嗯？」',
+    '「看什么看？」',
+    '「想进我的实验室？」',
+    '「打蛇要打七寸——小白鼠，你想对我做什么？」',
+    '「克莱茵，把这位记进今天的实验名单。」'
+  ];
+  var nameIdx = 0;
+  nameEl.addEventListener('click', function(){
+    showToast(nameLines[nameIdx % nameLines.length], false);
+    nameIdx++;
+  });
+  nameEl.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nameEl.click(); }
+  });
+
+  /* SECTION: easter egg C - 标题吐槽 */
+  var snarkMap = {
+    about: '「呵呵……想更了解我？好奇心很强嘛，小白鼠。」',
+    creations: '「来吧，我可爱的造物～」',
+    journey: '「想窥探我的过去？胆子不小。」',
+    quotes: '「把我的话一字一句念回来的样子……还挺可爱的。」',
+    daily: '「今天的实验对象，就决定是你了。」'
+  };
+  document.querySelectorAll('.section-title[data-snark]').forEach(function(t){
+    t.addEventListener('click', function(){
+      var key = t.getAttribute('data-snark');
+      if (snarkMap[key]) showToast(snarkMap[key], false);
+    });
+  });
+
+  /* SECTION: easter egg D - 结尾心声 */
+  var endingQuote = document.getElementById('endingQuote');
+  var endingSub = document.getElementById('endingSub');
+  var heartLines = [
+    '「死亡并不是生命的终点。生命将因死亡而得到进化。」',
+    '「我们的肉体凡胎，只不过是基因为自己打造的贮藏器而已。」',
+    '「克莱茵……你一直在看着吧。这样就好。」',
+    '「……呵，居然还真有人点到这里。记下来了，今天的你，很有趣。」'
+  ];
+  var heartIdx = 0;
+  endingQuote.addEventListener('click', function(){
+    endingSub.textContent = heartLines[heartIdx % heartLines.length];
+    endingSub.classList.add('visible');
+    heartIdx++;
+    if (!reducedMotion){
+      var r = endingQuote.getBoundingClientRect();
+      scaleBurst(r.left + r.width / 2, r.top + r.height / 2, 10, ['#3ddc84','#ffd166','#ff7bac']);
+    }
+  });
+  endingQuote.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); endingQuote.click(); }
+  });
+
+  /* SECTION: easter egg E - 小白鼠出没 */
+  var miceCaught = 0;
+  var mouseActive = false;
+  var mouseLines = [
+    '「抓住你咯！」',
+    '「诶嘿嘿，跑不掉的～」',
+    '「这只归实验室了。放心，不疼的。大概。」',
+    '「很痛的哦！……骗你的。」',
+    '「小白鼠 No.%n 已归档。谢谢你为科学献身。」'
+  ];
+  function spawnMouse(){
+    if (mouseActive || document.hidden) { scheduleMouse(); return; }
+    mouseActive = true;
+    var m = document.createElement('div');
+    m.className = 'lab-mouse';
+    m.textContent = Math.random() > 0.5 ? '🐁' : '🐭';
+    m.setAttribute('role','button');
+    m.setAttribute('aria-label','小白鼠，点击捕捉');
+    var fromLeft = Math.random() > 0.5;
+    var top = 12 + Math.random() * 70;
+    m.style.top = top + 'vh';
+    m.style.left = fromLeft ? '-40px' : (window.innerWidth + 10) + 'px';
+    document.body.appendChild(m);
+    var x = fromLeft ? -40 : window.innerWidth + 10;
+    var targetX = fromLeft ? window.innerWidth + 40 : -40;
+    var speed = (fromLeft ? 1 : -1) * (0.8 + Math.random() * 0.9);
+    var wobble = Math.random() * Math.PI * 2;
+    var raf = null;
+    function step(){
+      x += speed * 1.6;
+      wobble += 0.05;
+      m.style.left = x + 'px';
+      m.style.top = (top + Math.sin(wobble) * 2.2) + 'vh';
+      m.style.transform = speed > 0 ? 'scaleX(1)' : 'scaleX(-1)';
+      if ((speed > 0 && x > window.innerWidth + 50) || (speed < 0 && x < -50)){
+        cancelAnimationFrame(raf);
+        m.remove();
+        mouseActive = false;
+        showToast('「……让它跑掉了？算了，反正实验室里多的是。」', false);
+        scheduleMouse();
+      } else {
+        raf = requestAnimationFrame(step);
+      }
+    }
+    raf = requestAnimationFrame(step);
+    m.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      cancelAnimationFrame(raf);
+      miceCaught++;
+      m.classList.add('caught');
+      blip(900 + Math.random() * 300, 0.12, 'triangle', 0.25);
+      if (!reducedMotion){
+        var r = m.getBoundingClientRect();
+        scaleBurst(r.left + 14, r.top + 14, 8, ['#ffd166','#3ddc84','#ffffff']);
+      }
+      var line = mouseLines[(miceCaught - 1) % mouseLines.length].replace('%n', String(miceCaught));
+      showToast(line, false);
+      if (miceCaught === 10){
+        setTimeout(function(){
+          showToast('「十只了……你很有天赋嘛。要不要来我实验室上班？」', true);
+        }, 3400);
+      }
+      setTimeout(function(){ m.remove(); }, 520);
+      mouseActive = false;
+      scheduleMouse();
+    });
+  }
+  function scheduleMouse(){
+    setTimeout(spawnMouse, (16000 + Math.random() * 16000));
+  }
+  setTimeout(spawnMouse, 7000);
+
+  /* SECTION: easter egg F - 贪吃蛇小游戏 */
+  var gameFab = document.getElementById('gameFab');
+  var gameOverlay = document.getElementById('gameOverlay');
+  var snakeCanvas = document.getElementById('snakeCanvas');
+  var sctx = snakeCanvas.getContext('2d');
+  var gameScoreEl = document.getElementById('gameScore');
+  var gameBestEl = document.getElementById('gameBest');
+  var gameMsg = document.getElementById('gameMsg');
+  var gameStartBtn = document.getElementById('gameStart');
+  var gameCloseBtn = document.getElementById('gameClose');
+  var CELL = 20, N = 16;
+  var snake, dir, nextDir, food, gameTimer, playing, score;
+  var best = 0;
+  try { best = parseInt(localStorage.getItem('mbSnakeBest') || '0', 10) || 0; } catch(err){ best = 0; }
+  gameBestEl.textContent = String(best);
+
+  function resetGame(){
+    snake = [{x:8,y:8},{x:7,y:8},{x:6,y:8}];
+    dir = {x:1,y:0};
+    nextDir = {x:1,y:0};
+    score = 0;
+    gameScoreEl.textContent = '0';
+    placeFood();
+    drawGame();
+  }
+  function placeFood(){
+    do {
+      food = { x: Math.floor(Math.random()*N), y: Math.floor(Math.random()*N) };
+    } while (snake.some(function(s){ return s.x === food.x && s.y === food.y; }));
+  }
+  function drawGame(){
+    sctx.clearRect(0,0,320,320);
+    sctx.strokeStyle = 'rgba(61,220,132,.06)';
+    for (var g = 1; g < N; g++){
+      sctx.beginPath(); sctx.moveTo(g*CELL,0); sctx.lineTo(g*CELL,320); sctx.stroke();
+      sctx.beginPath(); sctx.moveTo(0,g*CELL); sctx.lineTo(320,g*CELL); sctx.stroke();
+    }
+    sctx.fillStyle = '#ffd166';
+    sctx.save();
+    sctx.translate(food.x*CELL+CELL/2, food.y*CELL+CELL/2);
+    sctx.rotate(Math.PI/4);
+    sctx.shadowColor = '#ffd166';
+    sctx.shadowBlur = 10;
+    sctx.fillRect(-CELL/3, -CELL/3, CELL*2/3, CELL*2/3);
+    sctx.restore();
+    snake.forEach(function(s, idx){
+      var t = idx / Math.max(1, snake.length - 1);
+      sctx.fillStyle = idx === 0 ? '#7dff5a' : 'rgba(61,220,132,' + (0.95 - t * 0.55).toFixed(2) + ')';
+      if (idx === 0){ sctx.shadowColor = '#3ddc84'; sctx.shadowBlur = 12; } else { sctx.shadowBlur = 0; }
+      var pad = idx === 0 ? 1 : 2;
+      sctx.beginPath();
+      sctx.roundRect ? sctx.roundRect(s.x*CELL+pad, s.y*CELL+pad, CELL-pad*2, CELL-pad*2, 5) : sctx.rect(s.x*CELL+pad, s.y*CELL+pad, CELL-pad*2, CELL-pad*2);
+      sctx.fill();
+    });
+    sctx.shadowBlur = 0;
+    if (snake.length){
+      var head = snake[0];
+      sctx.fillStyle = '#05130b';
+      var ex = head.x*CELL+CELL/2, ey = head.y*CELL+CELL/2;
+      var ox = dir.y !== 0 ? 4 : 0, oy = dir.x !== 0 ? 4 : 0;
+      sctx.beginPath(); sctx.arc(ex + dir.x*3 - ox, ey + dir.y*3 - oy, 1.8, 0, Math.PI*2); sctx.fill();
+      sctx.beginPath(); sctx.arc(ex + dir.x*3 + ox, ey + dir.y*3 + oy, 1.8, 0, Math.PI*2); sctx.fill();
+    }
+  }
+  function tick(){
+    dir = nextDir;
+    var head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+    if (head.x < 0 || head.x >= N || head.y < 0 || head.y >= N ||
+        snake.some(function(s){ return s.x === head.x && s.y === head.y; })){
+      gameOver();
+      return;
+    }
+    snake.unshift(head);
+    if (head.x === food.x && head.y === food.y){
+      score += 10;
+      gameScoreEl.textContent = String(score);
+      blip(660, 0.08, 'triangle', 0.2);
+      placeFood();
+      if (snake.length % 5 === 0 && gameTimer > 60){
+        clearInterval(timerHandle);
+        gameTimer -= 8;
+        timerHandle = setInterval(tick, gameTimer);
+      }
+    } else {
+      snake.pop();
+    }
+    drawGame();
+  }
+  var timerHandle = null;
+  function startGame(){
+    resetGame();
+    playing = true;
+    gameTimer = 130;
+    gameMsg.textContent = '「别害怕，实验很快就开始了～」';
+    gameStartBtn.textContent = '重新实验';
+    clearInterval(timerHandle);
+    timerHandle = setInterval(tick, gameTimer);
+  }
+  function gameOver(){
+    playing = false;
+    clearInterval(timerHandle);
+    blip(140, 0.4, 'sawtooth', 0.25);
+    if (score > best){
+      best = score;
+      try { localStorage.setItem('mbSnakeBest', String(best)); } catch(err){}
+      gameBestEl.textContent = String(best);
+      gameMsg.textContent = '「哦？新纪录……你的数据，很有研究价值。」';
+    } else {
+      gameMsg.textContent = '「哎呦，不小心玩坏了呢……但没关系，我还有你呀。」';
+    }
+  }
+  function setDir(x, y){
+    if (!playing) return;
+    if (x === -dir.x && y === -dir.y) return;
+    nextDir = { x: x, y: y };
+  }
+  gameStartBtn.addEventListener('click', startGame);
+  gameFab.addEventListener('click', function(){
+    gameOverlay.classList.add('on');
+    gameOverlay.setAttribute('aria-hidden','false');
+    if (!snake) resetGame();
+    drawGame();
+  });
+  gameCloseBtn.addEventListener('click', function(){
+    gameOverlay.classList.remove('on');
+    gameOverlay.setAttribute('aria-hidden','true');
+    playing = false;
+    clearInterval(timerHandle);
+  });
+  document.addEventListener('keydown', function(e){
+    if (!gameOverlay.classList.contains('on')) return;
+    var k = e.key;
+    if (k === 'ArrowUp' || k === 'w' || k === 'W'){ setDir(0,-1); e.preventDefault(); }
+    else if (k === 'ArrowDown' || k === 's' || k === 'S'){ setDir(0,1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'a' || k === 'A'){ setDir(-1,0); e.preventDefault(); }
+    else if (k === 'ArrowRight' || k === 'd' || k === 'D'){ setDir(1,0); e.preventDefault(); }
+    else if (k === 'Escape'){ gameCloseBtn.click(); }
+  });
+  var dpadBtns = document.querySelectorAll('#dpad button');
+  dpadBtns[0].addEventListener('click', function(){ setDir(0,-1); });
+  dpadBtns[1].addEventListener('click', function(){ setDir(-1,0); });
+  dpadBtns[2].addEventListener('click', function(){ setDir(0,1); });
+  dpadBtns[3].addEventListener('click', function(){ setDir(1,0); });
+  var touchStart = null;
+  snakeCanvas.addEventListener('touchstart', function(e){
+    touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, { passive: true });
+  snakeCanvas.addEventListener('touchend', function(e){
+    if (!touchStart) return;
+    var dx = e.changedTouches[0].clientX - touchStart.x;
+    var dy = e.changedTouches[0].clientY - touchStart.y;
+    if (Math.abs(dx) > Math.abs(dy)){ setDir(dx > 0 ? 1 : -1, 0); }
+    else { setDir(0, dy > 0 ? 1 : -1); }
+    touchStart = null;
+  }, { passive: true });
+
+  /* SECTION: birthday egg (4月30日) */
+  var BM = 3, BD = 30; /* 4月30日（月份从0起） */
+  var bdayEgg = document.getElementById('bdayEgg');
+  var bdayPanel = document.getElementById('bdayPanel');
+  var bdayEggText = document.getElementById('bdayEggText');
+  var bdayMsg = document.getElementById('bdayMsg');
+  var bdayTimer = document.getElementById('bdayTimer');
+  var bdayCake = document.getElementById('bdayCake');
+  var bd = { d: document.getElementById('bdD'), h: document.getElementById('bdH'), m: document.getElementById('bdM'), s: document.getElementById('bdS') };
+  function pad2(n){ return (n < 10 ? '0' : '') + n; }
+  function isBday(t){ return t.getMonth() === BM && t.getDate() === BD; }
+  function nextBday(now){
+    var y = now.getFullYear(), t = new Date(y, BM, BD, 0, 0, 0);
+    if (now >= new Date(y, BM, BD + 1, 0, 0, 0)) t = new Date(y + 1, BM, BD, 0, 0, 0);
+    return t;
+  }
+  function renderBday(){
+    var now = new Date();
+    if (isBday(now)){
+      bdayEggText.textContent = '今天是她的生日！';
+      bdayCake.textContent = '🎂';
+      bdayTimer.style.display = 'none';
+      bdayMsg.textContent = '「诶嘿嘿……记得我生日的小白鼠，今天可以不做实验。……才怪。」';
+      return;
+    }
+    var diff = nextBday(now) - now;
+    var d = Math.floor(diff / 86400000);
+    var h = Math.floor(diff % 86400000 / 3600000);
+    var m = Math.floor(diff % 3600000 / 60000);
+    var s = Math.floor(diff % 60000 / 1000);
+    bdayEggText.textContent = '距她的生日还有 ' + d + ' 天';
+    bd.d.textContent = d; bd.h.textContent = pad2(h); bd.m.textContent = pad2(m); bd.s.textContent = pad2(s);
+    bdayMsg.textContent = '「年龄于我而言毫无意义——但生日礼物还是要送的哦。」';
+  }
+  bdayEgg.addEventListener('click', function(){
+    bdayPanel.classList.toggle('open');
+    bdayPanel.setAttribute('aria-hidden', bdayPanel.classList.contains('open') ? 'false' : 'true');
+  });
+  bdayEgg.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bdayEgg.click(); }
+  });
+  renderBday();
+  setInterval(renderBday, 1000);
+  if (isBday(new Date())) setTimeout(function(){ bdayPanel.classList.add('open'); }, 1500);
+
+  /* SECTION: canvas ambient (孢子 + 光蛇) */
+  var canvas = document.getElementById('serpentCanvas');
+  var ctx = canvas.getContext('2d');
+  var W, H;
+  var sporeColors = ['#3ddc84','#1fa860','#ffd166','#7dff5a'];
+
+  function resize(){
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  var spores = [];
+  var sporeCount = Math.min(46, Math.floor(window.innerWidth / 26));
+  function createSpore(anywhere){
+    return {
+      x: Math.random() * W,
+      y: anywhere ? Math.random() * H : H + 10 + Math.random() * 60,
+      size: 0.6 + Math.random() * 2.2,
+      speedY: -(0.1 + Math.random() * 0.35),
+      drift: (Math.random() - 0.5) * 0.2,
+      baseOpacity: 0.12 + Math.random() * 0.4,
+      twinkleSpd: 0.006 + Math.random() * 0.02,
+      twinkleOff: Math.random() * Math.PI * 2,
+      color: sporeColors[Math.floor(Math.random() * sporeColors.length)]
+    };
+  }
+  for (var i = 0; i < sporeCount; i++) spores.push(createSpore(true));
+
+  var lightSnakes = [];
+  function createLightSnake(){
+    var fromLeft = Math.random() > 0.5;
+    return {
+      x: fromLeft ? -60 : W + 60,
+      baseY: H * (0.15 + Math.random() * 0.7),
+      speed: (fromLeft ? 1 : -1) * (0.7 + Math.random() * 0.8),
+      amp: 26 + Math.random() * 50,
+      freq: 0.016 + Math.random() * 0.02,
+      phase: Math.random() * Math.PI * 2,
+      trail: [],
+      life: 1,
+      color: Math.random() > 0.75 ? '#ffd166' : '#3ddc84'
+    };
+  }
+  lightSnakes.push(createLightSnake());
+
+  var scrollRatio = 0;
+  window.addEventListener('scroll', function(){
+    var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    scrollRatio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+  });
+
+  var time = 0;
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var bursts = [];
+
+  function animate(){
+    if (reducedMotion) return;
+    time++;
+    ctx.clearRect(0, 0, W, H);
+    var fadeFactor = 1 - scrollRatio * 0.5;
+    var speedMul = fallen ? 2.2 : 1;
+    var i, s, tw;
+
+    for (i = 0; i < spores.length; i++){
+      s = spores[i];
+      s.y += s.speedY * speedMul;
+      s.x += s.drift + Math.sin(time * 0.008 + s.twinkleOff) * 0.18;
+      if (s.y < -12){ spores[i] = createSpore(false); s = spores[i]; }
+      tw = 0.5 + 0.5 * Math.sin(time * s.twinkleSpd + s.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, s.baseOpacity * tw * fadeFactor * (fallen ? 1.4 : 1));
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, Math.max(0.3, s.size), 0, Math.PI * 2);
+      ctx.fill();
+      if (s.size > 1.6){
+        ctx.globalAlpha *= 0.3;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size * 2.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    for (i = lightSnakes.length - 1; i >= 0; i--){
+      var ls = lightSnakes[i];
+      ls.x += ls.speed * speedMul;
+      ls.phase += ls.freq;
+      var ly = ls.baseY + Math.sin(ls.phase) * ls.amp;
+      ls.trail.unshift({ x: ls.x, y: ly });
+      if (ls.trail.length > 26) ls.trail.pop();
+      var off = (ls.speed > 0 && ls.x > W + 80) || (ls.speed < 0 && ls.x < -80);
+      if (off){ lightSnakes.splice(i, 1); continue; }
+      ctx.save();
+      ctx.lineCap = 'round';
+      for (var t = 0; t < ls.trail.length - 1; t++){
+        var p1 = ls.trail[t], p2 = ls.trail[t + 1];
+        ctx.globalAlpha = (1 - t / ls.trail.length) * 0.4 * fadeFactor;
+        ctx.strokeStyle = ls.color;
+        ctx.lineWidth = Math.max(0.5, 4 * (1 - t / ls.trail.length));
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 0.85 * fadeFactor;
+      ctx.fillStyle = ls.color;
+      ctx.shadowColor = ls.color;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(ls.x, ly, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    if (lightSnakes.length < (fallen ? 3 : 2) && Math.random() < (fallen ? 0.02 : 0.006)){
+      lightSnakes.push(createLightSnake());
+    }
+
+    for (i = bursts.length - 1; i >= 0; i--){
+      var b = bursts[i];
+      b.x += b.vx;
+      b.y += b.vy;
+      b.vy += 0.06;
+      b.vx *= 0.985;
+      b.rotation += b.rotSpeed;
+      b.life -= 0.017;
+      if (b.life <= 0){ bursts.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, b.life);
+      ctx.fillStyle = b.color;
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.rotation);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, b.w * 0.55, b.w, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    requestAnimationFrame(animate);
+  }
+  function scaleBurst(cx, cy, count, colors){
+    var palette = colors || ['#3ddc84','#ffd166','#1fa860','#ff7bac'];
+    for (var k = 0; k < count; k++){
+      var angle = (k / count) * Math.PI * 2 + Math.random() * 0.6;
+      var speed = 1.5 + Math.random() * 4;
+      bursts.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        w: 3 + Math.random() * 5,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.15,
+        life: 1,
+        color: palette[Math.floor(Math.random() * palette.length)]
+      });
+    }
+  }
+  animate();
+
+  /* SECTION: click ripple (鳞片迸溅，无处不在的反馈) */
+  document.addEventListener('click', function(e){
+    if (reducedMotion) return;
+    if (e.target.closest && (e.target.closest('#gameOverlay') || e.target.closest('.lab-mouse'))) return;
+    scaleBurst(e.clientX, e.clientY, 8);
+    blip(520 + Math.random() * 200, 0.05, 'sine', 0.08);
+  });
+
+  /* SECTION: typewriter */
+  var typewriterEl = document.getElementById('typewriterText');
+  var cursorEl = document.getElementById('typingCursor');
+  var subEl = document.getElementById('openingSub');
+  var hintEl = document.getElementById('openingHint');
+  var ornEl = document.getElementById('openingOrn');
+  var scrollHintEl = document.getElementById('scrollHint');
+  var typeText = '诶嘿嘿，实验开始了。';
+  var charIndex = 0;
+
+  function typeNext(){
+    if (charIndex < typeText.length){
+      typewriterEl.textContent += typeText[charIndex];
+      charIndex++;
+      setTimeout(typeNext, 150 + Math.random() * 80);
+    } else {
+      setTimeout(function(){
+        cursorEl.classList.add('hidden');
+        subEl.classList.add('visible');
+        hintEl.classList.add('visible');
+        setTimeout(function(){ scrollHintEl.classList.add('visible'); }, 1000);
+      }, 500);
+    }
+  }
+  ornEl.classList.add('visible');
+  setTimeout(typeNext, 700);
+
+  /* SECTION: scroll animations */
+  var observerOptions = { threshold: 0.15, rootMargin: '0px 0px -50px 0px' };
+  var scrollObserver = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, observerOptions);
+  document.querySelectorAll('.timeline-node').forEach(function(node){
+    scrollObserver.observe(node);
+  });
+
+  var endingObserver = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting){
+        document.getElementById('endingQuote').classList.add('visible');
+        document.getElementById('endingAttr').classList.add('visible');
+        document.getElementById('backLink').classList.add('visible');
+      }
+    });
+  }, { threshold: 0.3 });
+  endingObserver.observe(document.getElementById('ending'));
+
+  /* SECTION: ending stars */
+  var starsContainer = document.getElementById('endingStars');
+  var endingStarCount = Math.min(80, Math.floor(window.innerWidth / 12));
+  var endStarColors = ['#fff','#3ddc84','#ffd166'];
+  for (i = 0; i < endingStarCount; i++){
+    var star = document.createElement('div');
+    star.className = 'ending-star';
+    var size = 0.5 + Math.random() * 2;
+    star.style.width = size + 'px';
+    star.style.height = size + 'px';
+    star.style.left = (Math.random() * 100) + '%';
+    star.style.top = (Math.random() * 100) + '%';
+    star.style.setProperty('--min-o', (0.08 + Math.random() * 0.3).toFixed(2));
+    star.style.setProperty('--max-o', (0.45 + Math.random() * 0.5).toFixed(2));
+    star.style.setProperty('--dur', (2 + Math.random() * 4).toFixed(1) + 's');
+    star.style.setProperty('--delay', (Math.random() * 5).toFixed(1) + 's');
+    star.style.background = endStarColors[Math.floor(Math.random() * endStarColors.length)];
+    starsContainer.appendChild(star);
+  }
+
+  /* SECTION: resize guard */
+  window.addEventListener('resize', function(){
+    for (var j = 0; j < spores.length; j++){
+      if (spores[j].x > W) spores[j].x = Math.random() * W;
+    }
+  });
+})();
+</script>
+</body>
+</html>
