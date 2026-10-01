@@ -1,47 +1,41 @@
 /**
- * assets/bottom.js — 下方区块的外壳（游戏槽 / 生日倒计时 / 探索度）
+ * assets/bottom.js — 下方区块的外壳（探索度 / 游戏槽）
  *
  * 呀，页面逛到最后，总得有个地方坐下来歇歇脚嘛♥
  *
  * ── 它在解决什么 ─────────────────────────────────────────────────────
- *   以前每页的「额外功能」都各挂各的：生日倒计时钉在右下角飘着、
- *   小游戏是个悬浮按钮 + 全屏遮罩、探索度临时塞在 body 末尾。
- *   三个东西三种形态，谁也不知道该往哪儿看。
- *   这一层把它们收进**页面最下方的一个区块**：看完内容自然走到那里，
- *   该有的都在，不该有的（比如没有生日的英桀）**根本不出现**。
+ *   以前每页的「额外功能」都各挂各的：小游戏是个悬浮按钮 + 全屏遮罩、
+ *   探索度临时塞在 body 末尾。两个东西两种形态，谁也不知道该往哪儿看。
+ *   这一层把它们收进**页面最下方的一个区块**：看完内容自然走到那里。
+ *
+ * ── ⚠ 生日倒计时**已经不在这里了**（2026-10-01）────────────────────
+ *   需求方要「其他英桀的生日和首页爱莉希雅的**形式一样**」，并明确选了
+ *   「照搬首页那个右下角悬浮胶囊」。而悬浮组件跟「页面下方一块区域」是两回事，
+ *   硬塞在 `#bottom` 里只会别扭。所以它搬到 **`assets/bday.js`**，
+ *   连 `pageKey()` 和 `nextBday()` 一起 —— 那两个函数本来就是为它写的。
+ *   → 下方区块现在只有**两个**槽；`data/bdays.js` 由 `bday.js` 读，这里不碰。
  *
  * ── 怎么用（**新的英桀页请照这个写**）─────────────────────────────────
  *     <script src="/assets/site.js"></script>
  *     <script src="/assets/explore.js"></script>
  *     <script src="/assets/bottom.js"></script>
+ *     <script src="/assets/bday.js"></script>
  *     <script src="/data/bdays.js"></script>
  *     <script src="/assets/games/<角色>.js"></script>   <!-- 该页有游戏才加载 -->
  *     <script>
  *     ElysiaExplore.init(THEME.explore);
- *     ElysiaBottom.mount({
- *       game: THEME.game,                  // 可选
- *       bdayLine: '「…」',                 // 可选：生日**当天**才说的那句话
- *       bdaySrc:  '生日语音',              // 可选：它的出处（有台词就必须有出处）
- *     });
+ *     ElysiaBottom.mount({ game: THEME.game });      // game 可选
+ *     ElysiaBday.mount({ birthMsg: '「…」', src: '生日语音' });  // 都是可选
  *     </script>
  *
- * ── 三个槽（spec §4.3）────────────────────────────────────────────────
- *   探索度    **恒有** —— 它是这一趟「逛」的成绩单，每个页面都该有
- *   生日倒计时 只在 `data/bdays.js` 里**有这一页**时才渲染
- *              ⚠ 「没有」的做法是**整个不渲染**，不是渲染出来藏起来。
- *                藏着的那种，断言分不出「没有生日」和「组件坏了」。
- *   游戏槽   只在传了 `game` 时才渲染 → 交给 `games/<角色>.js` 自己画
- *
- * ── 两条约束 ─────────────────────────────────────────────────────────
- *   · ⚠ **生日数据只有一处**（`data/bdays.js`）。这里只读，不存。
- *     这一页自己再写一份 `BD = 30` 就又把 HANDOVER §10.5 那个坑挖回来了。
- *   · ⚠ 倒计时算法**逐字照搬**既有页面的 `nextBday()`（见下方函数注释），
- *     不「顺手改好一点」—— 它已经在线上跑了很久。
+ * ── 两个槽 ───────────────────────────────────────────────────────────
+ *   探索度  **恒有** —— 它是这一趟「逛」的成绩单，每个页面都该有
+ *   游戏槽  只在传了 `game` 时才渲染 → 交给 `games/<角色>.js` 自己画
  */
 (function (global) {
   'use strict';
 
-  var S = { section: null, bdaySlot: null, timer: 0, opts: null };
+  var S = { section: null, opts: null };
 
   function el(tag, cls) {
     var n = document.createElement(tag);
@@ -50,88 +44,19 @@
   }
 
   /**
-   * 当前页在 `ELYSIA_BDAYS` 里用的键。
-   *
-   * ⚠ 必须归一：线上访问 `/sakura/` 时 `location.pathname` 是 `/sakura/`，
-   *   本地直接打开文件却是 `/sakura/index.html` —— 表里只写一种的话，
-   *   总有一种环境查不到，而症状是「倒计时莫名其妙不出现」。
-   *
-   *   `/`                     → `index.html`
-   *   `/sakura/`              → `sakura/index.html`
-   *   `/sakura/index.html`    → `sakura/index.html`
-   *
-   * @returns {string}
-   */
-  function pageKey() {
-    var p = global.location.pathname.replace(/^\/+/, '');
-    if (p === '') return 'index.html';
-    if (/\/$/.test(p)) p += 'index.html';
-    return p;
-  }
-
-  /**
-   * 下一个生日（本地时间零点）。
-   *
-   * ⚠ **逐字照搬** `/mobius/` 与首页 `index.html` 里既有的 `nextBday()`。
-   *   两份原件写的是 `new Date(y, BM, BD, 0, 0, 0)` 与
-   *   `new Date(y, BM, BD + 1, 0, 0, 0)`，这里只是把 `BM/BD` 换成了入参。
-   *   不要「顺手改成更严谨的写法」—— 线上跑着的语义就是这一份。
-   *
-   * @param {Date} now
-   * @param {number} m 月份，从 0 起
-   * @param {number} d 日
-   * @returns {Date}
-   */
-  function nextBday(now, m, d) {
-    var y = now.getFullYear();
-    var t = new Date(y, m, d, 0, 0, 0);
-    if (now >= new Date(y, m, d + 1, 0, 0, 0)) t = new Date(y + 1, m, d, 0, 0, 0);
-    return t;
-  }
-
-  /** 把倒计时槽的内容按「现在几点」重画一遍。 */
-  function paintBday() {
-    if (!S.bdaySlot) return;
-
-    var entry = (global.ELYSIA_BDAYS || {})[pageKey()];
-    if (!entry) return;
-
-    var m = entry[0], d = entry[1];
-    var now = new Date();
-    var today = (now.getMonth() === m && now.getDate() === d);
-
-    S.bdaySlot.querySelector('.bottom-bday-date').textContent = (m + 1) + ' 月 ' + d + ' 日';
-    S.bdaySlot.querySelector('.bottom-bday-text').textContent = today
-      ? '今天是她的生日！'
-      : '距她的生日还有 ' + Math.floor((nextBday(now, m, d) - now) / 86400000) + ' 天';
-
-    // 生日当天才说的那句。台词必须有出处，所以 src 一起渲染。
-    var lineEl = S.bdaySlot.querySelector('.bottom-bday-line');
-    var opts = S.opts || {};
-    if (today && opts.bdayLine) {
-      lineEl.textContent = opts.bdaySrc ? opts.bdayLine + '　—— ' + opts.bdaySrc : opts.bdayLine;
-      lineEl.hidden = false;
-    } else {
-      lineEl.textContent = '';
-      lineEl.hidden = true;
-    }
-  }
-
-  /**
    * 挂载下方区块。
    *
    * ⚠ **可以重复调用**（把区块重新画一遍）。这不是为了好看 ——
-   *   断言里要临时改 `ELYSIA_BDAYS` 再重挂，来验证「生日表变化 →
-   *   槽位跟着变」。不可重复调用的实现会让那类断言只能靠猜。
+   *   断言里要重挂一次来验「重画之后状态还对」，而「重挂之后槽位状态不对」
+   *   是真实会发生的 bug（`sec.innerHTML = ''` 会把挂在里面的可发现物一起抹掉，
+   *   见 `explore.js` 的 `ensureAttached`）。
    *
    * ⚠ **不传参数 = 沿用上一次的参数重画。** 不这样的话，一次 `mount({})`
    *   就会把上次传的 `game` 悄悄冲掉 —— 重画之后游戏槽凭空消失，
    *   而调用方以为自己什么也没改。
    *
    * @param {object} [opts]
-   * @param {object} [opts.game]      { module, title, hint }，见 spec §4.5
-   * @param {string} [opts.bdayLine]  生日当天额外说的一句（可选）
-   * @param {string} [opts.bdaySrc]   上面那句的出处（有台词就必须有出处）
+   * @param {object} [opts.game]      { module }，见 spec §4.5
    *
    * ⚠ **不传** 与 **传空对象** 不是一回事，别踩：
    *      `mount()`    → **沿用上次的 opts**（重画一遍，游戏槽保住）
@@ -164,27 +89,7 @@
       global.ElysiaExplore.mountCount(countSlot);
     }
 
-    /* ── 槽 2：生日倒计时（表里有这一页才渲染）────────────────────── */
-    S.bdaySlot = null;
-    if ((global.ELYSIA_BDAYS || {})[pageKey()]) {
-      var b = el('div', 'bottom-bday');
-      b.appendChild(el('p', 'bottom-bday-date'));
-      b.appendChild(el('p', 'bottom-bday-text'));
-      var line = el('p', 'bottom-bday-line');
-      line.hidden = true;
-      b.appendChild(line);
-      sec.appendChild(b);
-      S.bdaySlot = b;
-
-      paintBday();
-      // 每 60 秒重画一次：跨过零点时天数要跟着变。
-      // （既有页面是每秒刷的，那是为了显示时分秒；这里只显示天，
-      //   每秒重画没有意义，还白白占着主线程。）
-      clearInterval(S.timer);
-      S.timer = setInterval(paintBday, 60000);
-    }
-
-    /* ── 槽 3：游戏（传了 game 才渲染）───────────────────────────── */
+    /* ── 槽 2：游戏（传了 game 才渲染）───────────────────────────── */
     if (S.opts.game && S.opts.game.module) {
       var g = el('div', 'bottom-game');
       sec.appendChild(g);
@@ -202,8 +107,6 @@
 
   global.ElysiaBottom = {
     mount: mount,
-    pageKey: pageKey,       // 探针页与测试要用它确认路径归一化
-    nextBday: nextBday,     // 同上：断言要拿它当参照
   };
 
 })(window);

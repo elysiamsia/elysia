@@ -75,7 +75,7 @@
 | **探索系统** | `assets/explore.js` + `explore.css` | **每页撒一批藏起来的小东西**（`THEME.explore.finds`），五种互动动词、探索度、找齐解锁、渐进提示。见 §10.9 |
 | **陪伴层低语** | 同上 | 任意点击 → 冷却结束后的**第 3 次**说一句，台词**按顺序**推进。⚠ **不做概率**（需求方明确不要抽卡） |
 | **下方区块** | `assets/bottom.js` | 页面最下方一块：探索度 / 生日倒计时 / 游戏槽。见 §10.9 |
-| **生日倒计时** | `data/bdays.js`（**全站唯一数据源**） | 有确定生日的英桀才渲染；查不到就**整个不出现**。见 §10.5 同一条教训 |
+| **生日倒计时** | `assets/bday.js` + `data/bdays.js`（**全站唯一数据源**） | 右下角悬浮胶囊 → 点击展开面板（🎂 / 日期 / 天·时·分·秒 / 一句话）。**首页与英桀页共用同一个组件**。有确定生日的才渲染；查不到就**整个不出现** |
 | **每页小游戏** | `assets/games/<角色>.js` | 每位一个**互不干涉**的独立游戏，契约见 spec §4.5 |
 | `canonical` + JSON-LD | **11 页** `<head>` | 首页 `WebSite`，其余 `WebPage` + `BreadcrumbList` |
 | favicon / 404 / robots / sitemap | 根目录 | 404 是引路版（一句话 + 三扇门） |
@@ -94,11 +94,12 @@
 
 | | 内容 |
 |---|---|
-| **共享层多了三块** | `explore.js`（探索系统：12 个可发现物 / 五种动词 / 探索度 / 找齐解锁 / 渐进提示 / 陪伴层低语）、`bottom.js` + `data/bdays.js`（下方区块：探索度 / 生日倒计时 / 游戏槽）、`games/mobius.js`（贪吃蛇搬进来，成为「每位一个独立游戏」的样板） |
+| **共享层多了四块** | `explore.js`（探索系统：12 个可发现物 / 五种动词 / 探索度 / 找齐解锁 / 渐进提示 / 陪伴层低语）、`bottom.js` + `data/bdays.js`（下方区块：探索度 / 游戏槽）、`games/mobius.js`（贪吃蛇搬进来，成为「每位一个独立游戏」的样板）、**`bday.js`（生日胶囊 + 面板，见下）** |
 | **`/mobius/` 迁移到共享层** | 删掉 29 条与 `site.css` 语义一致的 CSS（**2 条同名不同值的正确保留**）+ 5 个共享函数改用 `ElysiaShared`。**它是从「前 P1 的老模板」复制出来的，本来就完全不加载共享层** |
 | **`/mobius/` 接入新架构** | 12 个可发现物 + 彩蛋 B/D **改机制**（拖名字 / 结尾往回滚）+ 旧的右下角悬浮倒计时**整套拆掉**（与 `bdays.js` 合流） |
 | **接线六点 + `<head>` 补齐** | 见 §4.1.2 —— 这一步之前，`/mobius/` 就算文件在仓库里也**上不了线** |
 | **验收** | 快照：**mobius 之外 9 页零差异**；aria **10/10**、减动 **7/7**、探索系统 **32 条** |
+| **上线** | `dev` 推上去了（31 个 commit），需求方合并为 `3c06ea4`。**线上实测**：`/mobius/` → **200**；sitemap 收录；真机点一个可发现物 → 探索度从「已发现 0 / 12」变「已发现 1 / 12」✅ |
 
 > ⚠ **本轮最值钱的几个教训**（都已进对应小节）：
 > · **计划里的数字不能当验收依据** —— 计划说「删 31 条」，实测是 **29 + 2**（那 2 条同名不同值，
@@ -290,15 +291,19 @@ https://flowers.elysiad.top/notes/manage?key=<MANAGE_KEY>
    <script src="/assets/explore.js"></script>
    <script src="/assets/bottom.js"></script>
    <script src="/data/bdays.js"></script>
+   <script src="/assets/bday.js"></script>
    <script src="/assets/games/<角色>.js"></script>   <!-- 有游戏才加载 -->
    <script>
    ElysiaExplore.init(THEME.explore);
    ElysiaBottom.mount({ game: THEME.game });
+   ElysiaBday.mount({ birthMsg: '「…」', src: '…' });   // 生日当天那句（可选）
    </script>
    ```
-   ⚠ **两行调用的先后顺序怎么写都对** —— 可发现物的锚点可以挂在下文区块上
-   （那是 `mount` 才建出来的），共享层的 `ensureAttached` 会补扫。
+   ⚠ **`ElysiaExplore.init` 与 `ElysiaBottom.mount` 的先后顺序怎么写都对** ——
+   可发现物的锚点可以挂在下文区块上（那是 `mount` 才建出来的），共享层的
+   `ensureAttached` 会补扫。
    ⚠ **`THEME.explore.pageId` 必填**（进度按它分页存）；改名 = 玩家进度丢失。
+   ⚠ **这一页在 `data/bdays.js` 里才渲染生日胶囊**；不在就**整个不出现**（连胶囊都没有）。
 6. 走 **§4.1.2 必做清单**
 7. 走 **§4.3 验收** —— ⚠ 现在多一步：`check_explore.py <新页>`
 
@@ -327,8 +332,20 @@ https://flowers.elysiad.top/notes/manage?key=<MANAGE_KEY>
 
 | 方法 | 干什么 |
 |---|---|
-| `mount({ game, bdayLine, bdaySrc })` | 画出下方区块：探索度 / 生日倒计时 / 游戏槽 |
+| `mount({ game })` | 画出下方区块：探索度 / 游戏槽 |
+
+`assets/bday.js` 导出 `ElysiaBday`：
+
+| 方法 | 干什么 |
+|---|---|
+| `mount({ msg, birthMsg, src })` | 右下角悬浮生日胶囊 + 点击展开的面板（🎂 / 标题 / 日期 / 天·时·分·秒 / 一句话） |
 | `pageKey()` | `location.pathname` → `ELYSIA_BDAYS` 的键（`/sakura/` 与 `/sakura/index.html` 归一） |
+| `nextBday(now, m, d)` | 下一个生日（本地零点），逐字照搬既有页面的写法 |
+
+> ⚠ **`bday.js` 与 `explore.js` / `bottom.js` 彼此独立** ——
+> **首页只用 `bday.js`**（它没有探索系统、也没有下方区块）。
+> 所以 `bday.js` **不能**反向依赖 `bottom.js`（2026-10-01 抽组件时踩到过：
+> 把 `pageKey()` 留在 `bottom.js` 里，首页就够不着了）。
 
 > ⚠ **`ElysiaShared` 之外的东西仍然全是每页私有的**：粒子数组、迸发函数、专属模块……
 > **不要以为 `site.js` 里有别的** —— 抄之前先 grep（§6.5）。
@@ -437,7 +454,7 @@ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8500/assets/site.css  
 
 # 2) 快照 + 比对（参照点见 §4.3.1）
 PYTHONIOENCODING=utf-8 python tools/snapshot.py after-<本步>
-PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py baseline-eggs after-<本步>; echo "退出码 $?"
+PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py after-explore after-<本步>; echo "退出码 $?"
 
 # 3) 属性断言 —— 快照**测不出来**的那一类（ARIA 等）
 PYTHONIOENCODING=utf-8 python tools/check_aria_labels.py
@@ -469,17 +486,22 @@ taskkill //F //PID <pid>                               # 杀
 
 | 目录 | 是什么 | 用途 |
 |---|---|---|
-| `baseline` | **P1 动手前**（`origin/main` worktree） | P1 最终验收（10/11/12 做完时用） |
-| `baseline-task6` / `-task78` / `-task9` / `-seo` / `-sakura` | 各阶段 | 已用过，备查 |
-| **`baseline-eggs`** | 三页彩蛋补齐之后（2026-09-17） | 备查 |
-| **`after-kosma`** | **科斯魔页建成之后**（2026-09-18） | 上一轮的参照点 |
+| `baseline` | **P1 动手前**（`origin/main` worktree） | P1 最终验收（Task 10/11/12 做完时用） |
 | **`after-explore`** | **公共层重构之后**（2026-10-01，11 页） | **下次改动用这个** |
 
-> ⚠ **参照点要挑对，别照抄文档里的旧名字。** 本轮实测：
-> 计划写的是「diff `baseline-eggs` → `after-explore`」，但 `baseline-eggs` 是 **9 页**的
-> （科斯魔都还没有），拿它比会把 **kosma 也报成「新增」**——
+> 🧹 **2026-10-01 清过一次**：原先堆了 20 个（539 MB），删到只剩上面两个（**92 MB**）。
+> 删掉的 18 个（`baseline-task6/78/9/seo/sakura`、`after-task2…9`、`after-seo`、
+> `after-sakura(-pronoun)`、`baseline-eggs`、`after-kosma`、`probe-head-pinned`）
+> 都是各阶段的中间产物、那一轮已验收通过。
+> ⚠ **它们都能从 git 重建**（`git worktree add` 到对应 commit 再跑 `snapshot.py`），
+> 所以删掉不等于丢历史 —— 只是不再占本机。
+> ⚠ `baseline` **留着**是因为 P1 的 Task 10/11/12 还没做，最终验收还要拿它当「动手前」。
+
+> ⚠ **参照点要挑对，别照抄文档里的旧名字。** 本轮实测（那次用的是已删的 `baseline-eggs` 与
+> `after-kosma`）：计划写的是「diff `baseline-eggs` → `after-explore`」，
+> 但 `baseline-eggs` 是 **9 页**的（科斯魔都还没有），拿它比会把 **kosma 也报成「新增」**——
 > 实测 6 处差异里 3 处是这种**纯噪音**，真信号被淹一半。
-> 换 `after-kosma`（10 页）之后是干净的 **3 处，全在 mobius**。
+> 换成 10 页的 `after-kosma` 之后是干净的 **3 处，全在 mobius**。
 > **判据：`ls screenshots/snap/<label>/*.png \| wc -l` 数得出来的页数，
 > 得和你要比的那一轮对得上。**
 
@@ -691,7 +713,7 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py http://localhost:8500/index.html \
 
 # 三项验收（§4.3）
 PYTHONIOENCODING=utf-8 python tools/snapshot.py after-<label>
-PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py baseline-eggs after-<label>
+PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py after-explore after-<label>
 PYTHONIOENCODING=utf-8 python tools/check_aria_labels.py
 PYTHONIOENCODING=utf-8 python tools/check_reduced_motion.py
 PYTHONIOENCODING=utf-8 python tools/check_explore.py <页面路径>   # 探索系统（改了才需要）
@@ -1090,6 +1112,29 @@ https://elysiad.top/mobius/   → 404   ← 文件在 main 上，页面不在
   否则 `check_explore.py <新页>` 会先挂一堆与本页无关的断言，**真问题被淹掉**。
 · **构造性测试要负责把现场复原** —— 有一个 agent 收尾时无脑 `delete` 了 mobius 的生日条目，
   后面几条断言跟着红，而原因在几百行之外。
+
+#### 六、生日组件：把首页那份抽出来，首页自己也改用
+
+需求方原话：「其他英桀的生日要和首页爱莉希雅的生日**界面形式一样**」，
+并在选项里选了「**完全照搬首页：右下角悬浮**」——
+⚠ 这**推翻了** spec §6.2 初稿那句「位置改为页面下方区块」，spec 已就地更正。
+
+「形式一样」最硬的保证是**它们本来就是同一个组件**，所以 `assets/bday.js` 抽出来之后
+**首页自己也改用**（原先那份内联 82 行已删）。否则站上就有两份同一个界面，早晚 drift。
+
+· **验收：`index.html` 三视口快照零差异** —— 这是「首页没被改坏」的唯一硬证据。
+  mobius 的差异是 9 处、**全是高度**（矮 120px = 搬走的那个槽），三个视口一致，可逐条解释。
+· ⚠ **零差异只证明渲染没变，不证明组件在首页上真的能用。** 所以另跑了运行时：
+  胶囊文案、四格齐全、`#bdS` 真的在走（09→07）、点击后 `.open` 且 `aria-hidden` 同步。
+· ⚠ 首页原来有处 **a11y 谎言**：**生日当天自动展开**那处只 `classList.add('open')`、
+  **没同步 `aria-hidden`** —— 面板视觉上开着，屏幕阅读器却以为它藏着。
+  快照**测不出属性**，所以这种问题只能靠断言守。已修，并补了断言
+  （把时钟拨到生日 → 等 1.9 秒 → 查 `.open` **且** `aria-hidden === 'false'`）。
+· ⚠ **修这处 a11y 时我自己引入了新 bug**：`setOpen()` 被放进了 `build()` 里，
+  而 `mount()` 里的自动展开够不着它 → `ReferenceError`。
+  **是刚写的那条断言 + 「页面无报错」把它抓回来的。**
+  教训：函数该放在**两个调用方都能看见的**作用域 —— 原来那个 `toggle()` 在 `build()` 里
+  没事，只是因为只有 `build()` 用它。
 
 ---
 

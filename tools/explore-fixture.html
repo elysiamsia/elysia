@@ -65,6 +65,7 @@
 <script src="/assets/site.js"></script>
 <script src="/assets/explore.js"></script>
 <script src="/assets/bottom.js"></script>
+<script src="/assets/bday.js"></script>
 <script src="/data/bdays.js"></script>
 <script>
 /* ── THEME ────────────────────────────────────────────────────────────
@@ -112,6 +113,11 @@ ElysiaExplore.init(THEME.explore);
 /* ⚠ 探针页**故意不传 game** —— 游戏槽的路径由 mobius 那两条断言覆盖（Task 11/12）。
    这里只验「不传 game 就不该有 .bottom-game」。 */
 ElysiaBottom.mount({});
+
+/* ⚠ 探针页**故意不在** data/bdays.js 里 —— 它是测试页、本来也没有生日。
+   这里调一次 mount，验的是「组件在跑，但页面不在表里 → **什么都不该出现**」。
+   （「不渲染」和「渲染了再藏起来」是两回事，见 check_bday_absent_when_not_listed。） */
+ElysiaBday.mount({});
 </script>
 </body>
 </html>

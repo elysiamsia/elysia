@@ -70,6 +70,27 @@
   --text:#e2f2e8;--text-dim:#a5c4b0;--text-muted:#6f9080;
   --glass-bg:rgba(61,220,132,.05);--glass-border:rgba(61,220,132,.16);
   --glass-bg2:rgba(255,209,102,.04);--glass-border2:rgba(255,209,102,.12);
+
+  /* 生日倒计时的配色覆盖（assets/explore.css 里那组 --bday-*）。
+     ⚠ 一个字都不新发明：全部从上面这套绿 + 金里取 ——
+       她这一页是「蛇」的绿，眼睛那抹金是 --eye。
+       不覆盖的话它会吃共享层的默认值，那是**首页爱莉希雅的粉紫**，串页。 */
+  --bday-ink:#e2f2e8;                                  /* = --text */
+  --bday-accent:#3ddc84;                               /* = --serpent，圆点与强调 */
+  --bday-title:#a5c4b0;                                /* = --text-dim */
+  --bday-date:#c9ecd8;
+  --bday-num:#ffd166;                                  /* = --eye，那抹金 */
+  --bday-unit:#6f9080;                                 /* = --text-muted */
+  --bday-egg-bg:linear-gradient(135deg,rgba(61,220,132,.16),rgba(255,209,102,.10));
+  --bday-egg-border:rgba(61,220,132,.25);
+  --bday-egg-glow:rgba(61,220,132,.18);
+  --bday-egg-glow-hover:rgba(61,220,132,.3);
+  --bday-panel-bg:linear-gradient(150deg,rgba(7,26,18,.92),rgba(18,58,38,.92));
+  --bday-panel-border:rgba(61,220,132,.22);
+  --bday-panel-glow:rgba(61,220,132,.12);
+  --bday-cell-bg:rgba(61,220,132,.07);
+  --bday-cell-border:rgba(61,220,132,.14);
+  --bday-src:rgba(165,196,176,.55);
 }
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
@@ -636,12 +657,13 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
 
 <!-- SECTION: scripts -->
 <script src="/assets/site.js"></script>
-<!-- ⚠ 顺序照 spec §3.2：site.js → explore.js → bottom.js → data/bdays.js → 页面脚本。
+<!-- ⚠ 顺序照 spec §3.2：site.js → explore.js → bottom.js → bday.js → data/bdays.js → 页面脚本。
      bottom.js 会建出下方区块，而有一个可发现物就锚在它上面（lab-11）——
      共享层的 ensureAttached 会补扫，所以两行调用的先后顺序怎么写都对。 -->
 <script src="/assets/explore.js"></script>
 <script src="/assets/bottom.js"></script>
 <script src="/assets/games/mobius.js"></script>
+<script src="/assets/bday.js"></script>
 <script src="/data/bdays.js"></script>
 <script>
 (function(){
@@ -1398,11 +1420,17 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
        而 `#bottom` 是 mount 才建出来的 —— 共享层的 ensureAttached 会在挂载探索度时
        补扫一次。见 assets/explore.js 里 ensureAttached 的注释。 */
   ElysiaExplore.init(THEME.explore);
-  ElysiaBottom.mount({
-    game: THEME.game,
-    // 生日当天才说的那一句（spec §6.2）。和台词一样，出处一起给。
-    bdayLine: '「我的生日？你指的是这一次的，还是第一次的？」',
-    bdaySrc: '生日语音',
+  ElysiaBottom.mount({ game: THEME.game });
+
+  /* 生日倒计时（spec §6.2）。
+     ⚠ 2026-10-01 改：它**不再挂在下方区块里**了 —— 需求方要「和首页爱莉希雅的
+       生日界面**形式一样**」，并明确选了「照搬首页那个右下角悬浮胶囊」。
+       这推翻了 spec §6.2 原来那句「位置改为页面下方区块」，以这次为准。
+       组件是共享的（assets/bday.js），首页现在用的也是它。 */
+  ElysiaBday.mount({
+    // 生日当天才说的那一句。和台词一样，出处一起给。
+    birthMsg: '「我的生日？你指的是这一次的，还是第一次的？」',
+    src: '生日语音',
   });
 })();
 </script>
