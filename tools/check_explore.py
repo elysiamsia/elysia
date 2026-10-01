@@ -509,6 +509,182 @@ def check_bubble_shows_source(b, page, expected):
     return (fails, u'气泡含台词与出处' if not fails else u'气泡不对')
 
 
+# ══ 探索度与存储 ══════════════════════════════════════════════════════
+STORAGE_KEY = 'elysia:explore:fixture'
+
+
+def _reload(b, wait=2.0):
+    b._send('Page.reload', {})
+    time.sleep(wait)
+
+
+def _stored(b):
+    """读 localStorage 里那条进度记录。读取本身抛异常也要如实报出来。"""
+    return b.jso("""(() => {
+        try {
+            var raw = window.localStorage.getItem('%s');
+            if (!raw) return JSON.stringify({ found: [], empty: true });
+            var o = JSON.parse(raw);
+            return JSON.stringify({ found: o.found || [], unlocked: !!o.unlocked });
+        } catch (e) {
+            return JSON.stringify({ error: String(e) });
+        }
+    })()""" % STORAGE_KEY)
+
+
+def _count_text(b):
+    return b.js("(() => { var e = document.querySelector('.explore-count');"
+                " return e ? e.textContent : null; })()")
+
+
+@check
+def check_progress_written(b, page, expected):
+    """碰一个可发现物之后，进度**真的落进了 localStorage**。
+
+    不写这一条的话，「持久化」就是句空话 —— 内存里改一改也能让页面看着对。
+    """
+    c = b.center('fx-01')
+    if not c:
+        return ([u'找不到 fx-01'], u'—')
+    _do_click(b, c)
+    time.sleep(0.4)
+
+    d = _stored(b)
+    if d is None:
+        return ([u'读不到 localStorage'], u'—')
+    if d.get('error'):
+        return ([u'读存储时抛异常：%s' % d['error']], u'—')
+    if 'fx-01' not in d['found']:
+        return ([u'触发 fx-01 之后存储里的 found 是 %r，里面没有它' % d['found']], u'没落盘')
+    return ([], u'已落盘（%d 项）' % len(d['found']))
+
+
+@check
+def check_progress_survives_reload(b, page, expected):
+    """重载之后进度还在 —— 这是「进度」两个字的最低要求。"""
+    before = b.found_ids()
+    if not before:
+        return ([u'重载前一个都没发现，这条断言测不出东西'], u'—')
+
+    _reload(b)
+    after = b.found_ids()
+    missing = [i for i in before if i not in after]
+    if missing:
+        return ([u'重载后丢了 %s（前 %r，后 %r）' % (u', '.join(missing), before, after)],
+                u'丢进度')
+
+    fails = []
+    # 读回来还不够 —— **节点当场就该是「已找到」的样子**，
+    # 否则用户重进页面会看见进度是 3/5 但东西全是暗的。
+    d = b.jso("""(() => {
+        var n = document.querySelector('[data-find-id="fx-01"]');
+        return JSON.stringify({ found: !!n && n.classList.contains('found') });
+    })()""")
+    if d and not d.get('found'):
+        fails.append(u'进度读回来了，但 fx-01 节点上没有 .found —— 视觉上它又变回「没找到」了')
+
+    return (fails, u'%d 项进度完好' % len(after))
+
+
+@check
+def check_count_text(b, page, expected):
+    """探索度文案是「已发现 N / M」，数字**跟着 found 走**。
+
+    ⚠ 先清空存储再重载 —— 让数字从确定的状态出发。
+      不清的话这条断言会依赖「前面跑过哪些检查」，那种断言迟早会假红。
+    """
+    b.js("(() => { try { window.localStorage.removeItem('%s'); } catch (e) {}"
+         " return 1; })()" % STORAGE_KEY)
+    _reload(b)
+
+    d0 = _count_text(b)
+    if d0 is None:
+        return ([u'页面里没有 .explore-count —— 探索度根本没渲染出来'], u'—')
+
+    fails = []
+    if d0 != u'已发现 0 / 5':
+        fails.append(u'清空进度后该显示「已发现 0 / 5」，实际是 %r' % d0)
+
+    c = b.center('fx-01')
+    if not c:
+        fails.append(u'找不到 fx-01')
+    else:
+        _do_click(b, c)
+        time.sleep(0.4)
+        d1 = _count_text(b)
+        if d1 != u'已发现 1 / 5':
+            fails.append(u'触发一个之后该显示「已发现 1 / 5」，实际是 %r' % d1)
+
+    # 它是个**状态播报**，不是一段普通文字（spec §5.6）
+    attrs = b.jso("""(() => {
+        var el = document.querySelector('.explore-count');
+        return JSON.stringify({
+            role: el.getAttribute('role'),
+            live: el.getAttribute('aria-live'),
+        });
+    })()""")
+    if attrs and (attrs.get('role') != 'status' or attrs.get('live') != 'polite'):
+        fails.append(u'缺 role=status / aria-live=polite，屏幕阅读器不会念它：%r' % attrs)
+
+    return (fails, u'「已发现 1 / 5」正确' if not fails else u'文案不对')
+
+
+# 打桩：让**所有** Storage 实例的 setItem 都抛异常。
+# 用 defineProperty 改原型，因为直接写 localStorage.setItem = fn 在
+# Storage 这种宿主对象上不一定生效（它有自己的属性语义）。
+STORAGE_STUB = """
+Object.defineProperty(Storage.prototype, 'setItem', {
+  configurable: true, writable: true,
+  value: function () { throw new Error('QuotaExceededError(桩)'); },
+});
+"""
+
+
+@check
+def check_storage_failure_degrades(b, page, expected):
+    """Review Focus #2：localStorage 写失败时**页面照常能用**。
+
+    隐私模式 / Safari ITP 下 localStorage 会直接抛异常。一次没接住的异常会让
+    整页剩下的脚本集体停摆，而页面看上去还是好的 —— 本站最贵的一类 bug。
+
+    所以这条断言要的**不是**「有没有存进去」，是「**页面还活着吗**」：
+    还能触发、探索度照样涨。刷新后从头开始是可以接受的（spec §5.4 有意取舍），
+    页面直接死掉不行。
+    """
+    r = b._send('Page.addScriptToEvaluateOnNewDocument', {'source': STORAGE_STUB})
+    sid = (r.get('result') or {}).get('identifier')
+    try:
+        _reload(b)
+
+        if b.js('String(!!window.__ELY_EXPLORE__)') != 'true':
+            return ([u'打桩之后 __ELY_EXPLORE__ 都没了 —— 初始化阶段就崩了'], u'—')
+
+        fails = []
+        count_before = _count_text(b)
+
+        c = b.center('fx-02')   # fx-02 是 hold
+        if not c:
+            fails.append(u'找不到 fx-02')
+        else:
+            _do_hold(b, c)
+            time.sleep(0.4)
+            after = b.found_ids()
+            if 'fx-02' not in after:
+                fails.append(u'写失败之后连「碰过什么」都记不住了 —— found 是 %r' % after)
+
+            count_after = _count_text(b)
+            if count_after == count_before:
+                fails.append(u'探索度没跟着涨（一直是 %r）—— 降级没做到，用户看到的是「点了没反应」'
+                             % count_after)
+
+        return (fails, u'写失败时照常可用' if not fails else u'降级有问题')
+    finally:
+        # ⚠ 打桩要撤掉，否则它会跟着后面每一次导航 —— 下一个跑这个工具的人
+        #   会遇到一堆「莫名其妙存不进去」，而且原因在几百行之外。
+        if sid:
+            b._send('Page.removeScriptToEvaluateOnNewDocument', {'identifier': sid})
+
+
 # ── 主流程 ────────────────────────────────────────────────────────────
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]

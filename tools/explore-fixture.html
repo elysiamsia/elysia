@@ -66,6 +66,8 @@
    ⚠ line 是占位中文 —— 探针页不校验出处（真实页面才必须逐字有出处）。 */
 var THEME = {
   explore: {
+    // ⚠ pageId 是**必填**的：进度按它分页存在 localStorage 里
+    pageId: 'fixture',
     finds: [
       { id:'fx-01', at:'#sec-a', x:0.22, y:0.35, verb:'click',
         art:'spore',  line:'（探针）点一下试试。', src:'探针页·一' },

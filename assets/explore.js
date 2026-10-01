@@ -143,7 +143,125 @@
     dbg: null,
     bubble: null,
     bubbleTimer: 0,
+    countEl: null,
   };
+
+  /* ══ 进度存储 ═══════════════════════════════════════════════════════
+     localStorage['elysia:explore:<页 id>'] = { found: [...], unlocked: false }
+
+     ⚠ **全部读写都要包 try/catch。** 隐私模式 / Safari ITP 下 localStorage
+       会**直接抛异常**；一次没接住的异常会让整页剩下的脚本集体停摆，
+       而页面看上去还是好的 —— 这是本站最贵的一类 bug（HANDOVER §十）。
+       失败就静默降级为内存：刷新后从头开始，但至少页面是活的。
+     ⚠ 已知取舍：**换设备会丢进度。这是有意接受的**（不做账号体系，spec §5.4）。 */
+  var store = { found: [], unlocked: false };
+  var memoryOnly = false;   // 一旦某次读写抛过，后面就不再尝试落盘
+
+  function storageKey() {
+    return 'elysia:explore:' + (S.cfg && S.cfg.pageId);
+  }
+
+  /** 读进度。任何异常都吞掉并降级为内存。 */
+  function load() {
+    try {
+      var raw = window.localStorage.getItem(storageKey());
+      if (!raw) return store;
+      var o = JSON.parse(raw);
+      if (o && typeof o === 'object') {
+        if (Object.prototype.toString.call(o.found) === '[object Array]') {
+          store.found = o.found.slice();
+        }
+        store.unlocked = !!o.unlocked;
+      }
+    } catch (e) {
+      memoryOnly = true;
+    }
+    return store;
+  }
+
+  /** 写进度。写不进去只是降级，**不提示** —— 用户不该为浏览器的隐私设置负责。 */
+  function save() {
+    if (memoryOnly) return;
+    try {
+      window.localStorage.setItem(storageKey(), JSON.stringify({
+        found: store.found,
+        unlocked: store.unlocked,
+      }));
+    } catch (e) {
+      memoryOnly = true;
+    }
+  }
+
+  /** 改一项并落盘。 */
+  function mark(key, val) {
+    store[key] = val;
+    save();
+  }
+
+  /**
+   * 已发现的**个数**。
+   *
+   * ⚠ 走**集合语义**：数的是 `declared` 里有多少个 id 在 `found` 里出现过。
+   *   绝不能用 `found.length` —— 那种写法只要 `found` 里出现过一次重复
+   *   （旧版本留下的数据、手工改过的存储、将来某次重构）就会永远差一个，
+   *   而「差一个」是最难看见的 bug。
+   */
+  function discoveredCount() {
+    return S.dbg.declared.filter(function (id) {
+      return S.dbg.found.indexOf(id) >= 0;
+    }).length;
+  }
+
+  /** 把「已发现 N / M」刷新成当前值。 */
+  function refreshCount() {
+    if (!S.countEl) return;
+    S.countEl.textContent = '已发现 ' + discoveredCount() + ' / ' + S.dbg.declared.length;
+  }
+
+  /**
+   * 把探索度节点渲染到指定容器里。
+   *
+   * ⚠ Task 8 的下方区块会**再调用一次**这个方法，把节点搬进 `#bottom` ——
+   *   所以这里必须能重复调用（先摘下来再挂上去），不能只 append 一次。
+   *
+   * @param {HTMLElement} [host] 不传就留在原处，只刷新文案
+   * @returns {HTMLElement}
+   */
+  function mountCount(host) {
+    if (!S.countEl) {
+      S.countEl = document.createElement('p');
+      S.countEl.className = 'explore-count';
+      // 屏幕阅读器要能念出「又找到一个」—— 这是 aria-live 的标准用法
+      S.countEl.setAttribute('role', 'status');
+      S.countEl.setAttribute('aria-live', 'polite');
+    }
+    if (host && S.countEl.parentNode !== host) host.appendChild(S.countEl);
+    refreshCount();
+    return S.countEl;
+  }
+
+  /**
+   * 命中一个可发现物：记进度 + 出气泡。
+   *
+   * ⚠ `found` 是**集合**，同一个 id 只记一次 —— 但**不代表可以靠长度判齐**：
+   *   判齐永远要写成「declared 里每个 id 都在 found 里出现过」，
+   *   因为存进去的东西可能是别的版本留下的、可能带重复。
+   *   `tools/check_explore.py` 会**故意往 found 里塞一个重复项**来守这一条。
+   *
+   * @param {object} find
+   * @param {HTMLElement} node
+   */
+  function markFound(find, node) {
+    node.classList.add('found');
+    if (S.dbg.found.indexOf(find.id) < 0) {
+      S.dbg.found.push(find.id);
+      save();
+      refreshCount();
+    }
+    // 已经找到过的再碰一下，也**照样**说话 —— 它现在是「陪着你」的东西，
+    // 不再是「还没发现的秘密」。（只是不再改进度。）
+    showBubble(find, node);
+  }
 
   /**
    * 这一次抬手算不算「点一下」。
@@ -151,24 +269,6 @@
    */
   function isTap(dx, dy, dt) {
     return Math.sqrt(dx * dx + dy * dy) < MOVE_PX && dt < HOLD_MS;
-  }
-
-  /**
-   * 命中一个可发现物：记进度 + 出气泡。
-   *
-   * ⚠ **同一个 id 可以命中很多次，`found` 里就会出现重复项 —— 这是有意的。**
-   *   探索度的数字与「找齐了没有」都必须走**集合语义**（`declared` 里每个 id
-   *   是否都在 `found` 里出现过），而不是 `found.length`。靠长度判齐是个等着
-   *   爆的 bug：重复触发一次就永远集不齐了。
-   *   `tools/check_explore.py` 专门构造重复来守这一条。
-   *
-   * @param {object} find
-   * @param {HTMLElement} node
-   */
-  function markFound(find, node) {
-    node.classList.add('found');
-    S.dbg.found.push(find.id);
-    showBubble(find, node);
   }
 
   /* 气泡停留多久。够读完一句台词，又不至于挡着后面的东西。 */
@@ -346,6 +446,17 @@
     S.cfg = cfg;
     S.dbg = dbg;
 
+    if (!cfg.pageId) {
+      // ⚠ 缺 pageId 就没法分页存进度 —— 只能活在这一次浏览里。
+      //   这是**用它的人**该修的事，所以要说出来；但仍然继续跑，不抛。
+      console.warn('[ElysiaExplore] THEME.explore 缺 pageId —— 进度不会落盘');
+    }
+
+    // ⚠ **先把进度读回来，再建节点。** 已经找到过的东西一进页面就该是
+    //   「已找到」的样子；等建完再补类名的话，用户会看见它们闪一下。
+    load();
+    dbg.found = store.found;
+
     finds.forEach(function (f) {
       if (!f || !f.id) {
         console.warn('[ElysiaExplore] 这一条 find 没有 id，跳过：', f);
@@ -373,14 +484,22 @@
       }
 
       var node = buildFind(f);
+      if (dbg.found.indexOf(f.id) >= 0) node.classList.add('found');
       anchor.appendChild(node);
       bindGestures(node, f);
     });
+
+    // 探索度先挂在 body 上。Task 8 的下方区块会调 mountCount 把它搬进 #bottom。
+    mountCount(document.body);
   }
 
   global.ElysiaExplore = {
     init: init,
-    ART: ART,          // 探针页与测试要能枚举关键字
+    ART: ART,                 // 探针页与测试要能枚举关键字
+    mountCount: mountCount,   // 下方区块把探索度搬过去用（Task 8）
+    load: load,
+    save: save,
+    mark: mark,
   };
 
 })(window);
