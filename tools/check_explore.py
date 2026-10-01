@@ -214,6 +214,20 @@ def mobius_only(fn):
     return fn
 
 
+SAKURA = 'sakura/index.html'
+
+
+def sakura_only(fn):
+    """收窄成「只对 /sakura/ 成立」。
+
+    ⚠ 樱这一页有一块**全站独有**的东西 ——「鞘中刀」（`#bladeStage`）：
+    一柄不肯出鞘的刀，点三次她会改赠一朵「勿忘我」。那是 2026-09-17 建页时
+    照她的性格设计的，别的页没有，所以这些断言只能在樱这一页上跑。
+    """
+    fn.pages = (SAKURA,)
+    return fn
+
+
 @check
 def check_declared_matches_rendered(b, page, expected):
     """① 声明了几个就生成几个 —— 且**就是那几个**。
@@ -2494,6 +2508,162 @@ def check_art_keywords_resolve(b, page, expected):
         return ([u'这些 find 的 art 在 ART 表里找不到（会**静默回落**成默认图形）：%s'
                  % u'、'.join(d['bad'])], u'%d 个对不上' % len(d['bad']))
     return ([], u'%d 个 art 都能解出' % d['n'])
+
+
+# ══ 樱：「鞘中刀」══════════════════════════════════════════════════════
+def _click_sel(b, sel):
+    """把选择器滚到视口中间，再用**真实指针事件**点它。
+
+    ⚠ 不能用 `.click()` —— 那是合成事件，站点里不少监听器认的是真实指针路径。
+    ⚠ 必须先滚动：CDP 派发的是**视口坐标**，元素在视口外时事件会落到别处，**而且不报错**
+      （HANDOVER §6.4）。`behavior:'instant'` 也是必须的 —— 站点有 `scroll-behavior:smooth`。
+    """
+    c = b.jso("""(() => {
+        var n = document.querySelector('%s');
+        if (!n) return null;
+        n.scrollIntoView({ block: 'center', behavior: 'instant' });
+        var r = n.getBoundingClientRect();
+        return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    })()""" % sel)
+    if not c:
+        return False
+    b.press(c['x'], c['y'])
+    time.sleep(0.05)
+    b.release(c['x'], c['y'])
+    return True
+
+
+@check
+@sakura_only
+def check_sakura_blade_alive_after_gift(b, page, expected):
+    """**收过花之后，刀照样能点、照样拒你** —— 那个 bug 的回归断言。
+
+    需求方 2026-10-01：「鞘中刀有个 bug，**触发成功一次之后就不会恢复了**」。
+
+    原写法是 `if (gifted){ showToast('……嗯。花还开着。', false); return; }` ——
+    拿到花之后整块**永远只弹那一句**，再点什么都不会发生。
+
+    修法是把 `gifted` 的语义收窄成「**还会不会再送花**」，而不是「刀还能不能点」。
+    名字本身（**勿忘我**）意味着花不该忘；但一柄不肯出鞘的刀，本就该**永远不驯**。
+    花是纪念品，刀是性格 —— 前者留，后者不该因为送过花就没了。
+    """
+    # 把「已经收过花」这个状态直接造出来
+    b.js("(() => { try { localStorage.setItem('sakuraFlower', '1'); } catch (e) {} return 1; })()")
+    _reload(b)
+
+    st = b.jso("""(() => {
+        var s = document.getElementById('bladeStage');
+        var c = document.getElementById('bladeCount');
+        return JSON.stringify({ stage: !!s, count: c ? c.textContent : null });
+    })()""")
+    if not st or not st['stage']:
+        return ([u'这一页没有 #bladeStage —— 「鞘中刀」模块不在？'], u'—')
+    if st['count'] != u'她给了你一朵花':
+        return ([u'造出来的「已收花」状态没生效：计数行是 %r' % st['count']], u'—')
+
+    if not _click_sel(b, '#bladeStage'):
+        return ([u'点不到 #bladeStage'], u'—')
+    time.sleep(0.35)
+
+    d = b.jso("""(() => {
+        var f = document.querySelector('.blade-float');
+        var t = document.getElementById('skToast');
+        return JSON.stringify({
+            float: f ? f.textContent : null,
+            toast: t ? t.textContent : null,
+            flower: localStorage.getItem('sakuraFlower'),
+        });
+    })()""")
+    if d is None:
+        return ([u'取不到点击后的状态'], u'—')
+
+    fails = []
+    # ① 反馈还在 —— 原写法在这一步就 return 了，所以什么都不会出现
+    if d['float'] != u'纹丝不动':
+        fails.append(u'收过花之后点刀，**没有「纹丝不动」那一下**，反馈没了 —— '
+                     u'这正是那个 bug：原写法一见 gifted 就 return')
+    # ② 弹的是**有出处的「拒绝」那句**，不是「……嗯。花还开着。」
+    if not d['toast'] or u'决不能就这样轻易出鞘' not in d['toast']:
+        fails.append(u'收过花之后点刀，该弹「拒绝」那句台词，实际弹的是 %r' % d['toast'])
+    # ③ 不再重复送花
+    if d['flower'] != '1':
+        fails.append(u'sakuraFlower 变成了 %r —— 不该被改写' % d['flower'])
+
+    return (fails, u'收过花后刀仍是活的' if not fails else u'刀死了')
+
+
+@check
+@sakura_only
+def check_sakura_ending_unlocks_immediately(b, page, expected):
+    """**收下花的同一瞬间**，结尾那句和多出来的那朵花就该出现 —— 不用刷新。
+
+    ⚠ 原先那段只在**页面加载时**判一次，所以「收下花 → 往下滚到结尾」当场看不到，
+      要刷新才有。而 HANDOVER §10.3 把这个跨彩蛋描述成「收过花才多一句」，
+      读起来像当场就能看到 —— **它该当场出现。**
+    """
+    b.js("(() => { try { localStorage.removeItem('sakuraFlower'); } catch (e) {} return 1; })()")
+    _reload(b)
+
+    for _ in range(3):
+        if not _click_sel(b, '#bladeStage'):
+            return ([u'点不到 #bladeStage'], u'—')
+        time.sleep(0.25)
+    time.sleep(0.3)
+
+    d = b.jso("""(() => {
+        var s = document.getElementById('endingSub');
+        var f = document.getElementById('endingFlower');
+        return JSON.stringify({
+            text: s ? s.textContent : null,
+            visible: !!s && s.classList.contains('visible'),
+            bloom: !!f && f.classList.contains('bloom'),
+            flower: localStorage.getItem('sakuraFlower'),
+        });
+    })()""")
+    if d is None:
+        return ([u'取不到结尾状态'], u'—')
+
+    fails = []
+    if d['flower'] != '1':
+        fails.append(u'点了三次却没拿到花（sakuraFlower=%r）—— 前提就不成立' % d['flower'])
+    if not d['text']:
+        fails.append(u'**收下花的当下**，结尾那句还是空的 —— 要刷新才出现（这就是要修的）')
+    elif not d['visible']:
+        fails.append(u'结尾那句有文字但没有 .visible —— 看不见')
+    if not d['bloom']:
+        fails.append(u'**收下花的当下**，结尾那朵花没有开（缺 .bloom）')
+
+    return (fails, u'收花当下结尾就解锁' if not fails else u'要刷新才出现')
+
+
+@check
+@sakura_only
+def check_sakura_no_dead_write(b, page, expected):
+    """点刀**不再往 localStorage 里写那个只写不读的 `sakuraTries`**。
+
+    ⚠ 原代码 `localStorage.setItem('sakuraTries', String(tries))` **只写不读** ——
+      页面上是 `var tries = 0`，每次访问从零开始，存进去的值**永远没人看**。
+      死代码不只是碍眼：它让「已伸手 × N」看起来像是跨访问累计的，**但它不是**。
+    """
+    b.js("""(() => {
+        try {
+            localStorage.removeItem('sakuraFlower');
+            localStorage.removeItem('sakuraTries');
+        } catch (e) {}
+        return 1;
+    })()""")
+    _reload(b)
+
+    for _ in range(3):
+        if not _click_sel(b, '#bladeStage'):
+            return ([u'点不到 #bladeStage'], u'—')
+        time.sleep(0.25)
+
+    v = b.js("String(localStorage.getItem('sakuraTries'))")
+    if v != 'null':
+        return ([u'点完三次之后 localStorage 里还有 `sakuraTries=%s` —— '
+                 u'那是**只写不读**的死代码，该删的那行还在' % v], u'死写入还在')
+    return ([], u'不再写 sakuraTries')
 
 
 # ── 主流程 ────────────────────────────────────────────────────────────

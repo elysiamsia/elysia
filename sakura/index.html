@@ -918,8 +918,11 @@ body{
 
   function renderBlade(){
     bladeCountEl.textContent = gifted ? '她给了你一朵花' : ('已伸手 × ' + tries);
+    /* ⚠ 收过花之后**刀仍然可以点**（2026-10-01 修的那个 bug），
+       所以这句不能再说「你没有再伸手」—— 那在刀重新可点的那一刻**自己就变成假话**了。
+       也不要写成「你可以再试一次」那种催促口气：她是「你越用力她越不肯」的性格。 */
     bladeHintEl.textContent = gifted
-      ? '刀还在鞘里。你没有再伸手——这样很好。'
+      ? '刀还在鞘里。花也还开着。'
       : '刀在鞘里。你可以试试。';
     if (gifted) bladeFlower.classList.add('bloom');
   }
@@ -931,11 +934,17 @@ body{
   }
 
   function tryDraw(){
-    if (gifted){ showToast('……嗯。花还开着。', false); return; }
+    /* ⚠ `gifted` 只决定「**还会不会再送花**」，不决定「刀还能不能点」。
+       2026-10-01 修的 bug：原写法一见 gifted 就 `showToast('……嗯。花还开着。'); return;`，
+       于是拿到花之后这一整块**永远只弹那一句**，再点什么都不会发生。
+       她的花是**纪念品**（勿忘我，名字就意味着不该忘），但刀是**性格** ——
+       一柄不肯出鞘的刀本就该永远不驯，不该因为送过一次花就变成摆设。 */
+    var alreadyGifted = gifted;
 
-    tries++;
-    try { localStorage.setItem('sakuraTries', String(tries)); } catch(err){}
-    renderBlade();
+    if (!alreadyGifted){
+      tries++;
+      renderBlade();
+    }
     bladeSound();
     refuseShake();
 
@@ -951,6 +960,12 @@ body{
       petalBurst(r.left + r.width * 0.62, r.top + r.height * 0.5, 5, ['#8fdcff','#4fb8e8']);
     }
 
+    if (alreadyGifted){
+      /* 收过花了 —— 刀照样拒你（用**有出处的那句**，与第一次相同），但不再送第二朵 */
+      showToast('「你是说『寒狱冰天』？……很抱歉，它决不能就这样轻易出鞘。对我来说，这是『戒律』的一部分。」', false);
+      return;
+    }
+
     if (tries >= 3){
       /* 呀，第三次了 —— 她没有拔刀。她说的是另一件事♥ */
       gifted = true;
@@ -962,6 +977,9 @@ body{
         petalBurst(r.left + r.width / 2, r.top + r.height / 2, 26,
                    ['#ffb7c5','#ffd6e0','#8fdcff','#e8f4ff']);
       }
+      /* ⚠ 收花的**同一瞬间**就把结尾解锁掉 —— 不然「收下花 → 往下滚到结尾」
+         当场看不到那句话，要刷新才有（2026-10-01 修的第二处）。 */
+      renderEndingFlower();
     } else if (tries === 1){
       showToast('「你是说『寒狱冰天』？……很抱歉，它决不能就这样轻易出鞘。对我来说，这是『戒律』的一部分。」', false);
     } else {
@@ -988,14 +1006,20 @@ body{
   var endingSub = document.getElementById('endingSub');
   var endingFlower = document.getElementById('endingFlower');
 
-  var gotFlower = false;
-  try { gotFlower = localStorage.getItem('sakuraFlower') === '1'; } catch(err){ gotFlower = false; }
-
-  if (gotFlower){
+  /* ⚠ 抽成函数，是因为它要在**两个时刻**各跑一次：
+     ① 页面加载时（上一趟就已经收过花的人）；② **收花的那一瞬间**（见 tryDraw 里那行）。
+     原先只有 ① —— 于是「收下花 → 往下滚到结尾」当场看不到那句话，**要刷新才有**，
+     而交接文档把这个彩蛋描述成「收过花才多一句」，读起来像当场就能看到。它该当场出现。
+     ⚠ 必须**幂等**：状态每次从 localStorage 现读，重复调用不产生副作用。 */
+  function renderEndingFlower(){
+    var gotFlower = false;
+    try { gotFlower = localStorage.getItem('sakuraFlower') === '1'; } catch(err){ gotFlower = false; }
+    if (!gotFlower) return;
     endingSub.textContent = '「她一直是个怕寂寞的孩子……真希望她迎来的，是一个平静安稳的结局啊。」';
     endingSub.classList.add('visible');
     if (endingFlower) endingFlower.classList.add('bloom');
   }
+  renderEndingFlower();
 
   /* SECTION: easter egg - 「等待」
    *
