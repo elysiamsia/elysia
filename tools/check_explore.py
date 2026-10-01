@@ -2461,6 +2461,41 @@ def check_finds_not_on_text(b, page, expected):
     return (fails, u'%d 个都落在容器上' % len(d) if not fails else u'%d 个压着东西' % len(fails))
 
 
+@check
+def check_art_keywords_resolve(b, page, expected):
+    """每个可发现物的 `art` 都要**能解出真正的图形**，不能悄悄回落到默认。
+
+    ⚠ `explore.js` 的 `artSvg()` 遇到未知关键字会 `console.warn` 并**回落到 `glint`** ——
+      于是「关键字打了个错字」在页面上只表现为「那个东西长得不对」：
+      **不报错、不影响别的断言、快照也照不出来**（它只是个 22px 的装饰）。
+      这条把它变成可见的。
+
+    ⚠ 换个说法：它是给**新页接入**用的 —— 新页要加自己的 art 关键字，
+      写错一个字母不会有任何提示，只会让某个可发现物长得像别的。
+
+    判据：`data-art` 声明的关键字必须真的在 `ElysiaExplore.ART` 里。
+    """
+    d = b.jso("""(() => {
+        var bad = [], n = 0;
+        document.querySelectorAll('.explore-find').forEach(function (el) {
+            n++;
+            var key = el.getAttribute('data-art');
+            if (!key || !window.ElysiaExplore || !window.ElysiaExplore.ART[key]) {
+                bad.push(el.getAttribute('data-find-id') + ' → ' + key);
+            }
+        });
+        return JSON.stringify({ n: n, bad: bad });
+    })()""")
+    if d is None:
+        return ([u'取不到可发现物的 art 关键字 —— explore.js 没加载？'], u'—')
+    if not d['n']:
+        return ([], u'本页没有可发现物（跳过）')
+    if d['bad']:
+        return ([u'这些 find 的 art 在 ART 表里找不到（会**静默回落**成默认图形）：%s'
+                 % u'、'.join(d['bad'])], u'%d 个对不上' % len(d['bad']))
+    return ([], u'%d 个 art 都能解出' % d['n'])
+
+
 # ── 主流程 ────────────────────────────────────────────────────────────
 def main():
     raw = sys.argv[1:]
