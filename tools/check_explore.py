@@ -1089,6 +1089,46 @@ def check_hint_on_above_ratio(b, page, expected):
     return (fails, u'过半后只提示没找到的' if not fails else u'提示范围不对')
 
 
+@check
+def check_hints_survive_remount(b, page, expected):
+    """重挂下方区块之后，**提示不能悄悄消失**。
+
+    `ElysiaBottom.mount` 会 `sec.innerHTML = ''` 重画整块 ——
+    挂在里面的可发现物**连同节点一起被抹掉**，再由 `ensureAttached` 挂回来。
+    但挂回来的是**新节点**：`attach()` 只补 `found` 类、**不补 `hinted`**。
+    于是「已经找到过半」这个提示会在重挂之后凭空消失，**而且不报错** ——
+    正是这个项目一直在防的那类静默失败。
+
+    ⚠ 这条必须有「后建的锚点」那种 find 才有意义（它才会被抹掉又挂回）——
+      探针页的 `fx-06` 就是。纯锚在正文里的页面上，这条会平凡通过。
+    """
+    _reset(b)
+    declared = json.loads(b.js('JSON.stringify(window.__ELY_EXPLORE__.declared)') or '[]')
+    n = len(declared)
+    if n < 4:
+        return ([u'声明数太少（%d），构造不出这个场景' % n], u'—')
+
+    above = n // 2 + 1
+    done = _trigger_first(b, above)
+    if len(done) < above:
+        return ([u'只触发了 %d 个' % len(done)], u'—')
+
+    before = set(_hinted_ids(b))
+    if not before:
+        return ([u'过半了却一个提示都没有 —— 这条断言的前提不成立'], u'—')
+
+    b.js('(() => { ElysiaBottom.mount(); return 1; })()')
+    time.sleep(0.4)
+    after = set(_hinted_ids(b))
+
+    fails = []
+    lost = sorted(before - after)
+    if lost:
+        fails.append(u'重挂区块之后这些的提示没了：%s —— '
+                     u'`attach()` 补了 found、没补 hinted' % u', '.join(lost))
+    return (fails, u'重挂后提示仍在（%d 个）' % len(after) if not fails else u'提示丢了')
+
+
 # ══ 陪伴层（低语）═════════════════════════════════════════════════════
 def _blank_point(b):
     """找一个「点下去不会碰到可发现物 / 链接 / 按钮」的视口坐标。

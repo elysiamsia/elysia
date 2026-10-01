@@ -485,6 +485,11 @@
       var anchor = document.querySelector(f.at);
       if (anchor) attach(f, anchor);
     });
+    // ⚠ 重挂的节点是**新的**，只带了 `found` 类，没带 `hinted` ——
+    //   而「找过半了要给提示」这件事是记在状态里、不是记在节点上的。
+    //   不补这一步的话：用户已经找到 8/12，页面某处重挂一次区块，
+    //   剩下那几个的提示就**悄悄消失了**，而且不报错。
+    refreshHints();
   }
 
   /**
