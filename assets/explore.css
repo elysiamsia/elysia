@@ -212,7 +212,10 @@
   transform: translateX(-50%);
   max-width: 78vw;
   padding: 10px 20px;
-  border-radius: 999px;
+  /* ⚠ 不是 999px 的胶囊形：whisper 池里是**整句原句**，
+     最长的（华那条）有 72 字，手机上要折成三行 ——
+     胶囊套三行会变成一根怪管子。常规圆角能容下折行。 */
+  border-radius: 18px;
   background: var(--explore-ink, rgba(14, 8, 24, .92));
   border: 1px solid var(--explore-border, rgba(255, 255, 255, .14));
   color: var(--explore-ink-2, #eee8f7);
