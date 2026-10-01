@@ -130,6 +130,201 @@
     return node;
   }
 
+  /* ══ 互动动词 ═══════════════════════════════════════════════════════
+     spec §5.1 定死的五个。**下面三个阈值也是定死的** ——
+     改它们等于改所有页的手感，要改请先改 spec。 */
+  var HOLD_MS = 600;      // hold：按住 ≥600ms
+  var TRIPLE_MS = 1200;   // triple_tap：1.2 秒内的三次点击
+  var MOVE_PX = 24;       // drag / slide：位移 ≥24px 才算「拖 / 划」，不足算「点」
+
+  /* 模块状态。所有跨调用要记住的东西都在这儿，不散在闭包里。 */
+  var S = {
+    cfg: null,
+    dbg: null,
+    bubble: null,
+    bubbleTimer: 0,
+  };
+
+  /**
+   * 这一次抬手算不算「点一下」。
+   * 位移够小、时间够短 —— 两条都要满足，否则「按住不动再挪一点」会被算成点击。
+   */
+  function isTap(dx, dy, dt) {
+    return Math.sqrt(dx * dx + dy * dy) < MOVE_PX && dt < HOLD_MS;
+  }
+
+  /**
+   * 命中一个可发现物：记进度 + 出气泡。
+   *
+   * ⚠ **同一个 id 可以命中很多次，`found` 里就会出现重复项 —— 这是有意的。**
+   *   探索度的数字与「找齐了没有」都必须走**集合语义**（`declared` 里每个 id
+   *   是否都在 `found` 里出现过），而不是 `found.length`。靠长度判齐是个等着
+   *   爆的 bug：重复触发一次就永远集不齐了。
+   *   `tools/check_explore.py` 专门构造重复来守这一条。
+   *
+   * @param {object} find
+   * @param {HTMLElement} node
+   */
+  function markFound(find, node) {
+    node.classList.add('found');
+    S.dbg.found.push(find.id);
+    showBubble(find, node);
+  }
+
+  /* 气泡停留多久。够读完一句台词，又不至于挡着后面的东西。 */
+  var BUBBLE_MS = 4200;
+
+  /**
+   * 弹一句台词。
+   *
+   * ⚠ 气泡挂在 `<body>` 上、用 **`position:fixed`** —— 不是挂在可发现物里面。
+   *   挂进锚点的话，锚点一旦是 `overflow:hidden`（很多区段都是），
+   *   气泡就被裁掉了：「存在着但看不见」，正是本系统最要防的那类失败。
+   *
+   * @param {object} find
+   * @param {HTMLElement} node
+   */
+  function showBubble(find, node) {
+    if (!find.line) return;
+
+    if (!S.bubble) {
+      S.bubble = document.createElement('div');
+      S.bubble.className = 'explore-bubble';
+      S.bubble.setAttribute('role', 'status');
+      S.bubble.setAttribute('aria-live', 'polite');
+      S.bubble.innerHTML = '<p class="explore-bubble-line"></p>' +
+                           '<p class="explore-bubble-src"></p>';
+      document.body.appendChild(S.bubble);
+    }
+
+    S.bubble.querySelector('.explore-bubble-line').textContent = find.line;
+    var srcEl = S.bubble.querySelector('.explore-bubble-src');
+    // 出处和台词一起渲染 —— 「绝不编造」这条纪律要**看得见**才有约束力
+    srcEl.textContent = find.src ? '—— ' + find.src : '';
+    srcEl.hidden = !find.src;
+
+    var r = node.getBoundingClientRect();
+    S.bubble.classList.add('visible');
+
+    // 先显示再量尺寸 —— display:none 的元素量出来是 0
+    var bw = S.bubble.offsetWidth, bh = S.bubble.offsetHeight;
+    var x = r.left + r.width / 2 - bw / 2;
+    var y = r.top - bh - 14;
+    if (y < 8) y = r.bottom + 14;                 // 上面放不下就翻到下面
+    // 贴边时往里收，别让气泡跑出屏幕（手机上尤其容易）
+    x = Math.max(10, Math.min(x, window.innerWidth - bw - 10));
+    y = Math.max(10, Math.min(y, window.innerHeight - bh - 10));
+    S.bubble.style.left = x + 'px';
+    S.bubble.style.top = y + 'px';
+
+    clearTimeout(S.bubbleTimer);
+    S.bubbleTimer = setTimeout(function () {
+      S.bubble.classList.remove('visible');
+    }, BUBBLE_MS);
+  }
+
+  /**
+   * 给一个可发现物绑上它那一种动词的判定。
+   *
+   * ⚠ 只认 `pointer*` 这一个事件族，**不分别写 mouse / touch** ——
+   *   pointer 事件在两端的语义是一致的，写两套迟早会分叉。
+   *   `pointercancel` 尤其重要：手机上纵向滑页面时，浏览器会接管这一笔并
+   *   发出 pointercancel —— 收到它就**收尾但不判定**，用户想滑页面，
+   *   不该顺手触发一个可发现物。
+   *
+   * @param {HTMLElement} node
+   * @param {object} find
+   */
+  function bindGestures(node, find) {
+    var verb = find.verb || 'click';
+    var down = null;   // 当前这一笔按压
+    var taps = [];     // triple_tap 的滑动窗口
+
+    function onDown(e) {
+      if (e.button) return;   // 只认主指针（左键 / 触摸 / 笔），右键中键不算
+      if (down) return;       // 上一笔还没收尾
+
+      down = { x: e.clientX, y: e.clientY, t: Date.now(), held: false, timer: 0 };
+      node.classList.add('dragging');
+
+      if (verb === 'hold') {
+        // ⚠ 在**按住期间**就触发，不是等松手 ——「按住 ≥600ms」说的就是这件事，
+        //   而且等到松手才回应，人会以为没按中，于是再按一次。
+        down.timer = setTimeout(function () {
+          if (!down) return;
+          down.held = true;
+          markFound(find, node);
+        }, HOLD_MS);
+      }
+
+      // ⚠ 监听挂在 **window** 上，不是挂在节点上。
+      //   拖到一半指针跑出这个 44×44 的小方块是常态；挂在节点上就收不到
+      //   pointerup，手势永远收不了尾，这个可发现物从此就废了。
+      window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointercancel', onCancel);
+    }
+
+    function detach() {
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onCancel);
+      if (down) clearTimeout(down.timer);
+      down = null;
+      node.classList.remove('dragging');
+    }
+
+    function onCancel() {
+      // 浏览器把这一笔接管去滚页面了 —— 收尾，不判定。
+      detach();
+    }
+
+    function onUp(e) {
+      if (!down) return;
+      var g = down;
+      var held = g.held;
+      var dx = e.clientX - g.x, dy = e.clientY - g.y, dt = Date.now() - g.t;
+      detach();
+
+      if (held) return;   // hold 已经在定时器里触发过了，别再判一次
+
+      if (verb === 'triple_tap') {
+        if (!isTap(dx, dy, dt)) return;
+        var now = Date.now();
+        taps = taps.filter(function (t) { return now - t < TRIPLE_MS; });
+        taps.push(now);
+        if (taps.length >= 3) { taps = []; markFound(find, node); }
+        return;
+      }
+      if (verb === 'click') {
+        if (isTap(dx, dy, dt)) markFound(find, node);
+        return;
+      }
+      if (verb === 'drag') {
+        if (Math.sqrt(dx * dx + dy * dy) >= MOVE_PX) markFound(find, node);
+        return;
+      }
+      if (verb === 'slide') {
+        // ⚠ **必须带方向判据**（横向位移要大过纵向）。
+        //   只看「位移 ≥24px」的话，用户纵向滑页面的手势会被当成「划过」，
+        //   一路滑下去就触发一串可发现物 —— 本系统最败好感的一种 bug。
+        //   `tools/check_explore.py` 有一条反向断言专门守它。
+        if (Math.abs(dx) >= MOVE_PX && Math.abs(dx) > Math.abs(dy)) markFound(find, node);
+        return;
+      }
+      // 不认识的 verb：什么也不做（init 时已经 warn 过了）
+    }
+
+    node.addEventListener('pointerdown', onDown);
+    node.addEventListener('keydown', function (e) {
+      // ⚠ 键盘用户做不出 hold / drag / slide —— 那是手势。
+      //   所以 Enter / Space **直接触发**，五种动词一视同仁（spec §5.6：键盘可达）。
+      //   不给这条兜底，键盘用户就永远只能找到五分之一的东西。
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        markFound(find, node);
+      }
+    });
+  }
+
   /**
    * 初始化探索系统。
    *
@@ -148,6 +343,8 @@
       unlocked: false,
       whisperShown: 0,
     };
+    S.cfg = cfg;
+    S.dbg = dbg;
 
     finds.forEach(function (f) {
       if (!f || !f.id) {
@@ -175,7 +372,9 @@
         anchor.classList.add('explore-anchor');
       }
 
-      anchor.appendChild(buildFind(f));
+      var node = buildFind(f);
+      anchor.appendChild(node);
+      bindGestures(node, f);
     });
   }
 

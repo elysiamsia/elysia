@@ -45,6 +45,7 @@
   color: var(--explore-tint, currentColor);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  user-select: none;   /* 拖拽时别把周围文字一起选中了 */
 
   /* ⚠ **不要**写 touch-action:none。
      那会把「从可发现物上开始的纵向滚动」一并吃掉 ——
@@ -59,7 +60,11 @@
   width: 22px;
   height: 22px;
   opacity: .35;
-  filter: drop-shadow(0 0 6px color-mix(in srgb, currentColor 45%, transparent));
+  /* ⚠ 用 currentColor 直接发光，**不要用 color-mix()** ——
+     这个站主要是给大陆手机看的，QQ 浏览器 / 系统自带浏览器的内核偏旧，
+     color-mix() 在那些版本上不认，而 CSS 不认的声明是**静默失效**的
+     （同一个坑：armor.html 的 --gold-soft 失色了 3 个月，HANDOVER §10.2）。 */
+  filter: drop-shadow(0 0 6px currentColor);
   transition: opacity .3s ease, transform .3s ease;
 }
 
@@ -81,4 +86,62 @@
   outline: 2px solid var(--explore-tint, currentColor);
   outline-offset: 2px;
   border-radius: 50%;
+}
+
+/* 拖拽中：亮起来、放大一点，让「我抓住了」这件事有即时反馈。
+   ⚠ 加在**内层** `.explore-art` 上 —— 外层那个 transform 要留着做居中。 */
+.explore-find.dragging .explore-art {
+  opacity: 1;
+  transform: scale(1.3);
+}
+
+/* 命中之后：**一直亮着**。它不再是「藏起来的东西」了，
+   而是「你已经找到的东西」—— 看得见的进度，正是探索感的一半。 */
+.explore-find.found .explore-art {
+  opacity: .9;
+}
+
+/* ---------- 2. 台词气泡 ---------- */
+/* ⚠ position:fixed + 挂在 <body> 上（见 explore.js 的 showBubble 注释）。
+   它**必须**在文档流之外，否则会撑高页面 —— 快照会当场报差异，
+   而且在 overflow:hidden 的区段里还会被裁掉。 */
+.explore-bubble {
+  position: fixed;
+  z-index: 90;
+  max-width: 280px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: var(--explore-ink, rgba(14, 8, 24, .94));
+  border: 1px solid var(--explore-border, rgba(255, 255, 255, .16));
+  color: var(--explore-ink-2, #eee8f7);
+  font-size: 14px;
+  line-height: 1.8;
+  letter-spacing: .02em;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
+  pointer-events: none;   /* 气泡不能挡住底下的东西 —— 它是旁白，不是控件 */
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity .28s ease, transform .28s ease;
+}
+
+.explore-bubble.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.explore-bubble-line {
+  margin: 0;
+}
+
+/* 出处不是装饰 —— 「台词一条不编」这条纪律要看得见才算数。 */
+.explore-bubble-src {
+  margin: 8px 0 0;
+  font-size: 11px;
+  letter-spacing: .08em;
+  opacity: .5;
+  text-align: right;
+}
+
+.explore-bubble-src[hidden] {
+  display: none;
 }

@@ -110,6 +110,47 @@ class Browser(object):
         except Exception:
             return None
 
+    # ── 输入事件 ──────────────────────────────────────────────────────
+    # 走 `Input.dispatchMouseEvent` —— 也就是**真的用户路径**。
+    # ⚠ 不走「直接调内部函数」那条路：这些页的脚本都是 IIFE 包裹的，
+    #   内部函数根本不是全局的（HANDOVER §10.6 Task 9 实测：
+    #   `typeof fireKevinKiller666 === 'function'` 得到 undefined）。
+    #   而且就算调得到，也测不出「事件到底有没有接上」这件事。
+    def press(self, x, y):
+        self._send('Input.dispatchMouseEvent', {
+            'type': 'mousePressed', 'x': x, 'y': y,
+            'button': 'left', 'buttons': 1, 'clickCount': 1})
+
+    def release(self, x, y):
+        self._send('Input.dispatchMouseEvent', {
+            'type': 'mouseReleased', 'x': x, 'y': y,
+            'button': 'left', 'buttons': 0, 'clickCount': 1})
+
+    def move(self, x, y, buttons=1):
+        self._send('Input.dispatchMouseEvent', {
+            'type': 'mouseMoved', 'x': x, 'y': y,
+            'button': 'none', 'buttons': buttons})
+
+    def center(self, fid):
+        """把可发现物滚进视口，返回它的**视口中心坐标**。
+
+        ⚠ 必须先滚动。CDP 派发的是视口坐标，元素在视口外时事件会落到别处，
+          而且**不会报错**（HANDOVER §6.4：cdp.py 的 click 要先滚动）。
+        ⚠ `scrollIntoView` 必须带 `behavior:'instant'` —— 站点有
+          `scroll-behavior:smooth`，平滑滚动下一帧才到位，紧接着量的坐标就是错的。
+        """
+        return self.jso("""(() => {
+            var n = document.querySelector('[data-find-id="%s"]');
+            if (!n) return null;
+            n.scrollIntoView({ block: 'center', behavior: 'instant' });
+            var r = n.getBoundingClientRect();
+            return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+        })()""" % fid)
+
+    def found_ids(self):
+        v = self.js('JSON.stringify(window.__ELY_EXPLORE__ ? window.__ELY_EXPLORE__.found : [])')
+        return json.loads(v) if v else []
+
 
 # ── 断言注册表 ────────────────────────────────────────────────────────
 CHECKS = []
@@ -293,6 +334,181 @@ def check_page_quiet(b, page, expected):
     return (fails, u'无报错' if not fails else u'%d 条' % len(fails))
 
 
+# ══ 五种互动动词 ══════════════════════════════════════════════════════
+# 每条都派发**真实的输入事件**（见 Browser.press/move/release），
+# 断言「触发前不在 found 里 → 触发后在了」这个状态变化本身。
+
+def _do_click(b, c):
+    b.press(c['x'], c['y']); time.sleep(0.06); b.release(c['x'], c['y'])
+
+
+def _do_hold(b, c):
+    # 判定线是 600ms（spec §5.1），按 750ms 留出余量 ——
+    # 贴着阈值测，机器一慢就会变成假阴性
+    b.press(c['x'], c['y']); time.sleep(0.75); b.release(c['x'], c['y'])
+
+
+def _do_triple_tap(b, c):
+    for _ in range(3):
+        b.press(c['x'], c['y']); time.sleep(0.05)
+        b.release(c['x'], c['y']); time.sleep(0.05)
+
+
+def _do_drag(b, c):
+    # ⚠ 这里刻意用**纵向**位移（dy=40）。
+    #   横向的话 drag 与 slide 的输入长得一模一样，这条断言就退化成了
+    #   「反正动一下就触发」——测不出方向判据。
+    #   纵向移动只可能被 drag 接受（slide 要求 |dx|>|dy|），
+    #   与下面那条「纵向不算划过」的反向断言正好把关卡的两面都钉住。
+    b.press(c['x'], c['y'])
+    for i in range(1, 5):
+        b.move(c['x'], c['y'] + i * 10); time.sleep(0.02)
+    b.release(c['x'], c['y'] + 40)
+
+
+def _do_slide(b, c):
+    b.press(c['x'], c['y'])
+    for i in range(1, 5):
+        b.move(c['x'] + i * 10, c['y']); time.sleep(0.02)
+    b.release(c['x'] + 40, c['y'])
+
+
+def _run_verb(b, fid, verb, action):
+    if fid in b.found_ids():
+        return ([u'%s 在测之前就已经是「已发现」了 —— 前面的检查污染了它' % fid], u'—')
+    c = b.center(fid)
+    if not c:
+        return ([u'找不到 %s —— 它没被渲染出来' % fid], u'—')
+    action(b, c)
+    time.sleep(0.3)
+    if fid in b.found_ids():
+        return ([], u'%s 触发成功' % verb)
+    return ([u'%s：派发了真实的 %s 输入之后，「已发现」里仍然没有它' % (fid, verb)],
+            u'%s 没触发' % verb)
+
+
+@check
+def check_vertical_gesture_ignored(b, page, expected):
+    """纵向滑动**不能**被当成「划过」—— Review Focus #4。
+
+    用户手指落在可发现物上往下滑页面，这是手机上最常见的动作。
+    如果 `slide` 只判「位移 ≥24px」而不判方向，这一滑就会沿路触发一串东西 ——
+    这是本系统最败好感的一种 bug。
+
+    ⚠ **本条必须跑在五个动词检查之前。** 等所有东西都被发现了再来测，
+      断言就成了恒真式（本来就都在 found 里了），测了等于没测。
+      所以这里先检查「跑之前一个都没发现」。
+    """
+    ids = b.found_ids()
+    if ids:
+        return ([u'跑这条时已经有 %d 个被发现（%s）—— 顺序错了，本断言会变成恒真式'
+                 % (len(ids), u', '.join(ids))], u'顺序不对')
+
+    c = b.center('fx-05')   # fx-05 就是 slide 那一位，在它身上起手最有针对性
+    if not c:
+        return ([u'找不到 fx-05'], u'—')
+
+    # dx 只挪 4px（<10），dy 挪 84px（>60）—— 一个典型的「往下滑页面」手势
+    b.press(c['x'], c['y'])
+    for i in range(1, 7):
+        b.move(c['x'] + (1 if i > 3 else 0), c['y'] + i * 14)
+        time.sleep(0.02)
+    b.release(c['x'] + 4, c['y'] + 84)
+    time.sleep(0.3)
+
+    after = b.found_ids()
+    if after:
+        return ([u'纵向滑了一下（dx=4, dy=84）却被判定成「划过」，触发了：%s'
+                 % u', '.join(after)], u'误触发了')
+    return ([], u'纵向手势被正确忽略')
+
+
+@check
+def check_verb_click(b, page, expected):
+    """click —— 点一下。"""
+    return _run_verb(b, 'fx-01', 'click', _do_click)
+
+
+@check
+def check_verb_hold(b, page, expected):
+    """hold —— 按住 ≥600ms。"""
+    return _run_verb(b, 'fx-02', 'hold', _do_hold)
+
+
+@check
+def check_verb_triple_tap(b, page, expected):
+    """triple_tap —— 1.2 秒内点三次。"""
+    return _run_verb(b, 'fx-03', 'triple_tap', _do_triple_tap)
+
+
+@check
+def check_verb_drag(b, page, expected):
+    """drag —— 按下后位移 ≥24px（**纵向也算拖**）。"""
+    return _run_verb(b, 'fx-04', 'drag', _do_drag)
+
+
+@check
+def check_verb_slide(b, page, expected):
+    """slide —— 位移 ≥24px **且**横向分量大于纵向。"""
+    return _run_verb(b, 'fx-05', 'slide', _do_slide)
+
+
+@check
+def check_bubble_shows_source(b, page, expected):
+    """命中之后气泡出现，且**台词与出处都渲染出来了**。
+
+    ⚠ 这一条计划里没有归属（Task 2 只写了「加 class + 进 found 数组」，
+      但 spec §4.2 把「命中后播放该 find 的表现 + 台词气泡」算在 ElysiaExplore 的
+      职责里，Task 11 的断言 ② 又要求气泡里含 src 文本）。见实施记录。
+      没有它，「触发了但什么都没发生」不会被任何断言抓住。
+
+    顺带守住「台词必须有出处」这条纪律：气泡里必须**同时**有 line 和 src。
+    """
+    # ⚠ 先在**本检查内部**重新触发一次 fx-01 再断言。
+    #   气泡是单例（后一句顶掉前一句），直接读的话读到的是上一个检查留下的
+    #   fx-05 的台词 —— 那种「测的不是我想测的东西」是假红最常见的来源。
+    c = b.center('fx-01')
+    if not c:
+        return ([u'找不到 fx-01'], u'—')
+    _do_click(b, c)
+    time.sleep(0.3)
+
+    d = b.jso("""(() => {
+        var el = document.querySelector('.explore-bubble');
+        if (!el) return JSON.stringify({ missing: true });
+        return JSON.stringify({
+            text: el.textContent,
+            visible: el.classList.contains('visible'),
+        });
+    })()""")
+    if d is None or d.get('missing'):
+        return ([u'页面里没有 .explore-bubble —— 命中之后没有出气泡'], u'—')
+
+    fails = []
+    if not d['visible']:
+        fails.append(u'气泡存在但没有 .visible（触发后是藏着的）')
+
+    # 期望值从**页面自己声明的 THEME** 里取，不写死 ——
+    # 免得探针页改一句台词，这条断言就假红。
+    want = b.jso("""(() => {
+        if (!window.THEME) return null;
+        var f = (window.THEME.explore.finds || []).filter(function (x) {
+            return x.id === 'fx-01';
+        })[0];
+        return f ? JSON.stringify({ line: f.line, src: f.src }) : null;
+    })()""")
+    if not want:
+        fails.append(u'取不到页面声明的 fx-01（window.THEME 里没有）')
+    else:
+        if want['line'] not in d['text']:
+            fails.append(u'气泡里没有 fx-01 的台词 %r，实际内容是：%r'
+                         % (want['line'], d['text'][:80]))
+        if want['src'] not in d['text']:
+            fails.append(u'气泡里没有出处 %r（spec §4.1 要求 src 一起渲染）' % want['src'])
+
+    return (fails, u'气泡含台词与出处' if not fails else u'气泡不对')
+
+
 # ── 主流程 ────────────────────────────────────────────────────────────
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
@@ -354,11 +570,16 @@ def main():
             'url': 'http://127.0.0.1:%d/%s?cb=%d' % (PORT, page, time.time() * 1000)})
         time.sleep(2.0)
 
-        marks = [u'\u2460', u'\u2461', u'\u2462', u'\u2463', u'\u2464', u'\u2465', u'\u2466', u'\u2467']
-        for i, fn in enumerate(CHECKS):
+        # ⚠ 「页面无报错」那条**必须跑在最后**：它读的是整轮攒下来的事件，
+        #   提前跑就会漏掉后面手势测试里抛的异常 —— 而手势恰恰最容易抛异常。
+        ordered = [f for f in CHECKS if f is not check_page_quiet] + [check_page_quiet]
+
+        for i, fn in enumerate(ordered):
             fails, summary = fn(b, page, expected)
             mark = u'\u2713' if not fails else u'\u2717'
-            print(u'  %s %s %s' % (mark, marks[i] if i < len(marks) else u'-', summary))
+            # ①②③… 数到 20 就退回用序号，别让报告里出现奇怪的字符
+            tag = chr(0x2460 + i) if i < 20 else u'(%d)' % (i + 1)
+            print(u'  %s %s %s' % (mark, tag, summary))
             # 摘要太长时另起一行 —— 失败原因必须**当场看得见**
             for f in fails:
                 print(u'       \u2022 ' + f)
