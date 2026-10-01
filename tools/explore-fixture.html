@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <title>探索系统探针页</title>
+<!-- ⚠ 这一行不是装饰：不声明 favicon 的话浏览器会去要 /favicon.ico，拿到 404，
+     而 404 在 check_explore.py 里**算失败**（「页面无报错」那条收了 CDP 的 Log 域）。
+     2026-10-01 加 Log 域时，页面缺 favicon 是第一个被抓出来的东西。 -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <!--
   呀！这不是给人看的页面，是给 tools/check_explore.py 用的**探针页**♥
   （与 tools/og-card.html 同一个定位：只服务测试）

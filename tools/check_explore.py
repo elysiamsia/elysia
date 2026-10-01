@@ -418,6 +418,21 @@ def check_page_quiet(b, page, expected):
             args = e['params'].get('args') or []
             text = u' '.join(str(a.get('value', a.get('description', u''))) for a in args)
             fails.append(u'console.error：%s' % text.strip())
+        elif m == 'Log.entryAdded':
+            # ⚠ **这一支是「资源加载失败」唯一的落点。**
+            #   404 既不是 `Runtime.exceptionThrown`、也不是 `console.error` ——
+            #   它只在 Log 域里冒一条 `source:network / level:error`。
+            #   2026-10-01 实测：把 `assets/games/mobius.js` 整个挪走，
+            #   上面两个分支**一条都没响**，这条断言照样绿 ——
+            #   当时是**功能断言**碰巧抓到的（「找不到游戏卡上的按钮」）。
+            #   缺文件是最普通的一种失败，不能靠碰巧。
+            en = e['params'].get('entry') or {}
+            if en.get('level') != 'error':
+                continue
+            where = en.get('url') or u''
+            fails.append(u'浏览器级错误（%s）：%s%s'
+                         % (en.get('source'), en.get('text'),
+                            (u'  ← ' + where) if where else u''))
 
     # 去重 —— 同一个错误每帧刷一次会淹掉报告
     fails = list(dict.fromkeys(fails))
@@ -2236,6 +2251,11 @@ def main():
         # Runtime.enable 必须在导航**之前** —— 否则加载期的异常收不到。
         b._send('Page.enable')
         b._send('Runtime.enable')
+        # ⚠ Log 域也要开，**同样必须在导航之前**。
+        #   原因见 check_page_quiet：**资源 404 根本不走 Runtime** ——
+        #   它只在 Log 域里冒一条 `source:network / level:error`。
+        #   不开这个域，把整个脚本文件挪走这类失败，那条断言**照样通过**。
+        b._send('Log.enable')
         b._send('Page.navigate', {
             'url': 'http://127.0.0.1:%d/%s?cb=%d' % (PORT, page, time.time() * 1000)})
         time.sleep(2.0)
