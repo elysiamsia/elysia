@@ -27,6 +27,7 @@ tools/check_explore.py — 探索系统断言
 import http.server
 import json
 import os
+import re
 import shutil
 import socketserver
 import subprocess
@@ -1260,6 +1261,293 @@ def check_reduced_off_motion_returns(b, page, expected):
 
     _set_motion(b, 'reduce')             # 收尾：别把模式留给后面
     return (fails, u'正常态动画都在' if not fails else u'减动段泄漏了')
+
+
+# ══ 下方区块：生日倒计时 ══════════════════════════════════════════════
+# 冻结时钟。**和 tools/snapshot.py 的 SEED_DATE_JS 是同一个理由**：
+# 倒计时吃日期，跨过零点结果就变 —— 那会骗过一切当场自检
+# （HANDOVER §6.4：「快照基线会随日历漂」）。
+# 这里是运行时改 window.Date，不用重载页面：bottom.js 里的 `new Date()`
+# 是在**画的时候**才去全局作用域取的。
+FROZEN_CLOCK = """
+(() => {
+  var RealDate = Date;
+  var FIXED = RealDate.UTC(2026, 8, 16, 12, 0, 0);   // 2026-09-16 12:00Z（月份从 0 起）
+  function FrozenDate() {
+    if (arguments.length === 0) return new RealDate(FIXED);
+    return Reflect.construct(RealDate, [].slice.call(arguments));
+  }
+  FrozenDate.prototype = RealDate.prototype;   // 保住 instanceof 与原型方法
+  FrozenDate.now = function () { return FIXED; };
+  FrozenDate.UTC = RealDate.UTC;
+  FrozenDate.parse = RealDate.parse;
+  window.__REAL_DATE__ = RealDate;
+  window.Date = FrozenDate;
+  return 1;
+})()
+"""
+
+UNFROZEN_CLOCK = """
+(() => {
+  if (window.__REAL_DATE__) window.Date = window.__REAL_DATE__;
+  return 1;
+})()
+"""
+
+BD_CASES = """
+(() => {
+  var key = ElysiaBottom.pageKey();
+  var out = [];
+  var now = new Date();
+  var y = now.getFullYear(), M = now.getMonth(), D = now.getDate();
+
+  function setBday(m, d, label) {
+    window.ELYSIA_BDAYS[key] = [m, d];
+    ElysiaBottom.mount({});
+    var t = document.querySelector('.bottom-bday-text');
+    out.push({ label: label, m: m, d: d, text: t ? t.textContent : null });
+  }
+
+  // (a) 今天就是生日
+  setBday(M, D, 'today');
+
+  // (b) 四天之后。期望值**独立算一遍**（不抄 bottom.js 里那段公式）
+  var t4 = new Date(y, M, D + 4);
+  setBday(t4.getMonth(), t4.getDate(), 'plus4');
+  out[out.length - 1].expect = Math.floor(
+    (new Date(t4.getFullYear(), t4.getMonth(), t4.getDate(), 0, 0, 0) - now.getTime()) / 86400000);
+
+  // (c) 昨天 —— 必须滚到明年
+  var y1 = new Date(y, M, D - 1);
+  setBday(y1.getMonth(), y1.getDate(), 'yesterday');
+
+  // 收尾：删掉临时条目，重挂回「没有生日」的样子
+  delete window.ELYSIA_BDAYS[key];
+  ElysiaBottom.mount({});
+  return JSON.stringify(out);
+})()
+"""
+
+
+def _bday_slot(b):
+    return b.jso("""(() => {
+        var slot = document.querySelector('.bottom-bday');
+        var sec = document.getElementById('bottom');
+        return JSON.stringify({
+            key: window.ElysiaBottom ? ElysiaBottom.pageKey() : null,
+            listed: !!(window.ELYSIA_BDAYS && ElysiaBottom
+                       && ELYSIA_BDAYS[ElysiaBottom.pageKey()]),
+            slot: !!slot,
+            inSection: !!(slot && sec && sec.contains(slot)),
+        });
+    })()""")
+
+
+@check
+def check_bday_absent_when_not_listed(b, page, expected):
+    """表里没有这一页 → **整个不渲染** `.bottom-bday`。
+
+    ⚠ 「不渲染」和「渲染了再藏起来」是两回事。藏起来的那种，
+      断言分不出「这页没有生日」和「倒计时组件坏了」——
+      而后者会静默地让所有页面的倒计时一起消失。
+
+      探针页**刻意不在** data/bdays.js 里（它是个测试页，本来也没有生日）。
+    """
+    _reset(b)
+    d = _bday_slot(b)
+    if d is None:
+        return ([u'取不到下方区块的状态 —— bottom.js 没跑？'], u'—')
+
+    fails = []
+    if d['key'] != 'tools/explore-fixture.html':
+        fails.append(u'pageKey() 得到 %r，期待 tools/explore-fixture.html' % d['key'])
+    if d['listed']:
+        fails.append(u'探针页居然在 ELYSIA_BDAYS 里 —— 表被谁改过了？')
+    if d['slot']:
+        fails.append(u'这一页不在生日表里，却渲染出了 .bottom-bday')
+
+    return (fails, u'没登记就不渲染' if not fails else u'不该出现')
+
+
+@check
+def check_bday_appears_when_listed(b, page, expected):
+    """把这一页塞进表里再重挂 → `.bottom-bday` 出现，日期也对。
+
+    ⚠ 这条同时是「mount 可以重复调用」的验证。不可重复调用的实现，
+      这类断言只能靠猜 —— 而「重挂之后槽位状态不对」是真实会发生的 bug。
+    """
+    _reset(b)
+    d = b.jso("""(() => {
+        var key = ElysiaBottom.pageKey();
+        window.ELYSIA_BDAYS[key] = [3, 30];        // 4 月 30 日
+        ElysiaBottom.mount({});
+        var slot = document.querySelector('.bottom-bday');
+        var date = slot ? slot.querySelector('.bottom-bday-date') : null;
+        var line = slot ? slot.querySelector('.bottom-bday-line') : null;
+        return JSON.stringify({
+            slot: !!slot,
+            date: date ? date.textContent : null,
+            lineHidden: line ? !!line.hidden : null,
+        });
+    })()""")
+    if not d:
+        return ([u'取不到下方区块状态'], u'—')
+
+    fails = []
+    if not d['slot']:
+        fails.append(u'塞进生日表之后仍然没有 .bottom-bday —— 表变化没反映到槽位')
+    if d['date'] != u'4 月 30 日':
+        fails.append(u'日期显示成 %r，应为「4 月 30 日」（月份 0 起算错了吗）' % d['date'])
+    if d['lineHidden'] is not True:
+        fails.append(u'不是生日当天，那句生日台词却是显示着的')
+
+    # 收尾：删掉临时条目
+    b.js("""(() => {
+        delete window.ELYSIA_BDAYS[ElysiaBottom.pageKey()];
+        ElysiaBottom.mount({});
+        return 1;
+    })()""")
+
+    return (fails, u'登记了就出现' if not fails else u'槽位不对')
+
+
+@check
+def check_bday_countdown_text(b, page, expected):
+    """倒计时数字**与「现在到下一个该日」一致** —— 三个分支逐个验。
+
+    ⚠ **时钟必须钉死。** 倒计时吃日期，跨过零点结果就变；
+      不钉的话这条断言在午夜前后会假红，而人只会以为是自己改坏了什么。
+      （HANDOVER §6.4 记着同一件事：快照基线「随日历漂」骗过了一切当场自检。）
+
+    三个分支：
+      (a) 今天就是生日      → 「今天是她的生日！」
+      (b) 生日在四天之后    → 天数与独立算出来的值一致
+      (c) 生日在昨天        → 必须滚到**明年**（约 364~366 天），不是显示成负数
+    """
+    _reset(b)
+    b.js(FROZEN_CLOCK)
+    try:
+        out = b.jso(BD_CASES)
+        if not out or len(out) != 3:
+            return ([u'三个分支没有全部跑到：%r' % out], u'—')
+        by = dict((c['label'], c) for c in out)
+        fails = []
+
+        a = by.get('today', {})
+        if a.get('text') != u'今天是她的生日！':
+            fails.append(u'(a) 今天就是生日，却显示 %r' % a.get('text'))
+
+        c2 = by.get('plus4', {})
+        want2 = u'距她的生日还有 %s 天' % c2.get('expect')
+        if c2.get('text') != want2:
+            fails.append(u'(b) 生日在四天后，显示 %r，独立算出来该是 %r（差 %r）'
+                         % (c2.get('text'), want2,
+                            u'—— 月份/日期是不是搞反了' if c2.get('text') else u''))
+
+        c3 = by.get('yesterday', {})
+        txt3 = c3.get('text') or u''
+        m = re.search(r'(\d+)\s*天', txt3)
+        if txt3 == u'今天是她的生日！':
+            fails.append(u'(c) 生日是昨天，却显示「今天是她的生日！」')
+        elif not m:
+            fails.append(u'(c) 生日是昨天，显示 %r —— 不是「还有 N 天」的形态' % txt3)
+        else:
+            n = int(m.group(1))
+            if n < 360 or n > 366:
+                fails.append(u'(c) 生日是昨天，天数该滚到明年（约 364~366），实际 %d' % n)
+
+        return (fails, u'三个分支都对' if not fails else u'倒计时不对')
+    finally:
+        # ⚠ 一定要解冻：冻结时间会影响后面的断言（比如低语冷却一直不结束）
+        b.js(UNFROZEN_CLOCK)
+
+
+@check
+def check_bday_table_sane(b, page, expected):
+    """`data/bdays.js` 的每一项都要是**合法的 [月, 日]**。
+
+    ⚠ 这类错最典型的是**月份忘了从 0 起**：写 `[11, 11]` 表示 11 月 11 日，
+      于是变成 12 月 11 日 —— 页面照常显示、倒计时照常倒，
+      只是**日子错了**。除了这种检查，没有别的办法发现。
+    """
+    d = b.jso("""(() => {
+        var t = window.ELYSIA_BDAYS || {}, out = [];
+        for (var k in t) {
+            if (Object.prototype.hasOwnProperty.call(t, k)) out.push({ key: k, v: t[k] });
+        }
+        return JSON.stringify(out);
+    })()""")
+    if d is None:
+        return ([u'取不到 window.ELYSIA_BDAYS'], u'—')
+
+    fails = []
+    if not d:
+        fails.append(u'ELYSIA_BDAYS 是空的 —— data/bdays.js 没加载，或者表被清空了')
+
+    for e in d:
+        k, v = e['key'], e['v']
+        if not isinstance(v, list) or len(v) != 2:
+            fails.append(u'%s：值应该是 [月, 日] 两项，实际是 %r' % (k, v))
+            continue
+        mo, day = v
+        if not (isinstance(mo, int) and 0 <= mo <= 11):
+            fails.append(u'%s：月份 %r 不在 0..11（月份**从 0 起**，11 月要写 10）' % (k, mo))
+        if not (isinstance(day, int) and 1 <= day <= 31):
+            fails.append(u'%s：日 %r 不在 1..31' % (k, day))
+        if k.startswith('/'):
+            fails.append(u'%s：键不该以 / 开头 —— pageKey() 给的是'
+                         u'「去掉开头斜杠」的形态，对不上就永远查不到' % k)
+        if not k.endswith('.html'):
+            fails.append(u'%s：键应是页面**文件路径**（以 .html 结尾）' % k)
+
+    return (fails, u'%d 项都合法' % len(d) if not fails else u'表里有问题')
+
+
+@check
+def check_count_moved_into_bottom(b, page, expected):
+    """探索度**搬进了下方区块**，而且不再是 body 的散装子节点。
+
+    ⚠ 「搬家」要验两头：新的地方有它、旧的地方没有它。
+      只验前者的话，一个「又建了一个新的」的实现能过 ——
+      而那会让页面上出现**两个**探索度，且其中一个永远不更新。
+    """
+    d = b.jso("""(() => {
+        var sec = document.getElementById('bottom');
+        var inside = sec ? sec.querySelector('.bottom-count .explore-count') : null;
+        var loose = document.querySelector('body > .explore-count');
+        var all = document.querySelectorAll('.explore-count').length;
+        return JSON.stringify({
+            section: !!sec,
+            inside: !!inside,
+            loose: !!loose,
+            all: all,
+            text: inside ? inside.textContent : null,
+            role: inside ? inside.getAttribute('role') : null,
+            live: inside ? inside.getAttribute('aria-live') : null,
+            slots: sec ? [].slice.call(sec.children).map(function (n) {
+                return n.className;
+            }) : [],
+        });
+    })()""")
+    if d is None:
+        return ([u'取不到下方区块状态'], u'—')
+
+    fails = []
+    if not d['section']:
+        fails.append(u'没有 #bottom —— ElysiaBottom.mount 没跑？')
+    if not d['inside']:
+        fails.append(u'#bottom 里没有 .bottom-count .explore-count —— 探索度没搬进来')
+    if d['loose']:
+        fails.append(u'body 下面还挂着一个散装的 .explore-count —— 搬家只搬了一半')
+    if d['all'] != 1:
+        fails.append(u'页面上有 %d 个 .explore-count，应该只有 1 个（搬家用的是同一个节点）' % d['all'])
+    if d['role'] != 'status' or d['live'] != 'polite':
+        fails.append(u'搬过之后 role/aria-live 丢了：role=%r aria-live=%r'
+                     % (d['role'], d['live']))
+    if not d['text'] or not re.match(u'^已发现 \\d+ / \\d+$', d['text']):
+        fails.append(u'搬过之后文案不对：%r' % d['text'])
+
+    return (fails, u'探索度在区块里（%r）' % d['text'] if not fails else u'搬家有问题')
 
 
 # ── 主流程 ────────────────────────────────────────────────────────────

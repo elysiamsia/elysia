@@ -60,6 +60,8 @@
 
 <script src="/assets/site.js"></script>
 <script src="/assets/explore.js"></script>
+<script src="/assets/bottom.js"></script>
+<script src="/data/bdays.js"></script>
 <script>
 /* ── THEME ────────────────────────────────────────────────────────────
    fixture 只走「探索系统」这一块。5 个 find 覆盖 5 种动词，一个不缺。
@@ -96,6 +98,10 @@ var THEME = {
 };
 
 ElysiaExplore.init(THEME.explore);
+
+/* ⚠ 探针页**故意不传 game** —— 游戏槽的路径由 mobius 那两条断言覆盖（Task 11/12）。
+   这里只验「不传 game 就不该有 .bottom-game」。 */
+ElysiaBottom.mount({});
 </script>
 </body>
 </html>

@@ -277,6 +277,62 @@
   display: none;
 }
 
+/* ---------- 7. 下方区块 ---------- */
+/* 页面逛到最后落脚的地方：探索度 / 生日倒计时 / 小游戏。
+   ⚠ 探索度本来（Task 3）临时挂在 body 末尾，现在由 ElysiaBottom.mount
+     把它搬进 `.bottom-count` —— 位置换了，「同一个节点」没换，
+     所以它的 role/aria-live 与内容一直是同一份。 */
+#bottom {
+  position: relative;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 8vh 6vw 14vh;
+  text-align: center;
+}
+
+.bottom-count {
+  margin-bottom: 10px;
+}
+
+.bottom-bday {
+  margin: 22px auto 0;
+  padding: 20px 24px;
+  max-width: 30em;
+  border-radius: 16px;
+  border: 1px solid var(--explore-border, rgba(255, 255, 255, .16));
+  background: rgba(255, 255, 255, .03);
+}
+
+.bottom-bday-date {
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: .3em;
+  opacity: .5;
+}
+
+.bottom-bday-text {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: .08em;
+  color: var(--explore-tint, currentColor);
+}
+
+/* 生日当天那一句 —— 平时 `hidden`，是**真的不渲染**（display:none） */
+.bottom-bday-line {
+  margin: 14px 0 0;
+  font-size: 14px;
+  line-height: 1.9;
+  opacity: .8;
+}
+
+.bottom-bday-line[hidden] {
+  display: none;
+}
+
+.bottom-game {
+  margin: 26px auto 0;
+}
+
 /* ==========================================================================
    8. 减动降级（WCAG 2.3.1）
 
