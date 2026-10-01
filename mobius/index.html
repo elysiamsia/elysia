@@ -608,6 +608,7 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
 <div id="mbToast" role="status"></div>
 
 <!-- SECTION: scripts -->
+<script src="/assets/site.js"></script>
 <script>
 (function(){
   /* SECTION: quotes data */
@@ -623,6 +624,48 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
     '「可不要逃走哦。」',
     '「所以……出去之后好好干吧，小白鼠。可别辜负了梅比乌斯的期待。」'
   ];
+
+  /* ── THEME ──────────────────────────────────────────────────────────
+     这一页的「性格」全在这儿，其余交给共享层（assets/site.js）。
+     📖 完整 schema 与逐页数值总表见 docs/theme-schema.md —— **那是权威规格**。
+
+     ⚠ 三个字段的值都是**从本页原值实测抄下来的**，不是照抄别的页：
+        · 打字机 delay 150 / jitter 80 —— 原代码 `150 + Math.random() * 80`
+        · startDelay 700 —— 原代码 `setTimeout(typeNext, 700)`
+        · tailDelay 500 —— 打完最后一个字之后的那个等待
+        · hintDelay 1000 —— 副标题 → #scrollHint 的等待
+        这几个数值**逐页都不同**（site.js 文件头与 theme-schema §5.1 都记着），
+        漏传或抄错会悄悄改变这一页的节奏。梅比乌斯是「极快、压迫」那一档。
+
+     ⚠ `ariaLabel` **必填**，而且必须是本页原本那句文案。
+        「无限之言」是世界观设定（Lore），不是通用 UI 标签 ——
+        统一成「语录」等于把角色塑造抹平。
+        更要命的是 `snapshot.py` 采的是**计算样式、不含属性**，这种回归它会报
+        「✅ 无差异」。所以另有一条断言单独守着：tools/check_aria_labels.py。 */
+  var THEME = {
+    /* 结尾星屑 —— 原代码逐项对照：
+       min(80, floor(视口宽/12)) / 0.5+rnd*2 / 0.08+rnd*0.3 / 0.45+rnd*0.5
+       / 2+rnd*4 / rnd*5 / 三色随机 */
+    endingStars: {
+      count: [80, 12],
+      size:  [0.5, 2],
+      minO:  [0.08, 0.3],
+      maxO:  [0.45, 0.5],
+      dur:   [2, 4],
+      delay: [0, 5],
+      colors: { pool: ['#fff', '#3ddc84', '#ffd166'] },
+    },
+    quotes: {
+      list: quotes,
+      ariaLabel: '无限之言，点击切换',
+    },
+    typewriter: {
+      text: '诶嘿嘿，实验开始了。',
+      delay: 150, jitter: 80, startDelay: 700, tailDelay: 500, hintDelay: 1000,
+      hintEl: true,             // 本页有 #openingHint（原代码会点亮它）
+      preReveal: 'openingOrn',  // 打字开始前同步点亮 #openingOrn
+    },
+  };
 
   /* SECTION: daily pool */
   var dailyPool = [
@@ -659,37 +702,16 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
   });
 
   /* SECTION: quotes build */
-  var grid = document.getElementById('quotesGrid');
-  var cardIndices = [];
-  quotes.forEach(function(q, i){
-    var card = document.createElement('div');
-    card.className = 'quote-card';
-    card.setAttribute('role','button');
-    card.setAttribute('tabindex','0');
-    card.setAttribute('aria-label','无限之言，点击切换');
-    var textEl = document.createElement('div');
-    textEl.className = 'quote-text';
-    textEl.textContent = q;
-    var hint = document.createElement('span');
-    hint.className = 'quote-hint';
-    hint.textContent = '点击切换';
-    card.appendChild(textEl);
-    card.appendChild(hint);
-    cardIndices.push(i);
-    card.addEventListener('click', function(){
-      var idxPos = Array.prototype.indexOf.call(grid.querySelectorAll('.quote-card'), card);
-      var nextIdx = (cardIndices[idxPos] + 1) % quotes.length;
-      cardIndices[idxPos] = nextIdx;
-      textEl.classList.add('fading');
-      setTimeout(function(){
-        textEl.textContent = quotes[nextIdx];
-        textEl.classList.remove('fading');
-      }, 400);
-    });
-    card.addEventListener('keydown', function(e){
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
-    });
-    grid.appendChild(card);
+  /* ⚠ 原实现每次点击都要 `Array.prototype.indexOf.call(grid.querySelectorAll('.quote-card'), card)`
+     **重扫一遍 DOM**，只为问「我是第几张」。共享层改成**闭包 O(1)**：
+     索引在创建时就固化在 card 自己的作用域里（这正是 P1 设计文档 §5-P1 要的一项）。
+
+     行为等价，包括那条最容易写错的：索引**同步**推进，而不是挪进 setTimeout 里 ——
+     否则连点多次会全部算出同一个下一句。 */
+  ElysiaShared.buildQuoteCards({
+    grid: document.getElementById('quotesGrid'),
+    quotes: THEME.quotes.list,
+    ariaLabel: THEME.quotes.ariaLabel,
   });
 
   /* SECTION: creations */
@@ -1162,10 +1184,15 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
   var W, H;
   var sporeColors = ['#3ddc84','#1fa860','#ffd166','#7dff5a'];
 
-  function resize(){
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-  }
+  // ⚠ 只抽「把 canvas 和视口尺寸对上」这三行。
+  //   文件末尾那个「把越界孢子拉回画布」的监听器**故意留着不动** ——
+  //   它碰的是本页自己的 spores 数组，每页不一样，抽走会改行为
+  //   （site.js 文件头与 Inventory §R10 都记着这件事）。
+  //   老页面用存取器接自己的闭包变量 W / H，下面的粒子代码一个字都不用改。
+  var resize = ElysiaShared.makeResize(canvas, {
+    get W() { return W; }, set W(v) { W = v; },
+    get H() { return H; }, set H(v) { H = v; },
+  });
   resize();
   window.addEventListener('resize', resize);
 
@@ -1325,73 +1352,36 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
   });
 
   /* SECTION: typewriter */
-  var typewriterEl = document.getElementById('typewriterText');
-  var cursorEl = document.getElementById('typingCursor');
-  var subEl = document.getElementById('openingSub');
-  var hintEl = document.getElementById('openingHint');
-  var ornEl = document.getElementById('openingOrn');
-  var scrollHintEl = document.getElementById('scrollHint');
-  var typeText = '诶嘿嘿，实验开始了。';
-  var charIndex = 0;
-
-  function typeNext(){
-    if (charIndex < typeText.length){
-      typewriterEl.textContent += typeText[charIndex];
-      charIndex++;
-      setTimeout(typeNext, 150 + Math.random() * 80);
-    } else {
-      setTimeout(function(){
-        cursorEl.classList.add('hidden');
-        subEl.classList.add('visible');
-        hintEl.classList.add('visible');
-        setTimeout(function(){ scrollHintEl.classList.add('visible'); }, 1000);
-      }, 500);
-    }
-  }
-  ornEl.classList.add('visible');
-  setTimeout(typeNext, 700);
+  /* ⚠ 五个时间数值 + hintEl + preReveal 都在 THEME.typewriter 里，
+     而且**必须传本页原值** —— 逐页不同（见 THEME 上方注释）。 */
+  ElysiaShared.makeTypewriter(THEME.typewriter);
 
   /* SECTION: scroll animations */
-  var observerOptions = { threshold: 0.15, rootMargin: '0px 0px -50px 0px' };
-  var scrollObserver = new IntersectionObserver(function(entries){
-    entries.forEach(function(entry){
-      if (entry.isIntersecting) entry.target.classList.add('visible');
-    });
-  }, observerOptions);
-  document.querySelectorAll('.timeline-node').forEach(function(node){
-    scrollObserver.observe(node);
+  /* ⚠ 两个观察器一律**带判空**（共享层内部做的）。原实现是
+     `document.getElementById('endingQuote').classList.add('visible')` 直取，
+     元素缺失就抛异常。元素齐全时表现与原先完全一致 ——
+     属**行为改善**，非纯重构（Inventory §3 R11）。 */
+  ElysiaShared.observeReveal('.timeline-node');
+  ElysiaShared.observeReveal('#ending', {
+    threshold: 0.3,
+    reveal: ['endingQuote', 'endingAttr', 'backLink'],
   });
-
-  var endingObserver = new IntersectionObserver(function(entries){
-    entries.forEach(function(entry){
-      if (entry.isIntersecting){
-        document.getElementById('endingQuote').classList.add('visible');
-        document.getElementById('endingAttr').classList.add('visible');
-        document.getElementById('backLink').classList.add('visible');
-      }
-    });
-  }, { threshold: 0.3 });
-  endingObserver.observe(document.getElementById('ending'));
+  /* ⚠ 这里有一处**与 mobius 原件的行为差异**，如实记下：
+     原件是 `new IntersectionObserver(..., { threshold: 0.3 })`，**没传 rootMargin**；
+     走共享层之后会吃默认的 `rootMargin: '0px 0px -50px 0px'`，
+     也就是结尾那三个元素**晚 50px 才点亮**。
+     这不是本页独有的问题：P1 之前 6 个子页的 endingObserver 与本页**逐字节相同**
+     （已核对 `git show 8ef5508:aponia/index.html`），P1 Task 7 把它们也改成了这一形态。
+     先按共享层走（与其余 6 页一致），差异已上报。 */
 
   /* SECTION: ending stars */
-  var starsContainer = document.getElementById('endingStars');
-  var endingStarCount = Math.min(80, Math.floor(window.innerWidth / 12));
-  var endStarColors = ['#fff','#3ddc84','#ffd166'];
-  for (i = 0; i < endingStarCount; i++){
-    var star = document.createElement('div');
-    star.className = 'ending-star';
-    var size = 0.5 + Math.random() * 2;
-    star.style.width = size + 'px';
-    star.style.height = size + 'px';
-    star.style.left = (Math.random() * 100) + '%';
-    star.style.top = (Math.random() * 100) + '%';
-    star.style.setProperty('--min-o', (0.08 + Math.random() * 0.3).toFixed(2));
-    star.style.setProperty('--max-o', (0.45 + Math.random() * 0.5).toFixed(2));
-    star.style.setProperty('--dur', (2 + Math.random() * 4).toFixed(1) + 's');
-    star.style.setProperty('--delay', (Math.random() * 5).toFixed(1) + 's');
-    star.style.background = endStarColors[Math.floor(Math.random() * endStarColors.length)];
-    starsContainer.appendChild(star);
-  }
+  ElysiaShared.spawnEndingStars(
+    document.getElementById('endingStars'), THEME.endingStars);
+  /* ⚠ 迁移后星屑会**重新洗一次**（每次加载本来就是重新随机的）。
+     原因：原实现的随机数调用顺序是 size→left→top→minO→maxO→dur→delay→color，
+     共享层统一成了 size→minO→maxO→dur→delay→left→top→color。
+     真正要守住的是五样：**数量 / 尺寸区间 / 透明度区间 / 时长区间 / 颜色分布** ——
+     这五样逐项对过原值，一个数都没动。 */
 
   /* SECTION: resize guard */
   window.addEventListener('resize', function(){
