@@ -2067,6 +2067,114 @@ def check_mobius_egg_d_scroll_back(b, page, expected):
     return (fails, u'往回滚触发了临别句' if not fails else u'D 没触发')
 
 
+# ══ 小游戏（Task 12）══════════════════════════════════════════════════
+def _canvas_sig(b):
+    """蛇画在 canvas 上，**内部状态取不到**（脚本是 IIFE）。
+    所以判「在不在动」只能靠画面本身 —— 取一次 dataURL。"""
+    return b.js("(() => { var c = document.getElementById('snakeCanvas');"
+                " return c ? c.toDataURL() : null; })()")
+
+
+def _overlay_open(b):
+    return b.js("(() => { var o = document.getElementById('gameOverlay');"
+                " return o ? o.classList.contains('on') : null; })()")
+
+
+def _click_sel(b, sel):
+    """按选择器找元素 → 滚进视口 → **走真实鼠标路径**点一下。"""
+    c = b.jso("""(() => {
+        var n = document.querySelector('%s');
+        if (!n) return null;
+        n.scrollIntoView({ block: 'center', behavior: 'instant' });
+        var r = n.getBoundingClientRect();
+        return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    })()""" % sel)
+    if not c:
+        return False
+    b.press(c['x'], c['y'])
+    time.sleep(0.06)
+    b.release(c['x'], c['y'])
+    time.sleep(0.4)
+    return True
+
+
+def _game_probe(b):
+    """点游戏卡的「开始实验」→ 验遮罩打开且**蛇真的在动**；
+    再关掉 → 验**同一个判据抓得到「不动」**。
+
+    ⚠ 后半段（关掉之后必须静止）不是多余的 —— 没有它，
+      「两次采样不同」有可能只是因为 canvas 的 dataURL 编码本身不稳定，
+      那这条断言就成了恒真式，测了等于没测。
+      前几轮反复出现的就是这类问题。
+    """
+    fails = []
+
+    if _overlay_open(b):
+        fails.append(u'还没点，遮罩就是打开的')
+
+    if not _click_sel(b, '.bottom-game .game-card-start'):
+        return ([u'找不到游戏卡上的「开始实验」按钮 —— 模块的 mount(host) 没跑？'], u'—')
+
+    if not _overlay_open(b):
+        fails.append(u'点了「开始实验」，#gameOverlay 却没有打开')
+
+    s1 = _canvas_sig(b)
+    time.sleep(0.25)
+    s2 = _canvas_sig(b)
+    if s1 is None or s2 is None:
+        fails.append(u'取不到 #snakeCanvas')
+    elif s1 == s2:
+        fails.append(u'开始之后两次采样**一模一样** —— 蛇没在动'
+                     u'（也可能已经「实验失败」停下来了）')
+
+    # ── 证伪那半段：关掉游戏，画面必须静止 ──
+    if not _click_sel(b, '#gameOverlay #gameClose'):
+        fails.append(u'找不到「逃离实验室」按钮')
+    else:
+        time.sleep(0.3)
+        t1 = _canvas_sig(b)
+        time.sleep(0.25)
+        t2 = _canvas_sig(b)
+        if t1 != t2:
+            fails.append(u'关掉之后画面**还在变** —— 说明上面「在动」那个判据是恒真式，'
+                         u'测了等于没测')
+
+    return (fails, u'开始后蛇在动；关掉后静止（判据有牙齿）' if not fails else u'游戏没跑起来')
+
+
+@check
+@mobius_only
+def check_mobius_game_runs(b, page, expected):
+    """① 点下方区块游戏卡上的「开始实验」→ 遮罩打开，且蛇真的在动。
+
+    ⚠ 点的是**卡片上的按钮**（`.bottom-game .game-card-start`），
+      不是遮罩里那个 —— 用户看到的入口就是这个，验它才有意义。
+    ⚠ 走**真实鼠标路径**：这些页的脚本是 IIFE，游戏状态不是全局的，
+      `typeof startGame === 'function'` 会得到 `undefined`（HANDOVER §10.6）。
+    """
+    _reset(b)
+    return _game_probe(b)
+
+
+@check_reduced
+@mobius_only
+def check_mobius_game_runs_under_reduced(b, page, expected):
+    """② **Review Focus #5**：减动模式下小游戏**照常能玩**。
+
+    spec §5.5 最后一条：小游戏**内部**的动画在减动下**保留** ——
+    它由「开始」按钮**显式触发**，不属于「自动播放的装饰动效」。
+    ⚠ 这条要防的失败模式是：有人在减动段里一刀切 `animation:none` / 停掉 rAF，
+      顺手把游戏也停了 —— 那不是「关动画」，是「关功能」。
+
+    判据与 ① 同一套（含「关掉之后必须静止」那半段）。
+    """
+    _set_motion(b, 'reduce')
+    _reset(b)
+    fails, summary = _game_probe(b)
+    _set_motion(b, 'reduce')      # 收尾：把模式留给后面的减动断言
+    return (fails, summary)
+
+
 # ── 主流程 ────────────────────────────────────────────────────────────
 def main():
     raw = sys.argv[1:]
