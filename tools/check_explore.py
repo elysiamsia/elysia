@@ -934,6 +934,181 @@ def check_hint_on_above_ratio(b, page, expected):
     return (fails, u'过半后只提示没找到的' if not fails else u'提示范围不对')
 
 
+# ══ 陪伴层（低语）═════════════════════════════════════════════════════
+def _blank_point(b):
+    """找一个「点下去不会碰到可发现物 / 链接 / 按钮」的视口坐标。
+
+    ⚠ 不能随便取一个坐标就当空白：探针页上确实有 5 个 44×44 的热区，
+      点到它们会走**另一条**代码路径（出气泡，不计数），
+      于是低语的断言会莫名其妙地失败，而原因在几十行之外。
+    """
+    return b.jso("""(() => {
+        window.scrollTo(0, 0);
+        var cands = [[40, 40], [window.innerWidth - 40, 60], [window.innerWidth / 2, 14],
+                     [60, window.innerHeight - 70]];
+        for (var i = 0; i < cands.length; i++) {
+            var x = cands[i][0], y = cands[i][1];
+            var el = document.elementFromPoint(x, y);
+            if (!el) continue;
+            if (el.closest('.explore-find, a, button, [role="button"], input, textarea, select, label')) continue;
+            return JSON.stringify({ x: x, y: y });
+        }
+        return null;
+    })()""")
+
+
+def _click_blank(b, times=1):
+    """在空白处点 N 次 —— **连着点**，间隔很小（这正是冷却要挡住的形态）。"""
+    p = _blank_point(b)
+    if not p:
+        return False
+    for _ in range(times):
+        b.press(p['x'], p['y'])
+        time.sleep(0.02)
+        b.release(p['x'], p['y'])
+        time.sleep(0.03)
+    return True
+
+
+def _whisper_state(b):
+    return b.jso("""(() => {
+        var el = document.querySelector('.explore-whisper');
+        var E = window.__ELY_EXPLORE__;
+        return JSON.stringify({
+            exists: !!el,
+            shown: E ? E.whisperShown : null,
+            text: el ? el.textContent : null,
+            visible: !!el && el.classList.contains('visible') && !el.hidden,
+        });
+    })()""")
+
+
+@check
+def check_whisper_silent_during_cooldown(b, page, expected):
+    """冷却期内**连着点多少次都不说话**。
+
+    ⚠ 依赖「已经说过一句」这个前提 —— 开场时冷却还没启动，
+      这时连点 3 次是**该**说话的。所以先正常说出一句，再测节流。
+      不这么写的话，这条断言会跟「第 3 次才说话」那条互相矛盾。
+    """
+    _reset(b)
+    if not _click_blank(b, 3):
+        return ([u'探针页里找不到可用的空白坐标'], u'—')
+    time.sleep(0.4)
+
+    st = _whisper_state(b)
+    if st['shown'] != 1:
+        return ([u'开场连点 3 次该说出第 1 句，实际 whisperShown=%r' % st['shown']], u'—')
+
+    # 紧接着连点 10 次 —— 全落在冷却里，而每次连点又**把冷却往后推**
+    _click_blank(b, 10)
+    time.sleep(0.4)
+    st2 = _whisper_state(b)
+    if st2['shown'] != 1:
+        return ([u'冷却期内连点 10 次，低语从 1 句涨到了 %r —— 没节流'
+                 % st2['shown']], u'没节流')
+
+    return ([], u'冷却期内静默（连点 13 次只说了 1 句）')
+
+
+@check
+def check_whisper_on_third_click(b, page, expected):
+    """冷却结束后的**第 3 次**点击才说话 —— 次数固定，不是概率。
+
+    第 1、2 次都必须**没有**。只验「第 3 次说了」的话，
+    一个「每次都说话」的实现照样能过。
+    """
+    _reset(b)
+    fails = []
+
+    if not _click_blank(b, 1):
+        return ([u'找不到空白坐标'], u'—')
+    time.sleep(0.25)
+    s1 = _whisper_state(b)['shown']
+
+    _click_blank(b, 1)
+    time.sleep(0.25)
+    s2 = _whisper_state(b)['shown']
+
+    _click_blank(b, 1)
+    time.sleep(0.35)
+    st = _whisper_state(b)
+
+    if s1 != 0:
+        fails.append(u'第 1 次点击就说话了（whisperShown=%r）' % s1)
+    if s2 != 0:
+        fails.append(u'第 2 次点击就说话了（whisperShown=%r）' % s2)
+    if st['shown'] != 1:
+        fails.append(u'第 3 次点击没说话（whisperShown=%r）' % st['shown'])
+    elif not st['visible']:
+        fails.append(u'低语计数涨了，但节点没显示出来')
+    if not st['exists']:
+        fails.append(u'页面上根本没有 .explore-whisper 节点')
+
+    return (fails, u'第 3 次才开口' if not fails else u'次数不对')
+
+
+@check
+def check_whisper_lines_in_order(b, page, expected):
+    """台词**按数组顺序**推进 —— 不是随机抽。
+
+    ⚠ 这条就是「不做抽卡」那条约定的直接断言。随机抽的实现迟早会在
+      这里翻车（而且是**偶发**翻车，跑十次错一次那种）——
+      所以这里连说三句逐个对，不是只说一句看看像不像。
+    """
+    _reset(b)
+    lines = json.loads(b.js('JSON.stringify((window.THEME && THEME.explore.whisper) || [])') or '[]')
+    if len(lines) < 3:
+        return ([u'探针页的 whisper 少于 3 句（%d），验不出顺序' % len(lines)], u'—')
+
+    seen = []
+    for i in range(3):
+        if i > 0:
+            time.sleep(2.0)      # 等冷却过去（夹具设的 1500ms）
+        _click_blank(b, 3)
+        time.sleep(0.4)
+        st = _whisper_state(b)
+        if st['shown'] != i + 1:
+            return ([u'第 %d 句没出来（whisperShown=%r，期待 %d）'
+                     % (i + 1, st['shown'], i + 1)], u'—')
+        seen.append(st['text'])
+
+    fails = []
+    for i, want in enumerate(lines[:3]):
+        if seen[i] != want:
+            fails.append(u'第 %d 句是 %r，按顺序该是 %r —— 台词不是按顺序推进的'
+                         % (i + 1, seen[i], want))
+
+    return (fails, u'三句逐字按序' if not fails else u'顺序不对')
+
+
+@check
+def check_whisper_auto_hides(b, page, expected):
+    """低语 2.5 秒后**自己消失**。
+
+    ⚠ 两头都要验：太早消失（还没读完就没了）和永不消失（叠在屏幕上挡路）
+      都要抓。只验「最后没了」的话，一个「出现后 0.1 秒就没了」的实现能过。
+    """
+    _reset(b)
+    if not _click_blank(b, 3):
+        return ([u'找不到空白坐标'], u'—')
+    time.sleep(0.4)
+
+    st = _whisper_state(b)
+    if not st['visible']:
+        return ([u'低语压根没出现，这条断言测不出东西'], u'—')
+
+    time.sleep(1.0)                      # 累计约 1.4 秒
+    if not _whisper_state(b)['visible']:
+        return ([u'低语出现不到 1.4 秒就没了 —— 话还没读完'], u'消失得太快')
+
+    time.sleep(2.0)                      # 累计约 3.4 秒
+    if _whisper_state(b)['visible']:
+        return ([u'过了 3.4 秒低语还显示着 —— 它不会自己消失'], u'不消失')
+
+    return ([], u'2.5 秒后自己消失')
+
+
 # ── 主流程 ────────────────────────────────────────────────────────────
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]

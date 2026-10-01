@@ -145,6 +145,9 @@
     bubbleTimer: 0,
     countEl: null,
     unlockEl: null,
+    whisperEl: null,
+    whisperTimer: 0,
+    whisperHideTimer: 0,
   };
 
   /* ══ 进度存储 ═══════════════════════════════════════════════════════
@@ -277,6 +280,91 @@
     refreshCount();
     return S.countEl;
   }
+
+  /* ══ 陪伴层（低语）═══════════════════════════════════════════════════
+     「每次点击都有一点回应」—— 但**必须可预期**。
+
+     ⚠ **这一节是全局约束的落点：绝对不做概率。**
+       需求方 2026-10-01 明确不要「抽卡式不可预测」——
+       可预期的陪伴才像「有人在那里」，概率会让它变成抽奖。
+       规则是死的：冷却结束后的**第 3 次**点击说一句，台词**按顺序**推进。
+
+     ⚠ 不做概率的代价是「有时候点了没反应」。**那是承诺的一部分，不是 bug。**
+       说好第 3 次，就一定是第 3 次 —— 想让它更常说话，调的是冷却是次数，
+       不是加一个随机数。 */
+  var WHISPER_MS = 2500;      // 一句话在屏幕上停留多久
+  var whisperLastAt = 0;      // 上一次「计数窗口」的时间戳
+  var whisperClicks = 0;      // 冷却结束之后点了第几次
+  var whisperIdx = 0;         // 下一句该说哪句（**按顺序**，不随机）
+
+  /** 点击落在「本来就有反应」的东西上时，不叠一层低语 —— 那样会吵。 */
+  function isInteractive(el) {
+    if (!el || !el.closest) return false;
+    if (el.closest('.explore-find')) return true;   // 它自己会弹台词气泡
+    return !!el.closest('a, button, input, textarea, select, label,' +
+                        ' [role="button"], [contenteditable="true"]');
+  }
+
+  /** 说下一句。台词**按数组顺序**推进，说完循环。 */
+  function showWhisper() {
+    var lines = (S.cfg && S.cfg.whisper) || [];
+    if (!lines.length) return;
+
+    if (!S.whisperEl) {
+      S.whisperEl = document.createElement('div');
+      S.whisperEl.className = 'explore-whisper';
+      S.whisperEl.setAttribute('role', 'status');
+      S.whisperEl.setAttribute('aria-live', 'polite');
+      S.whisperEl.hidden = true;
+      document.body.appendChild(S.whisperEl);
+    }
+
+    S.whisperEl.textContent = lines[whisperIdx % lines.length];
+    whisperIdx = (whisperIdx + 1) % lines.length;
+
+    S.whisperEl.hidden = false;
+    S.dbg.whisperShown++;
+    S.whisperEl.classList.add('visible');
+
+    // ⚠ 两个定时器都要清掉再重设。只清一个的话，上一句的「淡出之后隐藏」
+    //   会在新的一句正显示着的时候把它藏掉 —— 偶发、且很难复现。
+    clearTimeout(S.whisperTimer);
+    clearTimeout(S.whisperHideTimer);
+    S.whisperTimer = setTimeout(function () {
+      S.whisperEl.classList.remove('visible');   // 先淡出
+      S.whisperHideTimer = setTimeout(function () {
+        S.whisperEl.hidden = true;               // 淡出完了再真正藏起来
+      }, 300);
+    }, WHISPER_MS);
+  }
+
+  /** 页面上任何一次「落在非交互处」的点击都会走到这里。 */
+  function onDocClick(e) {
+    if (!S.cfg || !S.dbg) return;
+    if (!(S.cfg.whisper && S.cfg.whisper.length)) return;
+    if (isInteractive(e.target)) return;
+
+    var now = Date.now();
+    var cd = S.cfg.whisperCooldownMs != null ? S.cfg.whisperCooldownMs : 8000;
+
+    if (now - whisperLastAt < cd) {
+      // ⚠ 冷却期内**只把时间往后推，不计数**。
+      //   所以「一直快速点」永远不会说话 —— 那是刷屏，不是陪伴。
+      //   必须停一下，再点三次。
+      whisperLastAt = now;
+      return;
+    }
+
+    whisperClicks++;
+    if (whisperClicks >= 3) {
+      whisperClicks = 0;
+      whisperLastAt = now;
+      showWhisper();
+    }
+  }
+
+  // 只挂一次（整页一个监听器）。挂 document 上，页面本体不参与。
+  document.addEventListener('click', onDocClick);
 
   /**
    * 造出解锁区 —— **一进页面就建好，只是带 `hidden`**。
