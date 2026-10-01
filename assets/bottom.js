@@ -132,6 +132,13 @@
    * @param {object} [opts.game]      { module, title, hint }，见 spec §4.5
    * @param {string} [opts.bdayLine]  生日当天额外说的一句（可选）
    * @param {string} [opts.bdaySrc]   上面那句的出处（有台词就必须有出处）
+   *
+   * ⚠ **不传** 与 **传空对象** 不是一回事，别踩：
+   *      `mount()`    → **沿用上次的 opts**（重画一遍，游戏槽保住）
+   *      `mount({})`  → **opts 被重置成空**，上一次的 `game` 会被清掉
+   *   写测试或加第二个调用点时很容易顺手写成 `mount({})`，
+   *   症状是「重画之后游戏槽凭空消失，而调用方以为自己什么都没改」——
+   *   评测时就是这么踩到的（Task 11 复核）。
    */
   function mount(opts) {
     if (arguments.length === 0) opts = S.opts;   // 不传 = 沿用上次的

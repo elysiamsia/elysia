@@ -84,7 +84,7 @@ var THEME = {
       /* ⚠ 这一条锚在 `#bottom` 上 —— 而 `#bottom` 是 `ElysiaBottom.mount()`
          **之后**才建出来的，`ElysiaExplore.init()` 跑的时候它还不存在。
          这是**真实场景的复刻**（mobius 那条 lab-11 就锚在下方区块上），
-         用来守住「锚点是后建的 → 补扫」这条路（见 explore.js 的 retryPending）。 */
+         用来守住「锚点是后建的 → 补扫」这条路（见 explore.js 的 ensureAttached）。 */
       { id:'fx-06', at:'#bottom', x:0.50, y:0.30, verb:'click',
         art:'sleeping', line:'（探针）后建的锚点。', src:'探针页·六' },
     ],
