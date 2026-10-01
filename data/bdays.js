@@ -16,7 +16,7 @@
  *     写法一致 —— 也就是直接用 `new Date(y, m, d)` 的语义。
  *     写的时候心里过一遍：4 月 30 日 → `[3, 30]`。
  *
- *   键写成文件路径而不是 URL 路径，是因为 `ElysiaBottom.pageKey()`
+ *   键写成文件路径而不是 URL 路径，是因为 `ElysiaBday.pageKey()`
  *   会把 `/sakura/` 和 `/sakura/index.html` 都归一成 `sakura/index.html` ——
  *   线上是前者，本地双击打开是后者，两种都得认。
  *

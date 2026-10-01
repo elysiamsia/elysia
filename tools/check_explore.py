@@ -1498,27 +1498,36 @@ UNFROZEN_CLOCK = """
 
 BD_CASES = """
 (() => {
-  var key = ElysiaBottom.pageKey();
+  var key = ElysiaBday.pageKey();
   // ⚠ 先记住原条目：这一页可能本来就在生日表里
   var had = Object.prototype.hasOwnProperty.call(window.ELYSIA_BDAYS, key);
   var old = window.ELYSIA_BDAYS[key];
   var out = [];
-  var now = new Date();
-  var y = now.getFullYear(), M = now.getMonth(), D = now.getDate();
+
+  function txt(id) { var e = document.getElementById(id); return e ? e.textContent : null; }
 
   function setBday(m, d, label) {
     window.ELYSIA_BDAYS[key] = [m, d];
-    // ⚠ 不传参（不是传 `{}`）—— 传空对象会把上一次的 opts 整个换掉，
-    //   `game` 就此消失，后面查游戏槽的断言会莫名其妙地红。
-    ElysiaBottom.mount();
-    var t = document.querySelector('.bottom-bday-text');
-    out.push({ label: label, m: m, d: d, text: t ? t.textContent : null });
+    // ⚠ 不传参（不是传 `{}`）—— 传空对象会把上一次的 opts 整个换掉。
+    ElysiaBday.mount();
+    var timer = document.getElementById('bdayTimer');
+    var date = document.querySelector('.bday-date');
+    out.push({
+      label: label, m: m, d: d,
+      text: txt('bdayEggText'),
+      date: date ? date.textContent : null,
+      D: txt('bdD'), H: txt('bdH'), M: txt('bdM'), S: txt('bdS'),
+      timerHidden: !!timer && timer.style.display === 'none',
+    });
   }
+
+  var now = new Date();
+  var y = now.getFullYear(), M = now.getMonth(), D = now.getDate();
 
   // (a) 今天就是生日
   setBday(M, D, 'today');
 
-  // (b) 四天之后。期望值**独立算一遍**（不抄 bottom.js 里那段公式）
+  // (b) 四天之后。期望值**独立算一遍**（不抄 bday.js 里那段公式）
   var t4 = new Date(y, M, D + 4);
   setBday(t4.getMonth(), t4.getDate(), 'plus4');
   out[out.length - 1].expect = Math.floor(
@@ -1533,22 +1542,29 @@ BD_CASES = """
   // 后面几条断言会跟着红，而原因在几百行之外。实测踩到过。
   if (had) window.ELYSIA_BDAYS[key] = old;
   else delete window.ELYSIA_BDAYS[key];
-  ElysiaBottom.mount();
+  ElysiaBday.mount();
   return JSON.stringify(out);
 })()
 """
 
 
-def _bday_slot(b):
+def _bday_widget(b):
+    """看生日胶囊在不在、这一页有没有登记。
+
+    ⚠ 判据是 **`#bdayEgg` 这个节点在不在**，不是「有没有被藏起来」——
+      藏起来的那种，断言分不出「这页没有生日」和「组件坏了」。
+    """
     return b.jso("""(() => {
-        var slot = document.querySelector('.bottom-bday');
-        var sec = document.getElementById('bottom');
         return JSON.stringify({
-            key: window.ElysiaBottom ? ElysiaBottom.pageKey() : null,
-            listed: !!(window.ELYSIA_BDAYS && ElysiaBottom
-                       && ELYSIA_BDAYS[ElysiaBottom.pageKey()]),
-            slot: !!slot,
-            inSection: !!(slot && sec && sec.contains(slot)),
+            key: window.ElysiaBday ? ElysiaBday.pageKey() : null,
+            listed: !!(window.ELYSIA_BDAYS && window.ElysiaBday
+                       && ELYSIA_BDAYS[ElysiaBday.pageKey()]),
+            egg: !!document.getElementById('bdayEgg'),
+            panel: !!document.getElementById('bdayPanel'),
+            eggs: document.querySelectorAll('#bdayEgg').length,
+            panels: document.querySelectorAll('#bdayPanel').length,
+            // 旧的「下方区块里的倒计时」必须彻底不在了（两处倒计时是最坏的情况）
+            inBottom: !!document.querySelector('.bottom-bday'),
         });
     })()""")
 
@@ -1556,72 +1572,77 @@ def _bday_slot(b):
 @check
 @fixture_only
 def check_bday_absent_when_not_listed(b, page, expected):
-    """表里没有这一页 → **整个不渲染** `.bottom-bday`。
+    """表里没有这一页 → **整个不渲染**（连胶囊都没有）。
 
     ⚠ 「不渲染」和「渲染了再藏起来」是两回事。藏起来的那种，
       断言分不出「这页没有生日」和「倒计时组件坏了」——
       而后者会静默地让所有页面的倒计时一起消失。
 
-      探针页**刻意不在** data/bdays.js 里（它是个测试页，本来也没有生日）。
+      探针页**刻意不在** data/bdays.js 里（它是个测试页，本来也没有生日），
+      但它**加载并调用了** `bday.js` —— 所以这条断的是
+      「组件在跑，但页面不在表里，于是什么都不该出现」。
     """
     _reset(b)
-    d = _bday_slot(b)
+    d = _bday_widget(b)
     if d is None:
-        return ([u'取不到下方区块的状态 —— bottom.js 没跑？'], u'—')
+        return ([u'取不到生日组件的状态 —— bday.js 没跑？'], u'—')
 
     fails = []
     if d['key'] != 'tools/explore-fixture.html':
         fails.append(u'pageKey() 得到 %r，期待 tools/explore-fixture.html' % d['key'])
     if d['listed']:
         fails.append(u'探针页居然在 ELYSIA_BDAYS 里 —— 表被谁改过了？')
-    if d['slot']:
-        fails.append(u'这一页不在生日表里，却渲染出了 .bottom-bday')
+    if d['egg'] or d['panel']:
+        fails.append(u'这一页不在生日表里，却渲染出了 #bdayEgg / #bdayPanel')
 
-    return (fails, u'没登记就不渲染' if not fails else u'不该出现')
+    return (fails, u'没登记就整个不渲染' if not fails else u'不该出现')
 
 
 @check
 def check_bday_appears_when_listed(b, page, expected):
-    """把这一页塞进表里再重挂 → `.bottom-bday` 出现，日期也对。
+    """把这一页塞进表里再重挂 → 胶囊与面板出现，日期也对。
 
-    ⚠ 这条同时是「mount 可以重复调用」的验证。不可重复调用的实现，
-      这类断言只能靠猜 —— 而「重挂之后槽位状态不对」是真实会发生的 bug。
+    ⚠ 这条同时是「`mount` 可以重复调用」的验证。不可重复调用的实现，
+      这类断言只能靠猜 —— 而「重挂之后状态不对」是真实会发生的 bug
+      （比如重挂时没清掉上一次的节点 → 页面上两个胶囊）。
     """
     _reset(b)
     d = b.jso("""(() => {
-        var key = ElysiaBottom.pageKey();
+        var key = ElysiaBday.pageKey();
         var had = Object.prototype.hasOwnProperty.call(window.ELYSIA_BDAYS, key);
         var old = window.ELYSIA_BDAYS[key];
         window.ELYSIA_BDAYS[key] = [3, 30];        // 4 月 30 日
-        ElysiaBottom.mount();
-        var slot = document.querySelector('.bottom-bday');
-        var date = slot ? slot.querySelector('.bottom-bday-date') : null;
-        var line = slot ? slot.querySelector('.bottom-bday-line') : null;
+        ElysiaBday.mount();
+        var date = document.querySelector('.bday-date');
         var out = {
-            slot: !!slot,
+            egg: !!document.getElementById('bdayEgg'),
+            panel: !!document.getElementById('bdayPanel'),
+            eggs: document.querySelectorAll('#bdayEgg').length,
+            panels: document.querySelectorAll('#bdayPanel').length,
             date: date ? date.textContent : null,
-            lineHidden: line ? !!line.hidden : null,
         };
         // ⚠ **还原**，不是无脑 delete —— 这一页本来就在生日表里的话
         //   （mobius 就是），delete 会把它的真条目抹掉，
         //   后面几条断言就会跟着莫名其妙地红。这个坑当场踩到过。
         if (had) window.ELYSIA_BDAYS[key] = old;
         else delete window.ELYSIA_BDAYS[key];
-        ElysiaBottom.mount();      // 不传参 = 沿用上次的 opts 重画
+        ElysiaBday.mount();      // 不传参 = 沿用上次的 opts 重画
         return JSON.stringify(out);
     })()""")
     if not d:
-        return ([u'取不到下方区块状态'], u'—')
+        return ([u'取不到生日组件状态'], u'—')
 
     fails = []
-    if not d['slot']:
-        fails.append(u'塞进生日表之后仍然没有 .bottom-bday —— 表变化没反映到槽位')
-    if d['date'] != u'4 月 30 日':
-        fails.append(u'日期显示成 %r，应为「4 月 30 日」（月份 0 起算错了吗）' % d['date'])
-    if d['lineHidden'] is not True:
-        fails.append(u'不是生日当天，那句生日台词却是显示着的')
+    if not d['egg'] or not d['panel']:
+        fails.append(u'塞进生日表之后仍然没有 #bdayEgg / #bdayPanel —— 表变化没反映到界面')
+    if d['eggs'] != 1 or d['panels'] != 1:
+        fails.append(u'重挂之后有 %d 个胶囊 / %d 个面板，应该各 1 个 —— '
+                     u'`mount` 重复调用时没清干净上一次的节点'
+                     % (d['eggs'], d['panels']))
+    if d['date'] != u'4月30日':
+        fails.append(u'日期显示成 %r，应为「4月30日」（月份 0 起算错了吗）' % d['date'])
 
-    return (fails, u'登记了就出现（且已还原）' if not fails else u'槽位不对')
+    return (fails, u'登记了就出现（且已还原）' if not fails else u'界面不对')
 
 
 @check
@@ -1646,17 +1667,29 @@ def check_bday_countdown_text(b, page, expected):
         by = dict((c['label'], c) for c in out)
         fails = []
 
+        # (a) 今天就是生日 → 胶囊那句话 + **四格收起来**（首页就是这么做的）
         a = by.get('today', {})
         if a.get('text') != u'今天是她的生日！':
-            fails.append(u'(a) 今天就是生日，却显示 %r' % a.get('text'))
+            fails.append(u'(a) 今天就是生日，胶囊却显示 %r' % a.get('text'))
+        if not a.get('timerHidden'):
+            fails.append(u'(a) 生日当天四格该收起（首页就是这个行为），却没有')
 
+        # (b) 四天之后 → 胶囊的天数 + 四格**都要对**（别只验一行文案）
         c2 = by.get('plus4', {})
         want2 = u'距她的生日还有 %s 天' % c2.get('expect')
         if c2.get('text') != want2:
-            fails.append(u'(b) 生日在四天后，显示 %r，独立算出来该是 %r（差 %r）'
+            fails.append(u'(b) 生日在四天后，胶囊显示 %r，独立算出来该是 %r（差 %r）'
                          % (c2.get('text'), want2,
                             u'—— 月份/日期是不是搞反了' if c2.get('text') else u''))
+        if str(c2.get('D')) != str(c2.get('expect')):
+            fails.append(u'(b) 四格里的「天」是 %r，胶囊却写着 %r —— 两处对不上'
+                         % (c2.get('D'), c2.get('expect')))
+        for k in (u'H', u'M', u'S'):
+            v = c2.get(k)
+            if not (isinstance(v, str) and len(v) == 2 and v.isdigit()):
+                fails.append(u'(b) 四格里的 %s 是 %r —— 应该是两位补零的数字' % (k, v))
 
+        # (c) 昨天 → 必须滚到明年，不是显示成负数
         c3 = by.get('yesterday', {})
         txt3 = c3.get('text') or u''
         m = re.search(r'(\d+)\s*天', txt3)
@@ -1669,7 +1702,7 @@ def check_bday_countdown_text(b, page, expected):
             if n < 360 or n > 366:
                 fails.append(u'(c) 生日是昨天，天数该滚到明年（约 364~366），实际 %d' % n)
 
-        return (fails, u'三个分支都对' if not fails else u'倒计时不对')
+        return (fails, u'三个分支都对（含四格）' if not fails else u'倒计时不对')
     finally:
         # ⚠ 一定要解冻：冻结时间会影响后面的断言（比如低语冷却一直不结束）
         b.js(UNFROZEN_CLOCK)
@@ -1942,37 +1975,109 @@ def check_mobius_lines_from_material(b, page, expected):
 
 @check
 @mobius_only
-def check_mobius_has_bday_slot(b, page, expected):
-    """④ mobius 在 `data/bdays.js` 里，所以倒计时槽该渲染出来。"""
-    d = b.jso("""(() => {
-        var slot = document.querySelector('.bottom-bday');
-        var txt = slot ? slot.querySelector('.bottom-bday-text') : null;
-        return JSON.stringify({
-            slot: !!slot,
-            date: slot && slot.querySelector('.bottom-bday-date')
-                  ? slot.querySelector('.bottom-bday-date').textContent : null,
-            text: txt ? txt.textContent : null,
-        });
-    })()""")
+def check_mobius_has_bday_widget(b, page, expected):
+    """④ mobius 在 `data/bdays.js` 里，所以生日胶囊该渲染出来。
+
+    ⚠ 2026-10-01 改：从「下方区块里的一行字」换成**首页那个右下角悬浮组件**
+      （需求方要求「和首页形式一样」）。所以判据从 `.bottom-bday` 变成 `#bdayEgg`，
+      同时**反过来**要求 `.bottom-bday` **不存在** —— 两个倒计时是最坏的情况，
+      而且它自己写死 BM/BD，等于第二处数据源。
+    """
+    d = _bday_widget(b)
     if d is None:
-        return ([u'取不到下方区块状态'], u'—')
+        return ([u'取不到生日组件状态'], u'—')
 
     fails = []
-    if not d['slot']:
-        fails.append(u'没有 .bottom-bday —— mobius 在 bdays.js 里（[3,30]），该渲染的')
-    if d['date'] != u'4 月 30 日':
-        fails.append(u'日期显示成 %r，应为「4 月 30 日」' % d['date'])
+    if not d['listed']:
+        fails.append(u'mobius 不在 ELYSIA_BDAYS 里 —— data/bdays.js 少了它？')
+    if not d['egg'] or not d['panel']:
+        fails.append(u'没有 #bdayEgg / #bdayPanel —— mobius 在 bdays.js 里（[3,30]），该渲染的')
+    if d['eggs'] != 1 or d['panels'] != 1:
+        fails.append(u'页面上有 %d 个胶囊 / %d 个面板，应该各 1 个'
+                     % (d['eggs'], d['panels']))
+    if d['inBottom']:
+        fails.append(u'下方区块里还有 .bottom-bday —— 两个倒计时，'
+                     u'而它自己写死了 BM/BD，是第二处数据源（HANDOVER §10.5 那条教训）')
 
-    # ⚠ 旧的那套右下角悬浮倒计时**必须已经拆掉** ——
-    #   不拆的话同页两个倒计时，且与 data/bdays.js 构成两处维护
-    #   （HANDOVER §10.5 合并 `BUILT` 那条教训）。
-    stale = b.js("String(!!document.getElementById('bdayEgg')"
-                 " || !!document.getElementById('bdayPanel'))")
-    if stale == 'true':
-        fails.append(u'旧的右下角倒计时（#bdayEgg / #bdayPanel）还在 —— '
-                     u'同页两个倒计时，而且它自己写死了 BM/BD，是第二处数据源')
+    date = b.js("(() => { var e = document.querySelector('.bday-date');"
+                " return e ? e.textContent : null; })()")
+    if date != u'4月30日':
+        fails.append(u'面板里的日期是 %r，应为「4月30日」' % date)
 
-    return (fails, u'倒计时槽正确，旧件已拆' if not fails else u'倒计时不对')
+    # 台词与出处：本项目「有台词就必须有出处」，所以面板上要能看到出处
+    src = b.js("(() => { var e = document.getElementById('bdaySrc');"
+               " return e ? e.textContent : null; })()")
+    if not src or u'生日语音' not in src:
+        fails.append(u'面板里没有出处标注（#bdaySrc）：%r' % src)
+
+    return (fails, u'悬浮胶囊在该在的地方' if not fails else u'生日组件不对')
+
+
+@check
+@mobius_only
+def check_mobius_bday_panel_toggles(b, page, expected):
+    """点胶囊开面板，再点一下关掉 —— **走真实鼠标路径**。
+
+    ⚠ 要验两头：开了能开、关了能关。只验「点了会开」的话，
+      一个「只会开不会关」的实现照样能过。
+    """
+    _reset(b)
+    # ⚠ 不能用 `b.center()` —— 那是按 `[data-find-id]` 找的，胶囊不是可发现物。
+    p = b.jso("""(() => {
+        var e = document.getElementById('bdayEgg');
+        if (!e) return null;
+        e.scrollIntoView({ block: 'center', behavior: 'instant' });
+        var r = e.getBoundingClientRect();
+        return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    })()""")
+    if not p:
+        return ([u'页面上没有 #bdayEgg'], u'—')
+
+    def panel_open():
+        return b.js("String(document.getElementById('bdayPanel')"
+                    ".classList.contains('open'))")
+
+    fails = []
+    before = panel_open()
+    if before == 'true':
+        fails.append(u'一开始面板就是开着的 —— 那这条断言测不出「点开」')
+
+    b.press(p['x'], p['y']); time.sleep(0.06); b.release(p['x'], p['y'])
+    time.sleep(0.3)
+    if panel_open() != 'true':
+        fails.append(u'点了胶囊，面板没开')
+
+    b.press(p['x'], p['y']); time.sleep(0.06); b.release(p['x'], p['y'])
+    time.sleep(0.3)
+    if panel_open() == 'true':
+        fails.append(u'再点一下，面板没关 —— 只会开不会关')
+
+    return (fails, u'点开又点关' if not fails else u'开合不对')
+
+
+@check
+@mobius_only
+def check_mobius_bday_ticks(b, page, expected):
+    """秒针**真的在走** —— 1 秒刷一次的定时器是活的。
+
+    ⚠ 这条最容易写成恒真式（「读两次都在变」但两次读的其实是同一帧）。
+      所以判据是**间隔约 1.1 秒读两次 `#bdS`，两次必须不同**；
+      并且交付时**必须证明它抓得到「不走」**——办法是把时钟钉死：
+      时间不动 → `render()` 每次算出的秒数一样 → 这条断言必须报红。
+      （`FROZEN_CLOCK` 那套就在本文件里，现成的。）
+    """
+    _reset(b)
+    if b.js("String(!!document.getElementById('bdS'))") != 'true':
+        return ([u'面板里没有 #bdS —— 四格没渲染出来'], u'—')
+
+    a = b.js("document.getElementById('bdS').textContent")
+    time.sleep(1.1)
+    c = b.js("document.getElementById('bdS').textContent")
+    if a is None or c is None:
+        return ([u'读不到 #bdS'], u'—')
+    if a == c:
+        return ([u'隔了 1.1 秒，#bdS 还是 %r —— 每秒刷新的定时器没在跑' % a], u'秒针不走')
+    return ([], u'秒针在走（%s -> %s）' % (a, c))
 
 
 @check

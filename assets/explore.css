@@ -297,43 +297,169 @@
   margin-bottom: 10px;
 }
 
-.bottom-bday {
-  margin: 22px auto 0;
-  padding: 20px 24px;
-  max-width: 30em;
-  border-radius: 16px;
-  border: 1px solid var(--explore-border, rgba(255, 255, 255, .16));
-  background: rgba(255, 255, 255, .03);
-}
-
-.bottom-bday-date {
-  margin: 0 0 8px;
-  font-size: 12px;
-  letter-spacing: .3em;
-  opacity: .5;
-}
-
-.bottom-bday-text {
-  margin: 0;
-  font-size: 16px;
-  letter-spacing: .08em;
-  color: var(--explore-tint, currentColor);
-}
-
-/* 生日当天那一句 —— 平时 `hidden`，是**真的不渲染**（display:none） */
-.bottom-bday-line {
-  margin: 14px 0 0;
-  font-size: 14px;
-  line-height: 1.9;
-  opacity: .8;
-}
-
-.bottom-bday-line[hidden] {
-  display: none;
-}
-
 .bottom-game {
   margin: 26px auto 0;
+}
+
+/* ==========================================================================
+   7.5 生日倒计时（右下角悬浮胶囊 + 面板）
+
+   ⚠ **位置变了**：需求方 2026-10-01 改的口 ——「其他英桀的生日要和首页爱莉希雅的
+     生日界面**形式一样**」，并在选项里明确选了「**完全照搬首页：右下角悬浮**」。
+     这**推翻**了 spec §6.2 那句「位置改为页面下方区块（需求方要求『下方』）」，
+     **以这次为准**；下方区块里因此**不再有**倒计时槽。
+     （所以 `.bottom-bday*` 那几条规则已经删掉了，别以为是漏写。）
+
+   ⚠ **配色默认值 = 首页原先写死的那套粉紫**，逐字对应。
+     首页在 `:root` 里**不**定义 `--bday-*`，于是吃默认值 → **逐像素不变**；
+     英桀页在各自的 `:root` 里覆盖成自己的主题色即可。
+   ========================================================================== */
+#bdayEgg {
+  position: fixed;
+  right: 1.2rem;
+  bottom: 1.2rem;
+  z-index: 9990;
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  padding: .55rem 1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  user-select: none;
+  background: var(--bday-egg-bg,
+    linear-gradient(135deg, rgba(255, 143, 163, .16), rgba(155, 93, 229, .16)));
+  border: 1px solid var(--bday-egg-border, rgba(255, 200, 221, .25));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 0 18px var(--bday-egg-glow, rgba(255, 143, 163, .18));
+  color: var(--bday-ink, #ffd6e8);
+  font-size: .8rem;
+  letter-spacing: .08em;
+  transition: transform .25s, box-shadow .25s;
+  animation: bdayFloat 3.5s ease-in-out infinite;
+}
+
+#bdayEgg:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 0 26px var(--bday-egg-glow-hover, rgba(255, 143, 163, .3));
+}
+
+@keyframes bdayFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+.bday-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bday-accent, #ff8fa3);
+  box-shadow: 0 0 10px var(--bday-accent, #ff8fa3);
+  animation: bdayPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes bdayPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .5; transform: scale(.8); }
+}
+
+#bdayPanel {
+  position: fixed;
+  right: 1.2rem;
+  bottom: 4.4rem;
+  z-index: 9990;
+  width: min(300px, calc(100vw - 2.4rem));
+  padding: 1.4rem 1.3rem;
+  border-radius: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(12px) scale(.97);
+  transition: opacity .35s, transform .35s;
+  background: var(--bday-panel-bg,
+    linear-gradient(150deg, rgba(26, 14, 46, .92), rgba(45, 27, 78, .92)));
+  border: 1px solid var(--bday-panel-border, rgba(255, 200, 221, .22));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, .4),
+              0 0 40px var(--bday-panel-glow, rgba(255, 143, 163, .12));
+  text-align: center;
+}
+
+#bdayPanel.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.bday-cake {
+  display: block;
+  font-size: 1.5rem;
+  margin-bottom: .4rem;
+}
+
+.bday-title {
+  font-size: .72rem;
+  color: var(--bday-title, #a89cc8);
+  letter-spacing: .3em;
+  margin-bottom: .3rem;
+}
+
+.bday-date {
+  font-size: .95rem;
+  color: var(--bday-date, #ffc8dd);
+  letter-spacing: .12em;
+  margin-bottom: 1rem;
+}
+
+.bday-timer {
+  display: flex;
+  justify-content: center;
+  gap: .6rem;
+}
+
+.bday-cell {
+  min-width: 3.4rem;
+  padding: .55rem .3rem;
+  border-radius: 12px;
+  background: var(--bday-cell-bg, rgba(255, 200, 221, .07));
+  border: 1px solid var(--bday-cell-border, rgba(255, 200, 221, .14));
+}
+
+.bday-num {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 300;
+  color: var(--bday-num, #ffd166);
+  font-variant-numeric: tabular-nums;
+}
+
+.bday-unit {
+  display: block;
+  font-size: .62rem;
+  color: var(--bday-unit, #7b6f99);
+  margin-top: .2rem;
+  letter-spacing: .15em;
+}
+
+.bday-msg {
+  margin-top: 1rem;
+  font-size: .78rem;
+  color: var(--bday-title, #a89cc8);
+  line-height: 1.9;
+}
+
+.bday-msg .pink {
+  color: var(--bday-accent, #ff8fa3);
+}
+
+/* 台词出处 —— 与气泡那条同一个做法（「台词必须有出处」这条纪律要看得见）。
+   ⚠ **只有传了 `src` 才会有这个节点**，所以首页的 DOM 与改动前逐字相同。 */
+.bday-src {
+  margin-top: .6rem;
+  font-size: .62rem;
+  letter-spacing: .08em;
+  color: var(--bday-src, rgba(168, 156, 200, .55));
+  text-align: right;
 }
 
 /* ==========================================================================
@@ -365,6 +491,14 @@
 
   /* 解锁区同理：不播出现动画，但找齐了照样放出来 */
   .explore-unlock.revealed {
+    animation: none;
+  }
+
+  /* 生日胶囊的浮动、圆点的脉动 —— 都是**装饰性、自动播放**的，该停。
+     ⚠ **但面板开合是用户点出来的**，那条 transition 不能碰 ——
+       「关掉动画」不等于「关掉功能」。（工具里 `--reduced` 那几条断言守着这个。） */
+  #bdayEgg,
+  .bday-dot {
     animation: none;
   }
 }
