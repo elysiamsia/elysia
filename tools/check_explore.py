@@ -2666,6 +2666,51 @@ def check_sakura_no_dead_write(b, page, expected):
     return ([], u'不再写 sakuraTries')
 
 
+@check
+@sakura_only
+def check_blade_state_restores_together(b, page, expected):
+    """收过花的人**下次访问**时，刀的两个状态要**一起**恢复（花 + 刀光）。
+
+    ⚠ 这条对应 Task 3 交付时**主动交代「没做」**的那件事：
+      `renderBlade()` 只补了花的 `.bloom`，**没补 `bladeGlow` 的 `.lit`** ——
+      于是「花开着、光灭着」，两处状态自相矛盾。它是**改动前就有的不一致**
+      （Task 3 的四项范围里没列它，所以当时没动）。
+
+    ⚠ 但**现在更要紧**：刀已经永远可点，那个「送花」分支**不会再进第二次** ——
+      不在这里补，刀光对收过花的老访客就是**永远不再亮**。
+
+    做法：写 `sakuraFlower` → 重载 → 查两个类名是否都在。
+    （⚠ 注意不能靠「点三次」来构造这个状态 —— 那走的是**送花那一瞬间**的路径，
+      而这里要验的是**下次访问时从存储恢复**的路径。）
+    """
+    b.js("""(() => {
+        try { localStorage.setItem('sakuraFlower', '1'); } catch (e) {}
+        location.reload();
+        return 1;
+    })()""")
+    time.sleep(3.5)
+
+    d = b.jso("""(() => {
+        var f = document.getElementById('bladeFlower');
+        var g = document.getElementById('bladeGlow');
+        return JSON.stringify({
+            flower: !!f && f.classList.contains('bloom'),
+            glow:   !!g && g.classList.contains('lit'),
+        });
+    })()""")
+    if d is None:
+        return ([u'取不到刀的状态'], u'—')
+
+    fails = []
+    if not d['flower']:
+        fails.append(u'重载后花没有开着 —— `renderBlade()` 没从存储恢复 `bloom`')
+    if not d['glow']:
+        fails.append(u'花开着、**刀光却是灭的** —— `renderBlade()` 漏补了 `.lit`，'
+                     u'而刀现在永远可点、送花那支不会再进，所以它**永远亮不起来**了')
+
+    return (fails, u'花与刀光一起恢复' if not fails else u'状态不一致')
+
+
 # ── 主流程 ────────────────────────────────────────────────────────────
 def main():
     raw = sys.argv[1:]
