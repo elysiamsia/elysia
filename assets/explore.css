@@ -55,16 +55,25 @@
 
 /* 视觉本体。**所有动效都加在这一层**，因为外层那个 translate(-50%,-50%)
    要拿来居中，动它就等于动位置（会变成误触）。 */
+/* 呼吸光。⚠ **刻意用 filter 做呼吸，把 opacity 留给 hover / found 状态** ——
+   动画的优先级高于普通声明，用 opacity 做呼吸的话，
+   hover 上去那一下（.95）会被动画盖掉，看起来像「hover 没生效」。
+   换成 filter 之后两件事互不打扰，而且 animation-name 一直不是 none，
+   减动断言不会因为「恰好被 hover 着」而假通过。 */
+@keyframes explore-breathe {
+  0%, 100% { filter: drop-shadow(0 0 3px currentColor); }
+  50%      { filter: drop-shadow(0 0 10px currentColor); }
+}
+
 .explore-art {
   display: block;
   width: 22px;
   height: 22px;
   opacity: .35;
-  /* ⚠ 用 currentColor 直接发光，**不要用 color-mix()** ——
-     这个站主要是给大陆手机看的，QQ 浏览器 / 系统自带浏览器的内核偏旧，
-     color-mix() 在那些版本上不认，而 CSS 不认的声明是**静默失效**的
-     （同一个坑：armor.html 的 --gold-soft 失色了 3 个月，HANDOVER §10.2）。 */
-  filter: drop-shadow(0 0 6px currentColor);
+  /* 静态兜底：减动偏好打开时动画会被关掉（见文件末尾的 @media），
+     这一行就是那时的样子 —— 关动效不等于把这个东西变没。 */
+  filter: drop-shadow(0 0 5px currentColor);
+  animation: explore-breathe 5.5s ease-in-out infinite;
   transition: opacity .3s ease, transform .3s ease;
 }
 
@@ -267,3 +276,37 @@
 .explore-bubble-src[hidden] {
   display: none;
 }
+
+/* ==========================================================================
+   8. 减动降级（WCAG 2.3.1）
+
+   ⚠ **只关「装饰性的、自动播放的」动效。**
+     **绝不碰任何由用户点击显式触发的东西** —— 「关掉动画」不等于「关掉功能」：
+       · 小游戏内部的动画要留着（它由「开始」按钮显式触发，是要玩的东西）
+       · 低语 / 气泡 / 解锁该出现还得出现，只是不再用位移和闪烁来登场
+       · 提示的闪烁关掉之后，那圈虚线轮廓必须还在（只关闪烁，不关提示）
+     这几条都有断言守着（tools/check_explore.py --reduced）。
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  /* 呼吸光停 —— 静态的 filter 兜底仍在（上面 .explore-art 那条），所以它不会失色 */
+  .explore-art {
+    animation: none;
+  }
+
+  /* 提示不闪 —— 但 .explore-find.hinted 的虚线轮廓在 @media 之外，照常显示 */
+  .explore-find.hinted .explore-art {
+    animation: none;
+  }
+
+  /* 气泡与低语**直接显示**，不做位移淡入。它们还是会出现的 —— 只是没有登场动作。 */
+  .explore-bubble,
+  .explore-whisper {
+    transition: none;
+  }
+
+  /* 解锁区同理：不播出现动画，但找齐了照样放出来 */
+  .explore-unlock.revealed {
+    animation: none;
+  }
+}
+

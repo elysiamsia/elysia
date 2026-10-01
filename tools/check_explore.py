@@ -153,11 +153,23 @@ class Browser(object):
 
 
 # ── 断言注册表 ────────────────────────────────────────────────────────
+#   每条断言带一个 `modes`：默认只在普通模式下跑；
+#   减动那几条用 `@check_reduced` 注册，只在 `--reduced` 时跑。
+#   （和 tools/check_reduced_motion.py 是同一个思路：快照不模拟媒体特性，
+#     减动只能靠 CDP 的 Emulation.setEmulatedMedia 单独验。）
 CHECKS = []
 
 
 def check(fn):
     CHECKS.append(fn)
+    if not hasattr(fn, 'modes'):
+        fn.modes = ('normal',)
+    return fn
+
+
+def check_reduced(fn):
+    CHECKS.append(fn)
+    fn.modes = ('reduced',)
     return fn
 
 
@@ -332,6 +344,10 @@ def check_page_quiet(b, page, expected):
     # 去重 —— 同一个错误每帧刷一次会淹掉报告
     fails = list(dict.fromkeys(fails))
     return (fails, u'无报错' if not fails else u'%d 条' % len(fails))
+
+
+# 「页面无报错」两种模式都要跑 —— 减动路径上照样可能抛异常
+check_page_quiet.modes = ('normal', 'reduced')
 
 
 # ══ 五种互动动词 ══════════════════════════════════════════════════════
@@ -1109,9 +1125,148 @@ def check_whisper_auto_hides(b, page, expected):
     return ([], u'2.5 秒后自己消失')
 
 
+# ══ 减动降级（WCAG 2.3.1）═════════════════════════════════════════════
+def _set_motion(b, value):
+    """切 prefers-reduced-motion。value 传 'reduce' 或 'no-preference'。"""
+    b._send('Emulation.setEmulatedMedia', {
+        'features': [{'name': 'prefers-reduced-motion', 'value': value}]})
+    time.sleep(0.35)
+
+
+def _anim(b, selector):
+    return b.js("(() => { var n = document.querySelector('%s');"
+                " return n ? getComputedStyle(n).animationName : null; })()" % selector)
+
+
+@check_reduced
+def check_reduced_breathing_stops(b, page, expected):
+    """减动打开时，可发现物的呼吸光**停下来**。
+
+    ⚠ 光断言 animation-name 是 none 还不够 —— 得同时确认
+      **静态兜底还在**（filter 没变成 none）。否则一个「减动下把整个元素
+      的发光都去掉」的实现也能过，而那属于「把动效关成了功能缺失」。
+    """
+    _set_motion(b, 'reduce')
+    fails = []
+
+    name = _anim(b, '.explore-art')
+    if name is None:
+        return ([u'页面上没有 .explore-art'], u'—')
+    if name != 'none':
+        fails.append(u'.explore-art 的 animation-name 是 %r，应为 none —— 呼吸光没停' % name)
+
+    flt = b.js("(() => { var n = document.querySelector('.explore-art');"
+               " return getComputedStyle(n).filter; })()")
+    if not flt or flt == 'none':
+        fails.append(u'减动下 .explore-art 的 filter 也没了 —— 呼吸该停，'
+                     u'但静态的发光要留着，不该把它一起关掉')
+
+    return (fails, u'呼吸停、静态光还在' if not fails else u'减动没生效')
+
+
+@check_reduced
+def check_reduced_hint_static_marker(b, page, expected):
+    """减动下提示**不闪**，但**仍有可见的静态标记**（那圈虚线轮廓）。
+
+    ⚠ 这就是 spec §5.5 那句「改为常亮的淡边框，不闪」的落点。
+      只断言「不闪」的话，一个「减动下干脆不给提示」的实现也能过 ——
+      那等于把功能关了，而减动要关的只是动效。
+    """
+    _set_motion(b, 'reduce')
+    _reset(b)
+    done = _trigger_first(b, 3)          # 3 / 5 过半，提示该出现了
+    if len(done) < 3:
+        return ([u'只触发了 %d 个，提示条件不成立' % len(done)], u'—')
+
+    if not _hinted_ids(b):
+        return ([u'减动下过半了却一个提示都没有 —— 减动不该把提示关掉'], u'—')
+
+    fails = []
+    name = _anim(b, '.explore-find.hinted .explore-art')
+    if name != 'none':
+        fails.append(u'减动下 .hinted 的呼吸还在闪（animation-name=%r）' % name)
+
+    d = b.jso("""(() => {
+        var n = document.querySelector('.explore-find.hinted');
+        var cs = getComputedStyle(n);
+        return JSON.stringify({ style: cs.outlineStyle, width: cs.outlineWidth });
+    })()""")
+    if not d or d['style'] == 'none':
+        fails.append(u'闪烁关掉之后**没有任何静态标记**了 —— '
+                     u'减动用户拿不到提示，这是把功能关掉了：%r' % d)
+
+    return (fails, u'不闪但有静态轮廓' if not fails else u'提示没了')
+
+
+@check_reduced
+def check_reduced_whisper_still_works(b, page, expected):
+    """减动下低语**照常出现**，而且只有文字。
+
+    ⚠ 计划里这条写的是「低语只出文字，不带粒子节点」。
+      本实现里低语**从来就没有粒子节点**（它一直是纯文字），
+      所以「有没有粒子」这件事本身测不出任何东西。
+      改成测**两件真的有风险的事**：
+        · 减动段会不会顺手把低语整个关掉（「关动画」写成「关功能」）
+        · 低语节点里会不会混进装饰性子元素
+    """
+    _set_motion(b, 'reduce')
+    _reset(b)
+    if not _click_blank(b, 3):
+        return ([u'找不到空白坐标'], u'—')
+    time.sleep(0.4)
+
+    st = _whisper_state(b)
+    if st['shown'] != 1:
+        return ([u'减动下连点 3 次没出低语（whisperShown=%r）—— '
+                 u'减动把陪伴层也一起关了' % st['shown']], u'功能被关掉了')
+
+    fails = []
+    if not st['visible']:
+        fails.append(u'低语计数涨了但节点没显示 —— 减动下只出文字，不是不出')
+
+    d = b.jso("""(() => {
+        var el = document.querySelector('.explore-whisper');
+        return JSON.stringify({ children: el.children.length });
+    })()""")
+    if d and d['children']:
+        fails.append(u'低语节点里有 %d 个元素子节点 —— 它应该只有文字' % d['children'])
+
+    return (fails, u'低语照常，且只有文字' if not fails else u'减动下低语不对')
+
+
+@check_reduced
+def check_reduced_off_motion_returns(b, page, expected):
+    """**反向断言**：把减动关掉，同一批选择器的动画必须回来。
+
+    没有这一条的话，「减动段泄漏了」（比如不小心写在 @media 外面）
+    永远测不出来 —— 因为只验减动侧的话，两边都是「动画没了」，看着都对。
+    """
+    _reset(b)
+    done = _trigger_first(b, 3)          # 让 .hinted 存在
+    if len(done) < 3:
+        return ([u'只触发了 %d 个，提示条件不成立' % len(done)], u'—')
+
+    _set_motion(b, 'no-preference')
+    fails = []
+
+    a1 = _anim(b, '.explore-art')
+    if a1 in (None, 'none'):
+        fails.append(u'减动**关闭**时 .explore-art 也没有动画（%r）—— '
+                     u'减动段泄漏到正常态了' % a1)
+
+    a2 = _anim(b, '.explore-find.hinted .explore-art')
+    if a2 in (None, 'none'):
+        fails.append(u'减动**关闭**时提示不闪（%r）—— 同上' % a2)
+
+    _set_motion(b, 'reduce')             # 收尾：别把模式留给后面
+    return (fails, u'正常态动画都在' if not fails else u'减动段泄漏了')
+
+
 # ── 主流程 ────────────────────────────────────────────────────────────
 def main():
-    args = [a for a in sys.argv[1:] if not a.startswith('--')]
+    raw = sys.argv[1:]
+    mode = 'reduced' if '--reduced' in raw else 'normal'
+    args = [a for a in raw if not a.startswith('--')]
     page = args[0] if args else 'tools/explore-fixture.html'
     expected = EXPECTED_FINDS.get(page)
 
@@ -1136,7 +1291,8 @@ def main():
         print(u'\u274c 服务器内容不对（探针页里没有预期标记）—— 8501 上是不是有别的东西？')
         return 1
 
-    print(u'\U0001f50d 探索系统断言 —— %s' % page)
+    print(u'\U0001f50d 探索系统断言 —— %s%s'
+          % (page, u'（减动模式）' if mode == 'reduced' else u''))
     print()
 
     # ⚠ 用**全新临时 profile**。cdp.py 那个 C:/tmp/edge_cdp 会跨次留存缓存
@@ -1151,6 +1307,7 @@ def main():
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     failures = []
+    ordered = []
     try:
         targets = []
         for _ in range(20):
@@ -1172,7 +1329,10 @@ def main():
 
         # ⚠ 「页面无报错」那条**必须跑在最后**：它读的是整轮攒下来的事件，
         #   提前跑就会漏掉后面手势测试里抛的异常 —— 而手势恰恰最容易抛异常。
-        ordered = [f for f in CHECKS if f is not check_page_quiet] + [check_page_quiet]
+        pool = [f for f in CHECKS if mode in getattr(f, 'modes', ('normal',))]
+        ordered = [f for f in pool if f is not check_page_quiet]
+        if check_page_quiet in pool:
+            ordered.append(check_page_quiet)
 
         for i, fn in enumerate(ordered):
             fails, summary = fn(b, page, expected)
@@ -1199,7 +1359,7 @@ def main():
     if failures:
         print(u'\u274c %d 项断言失败' % len(failures))
         return 1
-    print(u'\u2705 全部通过：%d 组断言' % len(CHECKS))
+    print(u'\u2705 全部通过：%d 组断言' % len(ordered))
     return 0
 
 
