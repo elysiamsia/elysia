@@ -716,22 +716,22 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
         { id:'lab-01', at:'#opening',   x:0.72, y:0.66, verb:'click',      art:'spore',
           line:'你好啊，会放电的小白鼠。我们又见面了。',
           src:'蛇主的追忆·其一' },
-        { id:'lab-02', at:'#about',     x:0.20, y:0.56, verb:'hold',       art:'scale',
+        { id:'lab-02', at:'#about',     x:0.10, y:0.55, verb:'hold',       art:'scale',
           line:'既然得到了这副皮囊，那当然就要好好利用一下咯~虽然有些时候确实不如大人的身体方便……但有些事情，也只有这副小孩子的身体才能做到。',
           src:'蛇主的追忆·其二' },
         { id:'lab-03', at:'#about',     x:0.80, y:0.34, verb:'slide',      art:'glint',
           line:'毕竟像律者这样珍稀的实验素材……用一个少一个嘛。',
           src:'蛇主的追忆·其三' },
-        { id:'lab-04', at:'#journey',   x:0.26, y:0.82, verb:'hold',       art:'brick',
+        { id:'lab-04', at:'#journey',   x:0.25, y:0.85, verb:'hold',       art:'brick',
           line:'这里的每一寸砖瓦，我都摸清楚了。比如你脚底下那块砖，它叫菲莉丝，喜欢喝蘑菇奶油汤哦。',
           src:'关于自身·其一' },
         { id:'lab-05', at:'#journey',   x:0.74, y:0.26, verb:'click',      art:'record',
           line:'一场接一场的战斗、一次又一次的探索……哎，可爱的小白鼠，你还真是精力旺盛呢。',
           src:'关于芽衣·其一' },
-        { id:'lab-06', at:'#creations', x:0.22, y:0.32, verb:'triple_tap', art:'shadow',
+        { id:'lab-06', at:'#creations', x:0.20, y:0.35, verb:'triple_tap', art:'shadow',
           line:'我是做过一些事，但进化和变革，本就需要一些「损耗」。而之所以会变成你听说的样子……只是因为一些人明明愚蠢，却偏偏很有主见。',
           src:'蛇主的追忆·其七' },
-        { id:'lab-07', at:'#creations', x:0.78, y:0.64, verb:'drag',       art:'throne',
+        { id:'lab-07', at:'#creations', x:0.80, y:0.65, verb:'drag',       art:'throne',
           line:'世界蛇的王座……坐在上面的人是谁都可以。可以是我，可以是凯文，可以是梅，甚至可以是你，都没关系。因为无论这个人是谁，他一人的意志，都绝对无法改变这条巨蛇行进的轨迹。',
           src:'关于自身·其四' },
         { id:'lab-08', at:'#quotes',    x:0.16, y:0.44, verb:'click',      art:'shed',
@@ -744,8 +744,13 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
           line:'我可爱的小白鼠……就让我好好看看，你被她耍的团团转的样子吧~',
           src:'关于自身·其六' },
         /* ⚠ lab-11 锚在 `#bottom` 上 —— 而 `#bottom` 是 ElysiaBottom.mount 才建出来的。
-           共享层的 ensureAttached 会在挂载探索度时补扫一次，所以这里不需要特殊处理。 */
-        { id:'lab-11', at:'#bottom',    x:0.50, y:0.40, verb:'click',      art:'sleeping',
+           共享层的 ensureAttached 会在挂载探索度时补扫一次，所以这里不需要特殊处理。
+           ⚠ 坐标是**实测选出来的**，别随手改：`#bottom` 里三张卡是竖着排的
+           （桌面 570 高：探索度 72–122 / 生日卡 144–242 / 游戏卡 268–444；
+             移动 550 高：65–115 / 137–235 / 261–437），
+           所以 **y 要落在 0.8 以下**才在卡片下沿之外的那段空白里。
+           原先写的 0.40 正好压在生日卡下边缘上 —— 「z z」像粘在卡上，看着像渲染故障。 */
+        { id:'lab-11', at:'#bottom',    x:0.50, y:0.89, verb:'click',      art:'sleeping',
           line:'总觉得……最近总是很困呢。哎，我不会是要冬眠了吧？',
           src:'季节语音' },
         { id:'lab-12', at:'#ending',    x:0.32, y:0.52, verb:'slide',      art:'silhouette',

@@ -2238,6 +2238,61 @@ def check_game_card_matches_module(b, page, expected):
     return (fails, u'卡片文案与模块一致' if not fails else u'卡片文案对不上')
 
 
+@check
+def check_finds_not_on_text(b, page, expected):
+    """可发现物应该落在**容器**上，不该压在**文字**上。
+
+    它是 0.35 透明度、22px 的一枚小简笔画。落在卡片背景上 =「藏起来的东西」；
+    压在一句话正中间 = 看起来像**渲染故障**，还把那个字糊了一下。
+
+    ⚠ 这条是 2026-10-01 的视觉核对逼出来的：当时 12 个里有 4 个正压着文字
+      （档案标签「身体数据」、正文段落、创生图标、小字「死而复生的能力」），
+      另有 `lab-11` 贴在生日卡的下边缘上 —— 肉眼一看就像卡坏了。
+      改坐标能修一次，**断言才能不让它回来**。
+
+    判据：把可发现物临时藏起来，看它中心点上 `elementFromPoint` 命中的元素
+    有没有**直接文字**、或本身就是 `p / span / h2 / h3 / b / a / img` 这类叶子。
+    """
+    d = b.jso("""(() => {
+        var out = [];
+        document.querySelectorAll('.explore-find').forEach(function (n) {
+            // ⚠ 必须先滚到跟前 —— 不然 elementFromPoint 在视口外一律返回 null
+            n.scrollIntoView({ block: 'center', behavior: 'instant' });
+            var r = n.getBoundingClientRect();
+            var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+            n.style.visibility = 'hidden';
+            var under = document.elementFromPoint(cx, cy);
+            n.style.visibility = '';
+            var text = '';
+            if (under) {
+                for (var i = 0; i < under.childNodes.length; i++) {
+                    if (under.childNodes[i].nodeType === 3) text += under.childNodes[i].nodeValue;
+                }
+            }
+            out.push({
+                id: n.getAttribute('data-find-id'),
+                tag: under ? under.tagName.toLowerCase() : null,
+                text: text.trim().slice(0, 24),
+            });
+        });
+        return JSON.stringify(out);
+    })()""")
+    if d is None:
+        return ([u'取不到可发现物的落点信息'], u'—')
+
+    LEAF = ('p', 'span', 'h1', 'h2', 'h3', 'h4', 'b', 'strong', 'em', 'a', 'img', 'li')
+    fails = []
+    for n in d:
+        if n['text']:
+            fails.append(u"%s：正压着文字「%s」（<%s>）—— 看着会像渲染故障"
+                         % (n['id'], n['text'], n['tag']))
+        elif n['tag'] in LEAF:
+            fails.append(u'%s：落在 <%s> 这种**文字叶子**上，该挪到容器（卡片 / 区块）上去'
+                         % (n['id'], n['tag']))
+
+    return (fails, u'%d 个都落在容器上' % len(d) if not fails else u'%d 个压着东西' % len(fails))
+
+
 # ── 主流程 ────────────────────────────────────────────────────────────
 def main():
     raw = sys.argv[1:]
