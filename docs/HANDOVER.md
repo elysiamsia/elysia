@@ -454,7 +454,7 @@ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8500/assets/site.css  
 
 # 2) 快照 + 比对（参照点见 §4.3.1）
 PYTHONIOENCODING=utf-8 python tools/snapshot.py after-<本步>
-PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py after-explore after-<本步>; echo "退出码 $?"
+PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py after-bday after-<本步>; echo "退出码 $?"
 
 # 3) 属性断言 —— 快照**测不出来**的那一类（ARIA 等）
 PYTHONIOENCODING=utf-8 python tools/check_aria_labels.py
@@ -487,12 +487,12 @@ taskkill //F //PID <pid>                               # 杀
 | 目录 | 是什么 | 用途 |
 |---|---|---|
 | `baseline` | **P1 动手前**（`origin/main` worktree） | P1 最终验收（Task 10/11/12 做完时用） |
-| **`after-explore`** | **公共层重构之后**（2026-10-01，11 页） | **下次改动用这个** |
+| **`after-bday`** | **生日组件抽出来之后**（2026-10-01，11 页） | **下次改动用这个** |
 
-> 🧹 **2026-10-01 清过一次**：原先堆了 20 个（539 MB），删到只剩上面两个（**92 MB**）。
-> 删掉的 18 个（`baseline-task6/78/9/seo/sakura`、`after-task2…9`、`after-seo`、
-> `after-sakura(-pronoun)`、`baseline-eggs`、`after-kosma`、`probe-head-pinned`）
-> 都是各阶段的中间产物、那一轮已验收通过。
+> 🧹 **2026-10-01 清过两次**：原先堆了 20 个（539 MB），先删到 2 个，
+> 生日组件上线后又把 `after-explore` 也收掉（它已被 `after-bday` 取代）。
+> ⚠ **每轮结束就换参照点、顺手清掉上一个** —— 攒着只会让「该用哪个」变模糊
+> （本轮就吃过一次：计划让人用 `baseline-eggs`，而那是 9 页的，多报了 3 处纯噪音）。
 > ⚠ **它们都能从 git 重建**（`git worktree add` 到对应 commit 再跑 `snapshot.py`），
 > 所以删掉不等于丢历史 —— 只是不再占本机。
 > ⚠ `baseline` **留着**是因为 P1 的 Task 10/11/12 还没做，最终验收还要拿它当「动手前」。
@@ -713,7 +713,7 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py http://localhost:8500/index.html \
 
 # 三项验收（§4.3）
 PYTHONIOENCODING=utf-8 python tools/snapshot.py after-<label>
-PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py after-explore after-<label>
+PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py after-bday after-<label>
 PYTHONIOENCODING=utf-8 python tools/check_aria_labels.py
 PYTHONIOENCODING=utf-8 python tools/check_reduced_motion.py
 PYTHONIOENCODING=utf-8 python tools/check_explore.py <页面路径>   # 探索系统（改了才需要）
@@ -1135,6 +1135,23 @@ https://elysiad.top/mobius/   → 404   ← 文件在 main 上，页面不在
   **是刚写的那条断言 + 「页面无报错」把它抓回来的。**
   教训：函数该放在**两个调用方都能看见的**作用域 —— 原来那个 `toggle()` 在 `build()` 里
   没事，只是因为只有 `build()` 用它。
+
+#### 七、生日表补查（同日晚些时候）
+
+组件上线后扫了一遍「到底有几位能冒出胶囊」，**9 条**：
+
+· 材料包里有：梅比乌斯 4/30、樱 7/22、华 2/9、格蕾修 12/21、帕朵菲莉丝 7/11
+· **从各自页面档案卡里扫出来的：阿波尼亚 5/25、伊甸 10/31、维尔薇 5/5**
+  > ⚠ 这三位**没有材料包**（`materials/` 里只有 6 个包）。但生日**早就写在它们自己的
+  > 档案卡里**了 —— 只是没进 `bdays.js`。那就是「页面说 5 月 25 日、而胶囊不出现」，
+  > 同 HANDOVER §10.5 合并 `BUILT` 那条教训。来源已在 `bdays.js` 里**如实标注**，
+  > 没冒充成材料包。**拿到更权威来源（官方档案卡 / 需求方更正）时以那边为准。**
+· **仍然查不到的 4 位**：凯文 / 千劫 / 苏（三页**整页没有「生日」二字**）、
+  科斯魔（页面写「官方未公布」，材料包也说所有来源均无）。
+  按纪律**不猜** —— 没有就不显示，不会显示成错的。
+
+> ⚠ 所以「铺开其余 9 页」之后，**真正会冒出胶囊的是有生日的那几位**。
+> 这件事在铺开之前就该知道，否则会以为「铺完了怎么有的页没有」。
 
 ---
 
