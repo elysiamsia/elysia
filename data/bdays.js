@@ -34,6 +34,8 @@ window.ELYSIA_BDAYS = {
   'index.html':        [10, 11],   // 爱莉希雅 · 11 月 11 日
   'sakura/index.html': [6, 22],    // 樱 · 7 月 22 日（需求方 2026-09-17 确认，见 HANDOVER §10.3）
   'mobius/index.html': [3, 30],    // 梅比乌斯 · 4 月 30 日（与页面里既有的 BM=3, BD=30 对上）
-  'hua/index.html':    [1, 9],     // 华 · 2 月 9 日（材料包）
-  'griseo/index.html': [11, 21],   // 格蕾修 · 12 月 21 日（材料包）
+  'hua/index.html':    [1, 9],     // 华 · 2 月 9 日（材料包 README）
+  'griseo/index.html': [11, 21],   // 格蕾修 · 12 月 21 日（材料包 README）
+  // ⚠ 帕朵菲莉丝这一页**还没建**，先写上 —— 页建好之后自动生效，不用回头改这里。
+  'pardofelis/index.html': [6, 11], // 帕朵菲莉丝 · 7 月 11 日（材料包 README；需求方 2026-10-01 认可）
 };
