@@ -41,6 +41,19 @@
 | 打字机 DOM 元素 | `#typewriterText` / `#typingCursor` / `#openingSub` / `#scrollHint` | `makeTypewriter` | **7 页都有这些 id** |
 | 打字机 `hintEl` 元素 | `#openingHint` | `makeTypewriter` | 该 id 只存在于 kalpas/su/villv，查不到即跳过 |
 
+> ⚠ **2026-10-01 更正：结尾观察器多吃了那个 `rootMargin`。**
+> 上表「进场 `rootMargin`」那一行的「7 页逐字一致」指的是 **`.timeline-node` 那个观察器**
+> —— 它原本就带 `-50px`，确实一致。
+> 但 `observeReveal('#ending', { threshold: 0.3, … })` 走的是**同一个默认值**，
+> 而 P1 **之前**各子页的 `endingObserver` 只有 `{ threshold: 0.3 }`、**没有** rootMargin。
+> 于是结尾三元素（`endingQuote` / `endingAttr` / `backLink`）的点亮比原来**晚 50px**
+> —— 实测差 **51px**（10px 步进的扫描分辨率，理论值 50）。
+>
+> 影响全部 7 页、且无感，所以**保持现状**：7 页一个样比给某一页单开例外更对。
+> 但这条**以前没被记录过**（快照抓不到 —— `.visible` 迟早会加上，最终计算样式一样）。
+> 出处：2026-10-01 mobius 迁移（Task 10）的**迁移前 vs 迁移后行为差分**，
+> 复核方把共享层其余默认值逐个对过，确认**只有这一处**。
+
 > 上表里「7 页都有」是**实测过**的（2026-09-17，逐页 `grep id="…"` 核对）。
 
 ---
