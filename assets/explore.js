@@ -757,6 +757,8 @@
     ART: ART,                 // 探针页与测试要能枚举关键字
     mountCount: mountCount,   // 下方区块把探索度搬过去用（Task 8）
     retryPending: retryPending, // 锚点是后建的时补扫（见它的注释）
+    // 这一页的进度存在哪个键下。给测试用 —— 断言不该写死页名。
+    pageId: function () { return S.cfg && S.cfg.pageId; },
     load: load,
     save: save,
     mark: mark,

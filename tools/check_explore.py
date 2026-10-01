@@ -154,23 +154,38 @@ class Browser(object):
 
 
 # ── 断言注册表 ────────────────────────────────────────────────────────
-#   每条断言带一个 `modes`：默认只在普通模式下跑；
-#   减动那几条用 `@check_reduced` 注册，只在 `--reduced` 时跑。
-#   （和 tools/check_reduced_motion.py 是同一个思路：快照不模拟媒体特性，
-#     减动只能靠 CDP 的 Emulation.setEmulatedMedia 单独验。）
+#   每条断言带两个维度：
+#     `modes` —— normal / reduced（减动那几条只在 --reduced 时跑）
+#     `pages` —— 适用于哪些页。默认 `('*',)` 表示**任何页都该满足**；
+#                写死了 `fx-01` 这类探针页 id 的，用 `@fixture_only` 收窄。
+#   ⚠ 这个维度是 2026-10-01 做 Task 11 时补的：不给它的话，
+#     `check_explore.py mobius/index.html` 会先挂 8 条与 mobius 无关的断言，
+#     真正的问题被淹掉。**新页接入时也要照这个来。**
 CHECKS = []
+
+FIXTURE = 'tools/explore-fixture.html'
 
 
 def check(fn):
     CHECKS.append(fn)
     if not hasattr(fn, 'modes'):
         fn.modes = ('normal',)
+    if not hasattr(fn, 'pages'):
+        fn.pages = ('*',)
     return fn
 
 
 def check_reduced(fn):
     CHECKS.append(fn)
     fn.modes = ('reduced',)
+    if not hasattr(fn, 'pages'):
+        fn.pages = ('*',)
+    return fn
+
+
+def fixture_only(fn):
+    """收窄成「只对探针页成立」—— 这些断言写死了 fx-01…fx-06 这些 id。"""
+    fn.pages = (FIXTURE,)
     return fn
 
 
@@ -221,6 +236,7 @@ def check_declared_matches_rendered(b, page, expected):
 
 
 @check
+@fixture_only
 def check_late_anchor_gets_picked_up(b, page, expected):
     """锚点在 init **之后**才建出来的 find，必须被补扫到。
 
@@ -441,6 +457,7 @@ def _run_verb(b, fid, verb, action):
 
 
 @check
+@fixture_only
 def check_vertical_gesture_ignored(b, page, expected):
     """纵向滑动**不能**被当成「划过」—— Review Focus #4。
 
@@ -477,36 +494,42 @@ def check_vertical_gesture_ignored(b, page, expected):
 
 
 @check
+@fixture_only
 def check_verb_click(b, page, expected):
     """click —— 点一下。"""
     return _run_verb(b, 'fx-01', 'click', _do_click)
 
 
 @check
+@fixture_only
 def check_verb_hold(b, page, expected):
     """hold —— 按住 ≥600ms。"""
     return _run_verb(b, 'fx-02', 'hold', _do_hold)
 
 
 @check
+@fixture_only
 def check_verb_triple_tap(b, page, expected):
     """triple_tap —— 1.2 秒内点三次。"""
     return _run_verb(b, 'fx-03', 'triple_tap', _do_triple_tap)
 
 
 @check
+@fixture_only
 def check_verb_drag(b, page, expected):
     """drag —— 按下后位移 ≥24px（**纵向也算拖**）。"""
     return _run_verb(b, 'fx-04', 'drag', _do_drag)
 
 
 @check
+@fixture_only
 def check_verb_slide(b, page, expected):
     """slide —— 位移 ≥24px **且**横向分量大于纵向。"""
     return _run_verb(b, 'fx-05', 'slide', _do_slide)
 
 
 @check
+@fixture_only
 def check_bubble_shows_source(b, page, expected):
     """命中之后气泡出现，且**台词与出处都渲染出来了**。
 
@@ -563,7 +586,8 @@ def check_bubble_shows_source(b, page, expected):
 
 
 # ══ 探索度与存储 ══════════════════════════════════════════════════════
-STORAGE_KEY = 'elysia:explore:fixture'
+# ⚠ 存储键在**运行期**从页面取（`ElysiaExplore.pageId()`），不写死页名 ——
+#   写死的话这套断言就只能跑探针页，mobius 一行都验不了。
 
 
 def _reload(b, wait=2.0):
@@ -575,19 +599,30 @@ def _stored(b):
     """读 localStorage 里那条进度记录。读取本身抛异常也要如实报出来。"""
     return b.jso("""(() => {
         try {
-            var raw = window.localStorage.getItem('%s');
+            var key = 'elysia:explore:' + ElysiaExplore.pageId();
+            var raw = window.localStorage.getItem(key);
             if (!raw) return JSON.stringify({ found: [], empty: true });
             var o = JSON.parse(raw);
             return JSON.stringify({ found: o.found || [], unlocked: !!o.unlocked });
         } catch (e) {
             return JSON.stringify({ error: String(e) });
         }
-    })()""" % STORAGE_KEY)
+    })()""")
 
 
 def _count_text(b):
     return b.js("(() => { var e = document.querySelector('.explore-count');"
                 " return e ? e.textContent : null; })()")
+
+
+def _first_declared(b):
+    """本页声明的第一个可发现物 id。
+
+    ⚠ 存储/探索度这几条断言**在每一页上都该成立**，所以不能写死 `fx-01` ——
+      写死的话它们只在探针页跑得动，mobius 一行都验不了。
+    """
+    return b.js('String((window.__ELY_EXPLORE__ && window.__ELY_EXPLORE__.declared'
+                ' || [])[0] || "")')
 
 
 @check
@@ -596,10 +631,11 @@ def check_progress_written(b, page, expected):
 
     不写这一条的话，「持久化」就是句空话 —— 内存里改一改也能让页面看着对。
     """
-    c = b.center('fx-01')
-    if not c:
-        return ([u'找不到 fx-01'], u'—')
-    _do_click(b, c)
+    fid = _first_declared(b)
+    if not fid:
+        return ([u'取不到 declared —— 挑不出一个来触发'], u'—')
+    if not _trigger(b, fid):
+        return ([u'触发不了 %s' % fid], u'—')
     time.sleep(0.4)
 
     d = _stored(b)
@@ -607,8 +643,8 @@ def check_progress_written(b, page, expected):
         return ([u'读不到 localStorage'], u'—')
     if d.get('error'):
         return ([u'读存储时抛异常：%s' % d['error']], u'—')
-    if 'fx-01' not in d['found']:
-        return ([u'触发 fx-01 之后存储里的 found 是 %r，里面没有它' % d['found']], u'没落盘')
+    if fid not in d['found']:
+        return ([u'触发 %s 之后存储里的 found 是 %r，里面没有它' % (fid, d['found'])], u'没落盘')
     return ([], u'已落盘（%d 项）' % len(d['found']))
 
 
@@ -630,11 +666,12 @@ def check_progress_survives_reload(b, page, expected):
     # 读回来还不够 —— **节点当场就该是「已找到」的样子**，
     # 否则用户重进页面会看见进度是 3/5 但东西全是暗的。
     d = b.jso("""(() => {
-        var n = document.querySelector('[data-find-id="fx-01"]');
+        var n = document.querySelector('[data-find-id="%s"]');
         return JSON.stringify({ found: !!n && n.classList.contains('found') });
-    })()""")
+    })()""" % before[0])
     if d and not d.get('found'):
-        fails.append(u'进度读回来了，但 fx-01 节点上没有 .found —— 视觉上它又变回「没找到」了')
+        fails.append(u'进度读回来了，但 %s 节点上没有 .found —— 视觉上它又变回「没找到」了'
+                     % before[0])
 
     return (fails, u'%d 项进度完好' % len(after))
 
@@ -646,8 +683,8 @@ def check_count_text(b, page, expected):
     ⚠ 先清空存储再重载 —— 让数字从确定的状态出发。
       不清的话这条断言会依赖「前面跑过哪些检查」，那种断言迟早会假红。
     """
-    b.js("(() => { try { window.localStorage.removeItem('%s'); } catch (e) {}"
-         " return 1; })()" % STORAGE_KEY)
+    b.js("(() => { try { window.localStorage.removeItem("
+         "'elysia:explore:' + ElysiaExplore.pageId()); } catch (e) {} return 1; })()")
     _reload(b)
 
     d0 = _count_text(b)
@@ -661,11 +698,10 @@ def check_count_text(b, page, expected):
     if d0 != u'已发现 0 / %s' % total:
         fails.append(u'清空进度后该显示「已发现 0 / %s」，实际是 %r' % (total, d0))
 
-    c = b.center('fx-01')
-    if not c:
-        fails.append(u'找不到 fx-01')
+    fid = _first_declared(b)
+    if not fid or not _trigger(b, fid):
+        fails.append(u'触发不了本页第一个可发现物（%r）' % fid)
     else:
-        _do_click(b, c)
         time.sleep(0.4)
         d1 = _count_text(b)
         if d1 != u'已发现 1 / %s' % total:
@@ -772,8 +808,8 @@ def _reset(b):
     ⚠ 不这么做的话，断言的结果会取决于「前面跑过哪些检查」，
       那种依赖迟早会在某次重排顺序之后变成假红或假绿。
     """
-    b.js("(() => { try { window.localStorage.removeItem('%s'); } catch (e) {}"
-         " return 1; })()" % STORAGE_KEY)
+    b.js("(() => { try { window.localStorage.removeItem("
+         "'elysia:explore:' + ElysiaExplore.pageId()); } catch (e) {} return 1; })()")
     _reload(b)
 
 
@@ -1660,7 +1696,16 @@ def main():
 
         # ⚠ 「页面无报错」那条**必须跑在最后**：它读的是整轮攒下来的事件，
         #   提前跑就会漏掉后面手势测试里抛的异常 —— 而手势恰恰最容易抛异常。
-        pool = [f for f in CHECKS if mode in getattr(f, 'modes', ('normal',))]
+        # ⚠ 两个维度都要过：模式（normal/reduced）与**适用页**。
+        #   写死了探针页 id 的断言不该在别的页上跑 —— 否则真问题会被
+        #   一堆「与本页无关」的失败淹掉。
+        pool = [f for f in CHECKS
+                if mode in getattr(f, 'modes', ('normal',))
+                and ('*' in f.pages or page in f.pages)]
+        skipped = len(CHECKS) - len(pool)
+        if skipped:
+            print(u'（本页跳过 %d 条只适用于其他页的断言）' % skipped)
+            print()
         ordered = [f for f in pool if f is not check_page_quiet]
         if check_page_quiet in pool:
             ordered.append(check_page_quiet)
