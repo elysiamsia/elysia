@@ -134,7 +134,11 @@ var THEME = {
     hintAfterRatio: 0.5,                                // 可选，找到过半才开始给提示
   },
 
-  game: { module: 'mobius', title: '…', hint: '…' },
+  game: { module: 'mobius' },
+  // ⚠ **只有 module，没有 title / hint** —— 游戏卡上的文案归**模块**所有（见 §4.5）。
+  //   2026-10-01 改：初稿两边各写一份，实测两边逐字相同但**只有一份生效**
+  //   （`bottom.js` 只调 `mod.mount(host)`，从不转发 title/hint），
+  //   是典型的「同一件事两处维护」（HANDOVER §10.5 合并 `BUILT` 那条教训）。
 };
 ```
 
@@ -203,6 +207,9 @@ window.ElysiaGames.mobius = {
 ```
 
 - 只有 `mount(host)` 一个必需方法，**不强制生命周期钩子**（当前规模不需要，避免过早抽象）
+- ⚠ **`title` / `hint` 以模块为准，`THEME.game` 里不再重复**（2026-10-01 改，见 §4.1）。
+  两边各写一份的话，`bottom.js` 只会用其中一份（它只调 `mount(host)`），
+  另一份就成了**改不动的死配置** —— 而且这个 THEME 在 IIFE 里、测试读不到，**没法自动核对**。
 - 若日后需要清理，在 `bottom.js` 里约定「替换前调用旧实例的 `destroy?.()`」作为**可选**扩展点
 - ⚠ 游戏**不参与**探索度计数——两个系统互不牵扯，各自干净
 

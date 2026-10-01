@@ -2190,6 +2190,54 @@ def check_mobius_game_runs_under_reduced(b, page, expected):
     return (fails, summary)
 
 
+@check
+def check_game_card_matches_module(b, page, expected):
+    """游戏卡上的文案**必须来自模块自己声明的那份**。
+
+    ⚠ 守的是「同一件事两处维护」：`THEME.game` 里曾经**也**写了一份 title/hint，
+      而 `bottom.js` 只调 `mod.mount(host)`、从不转发 —— 于是那一份是**死配置**：
+      改它没有任何效果，而且这个 THEME 在 IIFE 里、测试读不到，**没法自动核对**。
+      现在只留模块那一份（spec §4.1 / §4.5），这条断言把
+      「卡上印的字 == 模块声明的字」钉死，谁再分叉就会红。
+
+    没有游戏槽的页面直接跳过（探针页就是）。
+    """
+    d = b.jso("""(() => {
+        var slot = document.querySelector('.bottom-game');
+        if (!slot) return JSON.stringify({ noSlot: true });
+        var ids = Object.keys(window.ElysiaGames || {});
+        var t = slot.querySelector('.game-card-title');
+        var h = slot.querySelector('.game-card-hint');
+        return JSON.stringify({
+            ids: ids,
+            mounted: slot.children.length > 0,
+            cardTitle: t ? t.textContent : null,
+            cardHint: h ? h.textContent : null,
+            modTitle: ids.length === 1 ? window.ElysiaGames[ids[0]].title : null,
+            modHint: ids.length === 1 ? window.ElysiaGames[ids[0]].hint : null,
+        });
+    })()""")
+    if d is None:
+        return ([u'取不到游戏槽状态'], u'—')
+    if d.get('noSlot'):
+        return ([], u'本页没有游戏槽（跳过）')
+
+    fails = []
+    if not d['mounted']:
+        fails.append(u'.bottom-game 是空的 —— 模块的 mount(host) 没往里渲染东西')
+    if len(d['ids']) != 1:
+        fails.append(u'页面上加载了 %d 个游戏模块（%r）—— 这条断言假定只有一个'
+                     % (len(d['ids']), d['ids']))
+        return (fails, u'模块数不对')
+
+    if d['cardTitle'] != d['modTitle']:
+        fails.append(u'卡上的标题是 %r，模块声明的却是 %r' % (d['cardTitle'], d['modTitle']))
+    if d['cardHint'] != d['modHint']:
+        fails.append(u'卡上那句话是 %r，模块声明的却是 %r' % (d['cardHint'], d['modHint']))
+
+    return (fails, u'卡片文案与模块一致' if not fails else u'卡片文案对不上')
+
+
 # ── 主流程 ────────────────────────────────────────────────────────────
 def main():
     raw = sys.argv[1:]

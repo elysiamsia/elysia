@@ -727,11 +727,12 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
 
     /* 小游戏槽（spec §4.5 的契约）。真正的实现在 assets/games/mobius.js（Task 12），
        这里只声明「这一页有游戏、它叫什么」。 */
-    game: {
-      module: 'mobius',
-      title: '贪吃蛇 · 实验体回收',
-      hint:  '收集实验素材，别撞墙。分数记作「进化度」。',
-    },
+    // ⚠ 这里**只有 module**，没有 title/hint —— 游戏卡上的文案归**模块**所有
+    //   （`assets/games/mobius.js` 的 `ElysiaGames.mobius.title/hint`）。
+    //   两边各写一份的话就是「同一件事两处维护」，而且**没法自动核对是否一致**
+    //   （这个 THEME 在 IIFE 里，`window.THEME` 读不到）。
+    //   HANDOVER §10.5 合并 `BUILT` 开关就是这条教训。
+    game: { module: 'mobius' },
   };
 
   /* SECTION: daily pool */
