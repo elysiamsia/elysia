@@ -124,12 +124,17 @@
    *   断言里要临时改 `ELYSIA_BDAYS` 再重挂，来验证「生日表变化 →
    *   槽位跟着变」。不可重复调用的实现会让那类断言只能靠猜。
    *
+   * ⚠ **不传参数 = 沿用上一次的参数重画。** 不这样的话，一次 `mount({})`
+   *   就会把上次传的 `game` 悄悄冲掉 —— 重画之后游戏槽凭空消失，
+   *   而调用方以为自己什么也没改。
+   *
    * @param {object} [opts]
    * @param {object} [opts.game]      { module, title, hint }，见 spec §4.5
    * @param {string} [opts.bdayLine]  生日当天额外说的一句（可选）
    * @param {string} [opts.bdaySrc]   上面那句的出处（有台词就必须有出处）
    */
   function mount(opts) {
+    if (arguments.length === 0) opts = S.opts;   // 不传 = 沿用上次的
     S.opts = opts || {};
 
     var sec = S.section;

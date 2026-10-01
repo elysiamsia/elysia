@@ -278,10 +278,10 @@
     // 解锁区跟着探索度走 —— 它们是同一块信息（「你找到多少了」）的两半
     if (host && S.unlockEl && S.unlockEl.parentNode !== host) host.appendChild(S.unlockEl);
     refreshCount();
-    // ⚠ 补扫那些锚点当时还没建出来的 find。
-    //   调用方（ElysiaBottom.mount）刚建出下方区块，而有些可发现物就锚在它上面。
-    //   见 retryPending 的注释 —— 这一步让「两行调用的先后顺序」不再重要。
-    retryPending();
+    // ⚠ 补扫：调用方（ElysiaBottom.mount）刚重画完下方区块 ——
+    //   既要把「锚点是后建的」那些挂上，也要把「刚被 innerHTML 抹掉的」重新挂上。
+    //   见 ensureAttached 的注释 —— 这一步让「谁先谁后」「重画几次」都不再重要。
+    ensureAttached();
     return S.countEl;
   }
 
@@ -443,7 +443,7 @@
 
   /**
    * 把一个可发现物真正挂到锚点上。
-   * （抽出来是为了让 retryPending 能复用同一段逻辑。）
+   * （抽出来是为了让 ensureAttached 能复用同一段逻辑。）
    */
   function attach(f, anchor) {
     // 锚点要当定位上下文。**只在它原本是 static 时才动它** ——
@@ -457,31 +457,34 @@
     bindGestures(node, f);
   }
 
-  /* 「当时锚点还不存在」的那些 find。见 retryPending。 */
-  var pending = [];
+  /* 所有声明过的 find。`ensureAttached` 每次拿它对着 DOM 扫一遍。 */
+  var allFinds = [];
 
   /**
-   * 再试一次那些锚点当时还没建出来的可发现物。
+   * 把**还不在场的**可发现物挂上。
    *
-   * ⚠ **这不是防御性代码，是真实存在的一种接法。** `THEME.explore` 里完全可以
-   *   挂一个锚在**下方区块**上的可发现物 —— 而下方区块是 `ElysiaBottom.mount`
-   *   才建出来的，`ElysiaExplore.init` 跑的时候它还不存在。
+   * ⚠ 这不是防御性代码，是两种真实存在的情况：
    *
-   *   不补扫的话，那条会被静默跳过：探索度**永远差一个**、解锁永远不触发 ——
-   *   spec 的 Review Focus #3 说的「差一个的 bug 最难看见」就是这个。
+   *   ① **锚点是后建的。** `THEME.explore` 里可以挂一个锚在**下方区块**上的
+   *      可发现物 —— 而下方区块是 `ElysiaBottom.mount` 才建出来的，
+   *      `ElysiaExplore.init` 跑的时候它还不存在。
+   *   ② **锚点被重建了。** `ElysiaBottom.mount` 会 `sec.innerHTML = ''` 重画整块，
+   *      挂在里面的可发现物**连同节点一起被抹掉** ——
+   *      这时锚点是在的，所以「只记住当时找不到的」那种补扫救不回来。
    *
-   *   `ElysiaBottom.mount` 会调 `mountCount`，那里顺手补扫一次 ——
+   *   所以这里**每次对着 DOM 实扫**：谁的锚点在、节点不在，就挂上。
+   *   幂等，可重复调用。
+   *
+   *   `ElysiaBottom.mount` 会调 `mountCount`，那里顺手扫一次 ——
    *   于是**两行调用的先后顺序就不再重要了**，页面怎么写都对。
    */
-  function retryPending() {
-    if (!pending.length) return;
-    var rest = [];
-    pending.forEach(function (f) {
+  function ensureAttached() {
+    allFinds.forEach(function (f) {
+      // 已经在场就不动它（别把用户正在交互的那个节点换掉）
+      if (document.querySelector('[data-find-id="' + f.id + '"]')) return;
       var anchor = document.querySelector(f.at);
       if (anchor) attach(f, anchor);
-      else rest.push(f);
     });
-    pending = rest;
   }
 
   /**
@@ -715,22 +718,23 @@
       //   两者的差集就是「配了但页面上找不到」——那是必须当场暴露的 bug，
       //   所以 check_explore.py 比的是集合，不是个数。
       dbg.declared.push(f.id);
+      // 记进总表：ensureAttached 每次拿它对着 DOM 实扫，
+      // 这样「锚点后建」和「节点被重建掉了」两种情况都能救回来
+      allFinds.push(f);
 
       var anchor = document.querySelector(f.at);
       if (!anchor) {
-        // ⚠ **找不到锚点就跳过，不抛。** 一次抛异常会让整页剩下的脚本集体停摆，
+        // ⚠ **找不到锚点就先放着，不抛。** 一次抛异常会让整页剩下的脚本集体停摆，
         //   而页面看上去还是好的 —— 那是本站最贵的一类 bug。
-        //   代价是这个 find 一时半会儿找不到、探索度暂时差一个；
-        //   那正是 check_explore.py ① 号断言专门守的东西。
-        // ⚠ 但**不能就此永远放弃** —— 有些锚点是后建的（比如下方区块是
-        //   ElysiaBottom.mount 才建出来的）。记进待办，等 mountCount 时补扫。
-        console.warn('[ElysiaExplore] 锚点还不存在，挂起等补扫 ' + f.id + '：' + f.at);
-        pending.push(f);
-        return;
+        //   记进 allFinds，等 ensureAttached 补扫（锚点可能是后建的）。
+        console.warn('[ElysiaExplore] 锚点还不存在，等补扫 ' + f.id + '：' + f.at);
+      } else {
+        attach(f, anchor);
       }
-
-      attach(f, anchor);
     });
+
+    // 走一遍补扫：把上面没挂上的（以及将来可能被重建的）统一交给它
+    ensureAttached();
 
     // 解锁区**一进页面就建好**（带 hidden），见 ensureUnlock 的注释
     ensureUnlock();
@@ -756,7 +760,7 @@
     init: init,
     ART: ART,                 // 探针页与测试要能枚举关键字
     mountCount: mountCount,   // 下方区块把探索度搬过去用（Task 8）
-    retryPending: retryPending, // 锚点是后建的时补扫（见它的注释）
+    ensureAttached: ensureAttached, // 补扫没挂上的可发现物（见它的注释）
     // 这一页的进度存在哪个键下。给测试用 —— 断言不该写死页名。
     pageId: function () { return S.cfg && S.cfg.pageId; },
     load: load,

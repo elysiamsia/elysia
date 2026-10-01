@@ -25,6 +25,7 @@ tools/check_explore.py — 探索系统断言
 退出码：0 = 全部通过；1 = 有断言失败。
 """
 import http.server
+import io
 import json
 import os
 import re
@@ -49,6 +50,7 @@ EDGE = r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
 #     只有跟这张登记表比才抓得到。新页接入时**必须**在这里登记。
 EXPECTED_FINDS = {
     'tools/explore-fixture.html': 6,
+    'mobius/index.html': 12,
 }
 
 
@@ -132,6 +134,20 @@ class Browser(object):
             'type': 'mouseMoved', 'x': x, 'y': y,
             'button': 'none', 'buttons': buttons})
 
+    def center_of(self, selector):
+        """把任意元素滚进视口，返回它的**视口中心坐标**。
+
+        与 `center` 的区别：这个接受**任意选择器**（`center` 只认
+        `data-find-id`）。`scrollIntoView` 的两条注意事项见 `center`。
+        """
+        return self.jso("""(() => {
+            var n = document.querySelector('%s');
+            if (!n) return null;
+            n.scrollIntoView({ block: 'center', behavior: 'instant' });
+            var r = n.getBoundingClientRect();
+            return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+        })()""" % selector)
+
     def center(self, fid):
         """把可发现物滚进视口，返回它的**视口中心坐标**。
 
@@ -186,6 +202,15 @@ def check_reduced(fn):
 def fixture_only(fn):
     """收窄成「只对探针页成立」—— 这些断言写死了 fx-01…fx-06 这些 id。"""
     fn.pages = (FIXTURE,)
+    return fn
+
+
+MOBIUS = 'mobius/index.html'
+
+
+def mobius_only(fn):
+    """收窄成「只对 /mobius/ 成立」—— 这些断言查的是她那一页的内容规格。"""
+    fn.pages = (MOBIUS,)
     return fn
 
 
@@ -625,6 +650,35 @@ def _first_declared(b):
                 ' || [])[0] || "")')
 
 
+def _src_number(page, key, default):
+    """从页面源码里读一个数值字段（如 `whisperCooldownMs`）；没有就用默认值。
+
+    ⚠ 必须**按页读**：`whisperCooldownMs` 逐页不同（共享层默认 8000，
+      mobius 按 spec 设得更稀疏）。测试里写死一个数的话，
+      换了页就会「等不够」→ 断言假红，而人会以为是自己改坏了什么。
+    """
+    src = io.open(os.path.join(ROOT_DIR, page), encoding='utf-8').read()
+    m = re.search(re.escape(key) + r'\s*:\s*(\d+)', src)
+    return int(m.group(1)) if m else default
+
+
+def _src_array(page, key):
+    """从**页面源码**里抠出 `key: [ '…', '…' ]` 这个数组的字面量。
+
+    ⚠ 为什么不能读 `window.THEME`：mobius 的脚本是 IIFE 包裹的，
+      `window.THEME` 是 **undefined**（Task 10 实测确认）。
+      探针页能读只是因为它的 `var THEME` 恰好在顶层 —— 那种断言搬到真页面上
+      会变成「永远取到空数组」的假绿/假红。
+    """
+    src = io.open(os.path.join(ROOT_DIR, page), encoding='utf-8').read()
+    i = src.find(key + ':')
+    if i < 0:
+        return []
+    j = src.index('[', i)
+    k = src.index(']', j)
+    return re.findall(r"'([^'\n]*)'", src[j:k])
+
+
 @check
 def check_progress_written(b, page, expected):
     """碰一个可发现物之后，进度**真的落进了 localStorage**。
@@ -754,14 +808,19 @@ def check_storage_failure_degrades(b, page, expected):
         fails = []
         count_before = _count_text(b)
 
-        c = b.center('fx-02')   # fx-02 是 hold
-        if not c:
-            fails.append(u'找不到 fx-02')
+        # ⚠ 挑一个**还没被发现的** id —— 已经找到过的再触发不会改进度，
+        #   而这条断言要看的正是「进度还涨不涨」。
+        ids = json.loads(b.js('JSON.stringify(window.__ELY_EXPLORE__.declared)') or '[]')
+        already = b.found_ids()
+        nxt = next((i for i in ids if i not in already), None)
+        if not nxt:
+            fails.append(u'所有可发现物都已经发现了，挑不出一个来测降级')
+        elif not _trigger(b, nxt):
+            fails.append(u'触发不了 %s' % nxt)
         else:
-            _do_hold(b, c)
             time.sleep(0.4)
             after = b.found_ids()
-            if 'fx-02' not in after:
+            if nxt not in after:
                 fails.append(u'写失败之后连「碰过什么」都记不住了 —— found 是 %r' % after)
 
             count_after = _count_text(b)
@@ -1153,14 +1212,17 @@ def check_whisper_lines_in_order(b, page, expected):
       所以这里连说三句逐个对，不是只说一句看看像不像。
     """
     _reset(b)
-    lines = json.loads(b.js('JSON.stringify((window.THEME && THEME.explore.whisper) || [])') or '[]')
+    lines = _src_array(page, 'whisper')
     if len(lines) < 3:
-        return ([u'探针页的 whisper 少于 3 句（%d），验不出顺序' % len(lines)], u'—')
+        return ([u'%s 的 whisper 少于 3 句（%d），验不出顺序' % (page, len(lines))], u'—')
 
+    # ⚠ 冷却时长**按页从源码读**，不写死 —— 逐页不同（mobius 是 12000，
+    #   共享层默认 8000）。写死的话换了页就会「等不够」→ 假红。
+    cooldown = _src_number(page, 'whisperCooldownMs', 8000) / 1000.0 + 0.8
     seen = []
     for i in range(3):
         if i > 0:
-            time.sleep(2.0)      # 等冷却过去（夹具设的 1500ms）
+            time.sleep(cooldown)     # 等冷却过去
         _click_blank(b, 3)
         time.sleep(0.4)
         st = _whisper_state(b)
@@ -1254,8 +1316,12 @@ def check_reduced_hint_static_marker(b, page, expected):
     """
     _set_motion(b, 'reduce')
     _reset(b)
-    done = _trigger_first(b, 3)          # 3 / 5 过半，提示该出现了
-    if len(done) < 3:
+    # ⚠ 触发几个**按本页的声明数算**，别写死 —— 写死的话换了页就够不到提示线，
+    #   断言会假红（mobius 12 个，3/12 = 0.25 远低于 0.5）。
+    n = len(json.loads(b.js('JSON.stringify(window.__ELY_EXPLORE__.declared)') or '[]'))
+    above = n // 2 + 1
+    done = _trigger_first(b, above)
+    if len(done) < above:
         return ([u'只触发了 %d 个，提示条件不成立' % len(done)], u'—')
 
     if not _hinted_ids(b):
@@ -1322,8 +1388,10 @@ def check_reduced_off_motion_returns(b, page, expected):
     永远测不出来 —— 因为只验减动侧的话，两边都是「动画没了」，看着都对。
     """
     _reset(b)
-    done = _trigger_first(b, 3)          # 让 .hinted 存在
-    if len(done) < 3:
+    n = len(json.loads(b.js('JSON.stringify(window.__ELY_EXPLORE__.declared)') or '[]'))
+    above = n // 2 + 1                   # 同上：按本页的声明数算
+    done = _trigger_first(b, above)
+    if len(done) < above:
         return ([u'只触发了 %d 个，提示条件不成立' % len(done)], u'—')
 
     _set_motion(b, 'no-preference')
@@ -1376,13 +1444,18 @@ UNFROZEN_CLOCK = """
 BD_CASES = """
 (() => {
   var key = ElysiaBottom.pageKey();
+  // ⚠ 先记住原条目：这一页可能本来就在生日表里
+  var had = Object.prototype.hasOwnProperty.call(window.ELYSIA_BDAYS, key);
+  var old = window.ELYSIA_BDAYS[key];
   var out = [];
   var now = new Date();
   var y = now.getFullYear(), M = now.getMonth(), D = now.getDate();
 
   function setBday(m, d, label) {
     window.ELYSIA_BDAYS[key] = [m, d];
-    ElysiaBottom.mount({});
+    // ⚠ 不传参（不是传 `{}`）—— 传空对象会把上一次的 opts 整个换掉，
+    //   `game` 就此消失，后面查游戏槽的断言会莫名其妙地红。
+    ElysiaBottom.mount();
     var t = document.querySelector('.bottom-bday-text');
     out.push({ label: label, m: m, d: d, text: t ? t.textContent : null });
   }
@@ -1400,9 +1473,12 @@ BD_CASES = """
   var y1 = new Date(y, M, D - 1);
   setBday(y1.getMonth(), y1.getDate(), 'yesterday');
 
-  // 收尾：删掉临时条目，重挂回「没有生日」的样子
-  delete window.ELYSIA_BDAYS[key];
-  ElysiaBottom.mount({});
+  // 收尾：**还原**，不是无脑 delete ——
+  // 这一页本来就在生日表里的话（mobius 就是），delete 会把真条目抹掉，
+  // 后面几条断言会跟着红，而原因在几百行之外。实测踩到过。
+  if (had) window.ELYSIA_BDAYS[key] = old;
+  else delete window.ELYSIA_BDAYS[key];
+  ElysiaBottom.mount();
   return JSON.stringify(out);
 })()
 """
@@ -1423,6 +1499,7 @@ def _bday_slot(b):
 
 
 @check
+@fixture_only
 def check_bday_absent_when_not_listed(b, page, expected):
     """表里没有这一页 → **整个不渲染** `.bottom-bday`。
 
@@ -1458,16 +1535,25 @@ def check_bday_appears_when_listed(b, page, expected):
     _reset(b)
     d = b.jso("""(() => {
         var key = ElysiaBottom.pageKey();
+        var had = Object.prototype.hasOwnProperty.call(window.ELYSIA_BDAYS, key);
+        var old = window.ELYSIA_BDAYS[key];
         window.ELYSIA_BDAYS[key] = [3, 30];        // 4 月 30 日
-        ElysiaBottom.mount({});
+        ElysiaBottom.mount();
         var slot = document.querySelector('.bottom-bday');
         var date = slot ? slot.querySelector('.bottom-bday-date') : null;
         var line = slot ? slot.querySelector('.bottom-bday-line') : null;
-        return JSON.stringify({
+        var out = {
             slot: !!slot,
             date: date ? date.textContent : null,
             lineHidden: line ? !!line.hidden : null,
-        });
+        };
+        // ⚠ **还原**，不是无脑 delete —— 这一页本来就在生日表里的话
+        //   （mobius 就是），delete 会把它的真条目抹掉，
+        //   后面几条断言就会跟着莫名其妙地红。这个坑当场踩到过。
+        if (had) window.ELYSIA_BDAYS[key] = old;
+        else delete window.ELYSIA_BDAYS[key];
+        ElysiaBottom.mount();      // 不传参 = 沿用上次的 opts 重画
+        return JSON.stringify(out);
     })()""")
     if not d:
         return ([u'取不到下方区块状态'], u'—')
@@ -1480,14 +1566,7 @@ def check_bday_appears_when_listed(b, page, expected):
     if d['lineHidden'] is not True:
         fails.append(u'不是生日当天，那句生日台词却是显示着的')
 
-    # 收尾：删掉临时条目
-    b.js("""(() => {
-        delete window.ELYSIA_BDAYS[ElysiaBottom.pageKey()];
-        ElysiaBottom.mount({});
-        return 1;
-    })()""")
-
-    return (fails, u'登记了就出现' if not fails else u'槽位不对')
+    return (fails, u'登记了就出现（且已还原）' if not fails else u'槽位不对')
 
 
 @check
@@ -1627,6 +1706,325 @@ def check_count_moved_into_bottom(b, page, expected):
         fails.append(u'搬过之后文案不对：%r' % d['text'])
 
     return (fails, u'探索度在区块里（%r）' % d['text'] if not fails else u'搬家有问题')
+
+
+# ══ /mobius/ 内容规格（spec §6.1 / §6.2 / §8）══════════════════════════
+# ⚠ 下面这张表**逐字抄自 spec §6.1 的表格**，而 spec 那张表又逐字抄自材料包。
+#   它是「**台词一条不编**」这条纪律的落点：页面必须与它逐字一致，
+#   而它自己由下面的 check_mobius_lines_from_material 对着材料包守。
+#   ⚠ 需求方 2026-10-01 拍板「台词一律引原句」——
+#     lab-02 / 06 / 07 / 12 都已换成材料包里的**全句**，别再改回截断版。
+MOBIUS_FINDS = [
+    ('lab-01', '#opening',   'click',      'spore',
+     u'你好啊，会放电的小白鼠。我们又见面了。', u'蛇主的追忆·其一'),
+    ('lab-02', '#about',     'hold',       'scale',
+     u'既然得到了这副皮囊，那当然就要好好利用一下咯~虽然有些时候确实不如大人的身体方便……但有些事情，也只有这副小孩子的身体才能做到。', u'蛇主的追忆·其二'),
+    ('lab-03', '#about',     'slide',      'glint',
+     u'毕竟像律者这样珍稀的实验素材……用一个少一个嘛。', u'蛇主的追忆·其三'),
+    ('lab-04', '#journey',   'hold',       'brick',
+     u'这里的每一寸砖瓦，我都摸清楚了。比如你脚底下那块砖，它叫菲莉丝，喜欢喝蘑菇奶油汤哦。', u'关于自身·其一'),
+    ('lab-05', '#journey',   'click',      'record',
+     u'一场接一场的战斗、一次又一次的探索……哎，可爱的小白鼠，你还真是精力旺盛呢。', u'关于芽衣·其一'),
+    ('lab-06', '#creations', 'triple_tap', 'shadow',
+     u'我是做过一些事，但进化和变革，本就需要一些「损耗」。而之所以会变成你听说的样子……只是因为一些人明明愚蠢，却偏偏很有主见。', u'蛇主的追忆·其七'),
+    ('lab-07', '#creations', 'drag',       'throne',
+     u'世界蛇的王座……坐在上面的人是谁都可以。可以是我，可以是凯文，可以是梅，甚至可以是你，都没关系。因为无论这个人是谁，他一人的意志，都绝对无法改变这条巨蛇行进的轨迹。', u'关于自身·其四'),
+    ('lab-08', '#quotes',    'click',      'shed',
+     u'蛇本来就是不会屈服于死亡的生物，这很值得大惊小怪吗？', u'关于不死的秘密·其一'),
+    ('lab-09', '#quotes',    'hold',       'infinity',
+     u'死亡并不是生命的终点。生命将因死亡而得到进化，并由此重获新生。', u'给予刻印·其七'),
+    ('lab-10', '#daily-sec', 'click',      'mouse',
+     u'我可爱的小白鼠……就让我好好看看，你被她耍的团团转的样子吧~', u'关于自身·其六'),
+    ('lab-11', '#bottom',    'click',      'sleeping',
+     u'总觉得……最近总是很困呢。哎，我不会是要冬眠了吧？', u'季节语音'),
+    ('lab-12', '#ending',    'slide',      'silhouette',
+     u'大……大姐姐……这里好黑……好可怕啊……大姐姐，带我离开这里好不好？', u'蛇主之影'),
+]
+
+# spec §6.1 末尾的解锁句 + §8.1 / §8.2 两个改机制彩蛋的台词
+MOBIUS_UNLOCK = (
+    u'没错，从一开始这里就不存在什么「梅比乌斯」的记忆体。现在在你面前的，就是唯一的、真正的「梅比乌斯」。',
+    u'关于自身·其三')
+MOBIUS_EGG_B = u'你要是有什么想评判的，就等你知道了真相之后再说吧。不过在那之前别忘了，这条供你探寻的路，可是我为你铺起来的。'
+MOBIUS_EGG_D = u'人类称呼自己能够理解的答案为「真相」，却称那无法理解的为「谬论」，说那人是「疯子」。至于你，你到最后会怎么看这一切？我可是很期待的哟，律·者·姐·姐。'
+
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MATERIAL_MD = os.path.join(os.path.dirname(ROOT_DIR), u'materials', u'梅比乌斯', u'text_materials.md')
+
+
+def _theme_explore_strings():
+    """从 `mobius/index.html` 源码里抠出 `THEME.explore` 块中**装台词的那些字段**。
+
+    ⚠ 为什么是按**字段名**抠、而不是「所有中文串」或「所有 `「…」`」：
+      · `unlock.title`（'记忆体的尽头'）是**站点 UI 文案**，不是她说的话 ——
+        它本来就不该在材料包里。全扫会把它误报成「编造」。
+      · 而台词里**有嵌套的「」**（`「损耗」`/`「真相」`/`律·者·姐·姐`），
+        按引号配对去切会被切碎。
+      所以只取 `line` / `src` / `text`（unlock 的正文）与 `whisper` 数组 ——
+      这几个字段才是「台词必须有出处」这条纪律的射程。
+    """
+    src = io.open(os.path.join(ROOT_DIR, 'mobius', 'index.html'), encoding='utf-8').read()
+    i = src.find('explore: {')
+    if i < 0:
+        return None
+    j = src.index('{', i + len('explore:'))
+    depth, k = 1, j + 1
+    while k < len(src) and depth:
+        if src[k] == '{':
+            depth += 1
+        elif src[k] == '}':
+            depth -= 1
+        k += 1
+    block = src[j + 1:k - 1]
+
+    out = re.findall(r"(?:line|src|text)\s*:\s*'([^'\n]*)'", block)
+    w = re.search(r'whisper\s*:\s*\[(.*?)\]', block, re.S)
+    if w:
+        out += re.findall(r"'([^'\n]*)'", w.group(1))
+    return out
+
+
+@check
+@mobius_only
+def check_mobius_find_ids(b, page, expected):
+    """① 12 个 `data-find-id` 与 spec §6.1 表格**逐字一致**（含顺序）。
+
+    差一个、写错一个，「探索度」就永远差一个、解锁永远不触发 ——
+    spec 的 Review Focus #3 说的「差一个的 bug 最难看见」。
+    """
+    got = b.jso("""(() => {
+        var out = [];
+        [].slice.call(document.querySelectorAll('.explore-find')).forEach(function (n) {
+            out.push(n.getAttribute('data-find-id'));
+        });
+        return JSON.stringify(out);
+    })()""")
+    if got is None:
+        return ([u'取不到 .explore-find 节点'], u'—')
+
+    want = [f[0] for f in MOBIUS_FINDS]
+    fails = []
+    if sorted(got) != sorted(want):
+        missing = [i for i in want if i not in got]
+        extra = [i for i in got if i not in want]
+        if missing:
+            fails.append(u'少了这几个：%s' % u', '.join(missing))
+        if extra:
+            fails.append(u'多出这几个：%s' % u', '.join(extra))
+        if not missing and not extra:
+            fails.append(u'有重复的 id：%r' % got)
+    # ⚠ 比的是**集合不是顺序**：DOM 里的先后由各锚点在页面上的先后决定
+    #   （`#creations` 在 `#journey` 前面，所以 lab-06 会排在 lab-04 前），
+    #   而 spec §6.1 那张表的编号是**内容清单**，不是 DOM 顺序要求。
+    #   实测踩到过：一开始按顺序比，报了个根本不重要的「不一致」。
+    return (fails, u'12 个 id 与 spec 逐字一致（集合）' if not fails else u'id 对不上')
+
+
+@check
+@mobius_only
+def check_mobius_bubble_line_and_src(b, page, expected):
+    """② 逐条触发，气泡里的台词与出处**都要对得上 spec**。
+
+    ⚠ 这里不读 `window.THEME` —— mobius 的脚本是 IIFE 包裹的，
+      `window.THEME` 是 **undefined**（Task 10 实测确认）。
+      所以期望值来自本文件的表，实际值从**渲染出来的气泡**上读。
+    """
+    fails = []
+    for fid, _at, _verb, _art, line, src in MOBIUS_FINDS:
+        if not _trigger(b, fid):
+            fails.append(u'%s：触发不了（锚点找不到？）' % fid)
+            continue
+        time.sleep(0.2)
+        d = b.jso("""(() => {
+            var el = document.querySelector('.explore-bubble');
+            return JSON.stringify({ text: el ? el.textContent : null });
+        })()""")
+        text = (d or {}).get('text') or u''
+        if line not in text:
+            fails.append(u'%s：气泡里没有它该有的台词（实际 %r）' % (fid, text[:60]))
+        elif src not in text:
+            fails.append(u'%s：气泡里没有出处标注 %r（实际 %r）' % (fid, src, text[:60]))
+
+    return (fails, u'12 条的台词与出处都渲染正确' if not fails else u'%d 条对不上' % len(fails))
+
+
+@check
+@mobius_only
+def check_mobius_lines_from_material(b, page, expected):
+    """③ `THEME.explore` 里出现的每一句中文，都能在材料包里**逐字**找到。
+
+    这是「**台词一条不编**」这条纪律的机器化落点。
+    ⚠ 只管**本轮新加的**内容（`THEME.explore` 那一块）——
+      页面原有的台词池（`dailyPool` 等 19 条出处不明的句子）
+      需求方 2026-10-01 明确「不用管」，不在这条的射程内。
+    """
+    if not os.path.exists(MATERIAL_MD):
+        # ⚠ **不静默跳过**：材料包不在就没法验「有没有编造」，
+        #   而「测不了」必须看得见 —— 静默跳过正是本站最怕的那种失败。
+        return ([u'材料包不在，无法验证台词出处：%s' % MATERIAL_MD], u'跳过=没测')
+
+    material = io.open(MATERIAL_MD, encoding='utf-8').read()
+    strings = _theme_explore_strings()
+    if strings is None:
+        return ([u'在 mobius/index.html 里找不到 THEME.explore 块'], u'—')
+
+    fails = []
+    checked = 0
+    for s in strings:
+        if not re.search(u'[一-鿿]', s):     # 只要含中文的
+            continue
+        checked += 1
+        # 台词在页面上带「」，材料包里也带「」—— 两边都剥掉再比
+        core = s.strip().strip(u'「」')
+        if core and core not in material:
+            fails.append(u'材料包里找不到这一句：%r' % s[:70])
+
+    if checked == 0:
+        fails.append(u'THEME.explore 里一句中文都没有 —— 是不是没写进去？')
+
+    return (fails, u'%d 句全部有出处' % checked if not fails else u'有 %d 句对不上' % len(fails))
+
+
+@check
+@mobius_only
+def check_mobius_has_bday_slot(b, page, expected):
+    """④ mobius 在 `data/bdays.js` 里，所以倒计时槽该渲染出来。"""
+    d = b.jso("""(() => {
+        var slot = document.querySelector('.bottom-bday');
+        var txt = slot ? slot.querySelector('.bottom-bday-text') : null;
+        return JSON.stringify({
+            slot: !!slot,
+            date: slot && slot.querySelector('.bottom-bday-date')
+                  ? slot.querySelector('.bottom-bday-date').textContent : null,
+            text: txt ? txt.textContent : null,
+        });
+    })()""")
+    if d is None:
+        return ([u'取不到下方区块状态'], u'—')
+
+    fails = []
+    if not d['slot']:
+        fails.append(u'没有 .bottom-bday —— mobius 在 bdays.js 里（[3,30]），该渲染的')
+    if d['date'] != u'4 月 30 日':
+        fails.append(u'日期显示成 %r，应为「4 月 30 日」' % d['date'])
+
+    # ⚠ 旧的那套右下角悬浮倒计时**必须已经拆掉** ——
+    #   不拆的话同页两个倒计时，且与 data/bdays.js 构成两处维护
+    #   （HANDOVER §10.5 合并 `BUILT` 那条教训）。
+    stale = b.js("String(!!document.getElementById('bdayEgg')"
+                 " || !!document.getElementById('bdayPanel'))")
+    if stale == 'true':
+        fails.append(u'旧的右下角倒计时（#bdayEgg / #bdayPanel）还在 —— '
+                     u'同页两个倒计时，而且它自己写死了 BM/BD，是第二处数据源')
+
+    return (fails, u'倒计时槽正确，旧件已拆' if not fails else u'倒计时不对')
+
+
+@check
+@mobius_only
+def check_mobius_has_game_slot(b, page, expected):
+    """⑤ 传了 `THEME.game`，游戏槽就该渲染出来（Task 12 往里面放贪吃蛇）。"""
+    d = b.jso("""(() => {
+        var g = document.querySelector('.bottom-game');
+        var sec = document.getElementById('bottom');
+        return JSON.stringify({ slot: !!g, inSection: !!(g && sec && sec.contains(g)) });
+    })()""")
+    if d is None:
+        return ([u'取不到下方区块状态'], u'—')
+
+    fails = []
+    if not d['slot']:
+        fails.append(u'没有 .bottom-game —— THEME.game 传了吗？ElysiaBottom.mount 调了吗？')
+    elif not d['inSection']:
+        fails.append(u'.bottom-game 不在 #bottom 里')
+    return (fails, u'游戏槽在' if not fails else u'游戏槽不对')
+
+
+@check
+@mobius_only
+def check_mobius_egg_b_drag_name(b, page, expected):
+    """⑥ 改机制后的 B：**拖走她的名字**（spec §8.1）。
+
+    ⚠ **必须走真实鼠标路径** —— 这些页的脚本是 IIFE 包裹的，
+      内部函数不是全局的（HANDOVER §10.6 Task 9 踩过：
+      `typeof fireKevinKiller666 === 'function'` 得到 `undefined`）。
+    """
+    c = b.center_of('#profileName')
+    if not c:
+        return ([u'找不到 #profileName'], u'—')
+
+    # 拖之前先把 toast 清掉，免得读到上一条留下的内容
+    b.js("(() => { var t = document.getElementById('mbToast');"
+         " if (t) { t.textContent = ''; t.classList.remove('show'); } return 1; })()")
+
+    b.press(c['x'], c['y'])
+    for i in range(1, 6):
+        b.move(c['x'] + i * 14, c['y'] + i * 2)
+        time.sleep(0.02)
+    b.release(c['x'] + 70, c['y'] + 10)
+    time.sleep(0.6)
+
+    d = b.jso("""(() => {
+        var t = document.getElementById('mbToast');
+        return JSON.stringify({ text: t ? t.textContent : null });
+    })()""")
+    text = (d or {}).get('text') or u''
+    fails = []
+    if MOBIUS_EGG_B not in text:
+        fails.append(u'拖了名字之后没有说那句话（#mbToast 实际是 %r）' % text[:70])
+    return (fails, u'拖名字触发了台词' if not fails else u'B 没触发')
+
+
+@check
+@mobius_only
+def check_mobius_egg_d_scroll_back(b, page, expected):
+    """⑦ 改机制后的 D：**在结尾往回滚**（spec §8.2）。
+
+    「到达即触发」别人用过（aponia / eden / kevin 是往下滚到结尾）；
+    这个是**从结尾往回滚**才触发 —— 方向相反、而且是「离开才触发」。
+    """
+    # ⚠ **先重载**。不重载的话，前面那些断言（尤其逐条触发 12 个可发现物）
+    #   早就把页面从下往上滚过好几轮了 —— `farewellShown` 已经翻成 true，
+    #   这条断言会变成「恒真」，测不出任何东西。实测踩到过。
+    _reload(b)
+
+    # 先走到结尾停住。
+    # ⚠ **不能用 `scrollTo(document.body.scrollHeight)`** —— 下方区块现在是页面
+    #   最后一块，直接跳到最底时 `#ending` 可能已经不足 50% 可见，
+    #   观察器根本不会报 intersecting，「到达过结尾」这个前提就假了。
+    #   真实的用户是一路滚下来经过结尾的，所以这里滚到结尾本身。
+    b.js("(() => { document.getElementById('ending')"
+         ".scrollIntoView({ block: 'center', behavior: 'instant' }); return 1; })()")
+    time.sleep(1.2)
+    before = b.js("String(document.getElementById('endingSub')"
+                  " ? document.getElementById('endingSub').classList.contains('visible') : null)")
+    if before == 'true':
+        return ([u'刚到结尾时临别句就已经显示了 —— 那就不是「往回滚才触发」了'], u'触发时机不对')
+
+    # 再往回滚
+    b.js("(() => { window.scrollBy({ top: -260, behavior: 'instant' }); return 1; })()")
+    time.sleep(1.0)
+
+    d = b.jso("""(() => {
+        var s = document.getElementById('endingSub');
+        return JSON.stringify({
+            exists: !!s,
+            visible: !!s && s.classList.contains('visible'),
+            text: s ? s.textContent : null,
+        });
+    })()""")
+    if not d:
+        return ([u'取不到 #endingSub'], u'—')
+
+    fails = []
+    if not d['exists']:
+        fails.append(u'页面里没有 #endingSub')
+    elif not d['visible']:
+        fails.append(u'从结尾往回滚了 260px，临别句仍然没浮出来')
+    elif MOBIUS_EGG_D not in (d['text'] or u''):
+        fails.append(u'临别句的内容不对：%r' % (d['text'] or u'')[:70])
+
+    return (fails, u'往回滚触发了临别句' if not fails else u'D 没触发')
 
 
 # ── 主流程 ────────────────────────────────────────────────────────────

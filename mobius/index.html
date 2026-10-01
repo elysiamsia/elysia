@@ -7,6 +7,9 @@
 <title>elysiad.top/mobius — 致梅比乌斯</title>
 <!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
 <link rel="stylesheet" href="/assets/site.css">
+<!-- 探索系统 + 下方区块的共享样式。⚠ **必须在页面 <style> 之前** ——
+     页面自己的规则要能覆盖共享层，这是全站一致的加载顺序（spec §3.2）。 -->
+<link rel="stylesheet" href="/assets/explore.css">
 <!-- SECTION: styles -->
 <style>
 :root{
@@ -104,6 +107,19 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
   font-size:clamp(1.8rem,5vw,2.8rem);font-weight:400;letter-spacing:.14em;cursor:pointer;user-select:none;
   color:var(--text);text-align:center;margin-bottom:.2em;text-shadow:0 0 24px rgba(61,220,132,.3);
 }
+/* 拖走的名字（彩蛋 B，spec §8.1）。
+   ⚠ --dx / --dy 由 JS 在拖动时写进 style，这里只负责怎么用它们。
+     拖的时候跟手走，松手后像蛇一样自己游回原位。 */
+.profile-name.dragging{
+  cursor:grabbing;transition:none;position:relative;z-index:6;
+  transform:translate(var(--dx,0),var(--dy,0)) rotate(-3deg);
+}
+@keyframes nameSwim{
+  0%{transform:translate(var(--dx,0),var(--dy,0)) rotate(-3deg)}
+  55%{transform:translate(calc(var(--dx,0) * -.14),calc(var(--dy,0) * -.14)) rotate(3deg)}
+  100%{transform:translate(0,0) rotate(0)}
+}
+.profile-name.swimming{animation:nameSwim .85s cubic-bezier(.3,1.15,.45,1) both}
 .profile-name-en{
   font-size:clamp(.9rem,2vw,1.1rem);font-weight:300;letter-spacing:.45em;
   color:var(--serpent-deep);text-align:center;margin-bottom:2rem;filter:brightness(1.3);
@@ -198,7 +214,7 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
 
 /* SECTION: ending */
 .ending-quote{
-  font-size:clamp(1.05rem,3vw,1.5rem);font-weight:300;letter-spacing:.1em;cursor:pointer;user-select:none;
+  font-size:clamp(1.05rem,3vw,1.5rem);font-weight:300;letter-spacing:.1em;
   color:var(--serpent);line-height:2;text-shadow:0 0 25px rgba(61,220,132,.35);
   max-width:660px;opacity:0;transform:translateY(20px);transition:opacity 1.5s ease,transform 1.5s ease;
 }
@@ -218,37 +234,6 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
   transition:background .3s ease,box-shadow .3s ease,transform .3s ease;opacity:0;
 }
 .back-link:hover{background:rgba(61,220,132,.12);box-shadow:0 0 24px rgba(61,220,132,.22);transform:translateY(-2px)}
-
-/* SECTION: birthday egg */
-#bdayEgg{
-  position:fixed;right:1.2rem;bottom:1.2rem;z-index:9990;display:flex;align-items:center;gap:.55rem;
-  padding:.55rem 1rem;border-radius:999px;cursor:pointer;user-select:none;
-  background:linear-gradient(135deg,rgba(61,220,132,.14),rgba(255,209,102,.1));
-  border:1px solid var(--glass-border);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  box-shadow:0 0 18px rgba(61,220,132,.16);color:var(--text);font-size:.8rem;letter-spacing:.08em;
-  transition:transform .25s,box-shadow .25s;animation:bdayFloat 3.5s ease-in-out infinite;
-}
-#bdayEgg:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 0 26px rgba(61,220,132,.3)}
-@keyframes bdayFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-.bday-dot{width:8px;height:8px;border-radius:50%;background:var(--serpent);box-shadow:0 0 10px var(--serpent);animation:bdayPulse 1.6s ease-in-out infinite}
-@keyframes bdayPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
-#bdayPanel{
-  position:fixed;right:1.2rem;bottom:4.4rem;z-index:9990;width:min(300px,calc(100vw - 2.4rem));
-  padding:1.4rem 1.3rem;border-radius:20px;opacity:0;pointer-events:none;transform:translateY(12px) scale(.97);
-  transition:opacity .35s,transform .35s;text-align:center;
-  background:linear-gradient(150deg,rgba(7,26,18,.94),rgba(18,58,38,.94));
-  border:1px solid var(--glass-border);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  box-shadow:0 8px 40px rgba(0,0,0,.45),0 0 40px rgba(61,220,132,.1);
-}
-#bdayPanel.open{opacity:1;pointer-events:auto;transform:translateY(0) scale(1)}
-.bday-cake{display:block;font-size:1.5rem;margin-bottom:.4rem}
-.bday-title{font-size:.72rem;color:var(--text-muted);letter-spacing:.3em;margin-bottom:.3rem}
-.bday-date{font-size:.95rem;color:var(--serpent);letter-spacing:.12em;margin-bottom:1rem}
-.bday-timer{display:flex;justify-content:center;gap:.6rem}
-.bday-cell{min-width:3.4rem;padding:.55rem .3rem;border-radius:12px;background:rgba(61,220,132,.06);border:1px solid var(--glass-border)}
-.bday-num{display:block;font-size:1.35rem;font-weight:300;color:var(--eye);font-variant-numeric:tabular-nums}
-.bday-unit{display:block;font-size:.62rem;color:var(--text-muted);margin-top:.2rem;letter-spacing:.15em}
-.bday-msg{margin-top:1rem;font-size:.78rem;color:var(--text-dim);line-height:1.9}
 
 /* SECTION: game button */
 #gameFab{
@@ -344,8 +329,6 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
   .quote-card{min-height:120px;padding:1.2rem}
   .creation-grid{grid-template-columns:1fr}
   #gameFab{width:46px;height:46px;font-size:1.2rem;left:.8rem;bottom:.8rem}
-  #bdayEgg{right:.8rem;bottom:.8rem}
-  #bdayPanel{bottom:4rem;right:.8rem}
 }
 </style>
 </head>
@@ -559,29 +542,15 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
 <!-- SECTION: ending -->
 <section class="section-ending" id="ending">
   <div class="ending-stars" id="endingStars"></div>
-  <p class="ending-quote" id="endingQuote" role="button" tabindex="0">所以……出去之后好好干吧，小白鼠。<br>可别辜负了梅比乌斯的期待。</p>
+  <!-- ⚠ 原本挂着 role="button" tabindex="0"（那时点它能循环换句）。
+       D 改成「在结尾往回滚」之后它**不再是控件**了 —— 一句装饰性的文字
+       顶着 button 的角色是 a11y 谎话，一并摘掉。 -->
+  <p class="ending-quote" id="endingQuote">所以……出去之后好好干吧，小白鼠。<br>可别辜负了梅比乌斯的期待。</p>
   <p class="ending-sub" id="endingSub"></p>
   <p class="ending-attr" id="endingAttr">致梅比乌斯 · elysiad.top/mobius</p>
   <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
   <div class="ending-fade"></div>
 </section>
-
-<!-- SECTION: birthday egg -->
-<div id="bdayEgg" role="button" tabindex="0" aria-label="生日倒计时">
-  <span class="bday-dot"></span><span id="bdayEggText"></span>
-</div>
-<div id="bdayPanel" aria-hidden="true">
-  <span class="bday-cake" id="bdayCake">🧪</span>
-  <div class="bday-title">她 的 诞 生 日</div>
-  <div class="bday-date">4月30日</div>
-  <div class="bday-timer" id="bdayTimer">
-    <div class="bday-cell"><span class="bday-num" id="bdD">--</span><span class="bday-unit">天</span></div>
-    <div class="bday-cell"><span class="bday-num" id="bdH">--</span><span class="bday-unit">时</span></div>
-    <div class="bday-cell"><span class="bday-num" id="bdM">--</span><span class="bday-unit">分</span></div>
-    <div class="bday-cell"><span class="bday-num" id="bdS">--</span><span class="bday-unit">秒</span></div>
-  </div>
-  <div class="bday-msg" id="bdayMsg"></div>
-</div>
 
 <!-- SECTION: game -->
 <button id="gameFab" aria-label="隐藏实验：贪吃蛇" title="隐藏实验">🧪</button>
@@ -609,6 +578,12 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
 
 <!-- SECTION: scripts -->
 <script src="/assets/site.js"></script>
+<!-- ⚠ 顺序照 spec §3.2：site.js → explore.js → bottom.js → data/bdays.js → 页面脚本。
+     bottom.js 会建出下方区块，而有一个可发现物就锚在它上面（lab-11）——
+     共享层的 ensureAttached 会补扫，所以两行调用的先后顺序怎么写都对。 -->
+<script src="/assets/explore.js"></script>
+<script src="/assets/bottom.js"></script>
+<script src="/data/bdays.js"></script>
 <script>
 (function(){
   /* SECTION: quotes data */
@@ -664,6 +639,89 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
       delay: 150, jitter: 80, startDelay: 700, tailDelay: 500, hintDelay: 1000,
       hintEl: true,             // 本页有 #openingHint（原代码会点亮它）
       preReveal: 'openingOrn',  // 打字开始前同步点亮 #openingOrn
+    },
+
+    /* ── 探索系统（spec §6.1）─────────────────────────────────────────────
+       「拖着你在页面里逛一圈，顺手把她的十二句话找出来。」
+
+       ⚠ **台词一条不编。** 12 条的 line / src 全部逐字取自
+         `materials/梅比乌斯/text_materials.md`，并经 tools/check_explore.py
+         的 ③ 号断言对着材料包逐句核过。
+       ⚠ **x / y 是「相对锚点矩形的百分比」，指的是中心点**（[0..1]）。
+         锚点用实测存在的六个区段 id：`#daily-sec` **不是** `#daily`
+         （`daily` 那个名字被 `data-snark` 占了）。
+       ⚠ 改 `id` = 玩家进度丢失。 */
+    explore: {
+      pageId: 'mobius',          // 进度存 localStorage['elysia:explore:mobius']
+      finds: [
+        { id:'lab-01', at:'#opening',   x:0.72, y:0.66, verb:'click',      art:'spore',
+          line:'你好啊，会放电的小白鼠。我们又见面了。',
+          src:'蛇主的追忆·其一' },
+        { id:'lab-02', at:'#about',     x:0.20, y:0.56, verb:'hold',       art:'scale',
+          line:'既然得到了这副皮囊，那当然就要好好利用一下咯~虽然有些时候确实不如大人的身体方便……但有些事情，也只有这副小孩子的身体才能做到。',
+          src:'蛇主的追忆·其二' },
+        { id:'lab-03', at:'#about',     x:0.80, y:0.34, verb:'slide',      art:'glint',
+          line:'毕竟像律者这样珍稀的实验素材……用一个少一个嘛。',
+          src:'蛇主的追忆·其三' },
+        { id:'lab-04', at:'#journey',   x:0.26, y:0.82, verb:'hold',       art:'brick',
+          line:'这里的每一寸砖瓦，我都摸清楚了。比如你脚底下那块砖，它叫菲莉丝，喜欢喝蘑菇奶油汤哦。',
+          src:'关于自身·其一' },
+        { id:'lab-05', at:'#journey',   x:0.74, y:0.26, verb:'click',      art:'record',
+          line:'一场接一场的战斗、一次又一次的探索……哎，可爱的小白鼠，你还真是精力旺盛呢。',
+          src:'关于芽衣·其一' },
+        { id:'lab-06', at:'#creations', x:0.22, y:0.32, verb:'triple_tap', art:'shadow',
+          line:'我是做过一些事，但进化和变革，本就需要一些「损耗」。而之所以会变成你听说的样子……只是因为一些人明明愚蠢，却偏偏很有主见。',
+          src:'蛇主的追忆·其七' },
+        { id:'lab-07', at:'#creations', x:0.78, y:0.64, verb:'drag',       art:'throne',
+          line:'世界蛇的王座……坐在上面的人是谁都可以。可以是我，可以是凯文，可以是梅，甚至可以是你，都没关系。因为无论这个人是谁，他一人的意志，都绝对无法改变这条巨蛇行进的轨迹。',
+          src:'关于自身·其四' },
+        { id:'lab-08', at:'#quotes',    x:0.16, y:0.44, verb:'click',      art:'shed',
+          line:'蛇本来就是不会屈服于死亡的生物，这很值得大惊小怪吗？',
+          src:'关于不死的秘密·其一' },
+        { id:'lab-09', at:'#quotes',    x:0.84, y:0.70, verb:'hold',       art:'infinity',
+          line:'死亡并不是生命的终点。生命将因死亡而得到进化，并由此重获新生。',
+          src:'给予刻印·其七' },
+        { id:'lab-10', at:'#daily-sec', x:0.50, y:0.80, verb:'click',      art:'mouse',
+          line:'我可爱的小白鼠……就让我好好看看，你被她耍的团团转的样子吧~',
+          src:'关于自身·其六' },
+        /* ⚠ lab-11 锚在 `#bottom` 上 —— 而 `#bottom` 是 ElysiaBottom.mount 才建出来的。
+           共享层的 retryPending 会在挂载探索度时补扫一次，所以这里不需要特殊处理。 */
+        { id:'lab-11', at:'#bottom',    x:0.50, y:0.40, verb:'click',      art:'sleeping',
+          line:'总觉得……最近总是很困呢。哎，我不会是要冬眠了吧？',
+          src:'季节语音' },
+        { id:'lab-12', at:'#ending',    x:0.32, y:0.52, verb:'slide',      art:'silhouette',
+          line:'大……大姐姐……这里好黑……好可怕啊……大姐姐，带我离开这里好不好？',
+          src:'蛇主之影' },
+      ],
+      unlock: {
+        title: '记忆体的尽头',
+        text: '「没错，从一开始这里就不存在什么「梅比乌斯」的记忆体。现在在你面前的，就是唯一的、真正的「梅比乌斯」。」',
+        src: '关于自身·其三',
+      },
+      /* ── 陪伴层台词池（spec §6.5 的余量）─────────────────────────────
+         ⚠ **按顺序推进，不随机抽** —— 「可预期的陪伴才像有人在那里」，
+           需求方明确不要抽卡式的不可预测（见 explore.js 的文件头）。
+         ⚠ 最后一条**是唯一一条有意截断的**：材料包原句还有下半截
+           「……在往世乐土中，她永远都是最不值得信任的那一个，哪怕只是一丁点。」
+           那是**直接给爱莉希雅下判词**，而这页是她自己的站 ——
+           需求方 2026-10-01 明确不要。**别顺手补全。** */
+      whisper: [
+        '讨厌我的人太多，我已经分不清是因为矛盾还是别的什么了。不过你这么一说……他似乎的确是最讨厌我的那一个。',
+        '对凯文来说，他早已料到时代的终结，知道自己的归处是那个未来，他选择了未来。但对于华来说……恐怕是因为她那时已经没有了归处、也没有其他的选择了吧。',
+        '还真是忠诚的好男人啊。',
+        '你明明活得再任性一点也可以的，樱。自由自在，顺从自己的欲望。',
+        '听好了，新来的小姑娘……啊，不，是会放电的大姐姐，你可千万要小心这个人。',
+      ],
+      // 她的台词长、分量重 —— 比共享层默认的 8000 稀疏一些（spec Task 11 Step 3）
+      whisperCooldownMs: 12000,
+    },
+
+    /* 小游戏槽（spec §4.5 的契约）。真正的实现在 assets/games/mobius.js（Task 12），
+       这里只声明「这一页有游戏、它叫什么」。 */
+    game: {
+      module: 'mobius',
+      title: '贪吃蛇 · 实验体回收',
+      hint:  '收集实验素材，别撞墙。分数记作「进化度」。',
     },
   };
 
@@ -849,22 +907,86 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); eyeTap(); }
   });
 
-  /* SECTION: easter egg B - 点名字 */
+  /* SECTION: easter egg B - 拖走她的名字（spec §8.1）
+     ⚠ **改机制，不删彩蛋。** 原机制是「点名字出 toast」—— 那个触发方式
+       kalpas / su / villv 三家都用过了，而这一页的问题是**触发方式**不是内容。
+     现在改成**拖拽**：名字跟手走，卡片上留一个空位，松手后它像蛇一样自己游回去。
+     全站没有任何一页用过拖拽（HANDOVER §4.2 那 15 种机制里没有它）。
+
+     为什么是她：这一页的核心真相就是「名字 ≠ 存在」
+       （解锁句：「从一开始这里就不存在什么「梅比乌斯」的记忆体」）。
+       **把名字拖走**，正好把这件事演了一遍。
+     ⚠ 台词逐字取自材料包（关于黄金庭园·其一），一条不编。 */
   var nameEl = document.getElementById('profileName');
-  var nameLines = [
-    '「嗯？」',
-    '「看什么看？」',
-    '「想进我的实验室？」',
-    '「打蛇要打七寸——小白鼠，你想对我做什么？」',
-    '「克莱茵，把这位记进今天的实验名单。」'
-  ];
-  var nameIdx = 0;
-  nameEl.addEventListener('click', function(){
-    showToast(nameLines[nameIdx % nameLines.length], false);
-    nameIdx++;
+  var nameDrag = null;
+  var NAME_LINE = '「你要是有什么想评判的，就等你知道了真相之后再说吧。不过在那之前别忘了，这条供你探寻的路，可是我为你铺起来的。」';
+
+  function nameSetOffset(dx, dy){
+    nameEl.style.setProperty('--dx', dx + 'px');
+    nameEl.style.setProperty('--dy', dy + 'px');
+  }
+  function nameMove(e){
+    if (!nameDrag) return;
+    nameDrag.dx = e.clientX - nameDrag.x;
+    nameDrag.dy = e.clientY - nameDrag.y;
+    nameSetOffset(nameDrag.dx, nameDrag.dy);
+  }
+  function nameDetach(){
+    window.removeEventListener('pointermove', nameMove);
+    window.removeEventListener('pointerup', nameUp);
+    window.removeEventListener('pointercancel', nameCancel);
+  }
+  function nameUp(e){
+    if (!nameDrag) return;
+    var d = nameDrag;
+    nameDrag = null;
+    nameDetach();
+    nameEl.classList.remove('dragging');
+
+    // 位移不够 = 只是点了一下（不是拖）—— 归位，不说话
+    if (Math.abs(d.dx) + Math.abs(d.dy) < 24){
+      nameEl.style.removeProperty('--dx');
+      nameEl.style.removeProperty('--dy');
+      return;
+    }
+    // 松手：名字像蛇一样自己游回原位
+    if (reducedMotion){
+      // 减动偏好：不游，直接归位（动画是装饰，「关动画」不等于「关功能」）
+      nameEl.style.removeProperty('--dx');
+      nameEl.style.removeProperty('--dy');
+    } else {
+      nameEl.classList.add('swimming');
+      setTimeout(function(){
+        nameEl.classList.remove('swimming');
+        nameEl.style.removeProperty('--dx');
+        nameEl.style.removeProperty('--dy');
+      }, 1000);
+    }
+    if (!reducedMotion) scaleBurst(e.clientX, e.clientY, 8, ['#3ddc84', '#ffd166']);
+    showToast(NAME_LINE, false);
+  }
+  function nameCancel(){
+    if (!nameDrag) return;
+    nameDrag = null;
+    nameDetach();
+    nameEl.classList.remove('dragging');
+    nameEl.style.removeProperty('--dx');
+    nameEl.style.removeProperty('--dy');
+  }
+  nameEl.addEventListener('pointerdown', function(e){
+    if (e.button) return;
+    if (nameDrag) return;
+    nameDrag = { x: e.clientX, y: e.clientY, dx: 0, dy: 0 };
+    nameEl.classList.add('dragging');
+    // ⚠ 监听挂在 **window** 上：拖到一半指针跑出名字那一小块是常态，
+    //   挂在元素上就收不到 pointerup，手势永远收不了尾。
+    window.addEventListener('pointermove', nameMove);
+    window.addEventListener('pointerup', nameUp);
+    window.addEventListener('pointercancel', nameCancel);
   });
+  // 键盘做不出「拖」这个动作 —— 给键盘用户留一条路（同 explore.js 对可发现物的处理）
   nameEl.addEventListener('keydown', function(e){
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nameEl.click(); }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showToast(NAME_LINE, false); }
   });
 
   /* SECTION: easter egg C - 标题吐槽 */
@@ -882,28 +1004,45 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
     });
   });
 
-  /* SECTION: easter egg D - 结尾心声 */
-  var endingQuote = document.getElementById('endingQuote');
+  /* SECTION: easter egg D - 在结尾往回滚（spec §8.2）
+     ⚠ **改机制，不删彩蛋。** 原机制是「点结尾语录循环换句」——
+       那个触发方式 kalpas / su / villv 三家都用过了。
+
+     现在改成**反向滚动**：走到结尾之后，**向上滚回上一节**时才触发。
+     为什么不算雷同：既有的「滚动到结尾触发」（aponia / eden / kevin）是
+       往下**到达**即触发；这个是**离开**才触发，方向相反。
+     为什么是她：结尾本来就在说「别走」；**你往回滚 = 你要走了**，她才开口。
+       这一句是送别。
+
+     ⚠ 台词逐字取自材料包（关于千劫·其二），一条不编。 */
   var endingSub = document.getElementById('endingSub');
-  var heartLines = [
-    '「死亡并不是生命的终点。生命将因死亡而得到进化。」',
-    '「我们的肉体凡胎，只不过是基因为自己打造的贮藏器而已。」',
-    '「克莱茵……你一直在看着吧。这样就好。」',
-    '「……呵，居然还真有人点到这里。记下来了，今天的你，很有趣。」'
-  ];
-  var heartIdx = 0;
-  endingQuote.addEventListener('click', function(){
-    endingSub.textContent = heartLines[heartIdx % heartLines.length];
+  var FAREWELL = '「人类称呼自己能够理解的答案为「真相」，却称那无法理解的为「谬论」，说那人是「疯子」。至于你，你到最后会怎么看这一切？我可是很期待的哟，律·者·姐·姐。」';
+  var farewellShown = false;
+  var endingReached = false;
+  var deepestY = 0;
+
+  new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (en.isIntersecting){
+        endingReached = true;
+        if (window.scrollY > deepestY) deepestY = window.scrollY;
+      }
+    });
+  }, { threshold: 0.5 }).observe(document.getElementById('ending'));
+
+  window.addEventListener('scroll', function(){
+    if (farewellShown || !endingReached) return;
+    if (window.scrollY > deepestY) deepestY = window.scrollY;
+    // 「往回滚」= 从最深的地方往回离开 80px 以上
+    if (deepestY - window.scrollY < 80) return;
+    farewellShown = true;
+    endingSub.textContent = FAREWELL;
     endingSub.classList.add('visible');
-    heartIdx++;
     if (!reducedMotion){
-      var r = endingQuote.getBoundingClientRect();
+      var r = endingSub.getBoundingClientRect();
       scaleBurst(r.left + r.width / 2, r.top + r.height / 2, 10, ['#3ddc84','#ffd166','#ff7bac']);
     }
-  });
-  endingQuote.addEventListener('keydown', function(e){
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); endingQuote.click(); }
-  });
+  }, { passive: true });
 
   /* SECTION: easter egg E - 小白鼠出没 */
   var miceCaught = 0;
@@ -1133,51 +1272,6 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
     touchStart = null;
   }, { passive: true });
 
-  /* SECTION: birthday egg (4月30日) */
-  var BM = 3, BD = 30; /* 4月30日（月份从0起） */
-  var bdayEgg = document.getElementById('bdayEgg');
-  var bdayPanel = document.getElementById('bdayPanel');
-  var bdayEggText = document.getElementById('bdayEggText');
-  var bdayMsg = document.getElementById('bdayMsg');
-  var bdayTimer = document.getElementById('bdayTimer');
-  var bdayCake = document.getElementById('bdayCake');
-  var bd = { d: document.getElementById('bdD'), h: document.getElementById('bdH'), m: document.getElementById('bdM'), s: document.getElementById('bdS') };
-  function pad2(n){ return (n < 10 ? '0' : '') + n; }
-  function isBday(t){ return t.getMonth() === BM && t.getDate() === BD; }
-  function nextBday(now){
-    var y = now.getFullYear(), t = new Date(y, BM, BD, 0, 0, 0);
-    if (now >= new Date(y, BM, BD + 1, 0, 0, 0)) t = new Date(y + 1, BM, BD, 0, 0, 0);
-    return t;
-  }
-  function renderBday(){
-    var now = new Date();
-    if (isBday(now)){
-      bdayEggText.textContent = '今天是她的生日！';
-      bdayCake.textContent = '🎂';
-      bdayTimer.style.display = 'none';
-      bdayMsg.textContent = '「诶嘿嘿……记得我生日的小白鼠，今天可以不做实验。……才怪。」';
-      return;
-    }
-    var diff = nextBday(now) - now;
-    var d = Math.floor(diff / 86400000);
-    var h = Math.floor(diff % 86400000 / 3600000);
-    var m = Math.floor(diff % 3600000 / 60000);
-    var s = Math.floor(diff % 60000 / 1000);
-    bdayEggText.textContent = '距她的生日还有 ' + d + ' 天';
-    bd.d.textContent = d; bd.h.textContent = pad2(h); bd.m.textContent = pad2(m); bd.s.textContent = pad2(s);
-    bdayMsg.textContent = '「年龄于我而言毫无意义——但生日礼物还是要送的哦。」';
-  }
-  bdayEgg.addEventListener('click', function(){
-    bdayPanel.classList.toggle('open');
-    bdayPanel.setAttribute('aria-hidden', bdayPanel.classList.contains('open') ? 'false' : 'true');
-  });
-  bdayEgg.addEventListener('keydown', function(e){
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bdayEgg.click(); }
-  });
-  renderBday();
-  setInterval(renderBday, 1000);
-  if (isBday(new Date())) setTimeout(function(){ bdayPanel.classList.add('open'); }, 1500);
-
   /* SECTION: canvas ambient (孢子 + 光蛇) */
   var canvas = document.getElementById('serpentCanvas');
   var ctx = canvas.getContext('2d');
@@ -1388,6 +1482,18 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
     for (var j = 0; j < spores.length; j++){
       if (spores[j].x > W) spores[j].x = Math.random() * W;
     }
+  });
+
+  /* SECTION: 探索系统 + 下方区块（spec §4.2 / §4.3）
+     ⚠ 两行调用的**先后顺序怎么写都对**：有一个可发现物（lab-11）锚在 `#bottom` 上，
+       而 `#bottom` 是 mount 才建出来的 —— 共享层的 ensureAttached 会在挂载探索度时
+       补扫一次。见 assets/explore.js 里 ensureAttached 的注释。 */
+  ElysiaExplore.init(THEME.explore);
+  ElysiaBottom.mount({
+    game: THEME.game,
+    // 生日当天才说的那一句（spec §6.2）。和台词一样，出处一起给。
+    bdayLine: '「我的生日？你指的是这一次的，还是第一次的？」',
+    bdaySrc: '生日语音',
   });
 })();
 </script>
