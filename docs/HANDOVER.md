@@ -438,7 +438,7 @@ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8500/assets/site.css  
 
 # 2) 快照 + 比对（参照点见 §4.3.1）
 PYTHONIOENCODING=utf-8 python tools/snapshot.py after-<本步>
-PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py baseline-eggs after-<本步>; echo "退出码 $?"
+PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py after-explore after-<本步>; echo "退出码 $?"
 
 # 3) 属性断言 —— 快照**测不出来**的那一类（ARIA 等）
 PYTHONIOENCODING=utf-8 python tools/check_aria_labels.py
@@ -470,17 +470,22 @@ taskkill //F //PID <pid>                               # 杀
 
 | 目录 | 是什么 | 用途 |
 |---|---|---|
-| `baseline` | **P1 动手前**（`origin/main` worktree） | P1 最终验收（10/11/12 做完时用） |
-| `baseline-task6` / `-task78` / `-task9` / `-seo` / `-sakura` | 各阶段 | 已用过，备查 |
-| **`baseline-eggs`** | 三页彩蛋补齐之后（2026-09-17） | 备查 |
-| **`after-kosma`** | **科斯魔页建成之后**（2026-09-18） | 上一轮的参照点 |
+| `baseline` | **P1 动手前**（`origin/main` worktree） | P1 最终验收（Task 10/11/12 做完时用） |
 | **`after-explore`** | **公共层重构之后**（2026-10-01，11 页） | **下次改动用这个** |
 
-> ⚠ **参照点要挑对，别照抄文档里的旧名字。** 本轮实测：
-> 计划写的是「diff `baseline-eggs` → `after-explore`」，但 `baseline-eggs` 是 **9 页**的
-> （科斯魔都还没有），拿它比会把 **kosma 也报成「新增」**——
+> 🧹 **2026-10-01 清过一次**：原先堆了 20 个（539 MB），删到只剩上面两个（**92 MB**）。
+> 删掉的 18 个（`baseline-task6/78/9/seo/sakura`、`after-task2…9`、`after-seo`、
+> `after-sakura(-pronoun)`、`baseline-eggs`、`after-kosma`、`probe-head-pinned`）
+> 都是各阶段的中间产物、那一轮已验收通过。
+> ⚠ **它们都能从 git 重建**（`git worktree add` 到对应 commit 再跑 `snapshot.py`），
+> 所以删掉不等于丢历史 —— 只是不再占本机。
+> ⚠ `baseline` **留着**是因为 P1 的 Task 10/11/12 还没做，最终验收还要拿它当「动手前」。
+
+> ⚠ **参照点要挑对，别照抄文档里的旧名字。** 本轮实测（那次用的是已删的 `baseline-eggs` 与
+> `after-kosma`）：计划写的是「diff `baseline-eggs` → `after-explore`」，
+> 但 `baseline-eggs` 是 **9 页**的（科斯魔都还没有），拿它比会把 **kosma 也报成「新增」**——
 > 实测 6 处差异里 3 处是这种**纯噪音**，真信号被淹一半。
-> 换 `after-kosma`（10 页）之后是干净的 **3 处，全在 mobius**。
+> 换成 10 页的 `after-kosma` 之后是干净的 **3 处，全在 mobius**。
 > **判据：`ls screenshots/snap/<label>/*.png \| wc -l` 数得出来的页数，
 > 得和你要比的那一轮对得上。**
 
@@ -692,7 +697,7 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py http://localhost:8500/index.html \
 
 # 三项验收（§4.3）
 PYTHONIOENCODING=utf-8 python tools/snapshot.py after-<label>
-PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py baseline-eggs after-<label>
+PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py after-explore after-<label>
 PYTHONIOENCODING=utf-8 python tools/check_aria_labels.py
 PYTHONIOENCODING=utf-8 python tools/check_reduced_motion.py
 PYTHONIOENCODING=utf-8 python tools/check_explore.py <页面路径>   # 探索系统（改了才需要）
