@@ -1,0 +1,84 @@
+/* ==========================================================================
+   assets/explore.css — 探索系统 + 下方区块的共享样式
+
+   ⚠ **加载顺序不可调换**（spec §3.2）：
+        site.css  →  explore.css  →  页面内联 <style>
+     内联在最下面，所以它永远能覆盖这里的值 —— 现有 9 页靠的就是这个机制。
+
+   配色走 CSS 变量，所以每位英桀不用改代码就能换色：
+        --explore-tint    可发现物与气泡的主色（默认继承当前文字色）
+        --explore-ink     气泡底色
+        --explore-ink-2   气泡文字色
+   ========================================================================== */
+
+/* ---------- 0. 锚点 ---------- */
+/* 只在锚点原本是 `position:static` 时由 JS 加上这个类。
+   给一个已经有定位的元素再套 relative，会改变它内部绝对定位子元素的参照物。 */
+.explore-anchor {
+  position: relative;
+}
+
+/* ---------- 1. 可发现物 ---------- */
+/* ⚠ 元素的**渲染盒本身就是热区**，就是这 44×44。
+   计划里写的是「用 ::after 撑开热区、不改变视觉大小」，这里改用
+   min-width/min-height + 内层缩小来实现同一个意图 —— 差别在于
+   **`getBoundingClientRect()` 量得到**：::after 的尺寸拿不到用值，
+   `check_explore.py` 那条「热区 ≥ 44×44」的断言就没法写。
+   （WCAG 2.5.8：触控目标至少 44×44 CSS px。）
+   视觉大小由里面的 `.explore-art` 决定，所以看起来还是小小的一个点。 */
+.explore-find {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+
+  /* x / y 是**中心点**语义 —— 见 explore.js 的 buildFind 注释 */
+  transform: translate(-50%, -50%);
+
+  color: var(--explore-tint, currentColor);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  /* ⚠ **不要**写 touch-action:none。
+     那会把「从可发现物上开始的纵向滚动」一并吃掉 ——
+     手机上想往下滑页面，手指恰好落在它上面就滑不动了。
+     纵向滚动 vs 横向划过的区分是 JS 的事（check_explore.py 有反向断言守着）。 */
+}
+
+/* 视觉本体。**所有动效都加在这一层**，因为外层那个 translate(-50%,-50%)
+   要拿来居中，动它就等于动位置（会变成误触）。 */
+.explore-art {
+  display: block;
+  width: 22px;
+  height: 22px;
+  opacity: .35;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, currentColor 45%, transparent));
+  transition: opacity .3s ease, transform .3s ease;
+}
+
+.explore-art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 靠近时才「亮」起来 —— 平时只是一点微光，找它本身就是玩法。
+   :focus-visible 一并给上，键盘用户要看得见自己停在哪儿。 */
+.explore-find:hover .explore-art,
+.explore-find:focus-visible .explore-art {
+  opacity: .95;
+  transform: scale(1.15);
+}
+
+.explore-find:focus-visible {
+  outline: 2px solid var(--explore-tint, currentColor);
+  outline-offset: 2px;
+  border-radius: 50%;
+}

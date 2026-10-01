@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>探索系统探针页</title>
+<!--
+  呀！这不是给人看的页面，是给 tools/check_explore.py 用的**探针页**♥
+  （与 tools/og-card.html 同一个定位：只服务测试）
+
+  它存在的理由：探索系统的断言要走**真实用户路径** —— 真的滚动、真的派发鼠标事件、
+  真的 reload。这些没法拿「线上某个英桀页」当靶子测，因为那页有它自己的
+  布局、自己的动画、自己的彩蛋，一改动就说不清是谁的问题。
+
+  所以这里只要一件事：**干净**。
+  两个足够高的区段、5 个可发现物（五种动词各占一个）、不加任何多余样式。
+
+  ⚠ 加载顺序与真实页面**逐字一致**（spec §3.2）：
+       site.css → explore.css → 页面内联 <style>
+     内联在最下面，所以它能覆盖共享层 —— 这正是真实页面依赖的机制。
+     ⚠ 别调换顺序，否则这里测过的顺序在真页面上不成立。
+
+  ⚠ 部署白名单已经把 tools/ 排除掉了，本页**不会上线**。
+-->
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/explore.css">
+<style>
+  :root{
+    --bg-abyss:#0a0612;
+    --ink:#e8e2f2;
+    --accent:#c77dff;
+    --explore-tint:#c77dff;   /* 探针页的探索物配色（真实页各自换） */
+  }
+  body{
+    background:var(--bg-abyss);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  section{
+    min-height:90vh;padding:14vh 8vw;
+    border-bottom:1px solid rgba(199,125,255,.15);
+  }
+  h2{font-size:28px;font-weight:300;letter-spacing:.12em;color:var(--accent);margin-bottom:18px}
+  p{line-height:2;color:rgba(232,226,242,.62);max-width:36em}
+</style>
+</head>
+<body>
+
+<section id="sec-a">
+  <h2>甲区 · 探针</h2>
+  <p>这一段是为了让「可发现物有个足够大的父亲」而存在的。它要够高，
+     高到能容下 y=0.82 的位置，也要够宽，宽到 x=0.74 不会顶到边上。</p>
+  <p>下面这个区段也一样。两个区段之间留一段空白，是为了让滚动断言有地方可滚。</p>
+</section>
+
+<section id="sec-b">
+  <h2>乙区 · 探针</h2>
+  <p>五种动词各在这里或上面占一个位置。它们的坐标刻意错开，
+     这样「点到了别的可发现物」这类错位问题会当场暴露。</p>
+  <p>这一页没有任何专属特效、没有彩蛋、没有动画 —— 一份干净的量具。</p>
+</section>
+
+<script src="/assets/site.js"></script>
+<script src="/assets/explore.js"></script>
+<script>
+/* ── THEME ────────────────────────────────────────────────────────────
+   fixture 只走「探索系统」这一块。5 个 find 覆盖 5 种动词，一个不缺。
+   ⚠ line 是占位中文 —— 探针页不校验出处（真实页面才必须逐字有出处）。 */
+var THEME = {
+  explore: {
+    finds: [
+      { id:'fx-01', at:'#sec-a', x:0.22, y:0.35, verb:'click',
+        art:'spore',  line:'（探针）点一下试试。', src:'探针页·一' },
+      { id:'fx-02', at:'#sec-a', x:0.68, y:0.72, verb:'hold',
+        art:'scale',  line:'（探针）按久一点。',   src:'探针页·二' },
+      { id:'fx-03', at:'#sec-b', x:0.35, y:0.28, verb:'triple_tap',
+        art:'glint',  line:'（探针）连点三下。',   src:'探针页·三' },
+      { id:'fx-04', at:'#sec-b', x:0.74, y:0.55, verb:'drag',
+        art:'brick',  line:'（探针）拖一拖。',     src:'探针页·四' },
+      { id:'fx-05', at:'#sec-b', x:0.50, y:0.82, verb:'slide',
+        art:'mouse',  line:'（探针）划过去。',     src:'探针页·五' },
+    ],
+    whisper: ['（探针）第一句。', '（探针）第二句。', '（探针）第三句。'],
+  },
+};
+
+ElysiaExplore.init(THEME.explore);
+</script>
+</body>
+</html>
