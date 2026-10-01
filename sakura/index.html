@@ -55,6 +55,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
 <link rel="stylesheet" href="/assets/site.css">
+<!-- 呀！探索系统 + 下方区块 + 生日胶囊的共享样式。
+     ⚠ **必须在页面 <style> 之前** —— 页面自己的规则要能覆盖共享层（全站一致的加载顺序）。 -->
+<link rel="stylesheet" href="/assets/explore.css">
 <meta name="referrer" content="same-origin">
 <title>elysiad.top/sakura — 致樱</title>
 <!-- SECTION: styles -->
@@ -655,6 +658,15 @@ body{
 
 <!-- SECTION: scripts -->
 <script src="/assets/site.js"></script>
+<!-- ⚠ 顺序不可调换（全站一致）：site → explore → bottom → bdays → bday
+     `bday.js` 与 `explore.js` / `bottom.js` 是**彼此独立**的 —— 它不依赖另外两个，
+     所以首页（没有探索系统）也用它。
+     ⚠ `games/sakura.js` 等 Task 6 建好再加 —— 现在加就是 404，
+       而 404 在 check_explore.py 里**算失败**（它收了 CDP 的 Log 域）。 -->
+<script src="/assets/explore.js"></script>
+<script src="/assets/bottom.js"></script>
+<script src="/data/bdays.js"></script>
+<script src="/assets/bday.js"></script>
 <script>
 (function(){
   /* SECTION: quotes data */
@@ -1138,6 +1150,19 @@ body{
       dur: [2.4, 4], delay: [0, 5],
       colors: { pool: ['#fff', '#ffb7c5', '#8fdcff'] },
     },
+
+    /* ── 探索系统（2026-10-02 接入）────────────────────────────────────
+       ⚠ **`pageId` 必填** —— 进度按它分页存进 `elysia:explore:<pageId>`。
+         **改名 = 玩家进度丢失。**
+       ⚠ 12 个可发现物由 Task 5 填（台词全部取自官方档案馆，一条不编）。
+         这一步先把线接好，`finds` 先空着。
+       ⚠ `game` 不在这一批里 —— `games/sakura.js` 要等 Task 6 才建，
+         现在写进来就是一份**用不上的配置**（正是上一轮在 mobius 上修掉的毛病）。 */
+    explore: {
+      pageId: 'sakura',
+      finds: [],
+      whisper: [],
+    },
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
   /* SECTION: resize guard */
@@ -1149,6 +1174,24 @@ body{
       if (petals[j].x > W) petals[j].x = Math.random() * W;
     }
   });
+
+  /* ══ 接新模块（2026-10-02）══════════════════════════════════════════
+     ⚠ `ElysiaExplore.init` 与 `ElysiaBottom.mount` 的**先后顺序本来都行** ——
+       可发现物的锚点可以挂在下文区块上（那是 `mount` 才建出来的），
+       共享层的 `ensureAttached` 会在挂载探索度时补扫。
+       这里保持与 mobius 一致：**先 init 再 mount**。
+     ⚠ 小游戏（`THEME.game` 与 `games/sakura.js`）留到 Task 6 ——
+       现在写进来就是一份用不上的配置，而且模块文件还不存在。 */
+  ElysiaExplore.init(THEME.explore);
+  ElysiaBottom.mount({});
+
+  /* 生日胶囊。⚠ **不传 `birthMsg`** —— 档案馆里没有可用的生日台词：
+     355 条里唯一像「礼物」的那句（「…我今天来，是准备了一份礼物给你…」）
+     **已经被她现有的送花彩蛋用掉了**；材料包的 `audio/` 目录也是空的
+     （包自己写着「未获取到任何可直接下载的语音文件」）。
+     按纪律「**没有就空着**」：胶囊照常工作（天/时/分/秒照走），只是生日当天不多那一句。
+     ⚠ 不许拿首页爱莉希雅那句顶替，更不许现编。 */
+  ElysiaBday.mount({});
 })();
 </script>
 </body>

@@ -51,6 +51,7 @@ EDGE = r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
 EXPECTED_FINDS = {
     'tools/explore-fixture.html': 6,
     'mobius/index.html': 12,
+    'sakura/index.html': 12,
 }
 
 
