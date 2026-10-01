@@ -144,6 +144,7 @@
     bubble: null,
     bubbleTimer: 0,
     countEl: null,
+    unlockEl: null,
   };
 
   /* ══ 进度存储 ═══════════════════════════════════════════════════════
@@ -236,8 +237,81 @@
       S.countEl.setAttribute('aria-live', 'polite');
     }
     if (host && S.countEl.parentNode !== host) host.appendChild(S.countEl);
+    // 解锁区跟着探索度走 —— 它们是同一块信息（「你找到多少了」）的两半
+    if (host && S.unlockEl && S.unlockEl.parentNode !== host) host.appendChild(S.unlockEl);
     refreshCount();
     return S.countEl;
+  }
+
+  /**
+   * 造出解锁区 —— **一进页面就建好，只是带 `hidden`**。
+   *
+   * ⚠ 不能等解锁了才创建节点：那样「还没解锁」和「解锁区坏了」在 DOM 上
+   *   长得一模一样，断言分不出来。先建好、用 hidden 藏起来，
+   *   「该出现时出现了没有」才是可测的。
+   */
+  function ensureUnlock() {
+    if (S.unlockEl) return S.unlockEl;
+    if (!S.cfg || !S.cfg.unlock) return null;
+
+    var u = S.cfg.unlock;
+    var el = document.createElement('section');
+    el.className = 'explore-unlock';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+    el.hidden = true;
+
+    var h = document.createElement('h3');
+    h.className = 'explore-unlock-title';
+    h.textContent = u.title || '';
+    el.appendChild(h);
+
+    var p = document.createElement('p');
+    p.className = 'explore-unlock-text';
+    p.textContent = u.text || '';
+    el.appendChild(p);
+
+    if (u.src) {
+      // 和气泡一样：出处**必须**跟着一起渲染出来
+      var s = document.createElement('p');
+      s.className = 'explore-unlock-src';
+      s.textContent = '—— ' + u.src;
+      el.appendChild(s);
+    }
+
+    S.unlockEl = el;
+    return el;
+  }
+
+  /**
+   * 看看是不是已经找齐了，是就把解锁区放出来。
+   *
+   * ⚠ **判据是「声明的每个 id 都在 found 里出现过」（集合包含），
+   *   不是 `found.length` 等于声明数。**
+   *   这两种写法在数据干净时结果一样，所以看不出区别 —— 但只要 found 里
+   *   出现一次重复（旧版本留下的数据、手工改过的存储、将来某次重构），
+   *   靠长度的那版就会**乱解锁**，而且不报错。
+   *   反过来，「差一个」的 bug 也是靠这条抓的：12 个里漏一个就永远差一个。
+   *   `tools/check_explore.py` 会**故意塞重复项**来守这条。
+   */
+  function checkUnlock() {
+    if (!S.cfg || !S.cfg.unlock || S.dbg.unlocked) return;
+
+    var complete = S.dbg.declared.every(function (id) {
+      return S.dbg.found.indexOf(id) >= 0;
+    });
+    if (!complete) return;
+
+    S.dbg.unlocked = true;
+    store.unlocked = true;
+    save();
+
+    if (S.unlockEl) {
+      S.unlockEl.hidden = false;
+      // 只有**当场**解锁才播放出现动画。从存储里读回来的那次不播 ——
+      // 它已经在上一趟出现过一次了，每次都重演就成了「每次进页面都在解锁」。
+      S.unlockEl.classList.add('revealed');
+    }
   }
 
   /**
@@ -257,6 +331,9 @@
       S.dbg.found.push(find.id);
       save();
       refreshCount();
+      // 同步判一次 —— 「触发最后一个的**同一个动作之后**就解锁」，
+      // 不能让用户等到下一次交互才看见它
+      checkUnlock();
     }
     // 已经找到过的再碰一下，也**照样**说话 —— 它现在是「陪着你」的东西，
     // 不再是「还没发现的秘密」。（只是不再改进度。）
@@ -456,6 +533,7 @@
     //   「已找到」的样子；等建完再补类名的话，用户会看见它们闪一下。
     load();
     dbg.found = store.found;
+    dbg.unlocked = !!store.unlocked;
 
     finds.forEach(function (f) {
       if (!f || !f.id) {
@@ -489,8 +567,20 @@
       bindGestures(node, f);
     });
 
+    // 解锁区**一进页面就建好**（带 hidden），见 ensureUnlock 的注释
+    ensureUnlock();
+
     // 探索度先挂在 body 上。Task 8 的下方区块会调 mountCount 把它搬进 #bottom。
     mountCount(document.body);
+
+    if (dbg.unlocked) {
+      // 上一趟就解锁过了 —— 直接放出来，**不播出现动画**（它只出现这一次）
+      if (S.unlockEl) S.unlockEl.hidden = false;
+    } else {
+      // 兜底：万一存储里 found 齐了、unlocked 却是 false（旧版本数据 / 手工改过），
+      // 这次进来也得把该给的东西给出去
+      checkUnlock();
+    }
   }
 
   global.ElysiaExplore = {

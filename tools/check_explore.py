@@ -685,6 +685,172 @@ def check_storage_failure_degrades(b, page, expected):
             b._send('Page.removeScriptToEvaluateOnNewDocument', {'identifier': sid})
 
 
+# ══ 找齐解锁 ══════════════════════════════════════════════════════════
+VERB_ACTIONS = {
+    'click': _do_click,
+    'hold': _do_hold,
+    'triple_tap': _do_triple_tap,
+    'drag': _do_drag,
+    'slide': _do_slide,
+}
+
+
+def _trigger(b, fid):
+    """按这个可发现物**自己声明的动词**触发它（动词从 DOM 上读，不写死）。
+
+    这样探针页以后增删或改动词，测试不用跟着改。
+    """
+    verb = b.js("(() => { var n = document.querySelector('[data-find-id=\"%s\"]');"
+                " return n ? n.getAttribute('data-verb') : null; })()" % fid)
+    c = b.center(fid)
+    if verb is None or not c:
+        return False
+    VERB_ACTIONS.get(verb, _do_click)(b, c)
+    time.sleep(0.25)
+    return True
+
+
+def _reset(b):
+    """清空这一页的进度并重载 —— 让每条断言从**确定**的状态出发。
+
+    ⚠ 不这么做的话，断言的结果会取决于「前面跑过哪些检查」，
+      那种依赖迟早会在某次重排顺序之后变成假红或假绿。
+    """
+    b.js("(() => { try { window.localStorage.removeItem('%s'); } catch (e) {}"
+         " return 1; })()" % STORAGE_KEY)
+    _reload(b)
+
+
+def _unlock_state(b):
+    return b.jso("""(() => {
+        var el = document.querySelector('.explore-unlock');
+        if (!el) return JSON.stringify({ missing: true });
+        return JSON.stringify({ hidden: !!el.hidden });
+    })()""")
+
+
+@check
+def check_unlock_hidden_until_complete(b, page, expected):
+    """没找齐的时候，解锁区**在场但藏着**。
+
+    ⚠ 「在场」和「藏着」要分开断言。如果实现是「解锁了才创建节点」，
+      那「还没解锁」和「解锁区整个坏了」在 DOM 上长得一模一样，
+      断言根本分不出来。
+    """
+    _reset(b)
+    d = _unlock_state(b)
+    if d is None:
+        return ([u'取不到 .explore-unlock'], u'—')
+    if d.get('missing'):
+        return ([u'页面里没有 .explore-unlock —— 它应该一进页面就建好、带 hidden 藏着'], u'—')
+
+    fails = []
+    if not d['hidden']:
+        fails.append(u'一个都没找到，解锁区却是显示出来的')
+    if b.js('String(window.__ELY_EXPLORE__.unlocked)') != 'false':
+        fails.append(u'__ELY_EXPLORE__.unlocked 不是 false')
+
+    # 顺手确认：这时候它确实不该占位（hidden 得是真的 display:none，
+    # 不能只靠 opacity:0 —— 那种元素照样占位、照样能被 elementFromPoint 命中）
+    box = b.jso("""(() => {
+        var el = document.querySelector('.explore-unlock');
+        var r = el.getBoundingClientRect();
+        return JSON.stringify({ w: Math.round(r.width), h: Math.round(r.height) });
+    })()""")
+    if box and (box['w'] or box['h']):
+        fails.append(u'解锁区带着 hidden 却仍然占了 %dx%d —— hidden 没生效'
+                     % (box['w'], box['h']))
+
+    return (fails, u'未找齐时藏着' if not fails else u'不该露出来')
+
+
+@check
+def check_unlock_appears_on_last(b, page, expected):
+    """逐个触发全部 find —— **最后一个的同一个动作之后**，解锁立刻出现。
+
+    ⚠ 要**逐个**验证，不是最后看一眼：只查终态的话，
+      「找齐前就提前解锁了」这个 bug 会被完全放过（终态反正也是显示的）。
+    """
+    _reset(b)
+    declared = b.js('JSON.stringify(window.__ELY_EXPLORE__.declared)')
+    if not declared:
+        return ([u'取不到 declared'], u'—')
+    ids = json.loads(declared)
+    if not ids:
+        return ([u'declared 是空的'], u'—')
+
+    fails = []
+    for i, fid in enumerate(ids):
+        if not _trigger(b, fid):
+            fails.append(u'触发不了 %s' % fid)
+            continue
+        last = (i == len(ids) - 1)
+        d = _unlock_state(b) or {}
+        visible = not d.get('hidden', True)
+
+        if last and not visible:
+            fails.append(u'找齐最后一个（%s）之后解锁区仍然藏着 —— 判齐没触发' % fid)
+        elif not last and visible:
+            fails.append(u'才找到 %d / %d（刚碰完 %s）解锁区就出来了 —— 提前解锁'
+                         % (i + 1, len(ids), fid))
+
+    cnt = _count_text(b)
+    if cnt != u'已发现 %d / %d' % (len(ids), len(ids)):
+        fails.append(u'找齐后探索度是 %r，应「已发现 %d / %d」' % (cnt, len(ids), len(ids)))
+
+    return (fails, u'逐个到齐才解锁' if not fails else u'解锁时机不对')
+
+
+@check
+def check_unlock_uses_set_not_count(b, page, expected):
+    """Review Focus #3：判齐靠**集合包含**，不靠数量相等。
+
+    构造法：先清空重载，再**直接往 found 里塞若干个同一个 id 的重复项**，
+    让数组长度看起来刚好够，然后触发一个真的新 find ——
+    于是 `found.length` 正好等于声明数，而真实集合里还差 3 个。
+
+    靠长度判齐的实现在这里会**乱解锁**（而且不报错）；
+    靠集合判齐的不会。
+
+    ⚠ 构造完还要**把正向也验一遍**（补完剩下的，确认它照样能解锁）——
+      否则这条断言有可能被一个「永远不会解锁」的实现骗过去。
+    """
+    _reset(b)
+    declared = json.loads(b.js('JSON.stringify(window.__ELY_EXPLORE__.declared)') or '[]')
+    if len(declared) < 2:
+        return ([u'声明数太少（%d），构造不出这个场景' % len(declared)], u'—')
+
+    # 往 found 里塞 declared-1 个重复项：长度 = 声明数 - 1，
+    # 紧接着触发一个新 find，长度就**正好等于**声明数了
+    b.js("""(() => {
+        var f = window.__ELY_EXPLORE__.found;
+        f.length = 0;
+        for (var i = 0; i < %d; i++) f.push('%s');
+        return 1;
+    })()""" % (len(declared) - 1, declared[0]))
+
+    if not _trigger(b, declared[1]):
+        return ([u'触发不了 %s' % declared[1]], u'—')
+
+    fails = []
+    d = _unlock_state(b) or {}
+    if not d.get('hidden', True):
+        fails.append(u'found 里是 %d 个重复的 %s —— 真实集合只覆盖 1 / %d，'
+                     u'解锁区却出来了：这是**靠数量判齐**的实现'
+                     % (len(declared) - 1, declared[0], len(declared)))
+    if b.js('String(window.__ELY_EXPLORE__.unlocked)') == 'true':
+        fails.append(u'__ELY_EXPLORE__.unlocked 被置成了 true —— 同上')
+
+    # 正向复验：把真的补齐，它必须解锁（防止「永远不解锁」蒙混过关）
+    for fid in declared:
+        _trigger(b, fid)
+    d2 = _unlock_state(b) or {}
+    if d2.get('hidden', True):
+        fails.append(u'把 %d 个真的全找齐了，解锁区却还是藏着 —— 另一头也坏了' % len(declared))
+
+    return (fails, u'集合判齐，重复项骗不过' if not fails else u'判齐方式不对')
+
+
 # ── 主流程 ────────────────────────────────────────────────────────────
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]

@@ -115,7 +115,58 @@
   text-align: center;
 }
 
-/* ---------- 4. 台词气泡 ---------- */
+/* ---------- 4. 解锁区 ---------- */
+/* 找齐之后才放出来。**带 hidden 属性时用 display:none** —— 别只靠 opacity，
+   一个 opacity:0 的元素照样占位、照样能被 elementFromPoint 命中。 */
+.explore-unlock[hidden] {
+  display: none;
+}
+
+.explore-unlock {
+  max-width: 34em;
+  margin: 18px auto 0;
+  padding: 22px 24px;
+  border-radius: 16px;
+  border: 1px solid var(--explore-border, rgba(255, 255, 255, .16));
+  background: var(--explore-ink, rgba(14, 8, 24, .94));
+  color: var(--explore-ink-2, #eee8f7);
+  text-align: center;
+}
+
+.explore-unlock-title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: .16em;
+  color: var(--explore-tint, currentColor);
+}
+
+.explore-unlock-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+.explore-unlock-src {
+  margin: 12px 0 0;
+  font-size: 11px;
+  letter-spacing: .08em;
+  opacity: .5;
+}
+
+/* ⚠ 动画挂在 `.revealed` 上，**不是**挂在解锁区自己身上。
+   从存储里读回来的那次不加这个类 —— 它已经在上一趟出现过一次了，
+   每次进页面都重演就成了「每次都在解锁」。 */
+@keyframes explore-unlock-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.explore-unlock.revealed {
+  animation: explore-unlock-in .6s ease both;
+}
+
+/* ---------- 5. 台词气泡 ---------- */
 /* ⚠ position:fixed + 挂在 <body> 上（见 explore.js 的 showBubble 注释）。
    它**必须**在文档流之外，否则会撑高页面 —— 快照会当场报差异，
    而且在 overflow:hidden 的区段里还会被裁掉。 */
