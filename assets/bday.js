@@ -102,6 +102,28 @@
   function pad(n) { return (n < 10 ? '0' : '') + n; }
 
   /** 造出胶囊 + 面板。结构与 id 与首页原来那份**逐字一致**。 */
+  /**
+   * 开合面板。**视觉与无障碍必须一起改** —— 这就是它得是个独立函数的原因：
+   * 两处分头写「加 class」和「改 aria-hidden」的话，迟早有一处漏。
+   * （首页原来正是这样：**点胶囊**那处同步了 `aria-hidden`，
+   *   **生日当天自动展开**那处没有 —— 面板视觉上开着，屏幕阅读器却以为它还藏着。）
+   *
+   * ⚠ 放在**模块作用域**，不是塞进 `build()` 里：`build()` 和 `mount()` 都要用它。
+   *   塞进 `build()` 的话，`mount()` 里那个自动展开的定时器会够不着它 → `ReferenceError`。
+   *   （2026-10-01 实测踩到：修 a11y 的那次改动**自己引入了新 bug**，
+   *     是刚写的那条断言 + 「页面无报错」把它抓回来的。）
+   * ⚠ 用 add/remove 而不是 `classList.toggle(cls, force)` ——
+   *   两个参数的那个形态在老内核里会被当成单参数版本，变成「来回翻」且不报错。
+   *
+   * @param {HTMLElement} panel
+   * @param {boolean} open
+   */
+  function setOpen(panel, open) {
+    if (open) panel.classList.add('open');
+    else panel.classList.remove('open');
+    panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+  }
+
   function build(m, d, opts) {
     var egg = el('div', null, 'bdayEgg');
     egg.setAttribute('role', 'button');
@@ -162,8 +184,7 @@
 
     // 开合 —— 与首页那份一致：点胶囊、或键盘 Enter / Space
     function toggle() {
-      panel.classList.toggle('open');
-      panel.setAttribute('aria-hidden', panel.classList.contains('open') ? 'false' : 'true');
+      setOpen(panel, !panel.classList.contains('open'));
     }
     egg.addEventListener('click', toggle);
     egg.addEventListener('keydown', function (e) {
@@ -247,13 +268,14 @@
     S.timer = setInterval(render, 1000);
 
     // 生日当天，进来 1.5 秒后把面板自己摊开 —— 这一天它值得被看见。
-    // ⚠ 与首页那份一致：这里只加 `.open`，**没有**同步 `aria-hidden`。
-    //   （首页原来就是这么写的，照搬以保持一致；但这确实是处 a11y 瑕疵，
-    //     已在交付说明里单独提出来，没有自作主张改掉。）
+    // ⚠ **2026-10-01 修了一处 a11y 瑕疵**：首页原来这里只 `classList.add('open')`、
+    //   **没同步 `aria-hidden`** —— 面板视觉上开着，屏幕阅读器却以为它还藏着。
+    //   快照测不出这种「属性」问题（它只采计算样式），所以这条只有在源码上才看得见。
+    //   现在走 setOpen()，视觉与无障碍一起改。
     var now = new Date();
     if (now.getMonth() === entry[0] && now.getDate() === entry[1]) {
       S.autoTimer = setTimeout(function () {
-        if (S.panel) S.panel.classList.add('open');
+        if (S.panel) setOpen(S.panel, true);
       }, 1500);
     }
   }

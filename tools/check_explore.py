@@ -2081,6 +2081,69 @@ def check_mobius_bday_ticks(b, page, expected):
 
 
 @check
+def check_bday_auto_opens_on_the_day(b, page, expected):
+    """生日当天，面板进来 1.5 秒**自己摊开** —— 而且 `aria-hidden` 要跟着改。
+
+    ⚠ 这条是 2026-10-01 交付时**明确没验到**的那条：那个 `setTimeout` 只有在
+      「今天就是生日」时才挂上，平时根本跑不到（要等 11 月 11 日）。
+      **「只有一年一次的路径」是最容易烂掉的地方**，所以在这里把时钟拨过去验。
+
+    ⚠ 顺带守一处 a11y 瑕疵：首页原来那里只 `classList.add('open')`、
+      **没同步 `aria-hidden`** —— 面板视觉上开着，屏幕阅读器却以为它还藏着。
+      快照**测不出属性**（它只采计算样式），所以这种问题只能靠断言守。
+
+    做法：钉死时钟 → 把「今天」当成生日写进表里 → 拆掉旧节点重挂 → 等 1.9 秒 → 查。
+    """
+    _reset(b)
+    b.js(FROZEN_CLOCK)
+    try:
+        if b.js("String(typeof window.ElysiaBday)") != 'object':
+            return ([u'本页没有加载 bday.js'], u'—')
+
+        # ⚠ 先拆掉上一份再重挂 —— 不依赖 mount 是否幂等（那是另一个实现细节，
+        #   不该让这条断言绑在它上面）。
+        b.js("""(() => {
+            var now = new Date();
+            window.ELYSIA_BDAYS[ElysiaBday.pageKey()] = [now.getMonth(), now.getDate()];
+            var e = document.getElementById('bdayEgg'); if (e) e.remove();
+            var p = document.getElementById('bdayPanel'); if (p) p.remove();
+            ElysiaBday.mount({});
+            return 1;
+        })()""")
+        time.sleep(1.9)      # 组件等 1.5 秒，留 0.4 秒余量
+
+        d = b.jso("""(() => {
+            var p = document.getElementById('bdayPanel');
+            var t = document.getElementById('bdayEggText');
+            return JSON.stringify({
+                exists: !!p,
+                open: !!p && p.classList.contains('open'),
+                aria: p ? p.getAttribute('aria-hidden') : null,
+                text: t ? t.textContent : null,
+            });
+        })()""")
+        if d is None:
+            return ([u'取不到面板状态'], u'—')
+
+        fails = []
+        if not d['exists']:
+            fails.append(u'把今天设成生日之后，面板却没渲染出来')
+            return (fails, u'没渲染')
+        if d['text'] != u'今天是她的生日！':
+            fails.append(u'生日当天胶囊该显示「今天是她的生日！」，实际是 %r' % d['text'])
+        if not d['open']:
+            fails.append(u'等了 1.9 秒，面板**没有**自己摊开 —— '
+                         u'那个 1.5 秒的 setTimeout 没挂上或没跑')
+        elif d['aria'] != 'false':
+            fails.append(u'面板视觉上开着，但 aria-hidden 是 %r —— '
+                         u'屏幕阅读器会以为它还藏着（属 a11y 谎话）' % d['aria'])
+
+        return (fails, u'生日当天自动摊开且 aria 同步' if not fails else u'自动摊开有问题')
+    finally:
+        b.js(UNFROZEN_CLOCK)
+
+
+@check
 @mobius_only
 def check_mobius_has_game_slot(b, page, expected):
     """⑤ 传了 `THEME.game`，游戏槽就该渲染出来（Task 12 往里面放贪吃蛇）。"""

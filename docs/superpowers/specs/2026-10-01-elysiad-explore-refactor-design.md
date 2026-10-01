@@ -79,9 +79,11 @@
 ```
 assets/site.css          不动（P1 抽出的 31 条跨页一致规则）
 assets/site.js           不动（ElysiaShared 6 个函数）
-assets/explore.css       新增  探索系统 + 下方区块的共享样式
+assets/explore.css       新增  探索系统 + 下方区块 + **生日组件**的共享样式
 assets/explore.js        新增  探索系统：可发现物 / 探索度 / 陪伴层
-assets/bottom.js         新增  下方区块外壳：游戏槽 + 倒计时槽 + 探索度
+assets/bottom.js         新增  下方区块外壳：游戏槽 + 探索度
+assets/bday.js           新增  生日倒计时组件（右下角悬浮胶囊 + 面板）。
+                              **首页与英桀页共用同一个** —— 详见 §6.2 的改动记录
 assets/games/mobius.js   新增  梅比乌斯的小游戏（每位一个，互不干涉）
 data/bdays.js            新增  生日表：**全站唯一数据源**
 ```
@@ -99,11 +101,18 @@ data/bdays.js            新增  生日表：**全站唯一数据源**
 <script src="/assets/site.js"></script>
 <script src="/assets/explore.js"></script>
 <script src="/assets/bottom.js"></script>
+<script src="/data/bdays.js"></script>               <!-- 生日表 -->
+<script src="/assets/bday.js"></script>              <!-- 生日组件（首页也用它） -->
 <script src="/assets/games/mobius.js"></script>      <!-- 该页有游戏才加载 -->
 <script>/* THEME + 两行调用 */</script>
 ```
 
 > ⚠ 现有 9 页是 `site.css`（57 行）→ `<style>`（61 行）的顺序，**不要破坏**。
+>
+> ⚠ **`bday.js` 与 `explore.js` / `bottom.js` 是彼此独立的**：
+> 首页只用 `bday.js`（它没有探索系统、也没有下方区块），
+> 英桀页三个都用。所以 `bday.js` **不能**反向依赖 `bottom.js` —— 它的
+> `pageKey()` / `nextBday()` 都是自己那份（2026-10-01 抽组件时就是这么定的）。
 
 ---
 
@@ -177,8 +186,11 @@ ElysiaBottom.mount({ game: THEME.game });
 | 槽 | 出现条件 | 内容 |
 |---|---|---|
 | **游戏槽** | `THEME.game` 存在 | 一张游戏卡（标题 + 一句话 + 「开始」按钮）→ 由 `games/<角色>.js` 自己渲染 |
-| **倒计时槽** | `data/bdays.js` 里有这一页的条目 | 生日倒计时 |
 | **探索度** | 恒有 | `✦ 3 / 12` + 解锁区 |
+
+> ⚠ **倒计时槽 2026-10-01 撤了**（原为第三个槽）。需求方定了「生日界面照首页那样、
+> 右下角悬浮」，所以它搬去了 `assets/bday.js`，**不在下方区块里**。见 §6.2。
+> 撤掉之后 mobius 整页矮了 120px（该槽的 padding + 两行 + margin），三个视口一致。
 
 ### 4.4 `data/bdays.js` —— **全站唯一数据源**
 
@@ -338,8 +350,23 @@ localStorage['elysia:explore:mobius']
 ### 6.2 生日倒计时
 
 - 数据来自 `data/bdays.js`（`mobius/index.html` → `[3, 30]`）
-- 倒计时文案与配色沿用首页 `#bdayEgg` 那一套的**语义**，但**位置改为页面下方区块**（需求方要求「下方」）
-- 4/30 当天，气泡里额外说一句：「我的生日？你指的是这一次的，还是第一次的？」（生日语音）
+- **组件是 `assets/bday.js`（`ElysiaBday.mount`），首页与英桀页共用同一个**
+- 4/30 当天，面板里额外说一句：「我的生日？你指的是这一次的，还是第一次的？」（生日语音）
+
+> ⚠ **2026-10-01 需求方改过一次，这里记的是改后的**：
+> 初稿写的是「倒计时文案与配色沿用首页 `#bdayEgg` 那一套的**语义**，
+> 但**位置改为页面下方区块**（需求方要求「下方」）」——
+> **那句已经作废。** 需求方后来的原话是：
+> > 「其他英桀的生日要和首页爱莉希雅的生日**界面形式一样**」
+>
+> 并在选项里明确选了「**完全照搬首页：右下角悬浮**」。
+> 所以现在是：**右下角悬浮胶囊 + 点击展开面板**（🎂 / 标题 / 日期 / 天·时·分·秒 / 一句话），
+> **不在下方区块里**（`.bottom-bday` 已删）。
+>
+> ⚠ 而且「形式一样」的最硬保证是**它们本来就是同一个组件** ——
+> 所以首页自己也改用 `assets/bday.js` 了（原先那份内联的已删）。
+> 否则站上就有两份同一个界面，早晚 drift（HANDOVER §10.5 合并 `BUILT` 那条教训）。
+> 首页改动后**三视口快照零差异**，见 HANDOVER §10.9。
 
 ### 6.3 小游戏：贪吃蛇改造
 
