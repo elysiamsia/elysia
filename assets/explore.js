@@ -220,6 +220,41 @@
   }
 
   /**
+   * 渐进提示：找到 ≥ `hintAfterRatio`（默认一半）之后，
+   * 给**还没找到的**那些加一点微光。
+   *
+   * 为什么要渐进、而不是一开始全亮：探索感靠的是「还有东西没被翻出来」。
+   * 一上来就把所有可发现物指出来，这一层就退化成装饰了。
+   * 但一直不给提示也不行 —— 有人翻了半天只找到一个就走了。
+   *
+   * ⚠ **提示只改明暗，绝不改位置。** 挪动一个 44×44 的热区，
+   *   用户正要点它的时候它跑了 —— 那是误触，比不给提示还糟。
+   */
+  function refreshHints() {
+    var total = S.dbg.declared.length;
+    if (!total) return;
+
+    var ratio = (S.cfg && typeof S.cfg.hintAfterRatio === 'number')
+      ? S.cfg.hintAfterRatio
+      : 0.5;
+    var on = discoveredCount() / total >= ratio;
+
+    var nodes = document.querySelectorAll('.explore-find');
+    for (var i = 0; i < nodes.length; i++) {
+      var id = nodes[i].getAttribute('data-find-id');
+      var found = S.dbg.found.indexOf(id) >= 0;
+      // ⚠ 用 add / remove，**不用 `classList.toggle(cls, force)`** ——
+      //   两个参数的那个形态在老内核里会被当成单参数版本，
+      //   于是「强制开/关」变成「来回翻」，而且不报错。
+      if (on && !found) {
+        nodes[i].classList.add('hinted');
+      } else {
+        nodes[i].classList.remove('hinted');
+      }
+    }
+  }
+
+  /**
    * 把探索度节点渲染到指定容器里。
    *
    * ⚠ Task 8 的下方区块会**再调用一次**这个方法，把节点搬进 `#bottom` ——
@@ -334,6 +369,7 @@
       // 同步判一次 —— 「触发最后一个的**同一个动作之后**就解锁」，
       // 不能让用户等到下一次交互才看见它
       checkUnlock();
+      refreshHints();
     }
     // 已经找到过的再碰一下，也**照样**说话 —— 它现在是「陪着你」的东西，
     // 不再是「还没发现的秘密」。（只是不再改进度。）
@@ -581,6 +617,10 @@
       // 这次进来也得把该给的东西给出去
       checkUnlock();
     }
+
+    // 从存储里读回来的进度也要算进提示比例 —— 找了一半的人刷新一下页面，
+    // 提示不该消失
+    refreshHints();
   }
 
   global.ElysiaExplore = {

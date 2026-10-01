@@ -851,6 +851,89 @@ def check_unlock_uses_set_not_count(b, page, expected):
     return (fails, u'集合判齐，重复项骗不过' if not fails else u'判齐方式不对')
 
 
+# ══ 渐进提示 ══════════════════════════════════════════════════════════
+def _hinted_ids(b):
+    return b.jso("""(() => {
+        var out = [];
+        [].slice.call(document.querySelectorAll('.explore-find.hinted')).forEach(function (n) {
+            out.push(n.getAttribute('data-find-id'));
+        });
+        return JSON.stringify(out);
+    })()""") or []
+
+
+def _trigger_first(b, n):
+    """按声明顺序触发前 n 个，返回**实际成功触发**的 id。"""
+    ids = json.loads(b.js('JSON.stringify(window.__ELY_EXPLORE__.declared)') or '[]')
+    done = []
+    for fid in ids[:n]:
+        if _trigger(b, fid):
+            done.append(fid)
+    return done
+
+
+@check
+def check_hint_off_below_ratio(b, page, expected):
+    """还没找到一半的时候，**一个提示都不该有**。
+
+    ⚠ 要连着验两点：0 个没有、找到 2/5（0.4 < 0.5）时仍然没有。
+      只验「一开始没有」的话，一个**永远不给提示**的实现也能通过 ——
+      那就成了「测了等于没测」。
+    """
+    _reset(b)
+    fails = []
+
+    h0 = _hinted_ids(b)
+    if h0:
+        fails.append(u'一个都没找到就有提示了：%s' % u', '.join(h0))
+
+    done = _trigger_first(b, 2)          # 2 / 5 = 0.4 < 0.5
+    if len(done) < 2:
+        return ([u'只触发了 %d 个，后面的判断不成立' % len(done)], u'—')
+
+    h1 = _hinted_ids(b)
+    if h1:
+        fails.append(u'才找到 2 / 5（低于一半）就出现提示了：%s' % u', '.join(h1))
+
+    return (fails, u'未过半时无提示' if not fails else u'过早提示')
+
+
+@check
+def check_hint_on_above_ratio(b, page, expected):
+    """越过一半之后，**没找到的全带上提示、已找到的一个都不带**。"""
+    _reset(b)
+    declared = json.loads(b.js('JSON.stringify(window.__ELY_EXPLORE__.declared)') or '[]')
+    if len(declared) < 4:
+        return ([u'声明数太少（%d），验不出「部分带、部分不带」' % len(declared)], u'—')
+
+    done = _trigger_first(b, 3)          # 3 / 5 = 0.6 ≥ 0.5
+    if len(done) < 3:
+        return ([u'只触发了 %d 个' % len(done)], u'—')
+
+    hinted = _hinted_ids(b)
+    fails = []
+    should = [i for i in declared if i not in done]
+    missing = [i for i in should if i not in hinted]
+    extra = [i for i in hinted if i in done]
+    if missing:
+        fails.append(u'过半了，但这些**还没找到的**没有提示：%s' % u', '.join(missing))
+    if extra:
+        fails.append(u'这些**已经找到了**却还带着提示：%s' % u', '.join(extra))
+
+    # ⚠ 提示**绝不能动几何**。挪动一个 44×44 的热区，
+    #   用户正要点它的时候它跑了 —— 那是误触，比不给提示还糟。
+    box = b.jso("""(() => {
+        var n = document.querySelector('.explore-find.hinted');
+        if (!n) return null;
+        var r = n.getBoundingClientRect();
+        return JSON.stringify({ w: Math.round(r.width), h: Math.round(r.height) });
+    })()""")
+    if box and (box['w'] < 44 or box['h'] < 44):
+        fails.append(u'加了提示之后热区缩成 %dx%d —— 提示动了几何' % (box['w'], box['h']))
+
+    return (fails, u'过半后只提示没找到的' if not fails else u'提示范围不对')
+
+
 # ── 主流程 ────────────────────────────────────────────────────────────
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]

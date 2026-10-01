@@ -101,6 +101,29 @@
   opacity: .9;
 }
 
+/* ---------- 1.5 渐进提示 ---------- */
+/* 找到过半之后，还没找到的那些轻轻闪一下。
+   ⚠ **只改明暗，绝不改位置** —— 挪动一个 44×44 的热区，
+     用户正要点它的时候它跑了，那是误触，比不给提示还糟。
+     所以这里没有 transform、没有 margin、没有 top/left。 */
+@keyframes explore-hint {
+  0%, 100% { opacity: .35; }
+  50%      { opacity: .85; }
+}
+
+.explore-find.hinted .explore-art {
+  animation: explore-hint 2.4s ease-in-out infinite;
+}
+
+/* 静态标记。**和闪烁分开写**：减动偏好打开时闪烁会被关掉（Task 7），
+   但这一圈虚线的提示必须还在 —— 否则减动用户拿不到任何提示，
+   而「关掉动画」不该等于「关掉功能」。 */
+.explore-find.hinted {
+  outline: 1px dashed var(--explore-tint, currentColor);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
 /* ---------- 3. 探索度 ---------- */
 /* ⚠ **刻意不用 position:fixed。** 固定定位会飘在内容上面，
    把底下的可发现物盖住 —— 那会让「热区可达」的断言失败，
