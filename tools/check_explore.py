@@ -48,7 +48,7 @@ EDGE = r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
 #     「声明数 == 渲染数」这条自洽断言抓不到（两边一起少了），
 #     只有跟这张登记表比才抓得到。新页接入时**必须**在这里登记。
 EXPECTED_FINDS = {
-    'tools/explore-fixture.html': 5,
+    'tools/explore-fixture.html': 6,
 }
 
 
@@ -218,6 +218,42 @@ def check_declared_matches_rendered(b, page, expected):
         len(declared), len(rendered),
         u'' if expected is None else u'（登记 %d）' % expected)
     return (fails, summary)
+
+
+@check
+def check_late_anchor_gets_picked_up(b, page, expected):
+    """锚点在 init **之后**才建出来的 find，必须被补扫到。
+
+    真实场景：可发现物锚在「下方区块」上，而下方区块是 `ElysiaBottom.mount`
+    才建出来的 —— `ElysiaExplore.init` 跑的时候它**还不存在**。
+    不补扫的话那条会被静默跳过：声明 12 个、只渲染出 11 个，
+    探索度永远差一个、解锁永远不触发（spec Review Focus #3）。
+
+    ⚠ 这条单独拎出来，是为了让失败**一眼看得懂** ——
+      混在「声明数对不上」里的话，真正的原因（两行调用的先后顺序）要翻半天。
+    """
+    d = b.jso("""(() => {
+        var n = document.querySelector('[data-find-id="fx-06"]');
+        var sec = document.getElementById('bottom');
+        return JSON.stringify({
+            section: !!sec,
+            node: !!n,
+            inSection: !!(n && sec && sec.contains(n)),
+        });
+    })()""")
+    if d is None:
+        return ([u'取不到页面状态'], u'—')
+
+    fails = []
+    if not d['section']:
+        fails.append(u'没有 #bottom —— ElysiaBottom.mount 没跑，这条断言的前提不成立')
+    if not d['node']:
+        fails.append(u'fx-06（锚在 #bottom 上）根本没渲染出来 —— '
+                     u'锚点是后建的，没被补扫到。探索度会永远差一个')
+    elif not d['inSection']:
+        fails.append(u'fx-06 渲染出来了，但**不在 #bottom 里面** —— 锚定错了地方')
+
+    return (fails, u'后建锚点被补扫到' if not fails else u'补扫没生效')
 
 
 @check
@@ -619,8 +655,11 @@ def check_count_text(b, page, expected):
         return ([u'页面里没有 .explore-count —— 探索度根本没渲染出来'], u'—')
 
     fails = []
-    if d0 != u'已发现 0 / 5':
-        fails.append(u'清空进度后该显示「已发现 0 / 5」，实际是 %r' % d0)
+    # ⚠ 总数从 declared 里读，别写死 —— 写死的话每加一条可发现物都要回来改测试，
+    #   而「忘了改」的症状是这条断言假红，不是真的坏了。
+    total = b.js('String((window.__ELY_EXPLORE__ && window.__ELY_EXPLORE__.declared || []).length)')
+    if d0 != u'已发现 0 / %s' % total:
+        fails.append(u'清空进度后该显示「已发现 0 / %s」，实际是 %r' % (total, d0))
 
     c = b.center('fx-01')
     if not c:
@@ -629,8 +668,8 @@ def check_count_text(b, page, expected):
         _do_click(b, c)
         time.sleep(0.4)
         d1 = _count_text(b)
-        if d1 != u'已发现 1 / 5':
-            fails.append(u'触发一个之后该显示「已发现 1 / 5」，实际是 %r' % d1)
+        if d1 != u'已发现 1 / %s' % total:
+            fails.append(u'触发一个之后该显示「已发现 1 / %s」，实际是 %r' % (total, d1))
 
     # 它是个**状态播报**，不是一段普通文字（spec §5.6）
     attrs = b.jso("""(() => {
@@ -904,13 +943,16 @@ def check_hint_off_below_ratio(b, page, expected):
     if h0:
         fails.append(u'一个都没找到就有提示了：%s' % u', '.join(h0))
 
-    done = _trigger_first(b, 2)          # 2 / 5 = 0.4 < 0.5
-    if len(done) < 2:
+    n = len(json.loads(b.js('JSON.stringify(window.__ELY_EXPLORE__.declared)') or '[]'))
+    below = max(1, (n + 1) // 2 - 1)     # 严格低于提示线（默认 0.5）
+    done = _trigger_first(b, below)
+    if len(done) < below:
         return ([u'只触发了 %d 个，后面的判断不成立' % len(done)], u'—')
 
     h1 = _hinted_ids(b)
     if h1:
-        fails.append(u'才找到 2 / 5（低于一半）就出现提示了：%s' % u', '.join(h1))
+        fails.append(u'才找到 %d / %d（低于一半）就出现提示了：%s'
+                     % (len(done), n, u', '.join(h1)))
 
     return (fails, u'未过半时无提示' if not fails else u'过早提示')
 
@@ -923,8 +965,9 @@ def check_hint_on_above_ratio(b, page, expected):
     if len(declared) < 4:
         return ([u'声明数太少（%d），验不出「部分带、部分不带」' % len(declared)], u'—')
 
-    done = _trigger_first(b, 3)          # 3 / 5 = 0.6 ≥ 0.5
-    if len(done) < 3:
+    above = len(declared) // 2 + 1       # 稳稳越过提示线
+    done = _trigger_first(b, above)
+    if len(done) < above:
         return ([u'只触发了 %d 个' % len(done)], u'—')
 
     hinted = _hinted_ids(b)
