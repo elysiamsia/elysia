@@ -54,6 +54,31 @@ EXPECTED_FINDS = {
     'sakura/index.html': 12,
 }
 
+# ── 樱这一页的**台词登记表** ─────────────────────────────────────────
+#   (id, at, line, src 子事件) —— 2026-10-01 逐字核准自官方档案馆「事件-樱」，
+#   核准记录见 `docs/superpowers/plans/2026-10-01-sakura-finds-table.md`。
+#
+# ⚠ **改台词必须同时改这里** —— 与 `check_aria_labels.py` 的 `EXPECTED` 同一个思路：
+#   逼它变成一次**刻意动作**，而不是静默漂移。
+# ⚠ 「**台词一条不编**」是本站底线，这张表就是那条底线的落点。
+SAKURA_FINDS = [
+    ('sakura-01', '#opening', '等待······对于此处的我们来说，又能有什么意义呢？', '关于自身·其一'),
+    ('sakura-02', '#about', '对我来说，这是必要的举措，能够在很多情境对我加以提醒，让我不会忘记自己的立场。', '关于戒律·其一'),
+    ('sakura-03', '#about', '换做是任何一位融合战士，都一样能结束那场事故——因为「阻止梅比乌斯」这件事，苏其实已经做到了。', '关于自身·其三'),
+    ('sakura-04', '#blade', '而这把剑每出鞘一次，那份记忆就会重现一分。', '关于戒律·其一'),
+    ('sakura-05', '#blade', '为了求生，我曾钻研诸武，但到最后，我仅有、却也最实用的，不过只此「一刀」。', '落樱的追忆·其二'),
+    ('sakura-06', '#blade', '是的，每当我再次对自己的同类举剑，所面对的就不再是一时权衡，而是因记忆重现成倍而来的压力。', '关于戒律·其一'),
+    ('sakura-07', '#journey', '在成为融合战士前，我就已隶属于一支名为「毒蛹」的秘密行动部队。和其他人不同，我们不能知道太多事。', '关于毒蛹·其一'),
+    ('sakura-08', '#journey', '我······我和千劫正好相反。我不希望有其他人和我一起行动。', '关于毒蛹·其一'),
+    ('sakura-09', '#journey', '看着二位，让我回想起曾经和妹妹相依为命的日子。那段时间虽然艰苦，但对我们两人来说，却是生命中最快乐的时光。', '关于自身·其四'),
+    ('sakura-10', '#quotes', '虽然刻印的寓意最终是由爱莉希雅决定，但它并没有那么复杂。我曾说过「刹那」是一种技艺，而它所蕴含的所有，也只有「一刀」这么简单。', '落樱的追忆·其二'),
+    ('sakura-11', '#ending', '其实，我也已经很久没有见到过樱花了。最后一次，还是在和千劫一起执行任务的路上。', '落樱的追忆·其七'),
+    ('sakura-12', '#bottom', '我曾经教导过一些后继者制作简单便捷的食物，如果你有需要的话，也可以来找我。', '关于料理·其一'),
+]
+
+# 出处的前缀。⚠ 渲染进气泡角落的就是它，所以「出处」这件事是**看得见**的。
+SAKURA_SRC_PREFIX = '官方档案馆 · 事件-樱 · '
+
 
 # ── 服务器 ────────────────────────────────────────────────────────────
 class Quiet(http.server.SimpleHTTPRequestHandler):
@@ -2421,6 +2446,33 @@ def check_game_card_matches_module(b, page, expected):
     return (fails, u'卡片文案与模块一致' if not fails else u'卡片文案对不上')
 
 
+# 落点探针：把可发现物临时藏起来，看它中心点上命中的是什么。
+# ⚠ 每个 find 都要**先滚到跟前** —— 不然 elementFromPoint 在视口外一律返回 null。
+MEASURE_FIND_SPOTS = """(() => {
+    var out = [];
+    document.querySelectorAll('.explore-find').forEach(function (n) {
+        n.scrollIntoView({ block: 'center', behavior: 'instant' });
+        var r = n.getBoundingClientRect();
+        var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        n.style.visibility = 'hidden';
+        var under = document.elementFromPoint(cx, cy);
+        n.style.visibility = '';
+        var text = '';
+        if (under) {
+            for (var i = 0; i < under.childNodes.length; i++) {
+                if (under.childNodes[i].nodeType === 3) text += under.childNodes[i].nodeValue;
+            }
+        }
+        out.push({
+            id: n.getAttribute('data-find-id'),
+            tag: under ? under.tagName.toLowerCase() : null,
+            text: text.trim().slice(0, 24),
+        });
+    });
+    return JSON.stringify(out);
+})()"""
+
+
 @check
 def check_finds_not_on_text(b, page, expected):
     """可发现物应该落在**容器**上，不该压在**文字**上。
@@ -2436,44 +2488,41 @@ def check_finds_not_on_text(b, page, expected):
     判据：把可发现物临时藏起来，看它中心点上 `elementFromPoint` 命中的元素
     有没有**直接文字**、或本身就是 `p / span / h2 / h3 / b / a / img` 这类叶子。
     """
-    d = b.jso("""(() => {
-        var out = [];
-        document.querySelectorAll('.explore-find').forEach(function (n) {
-            // ⚠ 必须先滚到跟前 —— 不然 elementFromPoint 在视口外一律返回 null
-            n.scrollIntoView({ block: 'center', behavior: 'instant' });
-            var r = n.getBoundingClientRect();
-            var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-            n.style.visibility = 'hidden';
-            var under = document.elementFromPoint(cx, cy);
-            n.style.visibility = '';
-            var text = '';
-            if (under) {
-                for (var i = 0; i < under.childNodes.length; i++) {
-                    if (under.childNodes[i].nodeType === 3) text += under.childNodes[i].nodeValue;
-                }
-            }
-            out.push({
-                id: n.getAttribute('data-find-id'),
-                tag: under ? under.tagName.toLowerCase() : null,
-                text: text.trim().slice(0, 24),
-            });
-        });
-        return JSON.stringify(out);
-    })()""")
-    if d is None:
-        return ([u'取不到可发现物的落点信息'], u'—')
-
+    d = b.jso(MEASURE_FIND_SPOTS)
     LEAF = ('p', 'span', 'h1', 'h2', 'h3', 'h4', 'b', 'strong', 'em', 'a', 'img', 'li')
     fails = []
-    for n in d:
-        if n['text']:
-            fails.append(u"%s：正压着文字「%s」（<%s>）—— 看着会像渲染故障"
-                         % (n['id'], n['text'], n['tag']))
-        elif n['tag'] in LEAF:
-            fails.append(u'%s：落在 <%s> 这种**文字叶子**上，该挪到容器（卡片 / 区块）上去'
-                         % (n['id'], n['tag']))
+    total = 0
 
-    return (fails, u'%d 个都落在容器上' % len(d) if not fails else u'%d 个压着东西' % len(fails))
+    # ⚠ **两个视口都要量。** 这条断言原先只在默认视口（约 1256）跑 ——
+    #   而本站的主要访客是**手机**。2026-10-02 实测：1256 下 0 个压字，
+    #   **375 宽下有 4 个**压着（档案标签「出处」/「鞘中刀」/「点击切换」…）。
+    #   **只测桌面 = 这条防线对手机是空的**，而移动端恰恰是主战场。
+    #   （坐标是锚点宽度的百分比，换个宽度就落到别的内容上 —— 所以必须两个都量。）
+    for (w, h, label) in ((None, None, u'默认'), (375, 812, u'375')):
+        if w:
+            b._send('Emulation.setDeviceMetricsOverride',
+                    {'width': w, 'height': h, 'deviceScaleFactor': 1, 'mobile': True})
+            time.sleep(0.6)
+        d = b.jso(MEASURE_FIND_SPOTS)
+        if d is None:
+            fails.append(u'[%s] 取不到可发现物的落点信息' % label)
+            continue
+        total = max(total, len(d))
+        for n in d:
+            if n['text']:
+                fails.append(u'[%s] %s：正压着文字「%s」（<%s>）—— 看着会像渲染故障'
+                             % (label, n['id'], n['text'], n['tag']))
+            elif n['tag'] in LEAF:
+                fails.append(u'[%s] %s：落在 <%s> 这种**文字叶子**上，该挪到容器上去'
+                             % (label, n['id'], n['tag']))
+
+    # ⚠ **必须清掉** —— 否则这个 375 的模拟会跟着后面**所有**断言，
+    #   把一整轮后续结果都变成「在手机上测的」，而人会以为自己测的是桌面。
+    b._send('Emulation.clearDeviceMetricsOverride')
+    time.sleep(0.6)
+
+    return (fails, u'%d 个都落在容器上（两个视口）' % total if not fails
+            else u'%d 处压着东西' % len(fails))
 
 
 @check
@@ -2710,6 +2759,73 @@ def check_blade_state_restores_together(b, page, expected):
                      u'而刀现在永远可点、送花那支不会再进，所以它**永远亮不起来**了')
 
     return (fails, u'花与刀光一起恢复' if not fails else u'状态不一致')
+
+
+@check
+@sakura_only
+def check_sakura_finds_match_registry(b, page, expected):
+    """樱那 12 条的 `id` / `at` / `verb` / `art` / `line` / `src` 与**登记表**逐字一致。
+
+    ⚠ 这是「**台词一条不编**」那条底线的落点 —— 台词逐字抄自官方档案馆，
+      核准记录在 `docs/superpowers/plans/2026-10-01-sakura-finds-table.md`。
+      **改台词必须同时改本文件的 `SAKURA_FINDS`**，逼它变成一次刻意动作。
+
+    ⚠ 判据读的是**源码**不是 DOM：`THEME` 在 IIFE 里（`window.THEME` 读不到），
+      而 `line` 只有触发时才进气泡，所以 DOM 侧拿不全这 12 条。
+    """
+    src = io.open(os.path.join(ROOT, page), encoding='utf-8').read()
+    i = src.find('explore: {')
+    if i < 0:
+        return ([u'源码里找不到 `explore: {`'], u'—')
+    got = re.findall(
+        r"\{\s*id:'([^']*)',\s*at:'([^']*)',\s*x:[-0-9.]+,\s*y:[-0-9.]+,\s*"
+        r"verb:'([^']*)',\s*art:'([^']*)',\s*\n\s*line:'([^']*)',\s*\n\s*src:'([^']*)'",
+        src[i:])
+
+    fails = []
+    if len(got) != len(SAKURA_FINDS):
+        fails.append(u'解析出 %d 条 find，登记表有 %d 条 —— 条数对不上（格式被改过？）'
+                     % (len(got), len(SAKURA_FINDS)))
+    for k, (wid, wat, wline, wsub) in enumerate(SAKURA_FINDS):
+        if k >= len(got):
+            break
+        gid, gat, gverb, gart, gline, gsrc = got[k]
+        if gid != wid:
+            fails.append(u'第 %d 条的 id 是 %r，登记表是 %r' % (k + 1, gid, wid))
+        if gat != wat:
+            fails.append(u'%s 的锚点是 %r，登记表是 %r' % (wid, gat, wat))
+        if gline != wline:
+            fails.append(u'%s 的**台词**与登记表不一致：\n        页面：%s\n        登记：%s'
+                         % (wid, gline, wline))
+        if gsrc != SAKURA_SRC_PREFIX + wsub:
+            fails.append(u'%s 的**出处**与登记表不一致：\n        页面：%s\n        登记：%s'
+                         % (wid, gsrc, SAKURA_SRC_PREFIX + wsub))
+    return (fails, u'12 条与登记表逐字一致' if not fails else u'%d 处对不上' % len(fails))
+
+
+@check
+@sakura_only
+def check_sakura_finds_not_in_quotes(b, page, expected):
+    """12 条可发现物的台词**不与语录区那 10 条重复**。
+
+    语录区是一张 10 张卡片的网格，读者**一眼能看到全部**；
+    可发现物再用同一句，就成了「你找到了一句你已经读过的话」——探索的甜头当场没了。
+    （上一轮 mobius 12 条里只撞了 1 条，基本是避开的；樱这边素材够，可以完全避开。）
+    """
+    src = io.open(os.path.join(ROOT, page), encoding='utf-8').read()
+    i = src.find('var quotes = [')
+    if i < 0:
+        return ([u'源码里找不到 `var quotes = [`'], u'—')
+    quotes = [m.group(1) for m in
+              re.finditer(u'「(.+?)」', src[i:src.find(u'];', i)])]
+    if len(quotes) < 5:
+        return ([u'语录区只解析出 %d 条 —— 解析器可能坏了' % len(quotes)], u'—')
+
+    dup = [wid for (wid, _at, line, _s) in SAKURA_FINDS
+           if any(line == q or line in q for q in quotes)]
+    if dup:
+        return ([u'这些可发现物的台词与语录区重复：%s' % u'、'.join(dup)], u'%d 条重复' % len(dup))
+    return ([], u'12 条与语录区零重复（语录区 %d 条）' % len(quotes))
 
 
 # ── 主流程 ────────────────────────────────────────────────────────────
