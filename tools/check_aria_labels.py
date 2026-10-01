@@ -52,6 +52,7 @@ EXPECTED = {
     'villv/index.html':  ('台词卡片，点击切换',           'shared'),
     'sakura/index.html': ('刹那之言，点击切换',           'shared'),
     'kosma/index.html':  ('旭光之言，点击切换',           'shared'),
+    'mobius/index.html': ('无限之言，点击切换',           'shared'),
 }
 
 

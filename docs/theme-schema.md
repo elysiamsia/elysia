@@ -40,6 +40,25 @@
 | 结尾目标元素 | `endingQuote` / `endingAttr` / `backLink` | 调用方 | 6 个子页一致（index 是 Task 10 专项） |
 | 打字机 DOM 元素 | `#typewriterText` / `#typingCursor` / `#openingSub` / `#scrollHint` | `makeTypewriter` | **7 页都有这些 id** |
 | 打字机 `hintEl` 元素 | `#openingHint` | `makeTypewriter` | 该 id 只存在于 kalpas/su/villv，查不到即跳过 |
+| 可发现物的 `aria-label` | `'可探索之处'` | `explore.js` | **共享默认值**，不进 `THEME`（要逐条不同就传 `f.label`） |
+| 陪伴层冷却 | `8000` ms | `explore.whisperCooldownMs` | 默认值；逐页要不同的手感才写 |
+| 提示起始比例 | `0.5` | `explore.hintAfterRatio` | 默认值；找到过半才开始提示 |
+| 五种动词的判定线 | hold `600`ms / triple `1200`ms / 位移 `24`px | `explore.js` | **全站一致，不进 `THEME`** —— 改它们等于改所有页的手感 |
+| 低语停留时长 | `2500` ms | `explore.js` | 全站一致 |
+| 台词气泡停留 | `4200` ms | `explore.js` | 全站一致 |
+
+> ⚠ **2026-10-01 更正：结尾观察器多吃了那个 `rootMargin`。**
+> 上表「进场 `rootMargin`」那一行的「7 页逐字一致」指的是 **`.timeline-node` 那个观察器**
+> —— 它原本就带 `-50px`，确实一致。
+> 但 `observeReveal('#ending', { threshold: 0.3, … })` 走的是**同一个默认值**，
+> 而 P1 **之前**各子页的 `endingObserver` 只有 `{ threshold: 0.3 }`、**没有** rootMargin。
+> 于是结尾三元素（`endingQuote` / `endingAttr` / `backLink`）的点亮比原来**晚 50px**
+> —— 实测差 **51px**（10px 步进的扫描分辨率，理论值 50）。
+>
+> 影响全部 7 页、且无感，所以**保持现状**：7 页一个样比给某一页单开例外更对。
+> 但这条**以前没被记录过**（快照抓不到 —— `.visible` 迟早会加上，最终计算样式一样）。
+> 出处：2026-10-01 mobius 迁移（Task 10）的**迁移前 vs 迁移后行为差分**，
+> 复核方把共享层其余默认值逐个对过，确认**只有这一处**。
 
 > 上表里「7 页都有」是**实测过**的（2026-09-17，逐页 `grep id="…"` 核对）。
 
@@ -89,8 +108,55 @@
       preReveal: 'openingOrn',// 打字前同步点亮的装饰 id；**无则传 null**
                               //   （string | null —— 共享层做防御性判空）
     },
+
+    /* ── 4. 探索系统 ── （2026-10-01 新增）───────────────────
+       逐页不同：**藏了什么**（12 个可发现物）、找齐之后说什么、陪伴层说什么。
+       机制本身（五种动词 / 探索度 / 存储 / 减动）全在共享层，不在这里。 */
+    explore: {
+      pageId: 'mobius',       // ⚠ **必填**：进度按它分页存进 localStorage
+                              //   （`elysia:explore:<pageId>`）。改名 = 玩家进度丢失
+
+      finds: [                // 8~12 个。**id 是页内唯一键，改了就等于进度丢失**
+        {
+          id:   'lab-01',     // 页内唯一
+          at:   '#opening',   // 锚点选择器（页面上**必须已存在**）
+                              //   ⚠ 锚点可以「后建」—— 比如挂在下方区块上的那条，
+                              //     它的锚点是 ElysiaBottom.mount 才建出来的。
+                              //     共享层的 ensureAttached 会补扫，所以两行调用
+                              //     **谁先谁后都对**（spec §4.1 / explore.js）
+          x:    0.18, y: 0.62,// 相对锚点矩形的百分比 [0..1]，指的是**中心点**
+          verb: 'hold',       // click | hold | drag | triple_tap | slide
+          art:  'spore',      // 外观关键字，见 spec §5.2（12 个）
+          line: '「…」',       // 台词 —— **必须有出处，一个字不能编**
+          src:  '蛇主的追忆·其一', // 出处标注，渲染在气泡角落
+        },
+      ],
+
+      unlock: {               // 找齐之后展开，**只出现这一次**
+        title: '…', text: '「…」', src: '…',
+      },
+
+      whisper: ['「…」'],     // 陪伴层台词池：冷却结束后的**第 3 次**点击说一句，
+                              //   台词**按顺序**推进（⚠ **绝不做概率** ——
+                              //   需求方明确不要「抽卡式不可预测」）
+      whisperCooldownMs: 8000,// 可选，默认 8000。调它来改「说得多勤」，别加随机数
+      hintAfterRatio:    0.5, // 可选，默认 0.5。找到过半才开始给未发现的那些提示
+    },
+
+    /* ── 5. 小游戏 ── （2026-10-01 新增）─────────────────────
+       ⚠ **这里只有 module，没有 title / hint** —— 卡上的文案归**模块**所有
+         （`ElysiaGames.<id>.title / .hint`，见 spec §4.5）。
+         两边各写一份的话，`bottom.js` 只调 `mount(host)`、只会用其中一份，
+         另一份就成了**改不动的死配置**，而且这个 THEME 在 IIFE 里、测试读不到，
+         **没法自动核对**（HANDOVER §10.5 合并 `BUILT` 那条教训）。 */
+    game: { module: 'mobius' },   // 可选；不写就不渲染游戏槽
   };
 ```
+
+> ⚠ 加载顺序（**不可调换**，spec §3.2）：
+> `site.css` → `explore.css` → 页面内联 `<style>`；
+> `site.js` → `explore.js` → `bottom.js` → `data/bdays.js` → `games/<角色>.js`（有游戏才加载）。
+> 内联 `<style>` 永远在最后，所以它能覆盖共享层 —— 现有 9 页靠的就是这个机制。
 
 ---
 

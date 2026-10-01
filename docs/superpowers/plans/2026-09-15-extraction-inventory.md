@@ -88,6 +88,22 @@
 | 30 | `.ending-sub` | kalpas,su | 2 |
 | 31 | `.ending-sub.visible` | kalpas,su | 2 |
 
+> ⚠ **这份清单是 2026-09-16 写的，已经过期一处**（2026-10-01 做 mobius 迁移时实测发现）：
+> `.ending-attr.visible` 当时列在 **B 组**（§3-R1：「仅前导零写法差异，视觉 100% 等价 → 合并安全」），
+> 是 P1 **Task 5 归一化前导零之后**才并进 A 组的 —— `assets/site.css:148` 里就有它。
+> 所以拿这份「31 条」当准绳去数，会**少数一条**。
+>
+> **要数，请直接与 `assets/site.css` 的实际内容逐条比，别信这里的数字。**
+> 比的时候记住：`site.css` 是**格式化过**的、各页老模板是**压过**的，
+> 「逐字节一致」得先归一化（压空白、去 `}` 前的行尾分号、剥注释）之后再比声明体 ——
+> 否则「同名」会被误判成「同值」。
+
+> ⚠ 另一条同样是 2026-10-01 实测出来的：**「同名」不等于「同值」，而且差的那几条往往是静默的。**
+> mobius 迁移时，A 组 31 个同名选择器里有 **2 条声明体其实不同**：
+> `.opening-hint.visible`（本页 `opacity:.7` vs site.css `.65`）、
+> `.ending-sub`（本页 `letter-spacing:.08em` vs site.css `.1em`）。
+> **按名字删就会静默变样** —— 正是 §6.5 那条（`armor.html` 的 `--gold-soft` 失色 3 个月）。
+
 > `armor.html` 是唯一的「异形页」：没有 `.content-section` / `.profile-card` / `.opening-*` / `.quotes-grid` 结构，只共享 timeline 骨架和滚动条基础样式。抽取时 armor 只能吃到第 1-8 条。
 
 ### A 组合并后的完整 CSS 源码（`assets/site.css` 初稿）

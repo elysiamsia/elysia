@@ -1,0 +1,371 @@
+/* ==========================================================================
+   assets/explore.css — 探索系统 + 下方区块的共享样式
+
+   ⚠ **加载顺序不可调换**（spec §3.2）：
+        site.css  →  explore.css  →  页面内联 <style>
+     内联在最下面，所以它永远能覆盖这里的值 —— 现有 9 页靠的就是这个机制。
+
+   配色走 CSS 变量，所以每位英桀不用改代码就能换色：
+        --explore-tint    可发现物与气泡的主色（默认继承当前文字色）
+        --explore-ink     气泡底色
+        --explore-ink-2   气泡文字色
+   ========================================================================== */
+
+/* ---------- 0. 锚点 ---------- */
+/* 只在锚点原本是 `position:static` 时由 JS 加上这个类。
+   给一个已经有定位的元素再套 relative，会改变它内部绝对定位子元素的参照物。 */
+.explore-anchor {
+  position: relative;
+}
+
+/* ---------- 1. 可发现物 ---------- */
+/* ⚠ 元素的**渲染盒本身就是热区**，就是这 44×44。
+   计划里写的是「用 ::after 撑开热区、不改变视觉大小」，这里改用
+   min-width/min-height + 内层缩小来实现同一个意图 —— 差别在于
+   **`getBoundingClientRect()` 量得到**：::after 的尺寸拿不到用值，
+   `check_explore.py` 那条「热区 ≥ 44×44」的断言就没法写。
+   （WCAG 2.5.8：触控目标至少 44×44 CSS px。）
+   视觉大小由里面的 `.explore-art` 决定，所以看起来还是小小的一个点。 */
+.explore-find {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+
+  /* x / y 是**中心点**语义 —— 见 explore.js 的 buildFind 注释 */
+  transform: translate(-50%, -50%);
+
+  color: var(--explore-tint, currentColor);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;   /* 拖拽时别把周围文字一起选中了 */
+
+  /* ⚠ **不要**写 touch-action:none。
+     那会把「从可发现物上开始的纵向滚动」一并吃掉 ——
+     手机上想往下滑页面，手指恰好落在它上面就滑不动了。
+     纵向滚动 vs 横向划过的区分是 JS 的事（check_explore.py 有反向断言守着）。 */
+}
+
+/* 视觉本体。**所有动效都加在这一层**，因为外层那个 translate(-50%,-50%)
+   要拿来居中，动它就等于动位置（会变成误触）。 */
+/* 呼吸光。⚠ **刻意用 filter 做呼吸，把 opacity 留给 hover / found 状态** ——
+   动画的优先级高于普通声明，用 opacity 做呼吸的话，
+   hover 上去那一下（.95）会被动画盖掉，看起来像「hover 没生效」。
+   换成 filter 之后两件事互不打扰，而且 animation-name 一直不是 none，
+   减动断言不会因为「恰好被 hover 着」而假通过。 */
+@keyframes explore-breathe {
+  0%, 100% { filter: drop-shadow(0 0 3px currentColor); }
+  50%      { filter: drop-shadow(0 0 10px currentColor); }
+}
+
+.explore-art {
+  display: block;
+  width: 22px;
+  height: 22px;
+  opacity: .35;
+  /* 静态兜底：减动偏好打开时动画会被关掉（见文件末尾的 @media），
+     这一行就是那时的样子 —— 关动效不等于把这个东西变没。 */
+  filter: drop-shadow(0 0 5px currentColor);
+  animation: explore-breathe 5.5s ease-in-out infinite;
+  transition: opacity .3s ease, transform .3s ease;
+}
+
+.explore-art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 靠近时才「亮」起来 —— 平时只是一点微光，找它本身就是玩法。
+   :focus-visible 一并给上，键盘用户要看得见自己停在哪儿。 */
+.explore-find:hover .explore-art,
+.explore-find:focus-visible .explore-art {
+  opacity: .95;
+  transform: scale(1.15);
+}
+
+.explore-find:focus-visible {
+  outline: 2px solid var(--explore-tint, currentColor);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
+/* 拖拽中：亮起来、放大一点，让「我抓住了」这件事有即时反馈。
+   ⚠ 加在**内层** `.explore-art` 上 —— 外层那个 transform 要留着做居中。 */
+.explore-find.dragging .explore-art {
+  opacity: 1;
+  transform: scale(1.3);
+}
+
+/* 命中之后：**一直亮着**。它不再是「藏起来的东西」了，
+   而是「你已经找到的东西」—— 看得见的进度，正是探索感的一半。 */
+.explore-find.found .explore-art {
+  opacity: .9;
+}
+
+/* ---------- 1.5 渐进提示 ---------- */
+/* 找到过半之后，还没找到的那些轻轻闪一下。
+   ⚠ **只改明暗，绝不改位置** —— 挪动一个 44×44 的热区，
+     用户正要点它的时候它跑了，那是误触，比不给提示还糟。
+     所以这里没有 transform、没有 margin、没有 top/left。 */
+@keyframes explore-hint {
+  0%, 100% { opacity: .35; }
+  50%      { opacity: .85; }
+}
+
+.explore-find.hinted .explore-art {
+  animation: explore-hint 2.4s ease-in-out infinite;
+}
+
+/* 静态标记。**和闪烁分开写**：减动偏好打开时闪烁会被关掉（Task 7），
+   但这一圈虚线的提示必须还在 —— 否则减动用户拿不到任何提示，
+   而「关掉动画」不该等于「关掉功能」。 */
+.explore-find.hinted {
+  outline: 1px dashed var(--explore-tint, currentColor);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
+/* ---------- 3. 探索度 ---------- */
+/* ⚠ **刻意不用 position:fixed。** 固定定位会飘在内容上面，
+   把底下的可发现物盖住 —— 那会让「热区可达」的断言失败，
+   而且是真的点不到（check_explore.py ③ 号断言就是抓这个的）。 */
+.explore-count {
+  margin: 0;
+  padding: 14px 18px;
+  font-size: 13px;
+  letter-spacing: .14em;
+  color: var(--explore-tint, currentColor);
+  opacity: .75;
+  text-align: center;
+}
+
+/* ---------- 4. 解锁区 ---------- */
+/* 找齐之后才放出来。**带 hidden 属性时用 display:none** —— 别只靠 opacity，
+   一个 opacity:0 的元素照样占位、照样能被 elementFromPoint 命中。 */
+.explore-unlock[hidden] {
+  display: none;
+}
+
+.explore-unlock {
+  max-width: 34em;
+  margin: 18px auto 0;
+  padding: 22px 24px;
+  border-radius: 16px;
+  border: 1px solid var(--explore-border, rgba(255, 255, 255, .16));
+  background: var(--explore-ink, rgba(14, 8, 24, .94));
+  color: var(--explore-ink-2, #eee8f7);
+  text-align: center;
+}
+
+.explore-unlock-title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: .16em;
+  color: var(--explore-tint, currentColor);
+}
+
+.explore-unlock-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+.explore-unlock-src {
+  margin: 12px 0 0;
+  font-size: 11px;
+  letter-spacing: .08em;
+  opacity: .5;
+}
+
+/* ⚠ 动画挂在 `.revealed` 上，**不是**挂在解锁区自己身上。
+   从存储里读回来的那次不加这个类 —— 它已经在上一趟出现过一次了，
+   每次进页面都重演就成了「每次都在解锁」。 */
+@keyframes explore-unlock-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.explore-unlock.revealed {
+  animation: explore-unlock-in .6s ease both;
+}
+
+/* ---------- 5. 陪伴层低语 ---------- */
+/* 贴在视口底部的轻气泡。
+   ⚠ `pointer-events:none` 是必须的 —— 它飘在内容上面，
+     能挡住底下可发现物的话就成了「存在但点不到」，
+     而且因为它是 fixed，滚动到哪儿都挡着。
+     （所以它也不会被 elementFromPoint 命中，几何断言不受影响。） */
+.explore-whisper {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  z-index: 88;
+  transform: translateX(-50%);
+  max-width: 78vw;
+  padding: 10px 20px;
+  /* ⚠ 不是 999px 的胶囊形：whisper 池里是**整句原句**，
+     最长的（华那条）有 72 字，手机上要折成三行 ——
+     胶囊套三行会变成一根怪管子。常规圆角能容下折行。 */
+  border-radius: 18px;
+  background: var(--explore-ink, rgba(14, 8, 24, .92));
+  border: 1px solid var(--explore-border, rgba(255, 255, 255, .14));
+  color: var(--explore-ink-2, #eee8f7);
+  font-size: 13px;
+  letter-spacing: .04em;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+
+.explore-whisper.visible {
+  opacity: 1;
+}
+
+.explore-whisper[hidden] {
+  display: none;
+}
+
+/* ---------- 6. 台词气泡 ---------- *//* ⚠ position:fixed + 挂在 <body> 上（见 explore.js 的 showBubble 注释）。
+   它**必须**在文档流之外，否则会撑高页面 —— 快照会当场报差异，
+   而且在 overflow:hidden 的区段里还会被裁掉。 */
+.explore-bubble {
+  position: fixed;
+  z-index: 90;
+  max-width: 280px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: var(--explore-ink, rgba(14, 8, 24, .94));
+  border: 1px solid var(--explore-border, rgba(255, 255, 255, .16));
+  color: var(--explore-ink-2, #eee8f7);
+  font-size: 14px;
+  line-height: 1.8;
+  letter-spacing: .02em;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
+  pointer-events: none;   /* 气泡不能挡住底下的东西 —— 它是旁白，不是控件 */
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity .28s ease, transform .28s ease;
+}
+
+.explore-bubble.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.explore-bubble-line {
+  margin: 0;
+}
+
+/* 出处不是装饰 —— 「台词一条不编」这条纪律要看得见才算数。 */
+.explore-bubble-src {
+  margin: 8px 0 0;
+  font-size: 11px;
+  letter-spacing: .08em;
+  opacity: .5;
+  text-align: right;
+}
+
+.explore-bubble-src[hidden] {
+  display: none;
+}
+
+/* ---------- 7. 下方区块 ---------- */
+/* 页面逛到最后落脚的地方：探索度 / 生日倒计时 / 小游戏。
+   ⚠ 探索度本来（Task 3）临时挂在 body 末尾，现在由 ElysiaBottom.mount
+     把它搬进 `.bottom-count` —— 位置换了，「同一个节点」没换，
+     所以它的 role/aria-live 与内容一直是同一份。 */
+#bottom {
+  position: relative;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 8vh 6vw 14vh;
+  text-align: center;
+}
+
+.bottom-count {
+  margin-bottom: 10px;
+}
+
+.bottom-bday {
+  margin: 22px auto 0;
+  padding: 20px 24px;
+  max-width: 30em;
+  border-radius: 16px;
+  border: 1px solid var(--explore-border, rgba(255, 255, 255, .16));
+  background: rgba(255, 255, 255, .03);
+}
+
+.bottom-bday-date {
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: .3em;
+  opacity: .5;
+}
+
+.bottom-bday-text {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: .08em;
+  color: var(--explore-tint, currentColor);
+}
+
+/* 生日当天那一句 —— 平时 `hidden`，是**真的不渲染**（display:none） */
+.bottom-bday-line {
+  margin: 14px 0 0;
+  font-size: 14px;
+  line-height: 1.9;
+  opacity: .8;
+}
+
+.bottom-bday-line[hidden] {
+  display: none;
+}
+
+.bottom-game {
+  margin: 26px auto 0;
+}
+
+/* ==========================================================================
+   8. 减动降级（WCAG 2.3.1）
+
+   ⚠ **只关「装饰性的、自动播放的」动效。**
+     **绝不碰任何由用户点击显式触发的东西** —— 「关掉动画」不等于「关掉功能」：
+       · 小游戏内部的动画要留着（它由「开始」按钮显式触发，是要玩的东西）
+       · 低语 / 气泡 / 解锁该出现还得出现，只是不再用位移和闪烁来登场
+       · 提示的闪烁关掉之后，那圈虚线轮廓必须还在（只关闪烁，不关提示）
+     这几条都有断言守着（tools/check_explore.py --reduced）。
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  /* 呼吸光停 —— 静态的 filter 兜底仍在（上面 .explore-art 那条），所以它不会失色 */
+  .explore-art {
+    animation: none;
+  }
+
+  /* 提示不闪 —— 但 .explore-find.hinted 的虚线轮廓在 @media 之外，照常显示 */
+  .explore-find.hinted .explore-art {
+    animation: none;
+  }
+
+  /* 气泡与低语**直接显示**，不做位移淡入。它们还是会出现的 —— 只是没有登场动作。 */
+  .explore-bubble,
+  .explore-whisper {
+    transition: none;
+  }
+
+  /* 解锁区同理：不播出现动画，但找齐了照样放出来 */
+  .explore-unlock.revealed {
+    animation: none;
+  }
+}
+

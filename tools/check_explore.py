@@ -1,0 +1,2412 @@
+# -*- coding: utf-8 -*-
+"""
+tools/check_explore.py — 探索系统断言
+
+**为什么需要这个：快照测不出「交互」。**
+
+`snapshot.py` 采的是静态的计算样式与整页截图。一个可发现物如果
+被 `overflow` 裁掉了、被别的元素盖住了、或者锚点选择器写错了，
+它照样「存在于 DOM 里」、CSS 也照样算得对 —— 快照会给「✅ 无差异」。
+
+但用户**永远点不到它**。这类 bug 不报错、不改变外观、不触发任何断言，
+是最难发现的一种。所以本工具走**真实用户路径**：
+真的派发鼠标事件、真的滚过去、真的 reload，
+断言「触发前没有 → 触发后有了」这个**状态变化**本身。
+
+── 跑法 ─────────────────────────────────────────────────────────────
+    PYTHONIOENCODING=utf-8 python tools/check_explore.py [页面路径]
+
+  不传页面 = `tools/explore-fixture.html`（探针页）。
+  真页面：`python tools/check_explore.py mobius/index.html`
+
+  自带服务器（**端口 8501**，刻意避开 8500）—— 见 HANDOVER §6.4：
+  8500 上常残留别的 `http.server`，请求落到哪个不确定，会测出「内容完全错」的结果。
+
+退出码：0 = 全部通过；1 = 有断言失败。
+"""
+import http.server
+import io
+import json
+import os
+import re
+import shutil
+import socketserver
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+import urllib.request
+
+import websocket  # 与 tools/cdp.py 同源依赖
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PORT = 8501
+EDGE = r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
+
+# 页面 → 该页声明的可发现物数量。
+#   ⚠ 这张表是**故意**独立于页面的：页面上少写一个 find 时，
+#     「声明数 == 渲染数」这条自洽断言抓不到（两边一起少了），
+#     只有跟这张登记表比才抓得到。新页接入时**必须**在这里登记。
+EXPECTED_FINDS = {
+    'tools/explore-fixture.html': 6,
+    'mobius/index.html': 12,
+}
+
+
+# ── 服务器 ────────────────────────────────────────────────────────────
+class Quiet(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, *a):
+        pass
+
+
+class QuietServer(socketserver.TCPServer):
+    allow_reuse_address = True
+
+    def handle_error(self, request, client_address):
+        # 浏览器取完就断开 —— ConnectionResetError 是常态，不是错误。
+        pass
+
+
+def start_server():
+    handler = lambda *a, **k: Quiet(*a, directory=ROOT, **k)
+    httpd = QuietServer(('127.0.0.1', PORT), handler)
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    return httpd
+
+
+# ── 浏览器 ────────────────────────────────────────────────────────────
+class Browser(object):
+    """CDP 的一层薄封装。`send` 会把**非本次请求的**消息收进 `events`
+    —— 页面抛的异常和 console 输出都在那儿，check_page_quiet 要用。"""
+
+    def __init__(self, ws):
+        self.ws = ws
+        self._id = 0
+        self.events = []
+
+    def _send(self, method, params=None):
+        self._id += 1
+        mid = self._id
+        self.ws.send(json.dumps({'id': mid, 'method': method, 'params': params or {}}))
+        while True:
+            r = json.loads(self.ws.recv())
+            if r.get('id') == mid:
+                return r
+            self.events.append(r)
+
+    def js(self, expr):
+        """求值并返回值；**抛异常时返回 None**（不吞掉错误 —— check_page_quiet 会看见）。"""
+        r = self._send('Runtime.evaluate', {'expression': expr, 'returnByValue': True})
+        res = r.get('result', {})
+        if res.get('exceptionDetails'):
+            return None
+        return res.get('result', {}).get('value')
+
+    def jso(self, expr):
+        """求值 + 解析 JSON。断言里最常用的形态（JS 侧统一 `JSON.stringify` 回来）。"""
+        v = self.js(expr)
+        if v is None:
+            return None
+        try:
+            return json.loads(v)
+        except Exception:
+            return None
+
+    # ── 输入事件 ──────────────────────────────────────────────────────
+    # 走 `Input.dispatchMouseEvent` —— 也就是**真的用户路径**。
+    # ⚠ 不走「直接调内部函数」那条路：这些页的脚本都是 IIFE 包裹的，
+    #   内部函数根本不是全局的（HANDOVER §10.6 Task 9 实测：
+    #   `typeof fireKevinKiller666 === 'function'` 得到 undefined）。
+    #   而且就算调得到，也测不出「事件到底有没有接上」这件事。
+    def press(self, x, y):
+        self._send('Input.dispatchMouseEvent', {
+            'type': 'mousePressed', 'x': x, 'y': y,
+            'button': 'left', 'buttons': 1, 'clickCount': 1})
+
+    def release(self, x, y):
+        self._send('Input.dispatchMouseEvent', {
+            'type': 'mouseReleased', 'x': x, 'y': y,
+            'button': 'left', 'buttons': 0, 'clickCount': 1})
+
+    def move(self, x, y, buttons=1):
+        self._send('Input.dispatchMouseEvent', {
+            'type': 'mouseMoved', 'x': x, 'y': y,
+            'button': 'none', 'buttons': buttons})
+
+    def center_of(self, selector):
+        """把任意元素滚进视口，返回它的**视口中心坐标**。
+
+        与 `center` 的区别：这个接受**任意选择器**（`center` 只认
+        `data-find-id`）。`scrollIntoView` 的两条注意事项见 `center`。
+        """
+        return self.jso("""(() => {
+            var n = document.querySelector('%s');
+            if (!n) return null;
+            n.scrollIntoView({ block: 'center', behavior: 'instant' });
+            var r = n.getBoundingClientRect();
+            return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+        })()""" % selector)
+
+    def center(self, fid):
+        """把可发现物滚进视口，返回它的**视口中心坐标**。
+
+        ⚠ 必须先滚动。CDP 派发的是视口坐标，元素在视口外时事件会落到别处，
+          而且**不会报错**（HANDOVER §6.4：cdp.py 的 click 要先滚动）。
+        ⚠ `scrollIntoView` 必须带 `behavior:'instant'` —— 站点有
+          `scroll-behavior:smooth`，平滑滚动下一帧才到位，紧接着量的坐标就是错的。
+        """
+        return self.jso("""(() => {
+            var n = document.querySelector('[data-find-id="%s"]');
+            if (!n) return null;
+            n.scrollIntoView({ block: 'center', behavior: 'instant' });
+            var r = n.getBoundingClientRect();
+            return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+        })()""" % fid)
+
+    def found_ids(self):
+        v = self.js('JSON.stringify(window.__ELY_EXPLORE__ ? window.__ELY_EXPLORE__.found : [])')
+        return json.loads(v) if v else []
+
+
+# ── 断言注册表 ────────────────────────────────────────────────────────
+#   每条断言带两个维度：
+#     `modes` —— normal / reduced（减动那几条只在 --reduced 时跑）
+#     `pages` —— 适用于哪些页。默认 `('*',)` 表示**任何页都该满足**；
+#                写死了 `fx-01` 这类探针页 id 的，用 `@fixture_only` 收窄。
+#   ⚠ 这个维度是 2026-10-01 做 Task 11 时补的：不给它的话，
+#     `check_explore.py mobius/index.html` 会先挂 8 条与 mobius 无关的断言，
+#     真正的问题被淹掉。**新页接入时也要照这个来。**
+CHECKS = []
+
+FIXTURE = 'tools/explore-fixture.html'
+
+
+def check(fn):
+    CHECKS.append(fn)
+    if not hasattr(fn, 'modes'):
+        fn.modes = ('normal',)
+    if not hasattr(fn, 'pages'):
+        fn.pages = ('*',)
+    return fn
+
+
+def check_reduced(fn):
+    CHECKS.append(fn)
+    fn.modes = ('reduced',)
+    if not hasattr(fn, 'pages'):
+        fn.pages = ('*',)
+    return fn
+
+
+def fixture_only(fn):
+    """收窄成「只对探针页成立」—— 这些断言写死了 fx-01…fx-06 这些 id。"""
+    fn.pages = (FIXTURE,)
+    return fn
+
+
+MOBIUS = 'mobius/index.html'
+
+
+def mobius_only(fn):
+    """收窄成「只对 /mobius/ 成立」—— 这些断言查的是她那一页的内容规格。"""
+    fn.pages = (MOBIUS,)
+    return fn
+
+
+@check
+def check_declared_matches_rendered(b, page, expected):
+    """① 声明了几个就生成几个 —— 且**就是那几个**。
+
+    Review Focus #3：12 个 find 里有一个 id 写错或锚点选择器写错，
+    探索度就**永远差一个**，解锁永远不触发。差一个的 bug 最难看见。
+    所以这里比的是**集合**，不是个数：
+      · 锚点找不到 → 渲染数 < 声明数 → 抓得到
+      · id 写重复了 → 集合对不上 → 抓得到
+      · 页面上少抄了一条 → 与 EXPECTED_FINDS 对不上 → 抓得到
+    """
+    d = b.jso("""(() => {
+        var E = window.__ELY_EXPLORE__;
+        if (!E) return JSON.stringify({ missing: true });
+        var nodes = [].slice.call(document.querySelectorAll('.explore-find'));
+        return JSON.stringify({
+            declared: E.declared,
+            rendered: nodes.map(function (n) { return n.getAttribute('data-find-id'); }),
+        });
+    })()""")
+    if d is None or d.get('missing'):
+        return ([u'取不到 window.__ELY_EXPLORE__ —— explore.js 没加载？'], u'—')
+
+    fails = []
+    declared, rendered = d['declared'], d['rendered']
+
+    missing = [i for i in declared if i not in rendered]
+    extra = [i for i in rendered if i not in declared]
+    if missing:
+        fails.append(u'声明了却没渲染出来（锚点选择器写错？）：%s' % u', '.join(missing))
+    if extra:
+        fails.append(u'渲染了却没声明（id 写重了？）：%s' % u', '.join(extra))
+    if len(rendered) != len(set(rendered)):
+        dup = sorted(set(i for i in rendered if rendered.count(i) > 1))
+        fails.append(u'data-find-id 有重复：%s' % u', '.join(dup))
+    if expected is not None and len(declared) != expected:
+        fails.append(u'登记数 %d，页面声明了 %d —— 两边对不上' % (expected, len(declared)))
+    elif expected is None:
+        fails.append(u'本页没在 EXPECTED_FINDS 里登记 —— 新页接入必须登记（这是有意的）')
+
+    summary = u'声明 %d / 渲染 %d%s' % (
+        len(declared), len(rendered),
+        u'' if expected is None else u'（登记 %d）' % expected)
+    return (fails, summary)
+
+
+@check
+@fixture_only
+def check_late_anchor_gets_picked_up(b, page, expected):
+    """锚点在 init **之后**才建出来的 find，必须被补扫到。
+
+    真实场景：可发现物锚在「下方区块」上，而下方区块是 `ElysiaBottom.mount`
+    才建出来的 —— `ElysiaExplore.init` 跑的时候它**还不存在**。
+    不补扫的话那条会被静默跳过：声明 12 个、只渲染出 11 个，
+    探索度永远差一个、解锁永远不触发（spec Review Focus #3）。
+
+    ⚠ 这条单独拎出来，是为了让失败**一眼看得懂** ——
+      混在「声明数对不上」里的话，真正的原因（两行调用的先后顺序）要翻半天。
+    """
+    d = b.jso("""(() => {
+        var n = document.querySelector('[data-find-id="fx-06"]');
+        var sec = document.getElementById('bottom');
+        return JSON.stringify({
+            section: !!sec,
+            node: !!n,
+            inSection: !!(n && sec && sec.contains(n)),
+        });
+    })()""")
+    if d is None:
+        return ([u'取不到页面状态'], u'—')
+
+    fails = []
+    if not d['section']:
+        fails.append(u'没有 #bottom —— ElysiaBottom.mount 没跑，这条断言的前提不成立')
+    if not d['node']:
+        fails.append(u'fx-06（锚在 #bottom 上）根本没渲染出来 —— '
+                     u'锚点是后建的，没被补扫到。探索度会永远差一个')
+    elif not d['inSection']:
+        fails.append(u'fx-06 渲染出来了，但**不在 #bottom 里面** —— 锚定错了地方')
+
+    return (fails, u'后建锚点被补扫到' if not fails else u'补扫没生效')
+
+
+@check
+def check_accessible_names(b, page, expected):
+    """② role / tabindex / aria-label 三项齐全（spec §5.6）。
+
+    ⚠ 这一类**属性**改动，快照测不出来 —— 理由同 tools/check_aria_labels.py。
+    12 个可发现物都得是 tab stop，键盘也要能用。
+    """
+    d = b.jso("""(() => {
+        var nodes = [].slice.call(document.querySelectorAll('.explore-find'));
+        return JSON.stringify(nodes.map(function (n) {
+            var label = n.getAttribute('aria-label');
+            return {
+                id: n.getAttribute('data-find-id'),
+                role: n.getAttribute('role'),
+                tabIndex: n.tabIndex,
+                label: label,
+            };
+        }));
+    })()""")
+    if d is None:
+        return ([u'取不到 .explore-find 节点'], u'0 个')
+    if not d:
+        return ([u'一个 .explore-find 都没有'], u'0 个')
+
+    fails = []
+    for n in d:
+        if n['role'] != 'button':
+            fails.append(u'%s: role=%r（应为 button）' % (n['id'], n['role']))
+        if n['tabIndex'] != 0:
+            fails.append(u'%s: tabIndex=%r（应为 0，键盘要能 tab 到）' % (n['id'], n['tabIndex']))
+        if not n['label']:
+            fails.append(u'%s: 没有 aria-label（屏幕阅读器念不出它是什么）' % n['id'])
+
+    return (fails, u'%d 个节点三项齐全' % len(d) if not fails else u'%d 个节点有缺' % len(d))
+
+
+@check
+def check_reachable(b, page, expected):
+    """③ 每个可发现物都**真的点得到** —— Review Focus #1。
+
+    这是本工具存在的头号理由。一个 find 可以：
+      · 掉到锚点外面（`overflow:hidden` 裁掉）→ 存在，但永远点不到
+      · 被别的元素盖住（z-index / 固定导航）→ 存在，但点下去是别人的
+    两种情况都**不报错、不改外观**，快照一律「✅ 无差异」。
+
+    判据三条，缺一不可：
+      a. 尺寸 ≠ 0（渲染盒真实存在）
+      b. 滚到它跟前之后，它的中心**落在视口内**
+      c. `elementFromPoint(中心)` 命中的是它自己或它的后代 —— 这一条
+         同时把「被裁掉」和「被盖住」都抓了
+    """
+    d = b.jso("""(() => {
+        var nodes = [].slice.call(document.querySelectorAll('.explore-find'));
+        var out = [];
+        nodes.forEach(function (n) {
+            // ⚠ 必须 behavior:'instant' —— site.css 里 html{scroll-behavior:smooth}，
+            //   平滑滚动会在下一帧才到位，紧接着量的位置就是错的（HANDOVER §6.4）。
+            n.scrollIntoView({ block: 'center', behavior: 'instant' });
+            var r = n.getBoundingClientRect();
+            var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+            var hit = document.elementFromPoint(cx, cy);
+            out.push({
+                id: n.getAttribute('data-find-id'),
+                w: Math.round(r.width), h: Math.round(r.height),
+                inView: cx >= 0 && cy >= 0 && cx <= window.innerWidth && cy <= window.innerHeight,
+                reachable: !!hit && (hit === n || n.contains(hit)),
+                hitTag: hit ? hit.tagName : null,
+            });
+        });
+        return JSON.stringify(out);
+    })()""")
+    if d is None:
+        return ([u'取不到 .explore-find 节点'], u'0 个')
+    if not d:
+        return ([u'一个 .explore-find 都没有'], u'0 个')
+
+    fails = []
+    for n in d:
+        if n['w'] == 0 or n['h'] == 0:
+            fails.append(u"%s: 渲染盒是 %dx%d —— 它存在，但用户看不见也点不到"
+                         % (n['id'], n['w'], n['h']))
+            continue
+        if not n['inView']:
+            fails.append(u"%s: 滚到跟前了仍不在视口内（%dx%d）—— 是不是被裁掉了？"
+                         % (n['id'], n['w'], n['h']))
+        if not n['reachable']:
+            fails.append(u"%s: 中心点的命中元素是 %s，不是它自己 —— 被盖住了"
+                         % (n['id'], n['hitTag'] or u'空'))
+        if n['w'] < 44 or n['h'] < 44:
+            fails.append(u"%s: 热区 %dx%d < 44×44（WCAG 2.5.8，手指点不中）"
+                         % (n['id'], n['w'], n['h']))
+
+    return (fails, u'%d 个节点全部可达' % len(d) if not fails else u'%d 个里有问题' % len(d))
+
+
+@check
+def check_page_quiet(b, page, expected):
+    """④ 页面**没有 JS 报错**。
+
+    这一条计划里没写，是我加的 —— 本站最贵的一类 bug 就是「静默失败」：
+    `explore.js` 抛一次异常，后面所有脚本集体停摆，页面看着还是好的。
+    console 里的红字是唯一当场能看见的证据，所以它必须算失败，不能只算提示。
+    """
+    fails = []
+    for e in b.events:
+        m = e.get('method')
+        if m == 'Runtime.exceptionThrown':
+            d = e['params']['exceptionDetails']
+            text = d.get('text') or ''
+            desc = (d.get('exception') or {}).get('description') or ''
+            # ⚠ 一定要带上**文件和行号**。不带的话「Unexpected token '<'」
+            #   这种报错完全无法定位 —— 它可能来自任何一个 404 的脚本。
+            where = d.get('url') or u'(inline)'
+            if d.get('lineNumber') is not None:
+                where += u':%d' % (d['lineNumber'] + 1)
+            fails.append(u'未捕获异常 [%s]：%s %s'
+                         % (where, text, (desc.split('\n')[0] if desc else u'')))
+        elif m == 'Runtime.consoleAPICalled' and e['params'].get('type') == 'error':
+            args = e['params'].get('args') or []
+            text = u' '.join(str(a.get('value', a.get('description', u''))) for a in args)
+            fails.append(u'console.error：%s' % text.strip())
+        elif m == 'Log.entryAdded':
+            # ⚠ **这一支是「资源加载失败」唯一的落点。**
+            #   404 既不是 `Runtime.exceptionThrown`、也不是 `console.error` ——
+            #   它只在 Log 域里冒一条 `source:network / level:error`。
+            #   2026-10-01 实测：把 `assets/games/mobius.js` 整个挪走，
+            #   上面两个分支**一条都没响**，这条断言照样绿 ——
+            #   当时是**功能断言**碰巧抓到的（「找不到游戏卡上的按钮」）。
+            #   缺文件是最普通的一种失败，不能靠碰巧。
+            en = e['params'].get('entry') or {}
+            if en.get('level') != 'error':
+                continue
+            where = en.get('url') or u''
+            fails.append(u'浏览器级错误（%s）：%s%s'
+                         % (en.get('source'), en.get('text'),
+                            (u'  ← ' + where) if where else u''))
+
+    # 去重 —— 同一个错误每帧刷一次会淹掉报告
+    fails = list(dict.fromkeys(fails))
+    return (fails, u'无报错' if not fails else u'%d 条' % len(fails))
+
+
+# 「页面无报错」两种模式都要跑 —— 减动路径上照样可能抛异常
+check_page_quiet.modes = ('normal', 'reduced')
+
+
+# ══ 五种互动动词 ══════════════════════════════════════════════════════
+# 每条都派发**真实的输入事件**（见 Browser.press/move/release），
+# 断言「触发前不在 found 里 → 触发后在了」这个状态变化本身。
+
+def _do_click(b, c):
+    b.press(c['x'], c['y']); time.sleep(0.06); b.release(c['x'], c['y'])
+
+
+def _do_hold(b, c):
+    # 判定线是 600ms（spec §5.1），按 750ms 留出余量 ——
+    # 贴着阈值测，机器一慢就会变成假阴性
+    b.press(c['x'], c['y']); time.sleep(0.75); b.release(c['x'], c['y'])
+
+
+def _do_triple_tap(b, c):
+    for _ in range(3):
+        b.press(c['x'], c['y']); time.sleep(0.05)
+        b.release(c['x'], c['y']); time.sleep(0.05)
+
+
+def _do_drag(b, c):
+    # ⚠ 这里刻意用**纵向**位移（dy=40）。
+    #   横向的话 drag 与 slide 的输入长得一模一样，这条断言就退化成了
+    #   「反正动一下就触发」——测不出方向判据。
+    #   纵向移动只可能被 drag 接受（slide 要求 |dx|>|dy|），
+    #   与下面那条「纵向不算划过」的反向断言正好把关卡的两面都钉住。
+    b.press(c['x'], c['y'])
+    for i in range(1, 5):
+        b.move(c['x'], c['y'] + i * 10); time.sleep(0.02)
+    b.release(c['x'], c['y'] + 40)
+
+
+def _do_slide(b, c):
+    b.press(c['x'], c['y'])
+    for i in range(1, 5):
+        b.move(c['x'] + i * 10, c['y']); time.sleep(0.02)
+    b.release(c['x'] + 40, c['y'])
+
+
+def _run_verb(b, fid, verb, action):
+    if fid in b.found_ids():
+        return ([u'%s 在测之前就已经是「已发现」了 —— 前面的检查污染了它' % fid], u'—')
+    c = b.center(fid)
+    if not c:
+        return ([u'找不到 %s —— 它没被渲染出来' % fid], u'—')
+    action(b, c)
+    time.sleep(0.3)
+    if fid in b.found_ids():
+        return ([], u'%s 触发成功' % verb)
+    return ([u'%s：派发了真实的 %s 输入之后，「已发现」里仍然没有它' % (fid, verb)],
+            u'%s 没触发' % verb)
+
+
+@check
+@fixture_only
+def check_vertical_gesture_ignored(b, page, expected):
+    """纵向滑动**不能**被当成「划过」—— Review Focus #4。
+
+    用户手指落在可发现物上往下滑页面，这是手机上最常见的动作。
+    如果 `slide` 只判「位移 ≥24px」而不判方向，这一滑就会沿路触发一串东西 ——
+    这是本系统最败好感的一种 bug。
+
+    ⚠ **本条必须跑在五个动词检查之前。** 等所有东西都被发现了再来测，
+      断言就成了恒真式（本来就都在 found 里了），测了等于没测。
+      所以这里先检查「跑之前一个都没发现」。
+    """
+    ids = b.found_ids()
+    if ids:
+        return ([u'跑这条时已经有 %d 个被发现（%s）—— 顺序错了，本断言会变成恒真式'
+                 % (len(ids), u', '.join(ids))], u'顺序不对')
+
+    c = b.center('fx-05')   # fx-05 就是 slide 那一位，在它身上起手最有针对性
+    if not c:
+        return ([u'找不到 fx-05'], u'—')
+
+    # dx 只挪 4px（<10），dy 挪 84px（>60）—— 一个典型的「往下滑页面」手势
+    b.press(c['x'], c['y'])
+    for i in range(1, 7):
+        b.move(c['x'] + (1 if i > 3 else 0), c['y'] + i * 14)
+        time.sleep(0.02)
+    b.release(c['x'] + 4, c['y'] + 84)
+    time.sleep(0.3)
+
+    after = b.found_ids()
+    if after:
+        return ([u'纵向滑了一下（dx=4, dy=84）却被判定成「划过」，触发了：%s'
+                 % u', '.join(after)], u'误触发了')
+    return ([], u'纵向手势被正确忽略')
+
+
+@check
+@fixture_only
+def check_verb_click(b, page, expected):
+    """click —— 点一下。"""
+    return _run_verb(b, 'fx-01', 'click', _do_click)
+
+
+@check
+@fixture_only
+def check_verb_hold(b, page, expected):
+    """hold —— 按住 ≥600ms。"""
+    return _run_verb(b, 'fx-02', 'hold', _do_hold)
+
+
+@check
+@fixture_only
+def check_verb_triple_tap(b, page, expected):
+    """triple_tap —— 1.2 秒内点三次。"""
+    return _run_verb(b, 'fx-03', 'triple_tap', _do_triple_tap)
+
+
+@check
+@fixture_only
+def check_verb_drag(b, page, expected):
+    """drag —— 按下后位移 ≥24px（**纵向也算拖**）。"""
+    return _run_verb(b, 'fx-04', 'drag', _do_drag)
+
+
+@check
+@fixture_only
+def check_verb_slide(b, page, expected):
+    """slide —— 位移 ≥24px **且**横向分量大于纵向。"""
+    return _run_verb(b, 'fx-05', 'slide', _do_slide)
+
+
+@check
+@fixture_only
+def check_bubble_shows_source(b, page, expected):
+    """命中之后气泡出现，且**台词与出处都渲染出来了**。
+
+    ⚠ 这一条计划里没有归属（Task 2 只写了「加 class + 进 found 数组」，
+      但 spec §4.2 把「命中后播放该 find 的表现 + 台词气泡」算在 ElysiaExplore 的
+      职责里，Task 11 的断言 ② 又要求气泡里含 src 文本）。见实施记录。
+      没有它，「触发了但什么都没发生」不会被任何断言抓住。
+
+    顺带守住「台词必须有出处」这条纪律：气泡里必须**同时**有 line 和 src。
+    """
+    # ⚠ 先在**本检查内部**重新触发一次 fx-01 再断言。
+    #   气泡是单例（后一句顶掉前一句），直接读的话读到的是上一个检查留下的
+    #   fx-05 的台词 —— 那种「测的不是我想测的东西」是假红最常见的来源。
+    c = b.center('fx-01')
+    if not c:
+        return ([u'找不到 fx-01'], u'—')
+    _do_click(b, c)
+    time.sleep(0.3)
+
+    d = b.jso("""(() => {
+        var el = document.querySelector('.explore-bubble');
+        if (!el) return JSON.stringify({ missing: true });
+        return JSON.stringify({
+            text: el.textContent,
+            visible: el.classList.contains('visible'),
+        });
+    })()""")
+    if d is None or d.get('missing'):
+        return ([u'页面里没有 .explore-bubble —— 命中之后没有出气泡'], u'—')
+
+    fails = []
+    if not d['visible']:
+        fails.append(u'气泡存在但没有 .visible（触发后是藏着的）')
+
+    # 期望值从**页面自己声明的 THEME** 里取，不写死 ——
+    # 免得探针页改一句台词，这条断言就假红。
+    want = b.jso("""(() => {
+        if (!window.THEME) return null;
+        var f = (window.THEME.explore.finds || []).filter(function (x) {
+            return x.id === 'fx-01';
+        })[0];
+        return f ? JSON.stringify({ line: f.line, src: f.src }) : null;
+    })()""")
+    if not want:
+        fails.append(u'取不到页面声明的 fx-01（window.THEME 里没有）')
+    else:
+        if want['line'] not in d['text']:
+            fails.append(u'气泡里没有 fx-01 的台词 %r，实际内容是：%r'
+                         % (want['line'], d['text'][:80]))
+        if want['src'] not in d['text']:
+            fails.append(u'气泡里没有出处 %r（spec §4.1 要求 src 一起渲染）' % want['src'])
+
+    return (fails, u'气泡含台词与出处' if not fails else u'气泡不对')
+
+
+# ══ 探索度与存储 ══════════════════════════════════════════════════════
+# ⚠ 存储键在**运行期**从页面取（`ElysiaExplore.pageId()`），不写死页名 ——
+#   写死的话这套断言就只能跑探针页，mobius 一行都验不了。
+
+
+def _reload(b, wait=2.0):
+    b._send('Page.reload', {})
+    time.sleep(wait)
+
+
+def _stored(b):
+    """读 localStorage 里那条进度记录。读取本身抛异常也要如实报出来。"""
+    return b.jso("""(() => {
+        try {
+            var key = 'elysia:explore:' + ElysiaExplore.pageId();
+            var raw = window.localStorage.getItem(key);
+            if (!raw) return JSON.stringify({ found: [], empty: true });
+            var o = JSON.parse(raw);
+            return JSON.stringify({ found: o.found || [], unlocked: !!o.unlocked });
+        } catch (e) {
+            return JSON.stringify({ error: String(e) });
+        }
+    })()""")
+
+
+def _count_text(b):
+    return b.js("(() => { var e = document.querySelector('.explore-count');"
+                " return e ? e.textContent : null; })()")
+
+
+def _first_declared(b):
+    """本页声明的第一个可发现物 id。
+
+    ⚠ 存储/探索度这几条断言**在每一页上都该成立**，所以不能写死 `fx-01` ——
+      写死的话它们只在探针页跑得动，mobius 一行都验不了。
+    """
+    return b.js('String((window.__ELY_EXPLORE__ && window.__ELY_EXPLORE__.declared'
+                ' || [])[0] || "")')
+
+
+def _src_number(page, key, default):
+    """从页面源码里读一个数值字段（如 `whisperCooldownMs`）；没有就用默认值。
+
+    ⚠ 必须**按页读**：`whisperCooldownMs` 逐页不同（共享层默认 8000，
+      mobius 按 spec 设得更稀疏）。测试里写死一个数的话，
+      换了页就会「等不够」→ 断言假红，而人会以为是自己改坏了什么。
+    """
+    src = io.open(os.path.join(ROOT_DIR, page), encoding='utf-8').read()
+    m = re.search(re.escape(key) + r'\s*:\s*(\d+)', src)
+    return int(m.group(1)) if m else default
+
+
+def _src_array(page, key):
+    """从**页面源码**里抠出 `key: [ '…', '…' ]` 这个数组的字面量。
+
+    ⚠ 为什么不能读 `window.THEME`：mobius 的脚本是 IIFE 包裹的，
+      `window.THEME` 是 **undefined**（Task 10 实测确认）。
+      探针页能读只是因为它的 `var THEME` 恰好在顶层 —— 那种断言搬到真页面上
+      会变成「永远取到空数组」的假绿/假红。
+    """
+    src = io.open(os.path.join(ROOT_DIR, page), encoding='utf-8').read()
+    i = src.find(key + ':')
+    if i < 0:
+        return []
+    j = src.index('[', i)
+    k = src.index(']', j)
+    return re.findall(r"'([^'\n]*)'", src[j:k])
+
+
+@check
+def check_progress_written(b, page, expected):
+    """碰一个可发现物之后，进度**真的落进了 localStorage**。
+
+    不写这一条的话，「持久化」就是句空话 —— 内存里改一改也能让页面看着对。
+    """
+    fid = _first_declared(b)
+    if not fid:
+        return ([u'取不到 declared —— 挑不出一个来触发'], u'—')
+    if not _trigger(b, fid):
+        return ([u'触发不了 %s' % fid], u'—')
+    time.sleep(0.4)
+
+    d = _stored(b)
+    if d is None:
+        return ([u'读不到 localStorage'], u'—')
+    if d.get('error'):
+        return ([u'读存储时抛异常：%s' % d['error']], u'—')
+    if fid not in d['found']:
+        return ([u'触发 %s 之后存储里的 found 是 %r，里面没有它' % (fid, d['found'])], u'没落盘')
+    return ([], u'已落盘（%d 项）' % len(d['found']))
+
+
+@check
+def check_progress_survives_reload(b, page, expected):
+    """重载之后进度还在 —— 这是「进度」两个字的最低要求。"""
+    before = b.found_ids()
+    if not before:
+        return ([u'重载前一个都没发现，这条断言测不出东西'], u'—')
+
+    _reload(b)
+    after = b.found_ids()
+    missing = [i for i in before if i not in after]
+    if missing:
+        return ([u'重载后丢了 %s（前 %r，后 %r）' % (u', '.join(missing), before, after)],
+                u'丢进度')
+
+    fails = []
+    # 读回来还不够 —— **节点当场就该是「已找到」的样子**，
+    # 否则用户重进页面会看见进度是 3/5 但东西全是暗的。
+    d = b.jso("""(() => {
+        var n = document.querySelector('[data-find-id="%s"]');
+        return JSON.stringify({ found: !!n && n.classList.contains('found') });
+    })()""" % before[0])
+    if d and not d.get('found'):
+        fails.append(u'进度读回来了，但 %s 节点上没有 .found —— 视觉上它又变回「没找到」了'
+                     % before[0])
+
+    return (fails, u'%d 项进度完好' % len(after))
+
+
+@check
+def check_count_text(b, page, expected):
+    """探索度文案是「已发现 N / M」，数字**跟着 found 走**。
+
+    ⚠ 先清空存储再重载 —— 让数字从确定的状态出发。
+      不清的话这条断言会依赖「前面跑过哪些检查」，那种断言迟早会假红。
+    """
+    b.js("(() => { try { window.localStorage.removeItem("
+         "'elysia:explore:' + ElysiaExplore.pageId()); } catch (e) {} return 1; })()")
+    _reload(b)
+
+    d0 = _count_text(b)
+    if d0 is None:
+        return ([u'页面里没有 .explore-count —— 探索度根本没渲染出来'], u'—')
+
+    fails = []
+    # ⚠ 总数从 declared 里读，别写死 —— 写死的话每加一条可发现物都要回来改测试，
+    #   而「忘了改」的症状是这条断言假红，不是真的坏了。
+    total = b.js('String((window.__ELY_EXPLORE__ && window.__ELY_EXPLORE__.declared || []).length)')
+    if d0 != u'已发现 0 / %s' % total:
+        fails.append(u'清空进度后该显示「已发现 0 / %s」，实际是 %r' % (total, d0))
+
+    fid = _first_declared(b)
+    if not fid or not _trigger(b, fid):
+        fails.append(u'触发不了本页第一个可发现物（%r）' % fid)
+    else:
+        time.sleep(0.4)
+        d1 = _count_text(b)
+        if d1 != u'已发现 1 / %s' % total:
+            fails.append(u'触发一个之后该显示「已发现 1 / %s」，实际是 %r' % (total, d1))
+
+    # 它是个**状态播报**，不是一段普通文字（spec §5.6）
+    attrs = b.jso("""(() => {
+        var el = document.querySelector('.explore-count');
+        return JSON.stringify({
+            role: el.getAttribute('role'),
+            live: el.getAttribute('aria-live'),
+        });
+    })()""")
+    if attrs and (attrs.get('role') != 'status' or attrs.get('live') != 'polite'):
+        fails.append(u'缺 role=status / aria-live=polite，屏幕阅读器不会念它：%r' % attrs)
+
+    return (fails, u'「已发现 1 / 5」正确' if not fails else u'文案不对')
+
+
+# 打桩：让**所有** Storage 实例的 setItem 都抛异常。
+# 用 defineProperty 改原型，因为直接写 localStorage.setItem = fn 在
+# Storage 这种宿主对象上不一定生效（它有自己的属性语义）。
+STORAGE_STUB = """
+Object.defineProperty(Storage.prototype, 'setItem', {
+  configurable: true, writable: true,
+  value: function () { throw new Error('QuotaExceededError(桩)'); },
+});
+"""
+
+
+@check
+def check_storage_failure_degrades(b, page, expected):
+    """Review Focus #2：localStorage 写失败时**页面照常能用**。
+
+    隐私模式 / Safari ITP 下 localStorage 会直接抛异常。一次没接住的异常会让
+    整页剩下的脚本集体停摆，而页面看上去还是好的 —— 本站最贵的一类 bug。
+
+    所以这条断言要的**不是**「有没有存进去」，是「**页面还活着吗**」：
+    还能触发、探索度照样涨。刷新后从头开始是可以接受的（spec §5.4 有意取舍），
+    页面直接死掉不行。
+    """
+    r = b._send('Page.addScriptToEvaluateOnNewDocument', {'source': STORAGE_STUB})
+    sid = (r.get('result') or {}).get('identifier')
+    try:
+        _reload(b)
+
+        if b.js('String(!!window.__ELY_EXPLORE__)') != 'true':
+            return ([u'打桩之后 __ELY_EXPLORE__ 都没了 —— 初始化阶段就崩了'], u'—')
+
+        fails = []
+        count_before = _count_text(b)
+
+        # ⚠ 挑一个**还没被发现的** id —— 已经找到过的再触发不会改进度，
+        #   而这条断言要看的正是「进度还涨不涨」。
+        ids = json.loads(b.js('JSON.stringify(window.__ELY_EXPLORE__.declared)') or '[]')
+        already = b.found_ids()
+        nxt = next((i for i in ids if i not in already), None)
+        if not nxt:
+            fails.append(u'所有可发现物都已经发现了，挑不出一个来测降级')
+        elif not _trigger(b, nxt):
+            fails.append(u'触发不了 %s' % nxt)
+        else:
+            time.sleep(0.4)
+            after = b.found_ids()
+            if nxt not in after:
+                fails.append(u'写失败之后连「碰过什么」都记不住了 —— found 是 %r' % after)
+
+            count_after = _count_text(b)
+            if count_after == count_before:
+                fails.append(u'探索度没跟着涨（一直是 %r）—— 降级没做到，用户看到的是「点了没反应」'
+                             % count_after)
+
+        return (fails, u'写失败时照常可用' if not fails else u'降级有问题')
+    finally:
+        # ⚠ 打桩要撤掉，否则它会跟着后面每一次导航 —— 下一个跑这个工具的人
+        #   会遇到一堆「莫名其妙存不进去」，而且原因在几百行之外。
+        if sid:
+            b._send('Page.removeScriptToEvaluateOnNewDocument', {'identifier': sid})
+
+
+# ══ 找齐解锁 ══════════════════════════════════════════════════════════
+VERB_ACTIONS = {
+    'click': _do_click,
+    'hold': _do_hold,
+    'triple_tap': _do_triple_tap,
+    'drag': _do_drag,
+    'slide': _do_slide,
+}
+
+
+def _trigger(b, fid):
+    """按这个可发现物**自己声明的动词**触发它（动词从 DOM 上读，不写死）。
+
+    这样探针页以后增删或改动词，测试不用跟着改。
+    """
+    verb = b.js("(() => { var n = document.querySelector('[data-find-id=\"%s\"]');"
+                " return n ? n.getAttribute('data-verb') : null; })()" % fid)
+    c = b.center(fid)
+    if verb is None or not c:
+        return False
+    VERB_ACTIONS.get(verb, _do_click)(b, c)
+    time.sleep(0.25)
+    return True
+
+
+def _reset(b):
+    """清空这一页的进度并重载 —— 让每条断言从**确定**的状态出发。
+
+    ⚠ 不这么做的话，断言的结果会取决于「前面跑过哪些检查」，
+      那种依赖迟早会在某次重排顺序之后变成假红或假绿。
+    """
+    b.js("(() => { try { window.localStorage.removeItem("
+         "'elysia:explore:' + ElysiaExplore.pageId()); } catch (e) {} return 1; })()")
+    _reload(b)
+
+
+def _unlock_state(b):
+    return b.jso("""(() => {
+        var el = document.querySelector('.explore-unlock');
+        if (!el) return JSON.stringify({ missing: true });
+        return JSON.stringify({ hidden: !!el.hidden });
+    })()""")
+
+
+@check
+def check_unlock_hidden_until_complete(b, page, expected):
+    """没找齐的时候，解锁区**在场但藏着**。
+
+    ⚠ 「在场」和「藏着」要分开断言。如果实现是「解锁了才创建节点」，
+      那「还没解锁」和「解锁区整个坏了」在 DOM 上长得一模一样，
+      断言根本分不出来。
+    """
+    _reset(b)
+    d = _unlock_state(b)
+    if d is None:
+        return ([u'取不到 .explore-unlock'], u'—')
+    if d.get('missing'):
+        return ([u'页面里没有 .explore-unlock —— 它应该一进页面就建好、带 hidden 藏着'], u'—')
+
+    fails = []
+    if not d['hidden']:
+        fails.append(u'一个都没找到，解锁区却是显示出来的')
+    if b.js('String(window.__ELY_EXPLORE__.unlocked)') != 'false':
+        fails.append(u'__ELY_EXPLORE__.unlocked 不是 false')
+
+    # 顺手确认：这时候它确实不该占位（hidden 得是真的 display:none，
+    # 不能只靠 opacity:0 —— 那种元素照样占位、照样能被 elementFromPoint 命中）
+    box = b.jso("""(() => {
+        var el = document.querySelector('.explore-unlock');
+        var r = el.getBoundingClientRect();
+        return JSON.stringify({ w: Math.round(r.width), h: Math.round(r.height) });
+    })()""")
+    if box and (box['w'] or box['h']):
+        fails.append(u'解锁区带着 hidden 却仍然占了 %dx%d —— hidden 没生效'
+                     % (box['w'], box['h']))
+
+    return (fails, u'未找齐时藏着' if not fails else u'不该露出来')
+
+
+@check
+def check_unlock_appears_on_last(b, page, expected):
+    """逐个触发全部 find —— **最后一个的同一个动作之后**，解锁立刻出现。
+
+    ⚠ 要**逐个**验证，不是最后看一眼：只查终态的话，
+      「找齐前就提前解锁了」这个 bug 会被完全放过（终态反正也是显示的）。
+    """
+    _reset(b)
+    declared = b.js('JSON.stringify(window.__ELY_EXPLORE__.declared)')
+    if not declared:
+        return ([u'取不到 declared'], u'—')
+    ids = json.loads(declared)
+    if not ids:
+        return ([u'declared 是空的'], u'—')
+
+    fails = []
+    for i, fid in enumerate(ids):
+        if not _trigger(b, fid):
+            fails.append(u'触发不了 %s' % fid)
+            continue
+        last = (i == len(ids) - 1)
+        d = _unlock_state(b) or {}
+        visible = not d.get('hidden', True)
+
+        if last and not visible:
+            fails.append(u'找齐最后一个（%s）之后解锁区仍然藏着 —— 判齐没触发' % fid)
+        elif not last and visible:
+            fails.append(u'才找到 %d / %d（刚碰完 %s）解锁区就出来了 —— 提前解锁'
+                         % (i + 1, len(ids), fid))
+
+    cnt = _count_text(b)
+    if cnt != u'已发现 %d / %d' % (len(ids), len(ids)):
+        fails.append(u'找齐后探索度是 %r，应「已发现 %d / %d」' % (cnt, len(ids), len(ids)))
+
+    return (fails, u'逐个到齐才解锁' if not fails else u'解锁时机不对')
+
+
+@check
+def check_unlock_uses_set_not_count(b, page, expected):
+    """Review Focus #3：判齐靠**集合包含**，不靠数量相等。
+
+    构造法：先清空重载，再**直接往 found 里塞若干个同一个 id 的重复项**，
+    让数组长度看起来刚好够，然后触发一个真的新 find ——
+    于是 `found.length` 正好等于声明数，而真实集合里还差 3 个。
+
+    靠长度判齐的实现在这里会**乱解锁**（而且不报错）；
+    靠集合判齐的不会。
+
+    ⚠ 构造完还要**把正向也验一遍**（补完剩下的，确认它照样能解锁）——
+      否则这条断言有可能被一个「永远不会解锁」的实现骗过去。
+    """
+    _reset(b)
+    declared = json.loads(b.js('JSON.stringify(window.__ELY_EXPLORE__.declared)') or '[]')
+    if len(declared) < 2:
+        return ([u'声明数太少（%d），构造不出这个场景' % len(declared)], u'—')
+
+    # 往 found 里塞 declared-1 个重复项：长度 = 声明数 - 1，
+    # 紧接着触发一个新 find，长度就**正好等于**声明数了
+    b.js("""(() => {
+        var f = window.__ELY_EXPLORE__.found;
+        f.length = 0;
+        for (var i = 0; i < %d; i++) f.push('%s');
+        return 1;
+    })()""" % (len(declared) - 1, declared[0]))
+
+    if not _trigger(b, declared[1]):
+        return ([u'触发不了 %s' % declared[1]], u'—')
+
+    fails = []
+    d = _unlock_state(b) or {}
+    if not d.get('hidden', True):
+        fails.append(u'found 里是 %d 个重复的 %s —— 真实集合只覆盖 1 / %d，'
+                     u'解锁区却出来了：这是**靠数量判齐**的实现'
+                     % (len(declared) - 1, declared[0], len(declared)))
+    if b.js('String(window.__ELY_EXPLORE__.unlocked)') == 'true':
+        fails.append(u'__ELY_EXPLORE__.unlocked 被置成了 true —— 同上')
+
+    # 正向复验：把真的补齐，它必须解锁（防止「永远不解锁」蒙混过关）
+    for fid in declared:
+        _trigger(b, fid)
+    d2 = _unlock_state(b) or {}
+    if d2.get('hidden', True):
+        fails.append(u'把 %d 个真的全找齐了，解锁区却还是藏着 —— 另一头也坏了' % len(declared))
+
+    return (fails, u'集合判齐，重复项骗不过' if not fails else u'判齐方式不对')
+
+
+# ══ 渐进提示 ══════════════════════════════════════════════════════════
+def _hinted_ids(b):
+    return b.jso("""(() => {
+        var out = [];
+        [].slice.call(document.querySelectorAll('.explore-find.hinted')).forEach(function (n) {
+            out.push(n.getAttribute('data-find-id'));
+        });
+        return JSON.stringify(out);
+    })()""") or []
+
+
+def _trigger_first(b, n):
+    """按声明顺序触发前 n 个，返回**实际成功触发**的 id。"""
+    ids = json.loads(b.js('JSON.stringify(window.__ELY_EXPLORE__.declared)') or '[]')
+    done = []
+    for fid in ids[:n]:
+        if _trigger(b, fid):
+            done.append(fid)
+    return done
+
+
+@check
+def check_hint_off_below_ratio(b, page, expected):
+    """还没找到一半的时候，**一个提示都不该有**。
+
+    ⚠ 要连着验两点：0 个没有、找到 2/5（0.4 < 0.5）时仍然没有。
+      只验「一开始没有」的话，一个**永远不给提示**的实现也能通过 ——
+      那就成了「测了等于没测」。
+    """
+    _reset(b)
+    fails = []
+
+    h0 = _hinted_ids(b)
+    if h0:
+        fails.append(u'一个都没找到就有提示了：%s' % u', '.join(h0))
+
+    n = len(json.loads(b.js('JSON.stringify(window.__ELY_EXPLORE__.declared)') or '[]'))
+    below = max(1, (n + 1) // 2 - 1)     # 严格低于提示线（默认 0.5）
+    done = _trigger_first(b, below)
+    if len(done) < below:
+        return ([u'只触发了 %d 个，后面的判断不成立' % len(done)], u'—')
+
+    h1 = _hinted_ids(b)
+    if h1:
+        fails.append(u'才找到 %d / %d（低于一半）就出现提示了：%s'
+                     % (len(done), n, u', '.join(h1)))
+
+    return (fails, u'未过半时无提示' if not fails else u'过早提示')
+
+
+@check
+def check_hint_on_above_ratio(b, page, expected):
+    """越过一半之后，**没找到的全带上提示、已找到的一个都不带**。"""
+    _reset(b)
+    declared = json.loads(b.js('JSON.stringify(window.__ELY_EXPLORE__.declared)') or '[]')
+    if len(declared) < 4:
+        return ([u'声明数太少（%d），验不出「部分带、部分不带」' % len(declared)], u'—')
+
+    above = len(declared) // 2 + 1       # 稳稳越过提示线
+    done = _trigger_first(b, above)
+    if len(done) < above:
+        return ([u'只触发了 %d 个' % len(done)], u'—')
+
+    hinted = _hinted_ids(b)
+    fails = []
+    should = [i for i in declared if i not in done]
+    missing = [i for i in should if i not in hinted]
+    extra = [i for i in hinted if i in done]
+    if missing:
+        fails.append(u'过半了，但这些**还没找到的**没有提示：%s' % u', '.join(missing))
+    if extra:
+        fails.append(u'这些**已经找到了**却还带着提示：%s' % u', '.join(extra))
+
+    # ⚠ 提示**绝不能动几何**。挪动一个 44×44 的热区，
+    #   用户正要点它的时候它跑了 —— 那是误触，比不给提示还糟。
+    box = b.jso("""(() => {
+        var n = document.querySelector('.explore-find.hinted');
+        if (!n) return null;
+        var r = n.getBoundingClientRect();
+        return JSON.stringify({ w: Math.round(r.width), h: Math.round(r.height) });
+    })()""")
+    if box and (box['w'] < 44 or box['h'] < 44):
+        fails.append(u'加了提示之后热区缩成 %dx%d —— 提示动了几何' % (box['w'], box['h']))
+
+    return (fails, u'过半后只提示没找到的' if not fails else u'提示范围不对')
+
+
+@check
+def check_hints_survive_remount(b, page, expected):
+    """重挂下方区块之后，**提示不能悄悄消失**。
+
+    `ElysiaBottom.mount` 会 `sec.innerHTML = ''` 重画整块 ——
+    挂在里面的可发现物**连同节点一起被抹掉**，再由 `ensureAttached` 挂回来。
+    但挂回来的是**新节点**：`attach()` 只补 `found` 类、**不补 `hinted`**。
+    于是「已经找到过半」这个提示会在重挂之后凭空消失，**而且不报错** ——
+    正是这个项目一直在防的那类静默失败。
+
+    ⚠ 这条必须有「后建的锚点」那种 find 才有意义（它才会被抹掉又挂回）——
+      探针页的 `fx-06` 就是。纯锚在正文里的页面上，这条会平凡通过。
+    """
+    _reset(b)
+    declared = json.loads(b.js('JSON.stringify(window.__ELY_EXPLORE__.declared)') or '[]')
+    n = len(declared)
+    if n < 4:
+        return ([u'声明数太少（%d），构造不出这个场景' % n], u'—')
+
+    above = n // 2 + 1
+    done = _trigger_first(b, above)
+    if len(done) < above:
+        return ([u'只触发了 %d 个' % len(done)], u'—')
+
+    before = set(_hinted_ids(b))
+    if not before:
+        return ([u'过半了却一个提示都没有 —— 这条断言的前提不成立'], u'—')
+
+    b.js('(() => { ElysiaBottom.mount(); return 1; })()')
+    time.sleep(0.4)
+    after = set(_hinted_ids(b))
+
+    fails = []
+    lost = sorted(before - after)
+    if lost:
+        fails.append(u'重挂区块之后这些的提示没了：%s —— '
+                     u'`attach()` 补了 found、没补 hinted' % u', '.join(lost))
+    return (fails, u'重挂后提示仍在（%d 个）' % len(after) if not fails else u'提示丢了')
+
+
+# ══ 陪伴层（低语）═════════════════════════════════════════════════════
+def _blank_point(b):
+    """找一个「点下去不会碰到可发现物 / 链接 / 按钮」的视口坐标。
+
+    ⚠ 不能随便取一个坐标就当空白：探针页上确实有 5 个 44×44 的热区，
+      点到它们会走**另一条**代码路径（出气泡，不计数），
+      于是低语的断言会莫名其妙地失败，而原因在几十行之外。
+    """
+    return b.jso("""(() => {
+        window.scrollTo(0, 0);
+        var cands = [[40, 40], [window.innerWidth - 40, 60], [window.innerWidth / 2, 14],
+                     [60, window.innerHeight - 70]];
+        for (var i = 0; i < cands.length; i++) {
+            var x = cands[i][0], y = cands[i][1];
+            var el = document.elementFromPoint(x, y);
+            if (!el) continue;
+            if (el.closest('.explore-find, a, button, [role="button"], input, textarea, select, label')) continue;
+            return JSON.stringify({ x: x, y: y });
+        }
+        return null;
+    })()""")
+
+
+def _click_blank(b, times=1):
+    """在空白处点 N 次 —— **连着点**，间隔很小（这正是冷却要挡住的形态）。"""
+    p = _blank_point(b)
+    if not p:
+        return False
+    for _ in range(times):
+        b.press(p['x'], p['y'])
+        time.sleep(0.02)
+        b.release(p['x'], p['y'])
+        time.sleep(0.03)
+    return True
+
+
+def _whisper_state(b):
+    return b.jso("""(() => {
+        var el = document.querySelector('.explore-whisper');
+        var E = window.__ELY_EXPLORE__;
+        return JSON.stringify({
+            exists: !!el,
+            shown: E ? E.whisperShown : null,
+            text: el ? el.textContent : null,
+            visible: !!el && el.classList.contains('visible') && !el.hidden,
+        });
+    })()""")
+
+
+@check
+def check_whisper_silent_during_cooldown(b, page, expected):
+    """冷却期内**连着点多少次都不说话**。
+
+    ⚠ 依赖「已经说过一句」这个前提 —— 开场时冷却还没启动，
+      这时连点 3 次是**该**说话的。所以先正常说出一句，再测节流。
+      不这么写的话，这条断言会跟「第 3 次才说话」那条互相矛盾。
+    """
+    _reset(b)
+    if not _click_blank(b, 3):
+        return ([u'探针页里找不到可用的空白坐标'], u'—')
+    time.sleep(0.4)
+
+    st = _whisper_state(b)
+    if st['shown'] != 1:
+        return ([u'开场连点 3 次该说出第 1 句，实际 whisperShown=%r' % st['shown']], u'—')
+
+    # 紧接着连点 10 次 —— 全落在冷却里，而每次连点又**把冷却往后推**
+    _click_blank(b, 10)
+    time.sleep(0.4)
+    st2 = _whisper_state(b)
+    if st2['shown'] != 1:
+        return ([u'冷却期内连点 10 次，低语从 1 句涨到了 %r —— 没节流'
+                 % st2['shown']], u'没节流')
+
+    return ([], u'冷却期内静默（连点 13 次只说了 1 句）')
+
+
+@check
+def check_whisper_on_third_click(b, page, expected):
+    """冷却结束后的**第 3 次**点击才说话 —— 次数固定，不是概率。
+
+    第 1、2 次都必须**没有**。只验「第 3 次说了」的话，
+    一个「每次都说话」的实现照样能过。
+    """
+    _reset(b)
+    fails = []
+
+    if not _click_blank(b, 1):
+        return ([u'找不到空白坐标'], u'—')
+    time.sleep(0.25)
+    s1 = _whisper_state(b)['shown']
+
+    _click_blank(b, 1)
+    time.sleep(0.25)
+    s2 = _whisper_state(b)['shown']
+
+    _click_blank(b, 1)
+    time.sleep(0.35)
+    st = _whisper_state(b)
+
+    if s1 != 0:
+        fails.append(u'第 1 次点击就说话了（whisperShown=%r）' % s1)
+    if s2 != 0:
+        fails.append(u'第 2 次点击就说话了（whisperShown=%r）' % s2)
+    if st['shown'] != 1:
+        fails.append(u'第 3 次点击没说话（whisperShown=%r）' % st['shown'])
+    elif not st['visible']:
+        fails.append(u'低语计数涨了，但节点没显示出来')
+    if not st['exists']:
+        fails.append(u'页面上根本没有 .explore-whisper 节点')
+
+    return (fails, u'第 3 次才开口' if not fails else u'次数不对')
+
+
+@check
+def check_whisper_lines_in_order(b, page, expected):
+    """台词**按数组顺序**推进 —— 不是随机抽。
+
+    ⚠ 这条就是「不做抽卡」那条约定的直接断言。随机抽的实现迟早会在
+      这里翻车（而且是**偶发**翻车，跑十次错一次那种）——
+      所以这里连说三句逐个对，不是只说一句看看像不像。
+    """
+    _reset(b)
+    lines = _src_array(page, 'whisper')
+    if len(lines) < 3:
+        return ([u'%s 的 whisper 少于 3 句（%d），验不出顺序' % (page, len(lines))], u'—')
+
+    # ⚠ 冷却时长**按页从源码读**，不写死 —— 逐页不同（mobius 是 12000，
+    #   共享层默认 8000）。写死的话换了页就会「等不够」→ 假红。
+    cooldown = _src_number(page, 'whisperCooldownMs', 8000) / 1000.0 + 0.8
+    seen = []
+    for i in range(3):
+        if i > 0:
+            time.sleep(cooldown)     # 等冷却过去
+        _click_blank(b, 3)
+        time.sleep(0.4)
+        st = _whisper_state(b)
+        if st['shown'] != i + 1:
+            return ([u'第 %d 句没出来（whisperShown=%r，期待 %d）'
+                     % (i + 1, st['shown'], i + 1)], u'—')
+        seen.append(st['text'])
+
+    fails = []
+    for i, want in enumerate(lines[:3]):
+        if seen[i] != want:
+            fails.append(u'第 %d 句是 %r，按顺序该是 %r —— 台词不是按顺序推进的'
+                         % (i + 1, seen[i], want))
+
+    return (fails, u'三句逐字按序' if not fails else u'顺序不对')
+
+
+@check
+def check_whisper_auto_hides(b, page, expected):
+    """低语 2.5 秒后**自己消失**。
+
+    ⚠ 两头都要验：太早消失（还没读完就没了）和永不消失（叠在屏幕上挡路）
+      都要抓。只验「最后没了」的话，一个「出现后 0.1 秒就没了」的实现能过。
+    """
+    _reset(b)
+    if not _click_blank(b, 3):
+        return ([u'找不到空白坐标'], u'—')
+    time.sleep(0.4)
+
+    st = _whisper_state(b)
+    if not st['visible']:
+        return ([u'低语压根没出现，这条断言测不出东西'], u'—')
+
+    time.sleep(1.0)                      # 累计约 1.4 秒
+    if not _whisper_state(b)['visible']:
+        return ([u'低语出现不到 1.4 秒就没了 —— 话还没读完'], u'消失得太快')
+
+    time.sleep(2.0)                      # 累计约 3.4 秒
+    if _whisper_state(b)['visible']:
+        return ([u'过了 3.4 秒低语还显示着 —— 它不会自己消失'], u'不消失')
+
+    return ([], u'2.5 秒后自己消失')
+
+
+# ══ 减动降级（WCAG 2.3.1）═════════════════════════════════════════════
+def _set_motion(b, value):
+    """切 prefers-reduced-motion。value 传 'reduce' 或 'no-preference'。"""
+    b._send('Emulation.setEmulatedMedia', {
+        'features': [{'name': 'prefers-reduced-motion', 'value': value}]})
+    time.sleep(0.35)
+
+
+def _anim(b, selector):
+    return b.js("(() => { var n = document.querySelector('%s');"
+                " return n ? getComputedStyle(n).animationName : null; })()" % selector)
+
+
+@check_reduced
+def check_reduced_breathing_stops(b, page, expected):
+    """减动打开时，可发现物的呼吸光**停下来**。
+
+    ⚠ 光断言 animation-name 是 none 还不够 —— 得同时确认
+      **静态兜底还在**（filter 没变成 none）。否则一个「减动下把整个元素
+      的发光都去掉」的实现也能过，而那属于「把动效关成了功能缺失」。
+    """
+    _set_motion(b, 'reduce')
+    fails = []
+
+    name = _anim(b, '.explore-art')
+    if name is None:
+        return ([u'页面上没有 .explore-art'], u'—')
+    if name != 'none':
+        fails.append(u'.explore-art 的 animation-name 是 %r，应为 none —— 呼吸光没停' % name)
+
+    flt = b.js("(() => { var n = document.querySelector('.explore-art');"
+               " return getComputedStyle(n).filter; })()")
+    if not flt or flt == 'none':
+        fails.append(u'减动下 .explore-art 的 filter 也没了 —— 呼吸该停，'
+                     u'但静态的发光要留着，不该把它一起关掉')
+
+    return (fails, u'呼吸停、静态光还在' if not fails else u'减动没生效')
+
+
+@check_reduced
+def check_reduced_hint_static_marker(b, page, expected):
+    """减动下提示**不闪**，但**仍有可见的静态标记**（那圈虚线轮廓）。
+
+    ⚠ 这就是 spec §5.5 那句「改为常亮的淡边框，不闪」的落点。
+      只断言「不闪」的话，一个「减动下干脆不给提示」的实现也能过 ——
+      那等于把功能关了，而减动要关的只是动效。
+    """
+    _set_motion(b, 'reduce')
+    _reset(b)
+    # ⚠ 触发几个**按本页的声明数算**，别写死 —— 写死的话换了页就够不到提示线，
+    #   断言会假红（mobius 12 个，3/12 = 0.25 远低于 0.5）。
+    n = len(json.loads(b.js('JSON.stringify(window.__ELY_EXPLORE__.declared)') or '[]'))
+    above = n // 2 + 1
+    done = _trigger_first(b, above)
+    if len(done) < above:
+        return ([u'只触发了 %d 个，提示条件不成立' % len(done)], u'—')
+
+    if not _hinted_ids(b):
+        return ([u'减动下过半了却一个提示都没有 —— 减动不该把提示关掉'], u'—')
+
+    fails = []
+    name = _anim(b, '.explore-find.hinted .explore-art')
+    if name != 'none':
+        fails.append(u'减动下 .hinted 的呼吸还在闪（animation-name=%r）' % name)
+
+    d = b.jso("""(() => {
+        var n = document.querySelector('.explore-find.hinted');
+        var cs = getComputedStyle(n);
+        return JSON.stringify({ style: cs.outlineStyle, width: cs.outlineWidth });
+    })()""")
+    if not d or d['style'] == 'none':
+        fails.append(u'闪烁关掉之后**没有任何静态标记**了 —— '
+                     u'减动用户拿不到提示，这是把功能关掉了：%r' % d)
+
+    return (fails, u'不闪但有静态轮廓' if not fails else u'提示没了')
+
+
+@check_reduced
+def check_reduced_whisper_still_works(b, page, expected):
+    """减动下低语**照常出现**，而且只有文字。
+
+    ⚠ 计划里这条写的是「低语只出文字，不带粒子节点」。
+      本实现里低语**从来就没有粒子节点**（它一直是纯文字），
+      所以「有没有粒子」这件事本身测不出任何东西。
+      改成测**两件真的有风险的事**：
+        · 减动段会不会顺手把低语整个关掉（「关动画」写成「关功能」）
+        · 低语节点里会不会混进装饰性子元素
+    """
+    _set_motion(b, 'reduce')
+    _reset(b)
+    if not _click_blank(b, 3):
+        return ([u'找不到空白坐标'], u'—')
+    time.sleep(0.4)
+
+    st = _whisper_state(b)
+    if st['shown'] != 1:
+        return ([u'减动下连点 3 次没出低语（whisperShown=%r）—— '
+                 u'减动把陪伴层也一起关了' % st['shown']], u'功能被关掉了')
+
+    fails = []
+    if not st['visible']:
+        fails.append(u'低语计数涨了但节点没显示 —— 减动下只出文字，不是不出')
+
+    d = b.jso("""(() => {
+        var el = document.querySelector('.explore-whisper');
+        return JSON.stringify({ children: el.children.length });
+    })()""")
+    if d and d['children']:
+        fails.append(u'低语节点里有 %d 个元素子节点 —— 它应该只有文字' % d['children'])
+
+    return (fails, u'低语照常，且只有文字' if not fails else u'减动下低语不对')
+
+
+@check_reduced
+def check_reduced_off_motion_returns(b, page, expected):
+    """**反向断言**：把减动关掉，同一批选择器的动画必须回来。
+
+    没有这一条的话，「减动段泄漏了」（比如不小心写在 @media 外面）
+    永远测不出来 —— 因为只验减动侧的话，两边都是「动画没了」，看着都对。
+    """
+    _reset(b)
+    n = len(json.loads(b.js('JSON.stringify(window.__ELY_EXPLORE__.declared)') or '[]'))
+    above = n // 2 + 1                   # 同上：按本页的声明数算
+    done = _trigger_first(b, above)
+    if len(done) < above:
+        return ([u'只触发了 %d 个，提示条件不成立' % len(done)], u'—')
+
+    _set_motion(b, 'no-preference')
+    fails = []
+
+    a1 = _anim(b, '.explore-art')
+    if a1 in (None, 'none'):
+        fails.append(u'减动**关闭**时 .explore-art 也没有动画（%r）—— '
+                     u'减动段泄漏到正常态了' % a1)
+
+    a2 = _anim(b, '.explore-find.hinted .explore-art')
+    if a2 in (None, 'none'):
+        fails.append(u'减动**关闭**时提示不闪（%r）—— 同上' % a2)
+
+    _set_motion(b, 'reduce')             # 收尾：别把模式留给后面
+    return (fails, u'正常态动画都在' if not fails else u'减动段泄漏了')
+
+
+# ══ 下方区块：生日倒计时 ══════════════════════════════════════════════
+# 冻结时钟。**和 tools/snapshot.py 的 SEED_DATE_JS 是同一个理由**：
+# 倒计时吃日期，跨过零点结果就变 —— 那会骗过一切当场自检
+# （HANDOVER §6.4：「快照基线会随日历漂」）。
+# 这里是运行时改 window.Date，不用重载页面：bottom.js 里的 `new Date()`
+# 是在**画的时候**才去全局作用域取的。
+FROZEN_CLOCK = """
+(() => {
+  var RealDate = Date;
+  var FIXED = RealDate.UTC(2026, 8, 16, 12, 0, 0);   // 2026-09-16 12:00Z（月份从 0 起）
+  function FrozenDate() {
+    if (arguments.length === 0) return new RealDate(FIXED);
+    return Reflect.construct(RealDate, [].slice.call(arguments));
+  }
+  FrozenDate.prototype = RealDate.prototype;   // 保住 instanceof 与原型方法
+  FrozenDate.now = function () { return FIXED; };
+  FrozenDate.UTC = RealDate.UTC;
+  FrozenDate.parse = RealDate.parse;
+  window.__REAL_DATE__ = RealDate;
+  window.Date = FrozenDate;
+  return 1;
+})()
+"""
+
+UNFROZEN_CLOCK = """
+(() => {
+  if (window.__REAL_DATE__) window.Date = window.__REAL_DATE__;
+  return 1;
+})()
+"""
+
+BD_CASES = """
+(() => {
+  var key = ElysiaBottom.pageKey();
+  // ⚠ 先记住原条目：这一页可能本来就在生日表里
+  var had = Object.prototype.hasOwnProperty.call(window.ELYSIA_BDAYS, key);
+  var old = window.ELYSIA_BDAYS[key];
+  var out = [];
+  var now = new Date();
+  var y = now.getFullYear(), M = now.getMonth(), D = now.getDate();
+
+  function setBday(m, d, label) {
+    window.ELYSIA_BDAYS[key] = [m, d];
+    // ⚠ 不传参（不是传 `{}`）—— 传空对象会把上一次的 opts 整个换掉，
+    //   `game` 就此消失，后面查游戏槽的断言会莫名其妙地红。
+    ElysiaBottom.mount();
+    var t = document.querySelector('.bottom-bday-text');
+    out.push({ label: label, m: m, d: d, text: t ? t.textContent : null });
+  }
+
+  // (a) 今天就是生日
+  setBday(M, D, 'today');
+
+  // (b) 四天之后。期望值**独立算一遍**（不抄 bottom.js 里那段公式）
+  var t4 = new Date(y, M, D + 4);
+  setBday(t4.getMonth(), t4.getDate(), 'plus4');
+  out[out.length - 1].expect = Math.floor(
+    (new Date(t4.getFullYear(), t4.getMonth(), t4.getDate(), 0, 0, 0) - now.getTime()) / 86400000);
+
+  // (c) 昨天 —— 必须滚到明年
+  var y1 = new Date(y, M, D - 1);
+  setBday(y1.getMonth(), y1.getDate(), 'yesterday');
+
+  // 收尾：**还原**，不是无脑 delete ——
+  // 这一页本来就在生日表里的话（mobius 就是），delete 会把真条目抹掉，
+  // 后面几条断言会跟着红，而原因在几百行之外。实测踩到过。
+  if (had) window.ELYSIA_BDAYS[key] = old;
+  else delete window.ELYSIA_BDAYS[key];
+  ElysiaBottom.mount();
+  return JSON.stringify(out);
+})()
+"""
+
+
+def _bday_slot(b):
+    return b.jso("""(() => {
+        var slot = document.querySelector('.bottom-bday');
+        var sec = document.getElementById('bottom');
+        return JSON.stringify({
+            key: window.ElysiaBottom ? ElysiaBottom.pageKey() : null,
+            listed: !!(window.ELYSIA_BDAYS && ElysiaBottom
+                       && ELYSIA_BDAYS[ElysiaBottom.pageKey()]),
+            slot: !!slot,
+            inSection: !!(slot && sec && sec.contains(slot)),
+        });
+    })()""")
+
+
+@check
+@fixture_only
+def check_bday_absent_when_not_listed(b, page, expected):
+    """表里没有这一页 → **整个不渲染** `.bottom-bday`。
+
+    ⚠ 「不渲染」和「渲染了再藏起来」是两回事。藏起来的那种，
+      断言分不出「这页没有生日」和「倒计时组件坏了」——
+      而后者会静默地让所有页面的倒计时一起消失。
+
+      探针页**刻意不在** data/bdays.js 里（它是个测试页，本来也没有生日）。
+    """
+    _reset(b)
+    d = _bday_slot(b)
+    if d is None:
+        return ([u'取不到下方区块的状态 —— bottom.js 没跑？'], u'—')
+
+    fails = []
+    if d['key'] != 'tools/explore-fixture.html':
+        fails.append(u'pageKey() 得到 %r，期待 tools/explore-fixture.html' % d['key'])
+    if d['listed']:
+        fails.append(u'探针页居然在 ELYSIA_BDAYS 里 —— 表被谁改过了？')
+    if d['slot']:
+        fails.append(u'这一页不在生日表里，却渲染出了 .bottom-bday')
+
+    return (fails, u'没登记就不渲染' if not fails else u'不该出现')
+
+
+@check
+def check_bday_appears_when_listed(b, page, expected):
+    """把这一页塞进表里再重挂 → `.bottom-bday` 出现，日期也对。
+
+    ⚠ 这条同时是「mount 可以重复调用」的验证。不可重复调用的实现，
+      这类断言只能靠猜 —— 而「重挂之后槽位状态不对」是真实会发生的 bug。
+    """
+    _reset(b)
+    d = b.jso("""(() => {
+        var key = ElysiaBottom.pageKey();
+        var had = Object.prototype.hasOwnProperty.call(window.ELYSIA_BDAYS, key);
+        var old = window.ELYSIA_BDAYS[key];
+        window.ELYSIA_BDAYS[key] = [3, 30];        // 4 月 30 日
+        ElysiaBottom.mount();
+        var slot = document.querySelector('.bottom-bday');
+        var date = slot ? slot.querySelector('.bottom-bday-date') : null;
+        var line = slot ? slot.querySelector('.bottom-bday-line') : null;
+        var out = {
+            slot: !!slot,
+            date: date ? date.textContent : null,
+            lineHidden: line ? !!line.hidden : null,
+        };
+        // ⚠ **还原**，不是无脑 delete —— 这一页本来就在生日表里的话
+        //   （mobius 就是），delete 会把它的真条目抹掉，
+        //   后面几条断言就会跟着莫名其妙地红。这个坑当场踩到过。
+        if (had) window.ELYSIA_BDAYS[key] = old;
+        else delete window.ELYSIA_BDAYS[key];
+        ElysiaBottom.mount();      // 不传参 = 沿用上次的 opts 重画
+        return JSON.stringify(out);
+    })()""")
+    if not d:
+        return ([u'取不到下方区块状态'], u'—')
+
+    fails = []
+    if not d['slot']:
+        fails.append(u'塞进生日表之后仍然没有 .bottom-bday —— 表变化没反映到槽位')
+    if d['date'] != u'4 月 30 日':
+        fails.append(u'日期显示成 %r，应为「4 月 30 日」（月份 0 起算错了吗）' % d['date'])
+    if d['lineHidden'] is not True:
+        fails.append(u'不是生日当天，那句生日台词却是显示着的')
+
+    return (fails, u'登记了就出现（且已还原）' if not fails else u'槽位不对')
+
+
+@check
+def check_bday_countdown_text(b, page, expected):
+    """倒计时数字**与「现在到下一个该日」一致** —— 三个分支逐个验。
+
+    ⚠ **时钟必须钉死。** 倒计时吃日期，跨过零点结果就变；
+      不钉的话这条断言在午夜前后会假红，而人只会以为是自己改坏了什么。
+      （HANDOVER §6.4 记着同一件事：快照基线「随日历漂」骗过了一切当场自检。）
+
+    三个分支：
+      (a) 今天就是生日      → 「今天是她的生日！」
+      (b) 生日在四天之后    → 天数与独立算出来的值一致
+      (c) 生日在昨天        → 必须滚到**明年**（约 364~366 天），不是显示成负数
+    """
+    _reset(b)
+    b.js(FROZEN_CLOCK)
+    try:
+        out = b.jso(BD_CASES)
+        if not out or len(out) != 3:
+            return ([u'三个分支没有全部跑到：%r' % out], u'—')
+        by = dict((c['label'], c) for c in out)
+        fails = []
+
+        a = by.get('today', {})
+        if a.get('text') != u'今天是她的生日！':
+            fails.append(u'(a) 今天就是生日，却显示 %r' % a.get('text'))
+
+        c2 = by.get('plus4', {})
+        want2 = u'距她的生日还有 %s 天' % c2.get('expect')
+        if c2.get('text') != want2:
+            fails.append(u'(b) 生日在四天后，显示 %r，独立算出来该是 %r（差 %r）'
+                         % (c2.get('text'), want2,
+                            u'—— 月份/日期是不是搞反了' if c2.get('text') else u''))
+
+        c3 = by.get('yesterday', {})
+        txt3 = c3.get('text') or u''
+        m = re.search(r'(\d+)\s*天', txt3)
+        if txt3 == u'今天是她的生日！':
+            fails.append(u'(c) 生日是昨天，却显示「今天是她的生日！」')
+        elif not m:
+            fails.append(u'(c) 生日是昨天，显示 %r —— 不是「还有 N 天」的形态' % txt3)
+        else:
+            n = int(m.group(1))
+            if n < 360 or n > 366:
+                fails.append(u'(c) 生日是昨天，天数该滚到明年（约 364~366），实际 %d' % n)
+
+        return (fails, u'三个分支都对' if not fails else u'倒计时不对')
+    finally:
+        # ⚠ 一定要解冻：冻结时间会影响后面的断言（比如低语冷却一直不结束）
+        b.js(UNFROZEN_CLOCK)
+
+
+@check
+def check_bday_table_sane(b, page, expected):
+    """`data/bdays.js` 的每一项都要是**合法的 [月, 日]**。
+
+    ⚠ 这类错最典型的是**月份忘了从 0 起**：写 `[11, 11]` 表示 11 月 11 日，
+      于是变成 12 月 11 日 —— 页面照常显示、倒计时照常倒，
+      只是**日子错了**。除了这种检查，没有别的办法发现。
+    """
+    d = b.jso("""(() => {
+        var t = window.ELYSIA_BDAYS || {}, out = [];
+        for (var k in t) {
+            if (Object.prototype.hasOwnProperty.call(t, k)) out.push({ key: k, v: t[k] });
+        }
+        return JSON.stringify(out);
+    })()""")
+    if d is None:
+        return ([u'取不到 window.ELYSIA_BDAYS'], u'—')
+
+    fails = []
+    if not d:
+        fails.append(u'ELYSIA_BDAYS 是空的 —— data/bdays.js 没加载，或者表被清空了')
+
+    for e in d:
+        k, v = e['key'], e['v']
+        if not isinstance(v, list) or len(v) != 2:
+            fails.append(u'%s：值应该是 [月, 日] 两项，实际是 %r' % (k, v))
+            continue
+        mo, day = v
+        if not (isinstance(mo, int) and 0 <= mo <= 11):
+            fails.append(u'%s：月份 %r 不在 0..11（月份**从 0 起**，11 月要写 10）' % (k, mo))
+        if not (isinstance(day, int) and 1 <= day <= 31):
+            fails.append(u'%s：日 %r 不在 1..31' % (k, day))
+        if k.startswith('/'):
+            fails.append(u'%s：键不该以 / 开头 —— pageKey() 给的是'
+                         u'「去掉开头斜杠」的形态，对不上就永远查不到' % k)
+        if not k.endswith('.html'):
+            fails.append(u'%s：键应是页面**文件路径**（以 .html 结尾）' % k)
+
+    return (fails, u'%d 项都合法' % len(d) if not fails else u'表里有问题')
+
+
+@check
+def check_count_moved_into_bottom(b, page, expected):
+    """探索度**搬进了下方区块**，而且不再是 body 的散装子节点。
+
+    ⚠ 「搬家」要验两头：新的地方有它、旧的地方没有它。
+      只验前者的话，一个「又建了一个新的」的实现能过 ——
+      而那会让页面上出现**两个**探索度，且其中一个永远不更新。
+    """
+    d = b.jso("""(() => {
+        var sec = document.getElementById('bottom');
+        var inside = sec ? sec.querySelector('.bottom-count .explore-count') : null;
+        var loose = document.querySelector('body > .explore-count');
+        var all = document.querySelectorAll('.explore-count').length;
+        return JSON.stringify({
+            section: !!sec,
+            inside: !!inside,
+            loose: !!loose,
+            all: all,
+            text: inside ? inside.textContent : null,
+            role: inside ? inside.getAttribute('role') : null,
+            live: inside ? inside.getAttribute('aria-live') : null,
+            slots: sec ? [].slice.call(sec.children).map(function (n) {
+                return n.className;
+            }) : [],
+        });
+    })()""")
+    if d is None:
+        return ([u'取不到下方区块状态'], u'—')
+
+    fails = []
+    if not d['section']:
+        fails.append(u'没有 #bottom —— ElysiaBottom.mount 没跑？')
+    if not d['inside']:
+        fails.append(u'#bottom 里没有 .bottom-count .explore-count —— 探索度没搬进来')
+    if d['loose']:
+        fails.append(u'body 下面还挂着一个散装的 .explore-count —— 搬家只搬了一半')
+    if d['all'] != 1:
+        fails.append(u'页面上有 %d 个 .explore-count，应该只有 1 个（搬家用的是同一个节点）' % d['all'])
+    if d['role'] != 'status' or d['live'] != 'polite':
+        fails.append(u'搬过之后 role/aria-live 丢了：role=%r aria-live=%r'
+                     % (d['role'], d['live']))
+    if not d['text'] or not re.match(u'^已发现 \\d+ / \\d+$', d['text']):
+        fails.append(u'搬过之后文案不对：%r' % d['text'])
+
+    return (fails, u'探索度在区块里（%r）' % d['text'] if not fails else u'搬家有问题')
+
+
+# ══ /mobius/ 内容规格（spec §6.1 / §6.2 / §8）══════════════════════════
+# ⚠ 下面这张表**逐字抄自 spec §6.1 的表格**，而 spec 那张表又逐字抄自材料包。
+#   它是「**台词一条不编**」这条纪律的落点：页面必须与它逐字一致，
+#   而它自己由下面的 check_mobius_lines_from_material 对着材料包守。
+#   ⚠ 需求方 2026-10-01 拍板「台词一律引原句」——
+#     lab-02 / 06 / 07 / 12 都已换成材料包里的**全句**，别再改回截断版。
+MOBIUS_FINDS = [
+    ('lab-01', '#opening',   'click',      'spore',
+     u'你好啊，会放电的小白鼠。我们又见面了。', u'蛇主的追忆·其一'),
+    ('lab-02', '#about',     'hold',       'scale',
+     u'既然得到了这副皮囊，那当然就要好好利用一下咯~虽然有些时候确实不如大人的身体方便……但有些事情，也只有这副小孩子的身体才能做到。', u'蛇主的追忆·其二'),
+    ('lab-03', '#about',     'slide',      'glint',
+     u'毕竟像律者这样珍稀的实验素材……用一个少一个嘛。', u'蛇主的追忆·其三'),
+    ('lab-04', '#journey',   'hold',       'brick',
+     u'这里的每一寸砖瓦，我都摸清楚了。比如你脚底下那块砖，它叫菲莉丝，喜欢喝蘑菇奶油汤哦。', u'关于自身·其一'),
+    ('lab-05', '#journey',   'click',      'record',
+     u'一场接一场的战斗、一次又一次的探索……哎，可爱的小白鼠，你还真是精力旺盛呢。', u'关于芽衣·其一'),
+    ('lab-06', '#creations', 'triple_tap', 'shadow',
+     u'我是做过一些事，但进化和变革，本就需要一些「损耗」。而之所以会变成你听说的样子……只是因为一些人明明愚蠢，却偏偏很有主见。', u'蛇主的追忆·其七'),
+    ('lab-07', '#creations', 'drag',       'throne',
+     u'世界蛇的王座……坐在上面的人是谁都可以。可以是我，可以是凯文，可以是梅，甚至可以是你，都没关系。因为无论这个人是谁，他一人的意志，都绝对无法改变这条巨蛇行进的轨迹。', u'关于自身·其四'),
+    ('lab-08', '#quotes',    'click',      'shed',
+     u'蛇本来就是不会屈服于死亡的生物，这很值得大惊小怪吗？', u'关于不死的秘密·其一'),
+    ('lab-09', '#quotes',    'hold',       'infinity',
+     u'死亡并不是生命的终点。生命将因死亡而得到进化，并由此重获新生。', u'给予刻印·其七'),
+    ('lab-10', '#daily-sec', 'click',      'mouse',
+     u'我可爱的小白鼠……就让我好好看看，你被她耍的团团转的样子吧~', u'关于自身·其六'),
+    ('lab-11', '#bottom',    'click',      'sleeping',
+     u'总觉得……最近总是很困呢。哎，我不会是要冬眠了吧？', u'季节语音'),
+    ('lab-12', '#ending',    'slide',      'silhouette',
+     u'大……大姐姐……这里好黑……好可怕啊……大姐姐，带我离开这里好不好？', u'蛇主之影'),
+]
+
+# spec §6.1 末尾的解锁句 + §8.1 / §8.2 两个改机制彩蛋的台词
+MOBIUS_UNLOCK = (
+    u'没错，从一开始这里就不存在什么「梅比乌斯」的记忆体。现在在你面前的，就是唯一的、真正的「梅比乌斯」。',
+    u'关于自身·其三')
+MOBIUS_EGG_B = u'你要是有什么想评判的，就等你知道了真相之后再说吧。不过在那之前别忘了，这条供你探寻的路，可是我为你铺起来的。'
+MOBIUS_EGG_D = u'人类称呼自己能够理解的答案为「真相」，却称那无法理解的为「谬论」，说那人是「疯子」。至于你，你到最后会怎么看这一切？我可是很期待的哟，律·者·姐·姐。'
+
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MATERIAL_MD = os.path.join(os.path.dirname(ROOT_DIR), u'materials', u'梅比乌斯', u'text_materials.md')
+
+
+def _theme_explore_strings():
+    """从 `mobius/index.html` 源码里抠出 `THEME.explore` 块中**装台词的那些字段**。
+
+    ⚠ 为什么是按**字段名**抠、而不是「所有中文串」或「所有 `「…」`」：
+      · `unlock.title`（'记忆体的尽头'）是**站点 UI 文案**，不是她说的话 ——
+        它本来就不该在材料包里。全扫会把它误报成「编造」。
+      · 而台词里**有嵌套的「」**（`「损耗」`/`「真相」`/`律·者·姐·姐`），
+        按引号配对去切会被切碎。
+      所以只取 `line` / `src` / `text`（unlock 的正文）与 `whisper` 数组 ——
+      这几个字段才是「台词必须有出处」这条纪律的射程。
+    """
+    src = io.open(os.path.join(ROOT_DIR, 'mobius', 'index.html'), encoding='utf-8').read()
+    i = src.find('explore: {')
+    if i < 0:
+        return None
+    j = src.index('{', i + len('explore:'))
+    depth, k = 1, j + 1
+    while k < len(src) and depth:
+        if src[k] == '{':
+            depth += 1
+        elif src[k] == '}':
+            depth -= 1
+        k += 1
+    block = src[j + 1:k - 1]
+
+    out = re.findall(r"(?:line|src|text)\s*:\s*'([^'\n]*)'", block)
+    w = re.search(r'whisper\s*:\s*\[(.*?)\]', block, re.S)
+    if w:
+        out += re.findall(r"'([^'\n]*)'", w.group(1))
+    return out
+
+
+@check
+@mobius_only
+def check_mobius_find_ids(b, page, expected):
+    """① 12 个 `data-find-id` 与 spec §6.1 表格**逐字一致**（含顺序）。
+
+    差一个、写错一个，「探索度」就永远差一个、解锁永远不触发 ——
+    spec 的 Review Focus #3 说的「差一个的 bug 最难看见」。
+    """
+    got = b.jso("""(() => {
+        var out = [];
+        [].slice.call(document.querySelectorAll('.explore-find')).forEach(function (n) {
+            out.push(n.getAttribute('data-find-id'));
+        });
+        return JSON.stringify(out);
+    })()""")
+    if got is None:
+        return ([u'取不到 .explore-find 节点'], u'—')
+
+    want = [f[0] for f in MOBIUS_FINDS]
+    fails = []
+    if sorted(got) != sorted(want):
+        missing = [i for i in want if i not in got]
+        extra = [i for i in got if i not in want]
+        if missing:
+            fails.append(u'少了这几个：%s' % u', '.join(missing))
+        if extra:
+            fails.append(u'多出这几个：%s' % u', '.join(extra))
+        if not missing and not extra:
+            fails.append(u'有重复的 id：%r' % got)
+    # ⚠ 比的是**集合不是顺序**：DOM 里的先后由各锚点在页面上的先后决定
+    #   （`#creations` 在 `#journey` 前面，所以 lab-06 会排在 lab-04 前），
+    #   而 spec §6.1 那张表的编号是**内容清单**，不是 DOM 顺序要求。
+    #   实测踩到过：一开始按顺序比，报了个根本不重要的「不一致」。
+    return (fails, u'12 个 id 与 spec 逐字一致（集合）' if not fails else u'id 对不上')
+
+
+@check
+@mobius_only
+def check_mobius_bubble_line_and_src(b, page, expected):
+    """② 逐条触发，气泡里的台词与出处**都要对得上 spec**。
+
+    ⚠ 这里不读 `window.THEME` —— mobius 的脚本是 IIFE 包裹的，
+      `window.THEME` 是 **undefined**（Task 10 实测确认）。
+      所以期望值来自本文件的表，实际值从**渲染出来的气泡**上读。
+    """
+    fails = []
+    for fid, _at, _verb, _art, line, src in MOBIUS_FINDS:
+        if not _trigger(b, fid):
+            fails.append(u'%s：触发不了（锚点找不到？）' % fid)
+            continue
+        time.sleep(0.2)
+        d = b.jso("""(() => {
+            var el = document.querySelector('.explore-bubble');
+            return JSON.stringify({ text: el ? el.textContent : null });
+        })()""")
+        text = (d or {}).get('text') or u''
+        if line not in text:
+            fails.append(u'%s：气泡里没有它该有的台词（实际 %r）' % (fid, text[:60]))
+        elif src not in text:
+            fails.append(u'%s：气泡里没有出处标注 %r（实际 %r）' % (fid, src, text[:60]))
+
+    return (fails, u'12 条的台词与出处都渲染正确' if not fails else u'%d 条对不上' % len(fails))
+
+
+@check
+@mobius_only
+def check_mobius_lines_from_material(b, page, expected):
+    """③ `THEME.explore` 里出现的每一句中文，都能在材料包里**逐字**找到。
+
+    这是「**台词一条不编**」这条纪律的机器化落点。
+    ⚠ 只管**本轮新加的**内容（`THEME.explore` 那一块）——
+      页面原有的台词池（`dailyPool` 等 19 条出处不明的句子）
+      需求方 2026-10-01 明确「不用管」，不在这条的射程内。
+    """
+    if not os.path.exists(MATERIAL_MD):
+        # ⚠ **不静默跳过**：材料包不在就没法验「有没有编造」，
+        #   而「测不了」必须看得见 —— 静默跳过正是本站最怕的那种失败。
+        return ([u'材料包不在，无法验证台词出处：%s' % MATERIAL_MD], u'跳过=没测')
+
+    material = io.open(MATERIAL_MD, encoding='utf-8').read()
+    strings = _theme_explore_strings()
+    if strings is None:
+        return ([u'在 mobius/index.html 里找不到 THEME.explore 块'], u'—')
+
+    fails = []
+    checked = 0
+    for s in strings:
+        if not re.search(u'[一-鿿]', s):     # 只要含中文的
+            continue
+        checked += 1
+        # 台词在页面上带「」，材料包里也带「」—— 两边都剥掉再比
+        core = s.strip().strip(u'「」')
+        if core and core not in material:
+            fails.append(u'材料包里找不到这一句：%r' % s[:70])
+
+    if checked == 0:
+        fails.append(u'THEME.explore 里一句中文都没有 —— 是不是没写进去？')
+
+    return (fails, u'%d 句全部有出处' % checked if not fails else u'有 %d 句对不上' % len(fails))
+
+
+@check
+@mobius_only
+def check_mobius_has_bday_slot(b, page, expected):
+    """④ mobius 在 `data/bdays.js` 里，所以倒计时槽该渲染出来。"""
+    d = b.jso("""(() => {
+        var slot = document.querySelector('.bottom-bday');
+        var txt = slot ? slot.querySelector('.bottom-bday-text') : null;
+        return JSON.stringify({
+            slot: !!slot,
+            date: slot && slot.querySelector('.bottom-bday-date')
+                  ? slot.querySelector('.bottom-bday-date').textContent : null,
+            text: txt ? txt.textContent : null,
+        });
+    })()""")
+    if d is None:
+        return ([u'取不到下方区块状态'], u'—')
+
+    fails = []
+    if not d['slot']:
+        fails.append(u'没有 .bottom-bday —— mobius 在 bdays.js 里（[3,30]），该渲染的')
+    if d['date'] != u'4 月 30 日':
+        fails.append(u'日期显示成 %r，应为「4 月 30 日」' % d['date'])
+
+    # ⚠ 旧的那套右下角悬浮倒计时**必须已经拆掉** ——
+    #   不拆的话同页两个倒计时，且与 data/bdays.js 构成两处维护
+    #   （HANDOVER §10.5 合并 `BUILT` 那条教训）。
+    stale = b.js("String(!!document.getElementById('bdayEgg')"
+                 " || !!document.getElementById('bdayPanel'))")
+    if stale == 'true':
+        fails.append(u'旧的右下角倒计时（#bdayEgg / #bdayPanel）还在 —— '
+                     u'同页两个倒计时，而且它自己写死了 BM/BD，是第二处数据源')
+
+    return (fails, u'倒计时槽正确，旧件已拆' if not fails else u'倒计时不对')
+
+
+@check
+@mobius_only
+def check_mobius_has_game_slot(b, page, expected):
+    """⑤ 传了 `THEME.game`，游戏槽就该渲染出来（Task 12 往里面放贪吃蛇）。"""
+    d = b.jso("""(() => {
+        var g = document.querySelector('.bottom-game');
+        var sec = document.getElementById('bottom');
+        return JSON.stringify({ slot: !!g, inSection: !!(g && sec && sec.contains(g)) });
+    })()""")
+    if d is None:
+        return ([u'取不到下方区块状态'], u'—')
+
+    fails = []
+    if not d['slot']:
+        fails.append(u'没有 .bottom-game —— THEME.game 传了吗？ElysiaBottom.mount 调了吗？')
+    elif not d['inSection']:
+        fails.append(u'.bottom-game 不在 #bottom 里')
+    return (fails, u'游戏槽在' if not fails else u'游戏槽不对')
+
+
+@check
+@mobius_only
+def check_mobius_egg_b_drag_name(b, page, expected):
+    """⑥ 改机制后的 B：**拖走她的名字**（spec §8.1）。
+
+    ⚠ **必须走真实鼠标路径** —— 这些页的脚本是 IIFE 包裹的，
+      内部函数不是全局的（HANDOVER §10.6 Task 9 踩过：
+      `typeof fireKevinKiller666 === 'function'` 得到 `undefined`）。
+    """
+    c = b.center_of('#profileName')
+    if not c:
+        return ([u'找不到 #profileName'], u'—')
+
+    # 拖之前先把 toast 清掉，免得读到上一条留下的内容
+    b.js("(() => { var t = document.getElementById('mbToast');"
+         " if (t) { t.textContent = ''; t.classList.remove('show'); } return 1; })()")
+
+    b.press(c['x'], c['y'])
+    for i in range(1, 6):
+        b.move(c['x'] + i * 14, c['y'] + i * 2)
+        time.sleep(0.02)
+    b.release(c['x'] + 70, c['y'] + 10)
+    time.sleep(0.6)
+
+    d = b.jso("""(() => {
+        var t = document.getElementById('mbToast');
+        return JSON.stringify({ text: t ? t.textContent : null });
+    })()""")
+    text = (d or {}).get('text') or u''
+    fails = []
+    if MOBIUS_EGG_B not in text:
+        fails.append(u'拖了名字之后没有说那句话（#mbToast 实际是 %r）' % text[:70])
+    return (fails, u'拖名字触发了台词' if not fails else u'B 没触发')
+
+
+@check
+@mobius_only
+def check_mobius_egg_d_scroll_back(b, page, expected):
+    """⑦ 改机制后的 D：**在结尾往回滚**（spec §8.2）。
+
+    「到达即触发」别人用过（aponia / eden / kevin 是往下滚到结尾）；
+    这个是**从结尾往回滚**才触发 —— 方向相反、而且是「离开才触发」。
+    """
+    # ⚠ **先重载**。不重载的话，前面那些断言（尤其逐条触发 12 个可发现物）
+    #   早就把页面从下往上滚过好几轮了 —— `farewellShown` 已经翻成 true，
+    #   这条断言会变成「恒真」，测不出任何东西。实测踩到过。
+    _reload(b)
+
+    # 先走到结尾停住。
+    # ⚠ **不能用 `scrollTo(document.body.scrollHeight)`** —— 下方区块现在是页面
+    #   最后一块，直接跳到最底时 `#ending` 可能已经不足 50% 可见，
+    #   观察器根本不会报 intersecting，「到达过结尾」这个前提就假了。
+    #   真实的用户是一路滚下来经过结尾的，所以这里滚到结尾本身。
+    b.js("(() => { document.getElementById('ending')"
+         ".scrollIntoView({ block: 'center', behavior: 'instant' }); return 1; })()")
+    time.sleep(1.2)
+    before = b.js("String(document.getElementById('endingSub')"
+                  " ? document.getElementById('endingSub').classList.contains('visible') : null)")
+    if before == 'true':
+        return ([u'刚到结尾时临别句就已经显示了 —— 那就不是「往回滚才触发」了'], u'触发时机不对')
+
+    # 再往回滚
+    b.js("(() => { window.scrollBy({ top: -260, behavior: 'instant' }); return 1; })()")
+    time.sleep(1.0)
+
+    d = b.jso("""(() => {
+        var s = document.getElementById('endingSub');
+        return JSON.stringify({
+            exists: !!s,
+            visible: !!s && s.classList.contains('visible'),
+            text: s ? s.textContent : null,
+        });
+    })()""")
+    if not d:
+        return ([u'取不到 #endingSub'], u'—')
+
+    fails = []
+    if not d['exists']:
+        fails.append(u'页面里没有 #endingSub')
+    elif not d['visible']:
+        fails.append(u'从结尾往回滚了 260px，临别句仍然没浮出来')
+    elif MOBIUS_EGG_D not in (d['text'] or u''):
+        fails.append(u'临别句的内容不对：%r' % (d['text'] or u'')[:70])
+
+    return (fails, u'往回滚触发了临别句' if not fails else u'D 没触发')
+
+
+# ══ 小游戏（Task 12）══════════════════════════════════════════════════
+def _canvas_sig(b):
+    """蛇画在 canvas 上，**内部状态取不到**（脚本是 IIFE）。
+    所以判「在不在动」只能靠画面本身 —— 取一次 dataURL。"""
+    return b.js("(() => { var c = document.getElementById('snakeCanvas');"
+                " return c ? c.toDataURL() : null; })()")
+
+
+def _overlay_open(b):
+    return b.js("(() => { var o = document.getElementById('gameOverlay');"
+                " return o ? o.classList.contains('on') : null; })()")
+
+
+def _click_sel(b, sel):
+    """按选择器找元素 → 滚进视口 → **走真实鼠标路径**点一下。"""
+    c = b.jso("""(() => {
+        var n = document.querySelector('%s');
+        if (!n) return null;
+        n.scrollIntoView({ block: 'center', behavior: 'instant' });
+        var r = n.getBoundingClientRect();
+        return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    })()""" % sel)
+    if not c:
+        return False
+    b.press(c['x'], c['y'])
+    time.sleep(0.06)
+    b.release(c['x'], c['y'])
+    time.sleep(0.4)
+    return True
+
+
+def _game_probe(b):
+    """点游戏卡的「开始实验」→ 验遮罩打开且**蛇真的在动**；
+    再关掉 → 验**同一个判据抓得到「不动」**。
+
+    ⚠ 后半段（关掉之后必须静止）不是多余的 —— 没有它，
+      「两次采样不同」有可能只是因为 canvas 的 dataURL 编码本身不稳定，
+      那这条断言就成了恒真式，测了等于没测。
+      前几轮反复出现的就是这类问题。
+    """
+    fails = []
+
+    if _overlay_open(b):
+        fails.append(u'还没点，遮罩就是打开的')
+
+    if not _click_sel(b, '.bottom-game .game-card-start'):
+        return ([u'找不到游戏卡上的「开始实验」按钮 —— 模块的 mount(host) 没跑？'], u'—')
+
+    if not _overlay_open(b):
+        fails.append(u'点了「开始实验」，#gameOverlay 却没有打开')
+
+    s1 = _canvas_sig(b)
+    time.sleep(0.25)
+    s2 = _canvas_sig(b)
+    if s1 is None or s2 is None:
+        fails.append(u'取不到 #snakeCanvas')
+    elif s1 == s2:
+        fails.append(u'开始之后两次采样**一模一样** —— 蛇没在动'
+                     u'（也可能已经「实验失败」停下来了）')
+
+    # ── 证伪那半段：关掉游戏，画面必须静止 ──
+    if not _click_sel(b, '#gameOverlay #gameClose'):
+        fails.append(u'找不到「逃离实验室」按钮')
+    else:
+        time.sleep(0.3)
+        t1 = _canvas_sig(b)
+        time.sleep(0.25)
+        t2 = _canvas_sig(b)
+        if t1 != t2:
+            fails.append(u'关掉之后画面**还在变** —— 说明上面「在动」那个判据是恒真式，'
+                         u'测了等于没测')
+
+    return (fails, u'开始后蛇在动；关掉后静止（判据有牙齿）' if not fails else u'游戏没跑起来')
+
+
+@check
+@mobius_only
+def check_mobius_game_runs(b, page, expected):
+    """① 点下方区块游戏卡上的「开始实验」→ 遮罩打开，且蛇真的在动。
+
+    ⚠ 点的是**卡片上的按钮**（`.bottom-game .game-card-start`），
+      不是遮罩里那个 —— 用户看到的入口就是这个，验它才有意义。
+    ⚠ 走**真实鼠标路径**：这些页的脚本是 IIFE，游戏状态不是全局的，
+      `typeof startGame === 'function'` 会得到 `undefined`（HANDOVER §10.6）。
+    """
+    _reset(b)
+    return _game_probe(b)
+
+
+@check_reduced
+@mobius_only
+def check_mobius_game_runs_under_reduced(b, page, expected):
+    """② **Review Focus #5**：减动模式下小游戏**照常能玩**。
+
+    spec §5.5 最后一条：小游戏**内部**的动画在减动下**保留** ——
+    它由「开始」按钮**显式触发**，不属于「自动播放的装饰动效」。
+    ⚠ 这条要防的失败模式是：有人在减动段里一刀切 `animation:none` / 停掉 rAF，
+      顺手把游戏也停了 —— 那不是「关动画」，是「关功能」。
+
+    判据与 ① 同一套（含「关掉之后必须静止」那半段）。
+    """
+    _set_motion(b, 'reduce')
+    _reset(b)
+    fails, summary = _game_probe(b)
+    _set_motion(b, 'reduce')      # 收尾：把模式留给后面的减动断言
+    return (fails, summary)
+
+
+@check
+def check_game_card_matches_module(b, page, expected):
+    """游戏卡上的文案**必须来自模块自己声明的那份**。
+
+    ⚠ 守的是「同一件事两处维护」：`THEME.game` 里曾经**也**写了一份 title/hint，
+      而 `bottom.js` 只调 `mod.mount(host)`、从不转发 —— 于是那一份是**死配置**：
+      改它没有任何效果，而且这个 THEME 在 IIFE 里、测试读不到，**没法自动核对**。
+      现在只留模块那一份（spec §4.1 / §4.5），这条断言把
+      「卡上印的字 == 模块声明的字」钉死，谁再分叉就会红。
+
+    没有游戏槽的页面直接跳过（探针页就是）。
+    """
+    d = b.jso("""(() => {
+        var slot = document.querySelector('.bottom-game');
+        if (!slot) return JSON.stringify({ noSlot: true });
+        var ids = Object.keys(window.ElysiaGames || {});
+        var t = slot.querySelector('.game-card-title');
+        var h = slot.querySelector('.game-card-hint');
+        return JSON.stringify({
+            ids: ids,
+            mounted: slot.children.length > 0,
+            cardTitle: t ? t.textContent : null,
+            cardHint: h ? h.textContent : null,
+            modTitle: ids.length === 1 ? window.ElysiaGames[ids[0]].title : null,
+            modHint: ids.length === 1 ? window.ElysiaGames[ids[0]].hint : null,
+        });
+    })()""")
+    if d is None:
+        return ([u'取不到游戏槽状态'], u'—')
+    if d.get('noSlot'):
+        return ([], u'本页没有游戏槽（跳过）')
+
+    fails = []
+    if not d['mounted']:
+        fails.append(u'.bottom-game 是空的 —— 模块的 mount(host) 没往里渲染东西')
+    if len(d['ids']) != 1:
+        fails.append(u'页面上加载了 %d 个游戏模块（%r）—— 这条断言假定只有一个'
+                     % (len(d['ids']), d['ids']))
+        return (fails, u'模块数不对')
+
+    if d['cardTitle'] != d['modTitle']:
+        fails.append(u'卡上的标题是 %r，模块声明的却是 %r' % (d['cardTitle'], d['modTitle']))
+    if d['cardHint'] != d['modHint']:
+        fails.append(u'卡上那句话是 %r，模块声明的却是 %r' % (d['cardHint'], d['modHint']))
+
+    return (fails, u'卡片文案与模块一致' if not fails else u'卡片文案对不上')
+
+
+@check
+def check_finds_not_on_text(b, page, expected):
+    """可发现物应该落在**容器**上，不该压在**文字**上。
+
+    它是 0.35 透明度、22px 的一枚小简笔画。落在卡片背景上 =「藏起来的东西」；
+    压在一句话正中间 = 看起来像**渲染故障**，还把那个字糊了一下。
+
+    ⚠ 这条是 2026-10-01 的视觉核对逼出来的：当时 12 个里有 4 个正压着文字
+      （档案标签「身体数据」、正文段落、创生图标、小字「死而复生的能力」），
+      另有 `lab-11` 贴在生日卡的下边缘上 —— 肉眼一看就像卡坏了。
+      改坐标能修一次，**断言才能不让它回来**。
+
+    判据：把可发现物临时藏起来，看它中心点上 `elementFromPoint` 命中的元素
+    有没有**直接文字**、或本身就是 `p / span / h2 / h3 / b / a / img` 这类叶子。
+    """
+    d = b.jso("""(() => {
+        var out = [];
+        document.querySelectorAll('.explore-find').forEach(function (n) {
+            // ⚠ 必须先滚到跟前 —— 不然 elementFromPoint 在视口外一律返回 null
+            n.scrollIntoView({ block: 'center', behavior: 'instant' });
+            var r = n.getBoundingClientRect();
+            var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+            n.style.visibility = 'hidden';
+            var under = document.elementFromPoint(cx, cy);
+            n.style.visibility = '';
+            var text = '';
+            if (under) {
+                for (var i = 0; i < under.childNodes.length; i++) {
+                    if (under.childNodes[i].nodeType === 3) text += under.childNodes[i].nodeValue;
+                }
+            }
+            out.push({
+                id: n.getAttribute('data-find-id'),
+                tag: under ? under.tagName.toLowerCase() : null,
+                text: text.trim().slice(0, 24),
+            });
+        });
+        return JSON.stringify(out);
+    })()""")
+    if d is None:
+        return ([u'取不到可发现物的落点信息'], u'—')
+
+    LEAF = ('p', 'span', 'h1', 'h2', 'h3', 'h4', 'b', 'strong', 'em', 'a', 'img', 'li')
+    fails = []
+    for n in d:
+        if n['text']:
+            fails.append(u"%s：正压着文字「%s」（<%s>）—— 看着会像渲染故障"
+                         % (n['id'], n['text'], n['tag']))
+        elif n['tag'] in LEAF:
+            fails.append(u'%s：落在 <%s> 这种**文字叶子**上，该挪到容器（卡片 / 区块）上去'
+                         % (n['id'], n['tag']))
+
+    return (fails, u'%d 个都落在容器上' % len(d) if not fails else u'%d 个压着东西' % len(fails))
+
+
+# ── 主流程 ────────────────────────────────────────────────────────────
+def main():
+    raw = sys.argv[1:]
+    mode = 'reduced' if '--reduced' in raw else 'normal'
+    args = [a for a in raw if not a.startswith('--')]
+    page = args[0] if args else 'tools/explore-fixture.html'
+    expected = EXPECTED_FINDS.get(page)
+
+    # ── §6.4 纪律：起完服务器**先验内容**再采样 ──
+    #    8500 上常残留别的 http.server。本工具用 8501，但仍然自己验一遍：
+    #    只要探针页的内容不对，后面测出来的东西全都不可信。
+    try:
+        httpd = start_server()
+    except Exception as e:
+        print(u'\u274c 8501 起不来：%s' % e)
+        return 1
+    time.sleep(0.6)
+    try:
+        probe = urllib.request.urlopen(
+            'http://127.0.0.1:%d/tools/explore-fixture.html' % PORT, timeout=5).read().decode('utf-8')
+    except Exception as e:
+        httpd.shutdown()
+        print(u'\u274c 本地服务器起不来：%s' % e)
+        return 1
+    if u'探索系统探针页' not in probe:
+        httpd.shutdown()
+        print(u'\u274c 服务器内容不对（探针页里没有预期标记）—— 8501 上是不是有别的东西？')
+        return 1
+
+    print(u'\U0001f50d 探索系统断言 —— %s%s'
+          % (page, u'（减动模式）' if mode == 'reduced' else u''))
+    print()
+
+    # ⚠ 用**全新临时 profile**。cdp.py 那个 C:/tmp/edge_cdp 会跨次留存缓存
+    #   （HANDOVER §6.4），改了 explore.js 再测可能读到的还是旧版本 ——
+    #   对这种「加载了没加载」的断言，缓存会让它**假通过**。宁可贵一点。
+    profile = tempfile.mkdtemp(prefix='edge_explore_')
+    proc = subprocess.Popen([
+        EDGE, '--remote-debugging-port=9322', '--headless=new', '--disable-gpu',
+        '--no-first-run', '--remote-allow-origins=*',
+        '--user-data-dir=' + profile, '--window-size=1280,900',
+        'about:blank',
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    failures = []
+    ordered = []
+    try:
+        targets = []
+        for _ in range(20):
+            try:
+                targets = json.load(urllib.request.urlopen('http://127.0.0.1:9322/json'))
+                break
+            except Exception:
+                time.sleep(0.5)
+        ws_url = next(t['webSocketDebuggerUrl'] for t in targets if t.get('type') == 'page')
+        ws = websocket.create_connection(ws_url, suppress_origin=True, timeout=60)
+        b = Browser(ws)
+
+        # Runtime.enable 必须在导航**之前** —— 否则加载期的异常收不到。
+        b._send('Page.enable')
+        b._send('Runtime.enable')
+        # ⚠ Log 域也要开，**同样必须在导航之前**。
+        #   原因见 check_page_quiet：**资源 404 根本不走 Runtime** ——
+        #   它只在 Log 域里冒一条 `source:network / level:error`。
+        #   不开这个域，把整个脚本文件挪走这类失败，那条断言**照样通过**。
+        b._send('Log.enable')
+        b._send('Page.navigate', {
+            'url': 'http://127.0.0.1:%d/%s?cb=%d' % (PORT, page, time.time() * 1000)})
+        time.sleep(2.0)
+
+        # ⚠ 「页面无报错」那条**必须跑在最后**：它读的是整轮攒下来的事件，
+        #   提前跑就会漏掉后面手势测试里抛的异常 —— 而手势恰恰最容易抛异常。
+        # ⚠ 两个维度都要过：模式（normal/reduced）与**适用页**。
+        #   写死了探针页 id 的断言不该在别的页上跑 —— 否则真问题会被
+        #   一堆「与本页无关」的失败淹掉。
+        pool = [f for f in CHECKS
+                if mode in getattr(f, 'modes', ('normal',))
+                and ('*' in f.pages or page in f.pages)]
+        skipped = len(CHECKS) - len(pool)
+        if skipped:
+            print(u'（本页跳过 %d 条只适用于其他页的断言）' % skipped)
+            print()
+        ordered = [f for f in pool if f is not check_page_quiet]
+        if check_page_quiet in pool:
+            ordered.append(check_page_quiet)
+
+        for i, fn in enumerate(ordered):
+            fails, summary = fn(b, page, expected)
+            mark = u'\u2713' if not fails else u'\u2717'
+            # ①②③… 数到 20 就退回用序号，别让报告里出现奇怪的字符
+            tag = chr(0x2460 + i) if i < 20 else u'(%d)' % (i + 1)
+            print(u'  %s %s %s' % (mark, tag, summary))
+            # 摘要太长时另起一行 —— 失败原因必须**当场看得见**
+            for f in fails:
+                print(u'       \u2022 ' + f)
+            failures.extend(fails)
+
+        ws.close()
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except Exception:
+            proc.kill()
+        shutil.rmtree(profile, ignore_errors=True)
+        httpd.shutdown()
+
+    print()
+    if failures:
+        print(u'\u274c %d 项断言失败' % len(failures))
+        return 1
+    print(u'\u2705 全部通过：%d 组断言' % len(ordered))
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

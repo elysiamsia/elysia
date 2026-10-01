@@ -8,7 +8,7 @@
 >
 > §六 是踩过的坑（**动手前务必扫一遍**），§十 是历史案例（出问题时再查）。
 >
-> 最后更新：2026-09-21
+> 最后更新：**2026-10-01**
 
 ---
 
@@ -27,7 +27,7 @@
 
 ## 二、当前状态
 
-### 2.1 站点全貌：13 页大计，**9 页已上线 / 4 页待建**
+### 2.1 站点全貌：13 页大计，**9 页已上线 / 1 页已完成待合并（`mobius`）/ 3 页待建**
 
 逐火十三英桀的界面最终要做齐。每位一个独立页，各有自己的性格设计。
 
@@ -42,7 +42,7 @@
 | Ⅶ | 天慧 | 苏 | `su/` | ✅ |
 | Ⅷ | 刹那 | 樱 | `sakura/` | ✅ |
 | **Ⅸ** | **旭光** | **科斯魔** | **`kosma/`** | ✅ |
-| Ⅹ | 无限 | 梅比乌斯 | `mobius/` | ⬜ **待建** |
+| **Ⅹ** | **无限** | **梅比乌斯** | **`mobius/`** | ✅ **已完成，待合并上线**（见 §2.3） |
 | Ⅺ | 繁星 | 格蕾修 | `griseo/` | ⬜ **待建** |
 | Ⅻ | 浮生 | 华 | `hua/` | ⬜ **待建** |
 | ⅩⅢ | 空梦 | 帕朵菲莉丝 | `pardofelis/` | ⬜ **待建** |
@@ -72,7 +72,12 @@
 | 匿名花笺 | 同上 + Worker | 不用账号；**先审后发**；提交者凭 token 能看到自己那条 |
 | 分享卡片 | `images/og-1\|2\|3.jpg` + `tools/pick_og.py` | 三个立绘变体，随机轮换 |
 | 英桀名片可点进子页 | `index.html` + `data/timeline-data.js` | 见 §10.5 |
-| `canonical` + JSON-LD | 10 页 `<head>` | 首页 `WebSite`，其余 `WebPage` + `BreadcrumbList` |
+| **探索系统** | `assets/explore.js` + `explore.css` | **每页撒一批藏起来的小东西**（`THEME.explore.finds`），五种互动动词、探索度、找齐解锁、渐进提示。见 §10.9 |
+| **陪伴层低语** | 同上 | 任意点击 → 冷却结束后的**第 3 次**说一句，台词**按顺序**推进。⚠ **不做概率**（需求方明确不要抽卡） |
+| **下方区块** | `assets/bottom.js` | 页面最下方一块：探索度 / 生日倒计时 / 游戏槽。见 §10.9 |
+| **生日倒计时** | `data/bdays.js`（**全站唯一数据源**） | 有确定生日的英桀才渲染；查不到就**整个不出现**。见 §10.5 同一条教训 |
+| **每页小游戏** | `assets/games/<角色>.js` | 每位一个**互不干涉**的独立游戏，契约见 spec §4.5 |
+| `canonical` + JSON-LD | **11 页** `<head>` | 首页 `WebSite`，其余 `WebPage` + `BreadcrumbList` |
 | favicon / 404 / robots / sitemap | 根目录 | 404 是引路版（一句话 + 三扇门） |
 | 图片优化 | `images/*.webp` | **5.0 MB → 0.86 MB** |
 
@@ -83,7 +88,49 @@
 - **`.gitattributes`**：统一 LF（本机系统级 `core.autocrlf=true`）
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
 
-### 2.3 最近一轮（2026-09-18）做了什么
+### 2.3 最近一轮（2026-10-01）做了什么
+
+**公共层重构全部做完（Task 1–16）。** `/mobius/` 从「一页静态档案」变成了一页**可以逛**的英桀页。
+
+| | 内容 |
+|---|---|
+| **共享层多了三块** | `explore.js`（探索系统：12 个可发现物 / 五种动词 / 探索度 / 找齐解锁 / 渐进提示 / 陪伴层低语）、`bottom.js` + `data/bdays.js`（下方区块：探索度 / 生日倒计时 / 游戏槽）、`games/mobius.js`（贪吃蛇搬进来，成为「每位一个独立游戏」的样板） |
+| **`/mobius/` 迁移到共享层** | 删掉 29 条与 `site.css` 语义一致的 CSS（**2 条同名不同值的正确保留**）+ 5 个共享函数改用 `ElysiaShared`。**它是从「前 P1 的老模板」复制出来的，本来就完全不加载共享层** |
+| **`/mobius/` 接入新架构** | 12 个可发现物 + 彩蛋 B/D **改机制**（拖名字 / 结尾往回滚）+ 旧的右下角悬浮倒计时**整套拆掉**（与 `bdays.js` 合流） |
+| **接线六点 + `<head>` 补齐** | 见 §4.1.2 —— 这一步之前，`/mobius/` 就算文件在仓库里也**上不了线** |
+| **验收** | 快照：**mobius 之外 9 页零差异**；aria **10/10**、减动 **7/7**、探索系统 **32 条** |
+
+> ⚠ **本轮最值钱的几个教训**（都已进对应小节）：
+> · **计划里的数字不能当验收依据** —— 计划说「删 31 条」，实测是 **29 + 2**（那 2 条同名不同值，
+>   按名字删就**静默变样**）。同类：A 组清单还**过期**了一处（§四 §6.5）。
+> · **一条看起来在守、其实守不住的断言**比普通 bug 更值钱：`check_page_quiet`
+>   原先抓不到**资源 404**（那走 CDP 的 `Log` 域），缺文件一律通过（§6.4）。
+> · **同名不同值的 CSS 规则**、**锚点后建/被重建**、**重挂后提示丢失** ——
+>   全是「不报错、不改外观、只是悄悄不对」的那一类。
+> · **可发现物压在文字上**看着像渲染故障 —— 这条是**肉眼**看出来的，
+>   已经固化成断言（§10.9）。
+
+#### 同一日的早些时候：只出了文档的一轮
+
+**那一轮只出了文档，没动代码** —— 但发现了一件必须先处理的事。
+
+| | 内容 |
+|---|---|
+| **发现** | `mobius/index.html`（1436 行）**已于 2026-10-01 凌晨从 GitHub 网页端直传进仓库**，`dev` 与 `main` 都停在 `2be3635`。但**线上是 404** —— 它没进 `static.yml` 的 `KEEP_DIRS` 白名单（见 §6.1） |
+| **体检** | 六个登记点**全缺**；`<head>` 缺 5 项；**完全不加载 `site.css` / `site.js`**（整页 CSS/JS 内联） |
+| **定方向** | 需求方拍板：**走公共层，且公共层要重构** —— 三个新东西：任意点击可探索的彩蛋系统 / 每页下方一个**独立小游戏** / 确定生日的英桀有倒计时 |
+| **产出** | 设计 spec + 实施计划（16 个任务），见 §八 文档地图。**当天晚些时候已全部执行完 —— 见上一小节** |
+
+> ⚠ **这一轮最重要的教训**（已进 §6.1）：
+> **白名单是「静默」的** —— 构建脚本只 `cp -r` 名单里的目录，
+> 不在名单里的**连产物都进不去，而且不报错**。那道自检只拦「不该进的路径」，
+> **不拦「该进却没进的」**。
+> ```
+> curl -s -o /dev/null -w '%{http_code}\n' https://elysiad.top/mobius/    # 404
+> curl -s -o /dev/null -w '%{http_code}\n' https://elysiad.top/kosma/     # 200
+> ```
+
+#### 上一轮（2026-09-18）
 
 | | 内容 |
 |---|---|
@@ -105,11 +152,28 @@
 
 ### 2.4 下一步做什么
 
-1. **建剩下 4 页英桀**（梅比乌斯 / 格蕾修 / 华 / 帕朵菲莉丝）—— 照 §4.1 的配方
-2. 之后再做 P1 的 **Task 10（index 专项）/ 11（armor 专项）/ 12（收尾）**
-   > 排在后面是有理由的：**别让新页面从一个「半迁移」的仓库起步** ——
-   > 那时 armor 还挂着自己那套、首页还挂着自己那套，「到底该照谁写」会变成问题。
-3. ⚠ **彩蛋要在第一版里一起做掉**（见 §4.2）—— aponia/eden/kevin 就是因为先上线再补，空了很久
+**公共层重构这一轮已经做完**，下一步回到「铺开」与「建页」。
+
+1. ~~公共层重构 + `/mobius/` 上线~~ ← ✅ **2026-10-01 完成**（见 §2.3 与 §10.9）
+   - 设计 spec：`docs/superpowers/specs/2026-10-01-elysiad-explore-refactor-design.md`
+   - 实施计划：`docs/superpowers/plans/2026-10-01-elysiad-explore-refactor.md`（16 个任务，全执行完）
+   - 落地：探索系统 / 下方区块 / 游戏契约三块共享层 + `/mobius/` 迁移到共享层并接入
+   - ⚠ 本轮的边界守住了：**只动 `/mobius/` 一页**，其余 9 页快照零差异
+
+2. **其余 9 页铺开新模块 + 其余 12 位的小游戏** ← **下一轮从这里接着做**
+   （每位一个**真正独立**的小游戏，一个一个来；契约见 spec §4.5，
+   样板是 `assets/games/mobius.js`）
+
+3. **明信片重做** —— 需求方 2026-10-01 定的两条：要**「有她」**（现在只会把台词画在空背景上，
+   没有立绘）+ 要能**自己写字再分享**。独立 spec
+
+4. **建剩下 3 页英桀**（格蕾修 / 华 / 帕朵菲莉丝）—— 照 §4.1 的配方。
+   ⚠ 但现在配方变了：新页要接 `ElysiaExplore.init` / `ElysiaBottom.mount`，
+   且**不必再抄一整套 CSS/JS**（那是 mobius 走过的弯路）
+
+5. 最后才是 P1 的 **Task 10（index 专项）/ 11（armor 专项）/ 12（收尾）**
+   > 排在后面是有理由的：**别让新页面从一个「半迁移」的仓库起步**。
+   > 2026-10-01 这一轮就是在补这个 —— mobius 正是「半迁移」的活例子。
 
 #### 开工第一条命令
 
@@ -121,7 +185,7 @@ git log --oneline -5        # 看看上一轮做到哪了
 
 # 材料（⚠ 在仓库外）
 ls D:\claude-code\materials\          # 找你要建的那位
-cat D:\claude-code\materials\科斯魔\README.md     # 先读这个，再读 text_materials.md
+cat D:\claude-code\materials\梅比乌斯\README.md     # 先读这个，再读 text_materials.md
 ```
 
 然后按 **§4.1** 走。**第一页建议从 `su/index.html` 复制骨架**（它的专属模块最少、模板最干净）。
@@ -210,11 +274,37 @@ https://flowers.elysiad.top/notes/manage?key=<MANAGE_KEY>
 1. `cp su/index.html <新目录>/index.html`
 2. 改配色（`:root`）、文案（档案 / 时间轴 / 语录 / 结尾）、`THEME`（见 `docs/theme-schema.md`）
 3. 写自己的**专属特效**（画布）与**专属互动模块** —— 这正是每位英桀「性格」所在
-4. 写 **≥3 个彩蛋**（见 §4.2）
-5. 走 **§4.1.2 必做清单**
-6. 走 **§4.3 验收**
+4. 写 **≥3 个彩蛋**（见 §4.2）—— ⚠ **机制别跟已有的重样**（清单见 §4.2）
+   > 💡 **2026-10-01 起，这一条的含义变了**：机制雷同正是需求方当初要重构公共层的起因。
+   > 现在「探索感」由**可发现物**承担（12 个 + 五种动词 + 探索度 + 解锁 + 提示 + 陪伴层），
+   > 3 个彩蛋该承担的是**这位的性格**，不是「再藏几个东西」。
+   > spec §6.1 第 4 条是最好的例子：官方台词直接点名「**你脚底下那块砖**」，
+   > 而它就真的藏在时间轴脚下 —— **台词和东西对上了**，那一瞬间才是探索的甜头。
+5. **接新模块**（⚠ 2026-10-01 起是必做）：
+   ```html
+   <link rel="stylesheet" href="/assets/site.css">
+   <link rel="stylesheet" href="/assets/explore.css">   <!-- ← 必须在页面 <style> 之前 -->
+   <style> …这一页的专属样式… </style>
+   ...
+   <script src="/assets/site.js"></script>
+   <script src="/assets/explore.js"></script>
+   <script src="/assets/bottom.js"></script>
+   <script src="/data/bdays.js"></script>
+   <script src="/assets/games/<角色>.js"></script>   <!-- 有游戏才加载 -->
+   <script>
+   ElysiaExplore.init(THEME.explore);
+   ElysiaBottom.mount({ game: THEME.game });
+   </script>
+   ```
+   ⚠ **两行调用的先后顺序怎么写都对** —— 可发现物的锚点可以挂在下文区块上
+   （那是 `mount` 才建出来的），共享层的 `ensureAttached` 会补扫。
+   ⚠ **`THEME.explore.pageId` 必填**（进度按它分页存）；改名 = 玩家进度丢失。
+6. 走 **§4.1.2 必做清单**
+7. 走 **§4.3 验收** —— ⚠ 现在多一步：`check_explore.py <新页>`
 
-**共享层只有这 5 个函数**（`assets/site.js` 导出的 `ElysiaShared`）：
+**共享层现在有三块**（`site.js` / `explore.js` / `bottom.js`）。
+
+`assets/site.js` 导出 `ElysiaShared` —— ⚠ **只有这 5 个**：
 
 | 函数 | 干什么 |
 |---|---|
@@ -224,8 +314,24 @@ https://flowers.elysiad.top/notes/manage?key=<MANAGE_KEY>
 | `makeTypewriter(o)` | 打字机（**五个数值逐页不同，必须传原值**） |
 | `makeResize(canvas, state)` | canvas 与视口尺寸对齐 |
 
-> ⚠ **其余全是每页私有的**：粒子数组、迸发函数、专属模块……
-> **不要以为 `ElysiaShared` 里有别的** —— 抄之前先 grep（§6.5）。
+`assets/explore.js` 导出 `ElysiaExplore`：
+
+| 方法 | 干什么 |
+|---|---|
+| `init(THEME.explore)` | 生成可发现物、接上五种动词、探索度与存储、找齐解锁、渐进提示、陪伴层 |
+| `mountCount(host)` | 把探索度节点搬进指定容器（`ElysiaBottom.mount` 会调它，**页面不用自己调**） |
+| `ensureAttached()` | 补扫「锚点后建」与「锚点被重建」的可发现物（同上，通常不用自己调） |
+| `pageId()` | 本页进度存在哪个键下（给测试用） |
+
+`assets/bottom.js` 导出 `ElysiaBottom`：
+
+| 方法 | 干什么 |
+|---|---|
+| `mount({ game, bdayLine, bdaySrc })` | 画出下方区块：探索度 / 生日倒计时 / 游戏槽 |
+| `pageKey()` | `location.pathname` → `ELYSIA_BDAYS` 的键（`/sakura/` 与 `/sakura/index.html` 归一） |
+
+> ⚠ **`ElysiaShared` 之外的东西仍然全是每页私有的**：粒子数组、迸发函数、专属模块……
+> **不要以为 `site.js` 里有别的** —— 抄之前先 grep（§6.5）。
 
 
 #### 4.1.1 每页该长的样子（三条硬要求）
@@ -254,7 +360,9 @@ https://flowers.elysiad.top/notes/manage?key=<MANAGE_KEY>
 | **在 `data/timeline-data.js` 给这位补 `url`** | 首页名片不会亮小星、点不进去 —— **新页又成了孤岛** |
 | 加进 `tools/check_aria_labels.py` 的 **`EXPECTED`** | 新页的语录卡文案**没人守**（快照测不出属性） |
 | 加进 `tools/snapshot.py` 的 **`PAGES`** | 快照**根本不拍这一页**，改动无从验证 |
-| 加进 `tools/check_reduced_motion.py` 的 **`PAGES`** | 新页的减动**没人验**（该表只覆盖 5 页，是抽样） |
+| 加进 `tools/check_reduced_motion.py` 的 **`PAGES`** | 新页的减动**没人验**（该表是抽样，只覆盖 7 页） |
+| 加进 `tools/check_explore.py` 的 **`EXPECTED_FINDS`** | 探索度**声明数没人守** —— 少渲染一个也看不出来 |
+| **接新模块**（`ElysiaExplore.init` / `ElysiaBottom.mount`，见 §4.1 第 5 步） | 这一页没有探索系统，也没有下方区块 —— **新页比老页矮一截** |
 | 角色页用**子页那套** `.back-link` / `.ending-*`（**不是** armor 那套） | 样式对不上 |
 | **核对性别代词** —— 骨架来自 `su`（苏，男性），里面写的是「**他**」 | 女角色页标题成了「关于**他**」，**三项验收全测不出**（见下） |
 
@@ -337,6 +445,11 @@ PYTHONIOENCODING=utf-8 python tools/check_aria_labels.py
 # 4) 减动断言 —— 快照同样测不出来（它不模拟媒体特性）
 PYTHONIOENCODING=utf-8 python tools/check_reduced_motion.py
 
+# 4.5) 探索系统断言 —— 快照测不了「交互」（改了探索/下方区块才需要）
+PYTHONIOENCODING=utf-8 python tools/check_explore.py                    # 探针页
+PYTHONIOENCODING=utf-8 python tools/check_explore.py <页面路径>          # 某个真页
+PYTHONIOENCODING=utf-8 python tools/check_explore.py <页面路径> --reduced
+
 # 5) 关了服务器再走（别把 8500 留给下一个人）
 netstat -ano | grep ":8500 " | grep LISTENING          # 查 PID
 taskkill //F //PID <pid>                               # 杀
@@ -359,7 +472,16 @@ taskkill //F //PID <pid>                               # 杀
 | `baseline` | **P1 动手前**（`origin/main` worktree） | P1 最终验收（10/11/12 做完时用） |
 | `baseline-task6` / `-task78` / `-task9` / `-seo` / `-sakura` | 各阶段 | 已用过，备查 |
 | **`baseline-eggs`** | 三页彩蛋补齐之后（2026-09-17） | 备查 |
-| **`after-kosma`** | **科斯魔页建成之后**（2026-09-18） | **下次改动用这个** |
+| **`after-kosma`** | **科斯魔页建成之后**（2026-09-18） | 上一轮的参照点 |
+| **`after-explore`** | **公共层重构之后**（2026-10-01，11 页） | **下次改动用这个** |
+
+> ⚠ **参照点要挑对，别照抄文档里的旧名字。** 本轮实测：
+> 计划写的是「diff `baseline-eggs` → `after-explore`」，但 `baseline-eggs` 是 **9 页**的
+> （科斯魔都还没有），拿它比会把 **kosma 也报成「新增」**——
+> 实测 6 处差异里 3 处是这种**纯噪音**，真信号被淹一半。
+> 换 `after-kosma`（10 页）之后是干净的 **3 处，全在 mobius**。
+> **判据：`ls screenshots/snap/<label>/*.png \| wc -l` 数得出来的页数，
+> 得和你要比的那一轮对得上。**
 
 > 参照点会随每轮前进。**建新基线前先看一眼哪些还有用**，别一直堆。
 > （`screenshots/` 是 gitignore 的，只在本机。）
@@ -402,6 +524,7 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py "https://elysiad.top/sakura/" size 12
 | `snapshot.py` + `snapshot_diff.py` | **双基线验证**：8 页 × 3 视口的计算样式 + 整页截图 |
 | `check_aria_labels.py` | 语录卡 `aria-label` 属性断言（**快照测不到属性**） |
 | `check_reduced_motion.py` | 减动双向断言（**快照不模拟媒体特性**） |
+| `check_explore.py` | **探索系统 / 下方区块断言** —— 走真实用户路径（真滚动 / 真鼠标事件 / 真 reload）。快照测不了「点不到」：被裁掉或被盖住的可发现物，它照样报「✅ 无差异」。⚠ 它**自带探针页** `tools/explore-fixture.html`（在 `tools/` 里，不会上线） |
 | `pick_og.py` | 分享卡片轮换 |
 | `og_convert.py` | PNG → JPEG（省 82%） |
 | `to_webp.py` | 图片 → WebP（5.0 MB → 0.86 MB 就是它干的） |
@@ -441,6 +564,7 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py "https://elysiad.top/sakura/" size 12
   |---|---|---|
   | `kevin` | `秦且歌（汉语）` | 其余 6 页都是「汉语 / 日语」双语，**凯文缺日语** |
   | `kalpas` | `kinsen / 金船（汉语）· 小林裕介（日语）` | 多出一个 `kinsen /` 前缀，格式与其余 6 页**不一致** |
+  | `mobius` | `蔡书瑾 / 林簌（汉语）· 大久保瑠美（日语）` | **与 kalpas 同款格式**（也是 `A / B（汉语）· C（日语）`）。<br>⚠ 更要注意：材料包把「中文 CV 是否含林簌交替/代配」**明确列为待核项**，原文写着「以官方档案卡为准，**别写死**」——而页面写死了 |
 
   > 按「绝不编造」的纪律，**没查到出处就不动**。要修请给权威来源。
 
@@ -497,6 +621,7 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py "https://elysiad.top/sakura/" size 12
 |---|---|
 | **只有 `main` 会部署** | `dev` 上随便折腾，不影响线上 |
 | **新增站点文件必须改进白名单** | `static.yml` 的 `KEEP_FILES` / `KEEP_DIRS`，否则不会上线 |
+| ⚠ **白名单是「静默」的 —— 不报错，只是不出现** | 构建脚本只 `cp -r` 名单里的目录。**不在名单里的连产物都进不去，而且不会失败**——那道自检拦的是「不该进的路径」（`tools` / `docs` / `worker`…），**不拦「该进却没进的」**。<br>2026-10-01 实测：`mobius/index.html` 在 `main` 上躺了 10 天，线上一直是 **404**，没有任何报警。<br>**验法（唯一可靠）**：`curl -s -o /dev/null -w '%{http_code}\n' https://elysiad.top/<新页>/` —— 本地全绿 ≠ 线上存在 |
 | **有两层缓存** | GitHub Pages（10 分钟）+ Cloudflare（2 分钟）。「改动没生效」先怀疑缓存 |
 | **上线后要验线上** | 本地全绿 ≠ 线上全绿。见 §4.4 |
 
@@ -529,6 +654,7 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py "https://elysiad.top/sakura/" size 12
 | **`cdp.py` 的 click 要先滚动** | 它用 `getBoundingClientRect()` 的视口坐标派发鼠标事件，元素在视口外会**静默无操作**。且站点有 `scroll-behavior:smooth`，必须 `scrollIntoView({behavior:'instant'})` |
 | **快照测不出「属性」** | `snapshot.py` 采的是**计算样式**。`aria-label`、`title`、`alt`、`href` 这类**属性**不在采样范围内 —— 它们被改掉时快照会报「✅ 无差异」。所以有 `tools/check_aria_labels.py`。**改属性类的改动，快照通过不算通过** |
 | **快照不模拟媒体特性** | 减动（`prefers-reduced-motion`）它测不到，跑的是默认无偏好路径。所以有 `tools/check_reduced_motion.py` |
+| **⚠ 资源 404 不写进 `Runtime`** | 它只在 CDP 的 **`Log` 域**里冒一条 `source:network / level:error`。所以「页面无报错」这类断言**若只判 `exceptionThrown` + `console.error`，缺文件一律通过**（2026-10-01 实测：把 `assets/games/mobius.js` 整个挪走，它照样绿，是功能断言碰巧抓到的）。`check_explore.py` 已收 `Log` 域 —— ⚠ 代价是**页面必须声明 favicon**，否则浏览器去要 `/favicon.ico` 拿 404，也算红 |
 | **⚠ 快照基线会「随日历漂」（已修，别再弄丢）** | 页面有两处吃日期：「今日之语」按**本地日期**取句、`#bdayEgg` 每天换字。**同一工作日内怎么复核都是零差异，跨过零点就报差异** —— 它会骗过一切当场自检。已把「现在几点」钉死在 `2026-09-16 12:00 UTC`。**改 `snapshot.py` 时别把 `SEED_DATE_JS` 弄丢** |
 | **探测 `loading="lazy"` 的图片要把视口拉高** | 否则下面的图不加载，渲染盒 `0x0` —— 那是正常行为，不是回归 |
 | **元素有入场动画时要等** | `.timeline-node` 是 `opacity:0` + IntersectionObserver 出 `.visible`。滚过去要 `sleep` 一两秒再截图，否则拍到一片空白 —— 那不是页面坏了 |
@@ -536,7 +662,7 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py "https://elysiad.top/sakura/" size 12
 | **颜色类改动用像素差分** | 相近的浅色（`#ffe5a0` vs `#f0e6ff`）肉眼分不出。用 `PIL.ImageChops` 比对前后截图，再拿 `getBoundingClientRect()` 交叉核对「差异是否落在目标元素内」 |
 | **Windows 跑 Python 要带 `PYTHONIOENCODING=utf-8`** | 否则中文输出 GBK 崩 |
 | **Bash 工具会吞内联字符串里的反斜杠** | `python - <<'PY'` 和 `node -e "..."` 常因此报错。**把脚本写成临时文件再执行，别写进仓库** |
-| **⚠ 快照没跑完就跑差分 → 会「少报差异」** | `snapshot.py` 是 10 页 × 3 视口的慢循环，**跑完才落盘**。它还在跑的时候跑 `snapshot_diff.py`，读到的是**半份目录** —— 实测（2026-09-18）：提前跑报「1 处差异」，等它真跑完再跑是「**3 处**」。<br>⚠ 更坑的是它**不会报「快照缺失」** —— 目录里还没有的页，对它来说就是「不存在」，连提示都没有。<br>**判据（照抄，别自己心算页数）**：① `ls screenshots/snap/<label>/*.json \| wc -l` 必须等于 **`len(snapshot.PAGES) × 3`**（现在是 10 × 3 = **30**）；② 后台任务输出末尾要出现 `快照存入 ……` 那一行、进程真的退出了。 |
+| **⚠ 快照没跑完就跑差分 → 会「少报差异」** | `snapshot.py` 是 11 页 × 3 视口的慢循环，**跑完才落盘**。它还在跑的时候跑 `snapshot_diff.py`，读到的是**半份目录** —— 实测（2026-09-18）：提前跑报「1 处差异」，等它真跑完再跑是「**3 处**」。<br>⚠ 更坑的是它**不会报「快照缺失」** —— 目录里还没有的页，对它来说就是「不存在」，连提示都没有。<br>**判据**：`ls screenshots/snap/<label>/*.json \| wc -l` 必须等于 **`len(snapshot.PAGES) × 3`**（现在是 11 × 3 = **33**，总文件数 66）**且后台任务输出末尾出现 `快照存入 ……`、进程真的退出了**。<br>⚠️ **重跑同一个 label 时，文件数那条判据会骗你**（2026-10-01 实测）：旧文件还在目录里，**没覆盖到的页看起来也是「齐的」**。那次跑到第 5 页时数出来就是 66 —— 差一步就把半新半旧的目录比了。<br>→ **同一个 label 重跑时，只认「快照存入」那一行 + 进程退出**；文件数只对**全新的目录**有意义。 |
 
 ### 6.5 「页面之间各不相同」的坑
 
@@ -568,6 +694,7 @@ PYTHONIOENCODING=utf-8 python tools/snapshot.py after-<label>
 PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py baseline-eggs after-<label>
 PYTHONIOENCODING=utf-8 python tools/check_aria_labels.py
 PYTHONIOENCODING=utf-8 python tools/check_reduced_motion.py
+PYTHONIOENCODING=utf-8 python tools/check_explore.py <页面路径>   # 探索系统（改了才需要）
 
 # Worker 测试（93 项断言：献花 38 + 花笺 55）
 cd worker && npm run smoke
@@ -598,12 +725,18 @@ docs/theme-schema.md                              ★ THEME 的完整 schema（1
 
 docs/superpowers/
 ├── specs/
-│   └── 2026-09-15-elysiad-update-design.md      设计文档（十项功能 + 匿名花笺 + 上线后待办）
-│                                                  ★ 改功能前先读这份
+│   ├── 2026-09-15-elysiad-update-design.md      设计文档（十项功能 + 匿名花笺 + 上线后待办）
+│   │                                              ★ 改功能前先读这份
+│   └── 2026-10-01-elysiad-explore-refactor-design.md
+│                                                 ★ **探索系统 + 下方区块设计（进行中）**
+│                                                   §七 = mobius 迁移到共享层
+│                                                   §八 = 原有 6 个彩蛋的处置
+│                                                   §十一 = 待需求方拍板的两条
 └── plans/
     ├── 2026-09-15-elysiad-update.md             计划 A：14 个任务（已全部执行）
     ├── 2026-09-15-elysiad-extraction.md         计划 B：P1 公共层抽取，12 个任务（Task 1–9 完成）
-    └── 2026-09-15-extraction-inventory.md       CSS/JS 抽取分析（1173 行）★ P1 的事实来源
+    ├── 2026-09-15-extraction-inventory.md       CSS/JS 抽取分析（1173 行）★ P1 的事实来源
+    └── 2026-10-01-elysiad-explore-refactor.md   ★ **本轮实施计划，16 个任务**
 
 tools/README.md                                   本地工具说明
 worker/README.md                                  Worker 部署手册
@@ -618,6 +751,11 @@ D:\claude-code\materials\<角色名>\                4 位待建英桀的建站�
 2. `docs/superpowers/specs/2026-09-15-elysiad-update-design.md` —— 规格与决策的唯一准绳
 3. `docs/theme-schema.md` —— **只要动到 `THEME` 或要开新页面，先读这份**
 4. `docs/superpowers/plans/2026-09-15-extraction-inventory.md` —— 只在做 P1 的 Task 10–12 时读
+
+**而这轮（2026-10-01）在做的事，读这两份**：
+
+- `specs/2026-10-01-elysiad-explore-refactor-design.md` —— 探索系统 / 下方区块 / 迁移
+- `plans/2026-10-01-elysiad-explore-refactor.md` —— **16 个任务的实施计划**，照着走
 
 ---
 
@@ -853,6 +991,105 @@ D:\claude-code\materials\<角色名>\                4 位待建英桀的建站�
 
 **顺带核对的**：`var(--x)` 全定义检查（§6.5 那个「静默失效」的坑）——
 本页 16 个引用**全部有定义**，零个静默回退。
+
+### 10.8 一份文件在 `main` 上躺了 10 天，线上是 404（2026-10-01）
+
+**起因**：例行 `git fetch` 后发现 `dev` 和 `main` 都被推到了 `2be3635`
+（`Add files via upload`，2026-10-01 03:10，从 GitHub 网页端直传了 `mobius/index.html` 1436 行）。
+看起来「科斯魔之后又建好一页」。
+
+**但真机一验就不对**：
+
+```
+https://elysiad.top/kosma/    → 200
+https://elysiad.top/mobius/   → 404   ← 文件在 main 上，页面不在
+```
+
+**根因**：`static.yml` 的构建是**白名单拷贝**，只 `cp -r` `KEEP_DIRS` 名单里的目录。
+`mobius` 不在名单里 → **连产物都没进去**。而且**不会报错** ——
+那道自检拦的是「不该进的路径」（`tools` / `docs` / `worker`…），
+**不拦「该进却没进的」**。这是一次典型的**静默失败**，网站看起来一切正常。
+
+**教训（已进 §6.1）**：白名单缺失的症状是「**东西不出现**」，不是「构建失败」。
+唯一可靠的验法是**线上 `curl`**，不是本地能不能打开。
+
+**顺带体检出来的**（都已记进 spec）：
+六个登记点**全缺**、`<head>` 缺 5 项、**完全不加载 `site.css` / `site.js`**
+（1436 行里 CSS 和 JS 全内联，是**前 P1 的老模板**）。
+量了一下：内联 `<style>` 顶层规则 149 条，其中 **31 条与 `site.css` 完全同名**
+—— 正好等于 P1 抽取分析里「A 组 = 31 条跨页逐字节一致」。
+**数字对得上，说明它就是同一份老模板**，所以迁移不是未知工作量。
+
+> 💡 **这一轮真正的收获不是「补上 mobius」，是发现公共层还没长完。**
+> 需求方借这件事把下一步定了：**走公共层，且公共层要重构** ——
+> 因为现在的彩蛋机制来回就那十几种，13 页轮着用，玩到第 3 页就腻了。
+
+---
+
+### 10.9 公共层重构：探索系统 + 下方区块（2026-10-01）
+
+**16 个任务的完整记录在 `docs/superpowers/plans/2026-10-01-elysiad-explore-refactor.md`。**
+这里只收「下一个人会重踩」的东西。
+
+**执行方式（需求方定的「混合」）**：Task 1–8 自己写；**9–12 上审查**
+（一个 subagent 实现、另一个**独立复核**）；13–16 自己做完。
+选 9–12 上审查的理由：**迁移那段删错一条 CSS 就是静默变样**，
+而快照对「同名不同值」的规则测不出来。
+
+#### 一、计划里的数字不能当验收依据
+
+| 计划说 | 实测 |
+|---|---|
+| 「删掉与 `site.css` **完全同名**的 **31** 条」 | **29 条该删 + 2 条同名不同值必须留** |
+| 「A 组清单 31 条」（extraction-inventory） | 那清单**过期**：`.ending-attr.visible` 是 P1 Task 5 之后才并进 A 组的 |
+
+那 2 条必须留的是 `.opening-hint.visible`（本页 `opacity:.7` vs site.css `.65`）与
+`.ending-sub`（本页 `letter-spacing:.08em` vs site.css `.1em`）—— **按名字删就静默变样**，
+正是 §6.5 那条（`armor.html` 的 `--gold-soft` 失色 3 个月）。
+→ 计划本身**自相矛盾**：它一边说「31 条同名」，一边说「不能只按名字删，同名的也要看值」。
+**现场站在后面那句。** 已在 inventory 顶部注明「这份数字别信，直接与 `assets/site.css` 实际内容比」。
+
+#### 二、「一条看起来在守、其实守不住的断言」比普通 bug 更值钱
+
+`check_page_quiet` 原先只判 `Runtime.exceptionThrown` + `console.error`。
+**资源 404 两个都不走** —— 它只在 CDP 的 **`Log` 域**里冒一条。
+实测：把 `assets/games/mobius.js` 整个挪走，这条断言**照样绿**，
+真正抓到它的是功能断言（「找不到游戏卡上的按钮」）。
+→ 已加 `Log.enable` + `Log.entryAdded(level=error)`。⚠ 代价：**页面必须声明 favicon**，
+否则浏览器要 `/favicon.ico` 拿 404 也算红（mobius 就是这么被查出来的 —— spec §6.4 本来就要求补）。
+
+同类：**变异测试**（故意把实现改成错的，看断言报不报红）现在已经是每个任务的标准动作。
+本轮靠它证明过：`checkUnlock` 的集合判齐（改成长度判齐 → 精确报红）、
+`ensureAttached` 的补扫、提示重挂、游戏判据。**没做变异测试的断言，等于没写。**
+
+#### 三、三类「不报错、不改外观、只是悄悄不对」
+
+1. **同名不同值的 CSS**（上面那条）
+2. **锚点是后建的 / 被重建的** —— 可发现物锚在**下方区块**上，而那是 `ElysiaBottom.mount`
+   才建出来的；更要命的是 `sec.innerHTML = ''` 重画时**会把节点一起抹掉而锚点还在**。
+   修法是 `ensureAttached()` **对着 DOM 实扫**，让「两行调用的先后顺序」不再重要。
+3. **重挂之后提示丢失** —— `attach()` 重建节点时补了 `found`、**没补 `hinted`**；
+   而「找过半了要提示」是记在**状态**里、不是记在节点上的。
+   → 同一类修复的既有先例：`observeReveal` 一律带判空（Inventory R11）。
+   **状态在别处、节点是新的，就得按状态重画一遍。**
+
+#### 四、肉眼才看得出来的
+
+可发现物是 0.35 透明度、22px 的一枚小简笔画。**压在一句话正中间，看着像渲染故障。**
+计划 Step 4 那句「逐节看，不接受看起来差不多」逼出来的 —— 量出 12 个里 4 个压着文字、
+`lab-11` 还贴在生日卡下边缘上。已改坐标 **+ 固化成断言**（不然下次又踩回去）。
+
+> ⚠ 顺带：**视觉核对不能靠肉眼看缩略图**。0.35 透明度的小图在缩放后根本看不见。
+> 真正管用的是那个探针 —— 把可发现物临时藏起来，看它中心点上 `elementFromPoint` 命中什么。
+
+#### 五、给 subagent 派活的几条
+
+· **brief 里不要写相对 ref**（「迁移前是 HEAD~1」）—— 中途落了别的 commit 它就会指错，
+  复核方那次自己发现并改用了 `<sha>~1`。
+· **`pages` / `modes` 两个维度**（见 `tools/README.md`）：写死了探针页 id 的断言要收窄，
+  否则 `check_explore.py <新页>` 会先挂一堆与本页无关的断言，**真问题被淹掉**。
+· **构造性测试要负责把现场复原** —— 有一个 agent 收尾时无脑 `delete` 了 mobius 的生日条目，
+  后面几条断言跟着红，而原因在几百行之外。
 
 ---
 
