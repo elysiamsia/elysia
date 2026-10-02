@@ -113,6 +113,49 @@ def check_prompt_keys_match_quotes():
             if not fails else u'键对不上')
 
 
+# ══ 二维码：必须**真的能解出那个网址** ═════════════════════════════════
+#   ⚠ 不许只验证「文件在、尺寸对、看着像二维码」——
+#     圆角遮罩、配色、模块形状任何一处做过头，都会让**扫码解不出来**，
+#     而那在页面上完全看不出来（它还是张好看的图）。
+#     所以这条判据是：**解码器解出来的字符串必须等于**那个 URL。
+
+QR_PATH = 'images/qr-elysiad.png'
+QR_URL = 'https://elysiad.top/'
+QR_SIZE = 240
+
+
+@check
+def check_qr_decodes():
+    """预生成的二维码必须能**解出** `https://elysiad.top/`。"""
+    try:
+        from PIL import Image
+    except ImportError:
+        return ([u'没装 Pillow，这条验不了 —— `pip install pillow`'], u'—')
+    try:
+        import zxingcpp
+    except ImportError:
+        return ([u'没装解码器，这条验不了 —— `pip install zxing-cpp`（缺了它就没法证明扫得出来）'], u'—')
+
+    p = os.path.join(ROOT, QR_PATH)
+    if not os.path.exists(p):
+        return ([u'`%s` 还不存在' % QR_PATH], u'—')
+
+    img = Image.open(p)
+    fails = []
+    if img.size != (QR_SIZE, QR_SIZE):
+        fails.append(u'尺寸是 %sx%s，spec 要求 %dx%d' % (img.size[0], img.size[1], QR_SIZE, QR_SIZE))
+    if img.mode not in ('RGBA', 'RGB', 'P'):
+        fails.append(u'图像模式是 %s，出图恐怕不对' % img.mode)
+
+    got = zxingcpp.read_barcode(img.convert('RGBA'))
+    if got is None:
+        fails.append(u'**解不出来** —— 扫码会失败（圆角遮罩/配色/模块形状做过头了？）')
+    elif got.text != QR_URL:
+        fails.append(u'解出来的不是那个网址：%r（应为 %r）' % (got.text, QR_URL))
+
+    return (fails, u'解出来 = %s' % QR_URL if not fails else u'二维码扫不出来')
+
+
 # ── 主流程 ────────────────────────────────────────────────────────────
 def main():
     raw = sys.argv[1:]
