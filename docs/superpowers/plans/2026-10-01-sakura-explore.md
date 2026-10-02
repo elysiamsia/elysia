@@ -907,11 +907,11 @@ git commit -m "文档：交接文档 + theme-schema 同步樱页那一轮"
 **Files:**
 - 无源码改动
 
-- [ ] **Step 1: push 到 dev**
+- [x] **Step 1: push 到 dev**
 
 ⚠ **不要替需求方合并到 main**。
 
-- [ ] **Step 2:（需求方合并后）线上验证**
+- [x] **Step 2:（需求方合并后）线上验证**
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' https://elysiad.top/sakura/          # 期望 200
@@ -923,10 +923,29 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py "https://elysiad.top/sakura/" size 12
 
 Expected: `已发现 0 / 12`。
 
-- [ ] **Step 3: 线上真机点一个可发现物**
+- [x] **Step 3: 线上真机点一个可发现物**
 
 ⚠ 用 `cdp.py` 的 `click`（**真实指针事件**），**不要**用 `.click()` ——
 共享层监听的是 `pointerdown` / `pointerup`，合成 `click()` 触发不了。
+
+
+#### 上线记录（2026-10-02）
+
+需求方合并 `dev` → `main`：`origin/main` = **`101996f`**（Merge PR #36），dev 已全部合进去。
+
+| 项 | 结果 |
+|---|---|
+| `/sakura/` | **200** |
+| **`/assets/games/sakura.js`**（**本轮新增的文件**） | **200** —— ⚠ 白名单是**静默**的，这条必须单独验（HANDOVER §6.1：不在名单里连产物都进不去、**而且不报错**） |
+| 探索系统 | 滚到 `sakura-01` → 「已发现 **0 / 12**」；**真指针点一下** → 「**1 / 12**」，`found=["sakura-01"]` |
+| 生日胶囊 | 面板底 = 她自己的 `rgba(7,10,20,.92)`→`rgba(19,28,51,.92)`、数字色 = `rgb(143,220,255)` —— **Task 8 那处配色补课线上生效** |
+| 游戏「一瞬」 | 点卡片 → 遮罩开、`aria-hidden=false`、画布画出来了；点「收刀」关得掉 |
+| 鞘中刀（Task 3 修的） | 点三次 → 「**她给了你一朵花**」+ 刀光 `lit`；**收花之后再点，仍然有「纹丝不动」** —— 那个 bug 线上确认修好了 |
+
+⚠ Step 3 用的是 `cdp.py` 的 `click`（**真实指针事件**）—— 共享层监听的是
+`pointerdown` / `pointerup`，**合成 `.click()` 触发不了**。
+
+✅ **十个任务全部完成，`/sakura/` 已上线。**
 
 ---
 
