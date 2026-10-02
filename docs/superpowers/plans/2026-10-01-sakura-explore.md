@@ -618,7 +618,7 @@ git commit -m "樱：小游戏「一瞬」—— 斩线 + 时机判定（刹那�
 | 断言**两条** | **五条** | 计划 ① 里「出刀判定真的生效」那半句**没有任何判据覆盖** —— `toDataURL` 比对只证明**循环在跑**。补了真正验判定的那条（`check_sakura_judgment`，正反两半都验）；另把遮罩的 `aria-hidden` 同步也纳入 `_sk_game_probe` |
 | （计划没提） | 判据改成**读画面** | 时间模型不可靠：`dt` 有 50ms 上限，掉帧时游戏钟比墙钟慢 —— 而实测这台机器 headless 只有 **40fps**，不是 60。改成取画布上粉色像素的**质心**，像玩家一样看着花瓣出刀 |
 | 空挥不消耗目标 | **一枚花瓣只够出一刀** | 实测：空挥不消耗时，60ms 连点 13 秒 = **12 次正中**（花瓣步长 9px，而判定窗有 32px 宽，跨不过去）。那就成了「按住就赢」，和「只有那一下」正相反 |
-| `.sk-canvas` 用 `max-width:88vw` | `calc(100vw - 4rem)` **+ `max-height`** | `88vw` 没算面板自己的左右内边距。实测 **360px 宽的手机**（大陆最常见的一档）面板溢出约 4px；横屏更糟 —— 上下被切，而 fixed 遮罩没有滚动条，切掉的**够不着** |
+| `.sk-canvas` 用 `max-width:88vw` | `calc(100vw - 4rem)` **+ `max-height`** | `88vw` 没算面板自己的左右内边距，**360px 宽的手机上余量只剩 1px**（面板 364 / 视口 366，靠 flex 硬收进去）；**横屏是真的溢出** —— 画布 320 → 面板 542 > 360，而 fixed 遮罩没有滚动条，切掉的**够不着**。<br>⚠ **更正**：这一行原先写「360 上溢出约 4px」，那是**按算式推的、没量过**。2026-10-02 补量后确认它当时**没有溢出**，提交信息里那句同样不准 |
 | 判定窗 `rgba(...,.16)` | `rgba(...,.3)` | 实测只画出约 **6%** 的对比度（`(7,10,20)` → `(17,26,38)`），手机上白天看不见 —— 而代码自己的注释写着「让人看得见『分寸』在哪」 |
 
 **顺手给工具加的口子**：`check_explore.py --only <名字片段>`。
@@ -734,7 +734,7 @@ git commit -m "樱：刀舞台与可发现物互不误触（两向断言）"
 - Consumes: Task 1–7 的全部产物
 - Produces: `screenshots/snap/after-sakura/`
 
-- [ ] **Step 1: 建快照**
+- [x] **Step 1: 建快照**
 
 ```bash
 cd D:\claude-code\elysia-main
@@ -746,7 +746,7 @@ PYTHONIOENCODING=utf-8 python tools/snapshot.py after-sakura
 ⚠ **等它真的跑完**：输出末尾必须出现 `快照存入 ……` 且进程真的退出。
 ⚠ **重跑同一个 label 时文件数判据会骗你**（旧文件还在目录里）—— 只认那一行 + 进程退出。
 
-- [ ] **Step 2: 差分**
+- [x] **Step 2: 差分**
 
 ```bash
 PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py after-bday after-sakura; echo "退出码 $?"
@@ -757,7 +757,7 @@ PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py after-bday after-sakura; ec
 
 ⚠ **其余 10 页零差异**。任何一处落在别的页上 → 停下来查。
 
-- [ ] **Step 3: 属性与减动断言**
+- [x] **Step 3: 属性与减动断言**
 
 ```bash
 PYTHONIOENCODING=utf-8 python tools/check_aria_labels.py        # 10/10
@@ -767,7 +767,7 @@ PYTHONIOENCODING=utf-8 python tools/check_explore.py            # 探针页，�
 PYTHONIOENCODING=utf-8 python tools/check_explore.py --reduced  # 探针页减动
 ```
 
-- [ ] **Step 4: 视觉核对**
+- [x] **Step 4: 视觉核对**
 
 桌面 `1280×900` + 移动 `375×812` 各一轮截图，逐节看。
 
@@ -776,7 +776,7 @@ PYTHONIOENCODING=utf-8 python tools/check_explore.py --reduced  # 探针页减�
 - 「一瞬」在手机上能不能玩（触摸）
 - 生日胶囊在樱的配色下**顺不顺眼**（她那一页是冷靛 + 樱粉）
 
-- [ ] **Step 5: 关服务器 + Commit**
+- [x] **Step 5: 关服务器 + Commit**
 
 ```bash
 netstat -ano | grep ":8500 " | grep LISTENING
@@ -784,6 +784,85 @@ taskkill //F //PID <pid>
 git add -A
 git commit -m "验收：樱页三项断言全绿（其余 10 页零差异）"
 ```
+
+
+#### 验收记录（2026-10-02）
+
+| 项 | 结果 |
+|---|---|
+| 快照 | `after-sakura` **33 json + 33 png**（11 页 × 3 视口）—— 末尾有「快照存入」、进程退出码 0 |
+| 差分 `after-bday` → `after-sakura` | **9 处，全落在 `sakura/index.html`，逐条可解释**；其余 **10 页零差异** |
+| 属性断言 | `check_aria_labels.py` **10/10** |
+| 减动断言 | `check_reduced_motion.py` **7/7**（另有 2 个场景） |
+| 探索系统（樱页） | **38/38** |
+| 探针页 | 普通 **35/35** · 减动 **5/5** |
+
+**那 9 处差异全是高度**，而且**正好等于 `#bottom` 的高度** —— 实测 490 / 477 / 431px
+分别对应 1920 / 768 / 375，正是 Task 4 的探索度 + Task 6 的游戏卡那一块。
+误差 0.3px 以内，**没有一分钱解释不了**。
+
+> ⚠ **mobius 一处差异都没有** —— 和 HANDOVER §10.10 三 里那条预告相反。
+> 根因：**快照的 `SELECTORS`（39 个）里根本没有探索系统那批元素**
+> （`.explore-find` / `.bottom-*` / `.game-card` / `#bdayEgg` / `#blade*` 一个都没登记），
+> 所以 `lab-06` 那次改坐标**在快照里本来就看不见** —— 那条预告是想当然写的，已更正。
+> **推论**：这三块在差分里**只看得到高度、看不到内容**；它们的正确性靠
+> `check_explore` / `check_aria_labels` 守，不靠快照。
+
+#### 视觉核对（桌面 1280 / 1920，移动 375 / 360 / 320 / 横屏，逐节看）
+
+抓到一件真东西：
+
+**生日胶囊在樱页上一直是「别人的配色」。** `explore.css` 里那 15 个 `--bday-*`
+**全都带兜底**，而兜底值是**首页爱莉希雅的粉紫 + 金**；`mobius` 逐页覆盖过
+（它那段注释原话：「不覆盖的话它会吃共享层的默认值，那是首页爱莉希雅的粉紫，**串页**」），
+**而樱页一个都没覆盖** —— 于是她的生日面板是紫底金字。
+已补上（照本页 `:root` 取色：壳子走冰蓝、圆点与强调走樱粉、倒计时四位数走冰蓝）。
+实测计算样式已变：面板底 → `rgba(7,10,20,.92)`/`rgba(19,28,51,.92)`、数字色 → `rgb(143,220,255)`。
+
+> ⚠ 这属于 §6.5 那一类 —— **静默**：不报错，快照也测不出来
+> （`#bdayPanel` / `#bdayEgg` 不在 `SELECTORS` 里）。是**肉眼看截图**看出来的。
+
+另外三条看下来的（都**不是**缺陷）：
+
+· **12 个可发现物的落点**干净 —— 肉眼 + 断言（两个视口）都对过，没有压在文字上
+· **「一瞬」在手机上**：面板放得下、卡片与遮罩都正常（另有一条断言守着，见 Task 6）
+· **全页截图里「结尾」那一大段是空的** —— 那是**快照的已知特性**（`.ending-*` 靠
+  IntersectionObserver 出 `.visible`，全页截图没滚过去 → `opacity:0`），**不是页面坏了**
+
+#### ⚠ 与计划的两处偏差
+
+1. **计划说「无源码改动」，实际动了两处**：`sakura/index.html` 的 `:root`（补生日变量）
+   + `check_explore.py`（第 ④ 条断言「手机上放得下 + 摸得到」）。
+   后者是因为 Step 4 那句「手机上能不能玩」原本只是**手工核对**，
+   而它是 spec 的硬约束、又零覆盖 —— 固化成断言比每次手工看可靠。
+2. **顺带查出一个工具级的坑**，见下。它比这一轮的任何页面改动都值钱。
+
+#### ⚠⚠ 工具坑：CDP 的输入坐标 ≠ `getBoundingClientRect()` 的坐标
+
+**症状**：在 320 宽的手机模拟下「点」游戏卡的「开始」按钮，CDP 报
+`clicked (160,504)`，页面自己的 `elementFromPoint(160,504)` 也命中的是
+`BUTTON.game-card-start` —— 但遮罩**不开**。
+
+**根因**（实测数据）：
+
+```
+Emulation.setDeviceMetricsOverride(width:320, height:568, mobile:true)
+  → innerWidth/innerHeight        = 355 / 631     （布局视口）
+  → visualViewport.width/height   = 320 / 568     （视觉视口）
+  → visualViewport.offsetTop      =  63
+```
+
+CDP 的 `Input.dispatchMouseEvent` / `dispatchTouchEvent` 坐标走的是**视觉视口**，
+而页面里量出来的是**布局视口** —— 于是「照着 rect 派发」会**统一偏低 offsetTop 像素**。
+实测：派发 (160,504) 的事件自报 `clientY=566`，落到了 `sakura-12` 上；
+减掉 63 之后 `clientY=503`，命中的才是那个按钮。
+
+⚠ **默认视口（不设 mobile）下 offsetTop 恒为 0**，所以现有断言全都没受影响。
+但**任何将来要在手机视口上点/摸东西的断言，都必须先减这个偏移** ——
+否则它会「点到了别的东西」，而且**不报错**（点空、点偏都是静默的）。
+`check_explore.py` 里已加了 `_vv_offset()` 并在触摸路径上用它；
+`Browser.press/release/center_of` **还没改**（它们在默认视口下是对的，
+但谁要在 mobile 视口上用它们，得先自己减）。
 
 ---
 

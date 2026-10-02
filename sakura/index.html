@@ -72,6 +72,32 @@
   --text:#eaf0ff;--text-dim:#aebbd8;--text-muted:#7686a6;
   --glass-bg:rgba(255,183,197,.05);--glass-border:rgba(143,220,255,.14);
   --glass-bg2:rgba(79,184,232,.05);--glass-border2:rgba(255,183,197,.14);
+
+  /* ── 生日胶囊 / 面板（共享层 `explore.css`）─────────────────────────
+     ⚠ 这一组**必须逐页覆盖**：`explore.css` 里那 15 个变量都带兜底，
+       而兜底值是**首页爱莉希雅**的粉紫 + 金 —— 不覆盖就会「串页」，
+       在她这页上冒出一块别人的配色，而且**不报错、看不出是哪儿来的**。
+       （原话见 `mobius/index.html` 里同一段注释。）
+
+     她这一页是「夜」：冷靛黑的底、夜樱的粉、冰蓝那一线光。
+     所以 —— 壳子（底 / 边框 / 光晕 / 四格）走**冰蓝**（那柄「寒狱冰天」，
+     只作细细一道光）；圆点与强调走**樱粉**；倒计时那四位数走冰蓝，
+     和日期那抹 `--sakura-soft` 拉开层次。 */
+  --bday-ink:#eaf0ff;                                  /* = --text */
+  --bday-accent:#ffb7c5;                               /* = --sakura，圆点与强调 */
+  --bday-title:#aebbd8;                                /* = --text-dim */
+  --bday-date:#ffd6e0;                                 /* = --sakura-soft */
+  --bday-num:#8fdcff;                                  /* = --ice，倒计时那四位数 */
+  --bday-unit:#7686a6;                                 /* = --text-muted */
+  --bday-egg-bg:linear-gradient(135deg,rgba(255,183,197,.16),rgba(143,220,255,.10));
+  --bday-egg-border:rgba(255,183,197,.25);
+  --bday-egg-glow:rgba(255,183,197,.18);
+  --bday-egg-glow-hover:rgba(255,183,197,.3);
+  --bday-panel-bg:linear-gradient(150deg,rgba(7,10,20,.92),rgba(19,28,51,.92));
+  --bday-panel-border:rgba(143,220,255,.22);
+  --bday-panel-glow:rgba(143,220,255,.12);
+  --bday-cell-bg:rgba(143,220,255,.07);
+  --bday-cell-border:rgba(143,220,255,.14);
 }
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
@@ -424,9 +450,13 @@ body{
 .sk-canvas{
   display:block;margin:0 auto .9rem;
   /* ⚠ 两个上限都要，照 mobius 那个 `#snakeCanvas` 的做法：
-     · max-width 要**减掉面板自己的左右内边距**（2×1.4rem）再加点余量。
-       只写 `88vw` 的话 —— 360px 宽的手机（大陆最常见的一档）上面板会有
-       约 4px 横向溢出；320px 的窄机更糟。2026-10-02 实测。
+     · max-width 要**减掉面板自己的左右内边距**（2×1.4rem）**并且留够余量** ——
+       别指望 flex 会把面板压回去。
+       ⚠ 2026-10-02 实测：只写 `88vw` 的话，360px 宽的手机（大陆最常见的一档）上
+       **余量只剩 1px**（面板 364 / 视口 366），是靠 `flex-shrink` 把面板硬收进去
+       才没溢出的 —— 能用，但挤。换成本式之后是 **12px**。
+       ⚠ **更正**：Task 6 的提交信息里写「360 上溢出约 4px」，那是**按算式推的、错了**；
+       实测它当时**没有溢出**。真正溢出的是**竖向**（见下）。
      · max-height 管**横屏 / 矮视口**：面板比视口高的话上下会被切掉，
        而这个遮罩是 fixed、没有滚动条，切掉的部分**永远够不着**。
      ⚠ 刻意**不写** `width:320px` —— 画布的固有尺寸就是 320×320（JS 里

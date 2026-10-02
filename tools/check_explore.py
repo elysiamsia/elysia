@@ -3337,6 +3337,193 @@ def check_sakura_judgment(b, page, expected):
     return (fails, u'远处不中、斩线上的中（判定有牙齿）' if not fails else u'判定不对')
 
 
+# ── 真·触摸（不是鼠标）────────────────────────────────────────────────
+def _vv_offset(b):
+    """派发输入坐标前要减掉的那个偏移（**只在 mobile 模拟下不为 0**）。
+
+    ⚠ 2026-10-02 实测，这是本条断言最要紧的一块知识：
+      `Emulation.setDeviceMetricsOverride(mobile:true)` 会让**布局视口 ≠ 视觉视口**。
+      以 320×568 那一档为例：`innerHeight` 631、`visualViewport.height` 568、
+      `visualViewport.offsetTop` **63**。
+      而 CDP 的 `Input.*` 坐标走**视觉视口**，页面里 `getBoundingClientRect()`
+      给的却是**布局视口** —— 于是「照着 rect 派发」会**统一偏低 offsetTop 像素**：
+
+          照着按钮中心 (160, 504) 派发 → 事件落到 clientY=566 的 `sakura-12` 上（遮罩不开）
+          减掉 63 → clientY=503，命中的才是 `BUTTON.game-card-start` ✓
+
+    ⚠ 默认视口（不设 mobile）下 offsetTop 恒为 0，所以**老断言不受影响**。
+      但**任何将来要在手机视口上点/摸东西的断言，都必须先减这个偏移** ——
+      否则它会「点到了别的东西」，而且**不报错**（点空/点偏都是静默的）。
+    """
+    d = b.jso("(() => { var v = window.visualViewport;"
+              " return JSON.stringify({ x: v ? v.offsetLeft : 0, y: v ? v.offsetTop : 0 }); })()")
+    return d or {'x': 0, 'y': 0}
+
+
+def _sk_touch(b, x, y):
+    """派发一次**真的触摸**（`touchStart` + `touchEnd`，中间不移动）。
+
+    ⚠ 传进来的 x/y 是**布局视口**坐标（照 `getBoundingClientRect()` 量的），
+      这里负责换算成 CDP 要的**视觉视口**坐标 —— 见 `_vv_offset`。
+    """
+    o = _vv_offset(b)
+    x, y = x - o['x'], y - o['y']
+    b._send('Input.dispatchTouchEvent',
+            {'type': 'touchStart', 'touchPoints': [{'x': x, 'y': y}]})
+    time.sleep(0.05)
+    b._send('Input.dispatchTouchEvent', {'type': 'touchEnd', 'touchPoints': []})
+
+
+def _touch_tap_sel(b, sel):
+    """滚进视口 → 用**真触摸**点它的中心。"""
+    c = b.jso("""(() => {
+        var n = document.querySelector('%s');
+        if (!n) return null;
+        n.scrollIntoView({ block: 'center', behavior: 'instant' });
+        var r = n.getBoundingClientRect();
+        return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    })()""" % sel)
+    if not c:
+        return False
+    _sk_touch(b, c['x'], c['y'])
+    return True
+
+
+@check
+@sakura_only
+def check_sakura_game_touch(b, page, expected):
+    """④ 手机上**玩得起来** —— 两半：面板放得下 + 真触摸能用。
+
+    ── 第一半：面板放得下（**这一半是可证伪的**）────────────────────
+    ⚠ 2026-10-02 实测：`.sk-canvas` 原先只写 `max-width:88vw`（没算面板自己
+      2×1.4rem 的内边距）—— 360px 宽的手机上**余量只剩 1px**（面板 364 / 视口 366），
+      是靠 `flex-shrink` 硬收进去才没溢出；**横屏则是真的溢出**（画布 320 →
+      面板 542 > 360，而遮罩是 `position:fixed`、没有滚动条，**切掉的永远够不着**）。
+      已改成 `calc(100vw - 4rem)` + `calc(100vh - 15rem)`。
+      ⚠ **更正**：Task 6 的提交信息里写「360 上溢出约 4px」，那是**按算式推的、错了** ——
+      实测它当时**没有溢出**。所以这条断言守的是「**别退回去**」，不是「修好了一个溢出」。
+    ⚠ 四个视口都要量：375 是最常见的、360 那一档余量最紧、
+      320 更窄，**横屏 640×360 专门管竖向那一半**（它是 `max-height` 唯一的行使场景 ——
+      不加这一档，那条 `calc(100vh - 15rem)` 就没有任何断言守着）。
+
+    ── 第二半：真触摸（**从 320 开局**，不是 375）──────────────────
+    ⚠ 320 那一档 `visualViewport.offsetTop` 是 **63px**，比按钮本身（41px）还高 ——
+      不换算坐标就**一定**点偏。375 那一档只有个位数，算错了也照样点得中，
+      验不出东西。所以断言从 320 开局。见 `_vv_offset`。
+    ⚠ **说清楚它守得住什么、守不住什么**：实测把 `pointerdown` 换成 `mousedown`，
+      这一半**照样绿** —— 因为 Chrome 会给 tap 补一套**兼容鼠标事件**
+      （mousedown / mouseup / click）。所以它**不是**「事件类型」的守卫，
+      是一条**端到端冒烟**：375 下按钮点得到、遮罩开得了、画布中心那一下真能算分。
+      （别的断言走的全是鼠标路径，默认视口 —— 这一页面向的却是手机。）
+
+    ⚠ `setTouchEmulationEnabled` / `setDeviceMetricsOverride` **必须关掉**：
+      否则后面每一条断言都会在「手机 + 触摸」的环境里跑，而人会以为测的是桌面。
+    """
+    fails = []
+
+    # ── 第一半：面板放得下（三个宽度）──
+    PANEL = """(() => {
+        var p = document.querySelector('.sk-panel');
+        var c = document.querySelector('.sk-canvas');
+        if (!p) return JSON.stringify({ missing: true });
+        var r = p.getBoundingClientRect();
+        var q = c ? c.getBoundingClientRect() : null;
+        return JSON.stringify({ l: Math.round(r.left), t: Math.round(r.top),
+                                r: Math.round(r.right), b: Math.round(r.bottom),
+                                vw: innerWidth, vh: innerHeight,
+                                cl: q ? Math.round(q.left) : null,
+                                cr: q ? Math.round(q.right) : null,
+                                cw: q ? +q.width.toFixed(1) : null,
+                                ch: q ? +q.height.toFixed(1) : null });
+    })()"""
+
+    b._send('Emulation.setDeviceMetricsOverride',
+            {'width': 320, 'height': 568, 'deviceScaleFactor': 1, 'mobile': True})
+    b._send('Emulation.setTouchEmulationEnabled', {'enabled': True, 'maxTouchPoints': 5})
+    time.sleep(0.6)
+
+    try:
+        _reset(b)                      # 重载一次，让窄屏布局真的生效
+
+        # ⚠ **故意从最窄的 320 开局**（不是 375）：这一档 `visualViewport.offsetTop`
+        #   是 **63px**，比按钮本身还高（41px）—— 即「不换算坐标就**一定**点偏」。
+        #   所以这一步同时钉住两件事：手机上点得开、坐标换算是对的。
+        #   （375 那一档偏移只有个位数，算错了也照样点得中 —— 验不出东西。）
+        if not _touch_tap_sel(b, '.bottom-game .game-card-start'):
+            return ([u'用触摸点不到游戏卡上的「开始」按钮'], u'—')
+        time.sleep(0.5)
+
+        st = _sk_overlay_state(b) or {}
+        if not st.get('open'):
+            return ([u'用触摸点了「开始」，遮罩却没打开 —— 手机上玩不了'], u'—')
+
+        for (w, h) in ((375, 812), (360, 640), (320, 568), (640, 360)):
+            b._send('Emulation.setDeviceMetricsOverride',
+                    {'width': w, 'height': h, 'deviceScaleFactor': 1, 'mobile': True})
+            time.sleep(0.6)
+            d = b.jso(PANEL)
+            if not d or d.get('missing'):
+                fails.append(u'[%d] 找不到 .sk-panel —— 遮罩的结构变了？' % w)
+                continue
+            # ⚠ 横向这一半**要挑对变异才验得出来**（2026-10-02 实测）：
+            #   · 把 `max-width` 改回 `88vw` → **不红**。因为 `#sakuraGameOverlay`
+            #     是 flex 行容器，面板横向放不下时 `flex-shrink` 会把它收进去。
+            #   · 改成显式 `width:320px` → **红**（画布不肯缩，面板真的溢出 -6~361）。
+            #   所以它守得住「画布不肯缩」这一类，守不住「只是 max-width 算小了」那类。
+            if d['l'] < 0 or d['r'] > d['vw']:
+                fails.append(u'[%d] 游戏面板**横向溢出**：面板 x %d~%d，视口宽 %d —— '
+                             u'两边会被切掉，而 fixed 遮罩没有滚动条，切掉的够不着'
+                             % (w, d['l'], d['r'], d['vw']))
+            # 竖向这一半**有牙齿**：flex 行方向不管纵向，超出就是真的被切。
+            if d['t'] < 0 or d['b'] > d['vh']:
+                fails.append(u'[%d] 游戏面板**竖向溢出**：面板 y %d~%d，视口高 %d —— '
+                             u'横屏 / 矮视口下上下会被切掉'
+                             % (w, d['t'], d['b'], d['vh']))
+            # 画布本身也要在视口里。
+            if d.get('cl') is not None and (d['cl'] < 0 or d['cr'] > d['vw']):
+                fails.append(u'[%d] 游戏**画布**横向超出视口：%d~%d，视口宽 %d'
+                             % (w, d['cl'], d['cr'], d['vw']))
+            # ⚠ **画布必须是方的** —— 这是最容易踩的那个陷阱：
+            #   给画布显式定宽（`width:320px`）之后，`max-height` 生效时高度被压
+            #   而宽度不变，画面就被**拉扁**了（樱瓣会变成椭圆、斩线位置也会错）。
+            #   两个都不写、只给上下限，浏览器才会等比缩。短边那些档测不出来，
+            #   只有横屏（`max-height` 真正生效）才验得到 —— 这就是 (640,360) 那一档的用处。
+            if d.get('cw') is not None and abs(d['cw'] - d['ch']) > 1:
+                fails.append(u'[%d] 游戏画布**被拉扁了**：%.1f × %.1f —— '
+                             u'显式定宽 + `max-height` 同时生效就会这样。'
+                             u'画布该等比缩（内部是 320×320）' % (w, d['cw'], d['ch']))
+
+        # ── 第二半：回到 375，真触摸出刀 ──
+        b._send('Emulation.setDeviceMetricsOverride',
+                {'width': 375, 'height': 812, 'deviceScaleFactor': 1, 'mobile': True})
+        time.sleep(0.6)
+
+        t0 = time.time()
+        while time.time() - t0 < 6.0:
+            p = _sk_petal(b)
+            if p and p.get('x') is not None and abs(p['x'] - p['mid']) <= 6:
+                c = _sk_canvas_rect(b)
+                if not c:
+                    break
+                _sk_touch(b, c['x'], c['y'])
+                time.sleep(0.35)
+                hud = _sk_hud(b) or {}
+                if hud.get('hits') not in ('0', None):
+                    return (fails, u'手机上放得下 + 摸得到（320 开局 / 四个视口）' if not fails
+                            else u'面板放不下')
+                break
+            time.sleep(0.015)
+
+        fails.append(u'用手指（真 touchStart / touchEnd）在斩线上出刀，一次都没中 —— '
+                     u'**触摸这条路走不通**')
+        return (fails, u'触摸玩不了')
+
+    finally:
+        b._send('Emulation.setTouchEmulationEnabled', {'enabled': False})
+        b._send('Emulation.clearDeviceMetricsOverride')
+        time.sleep(0.6)
+
+
 # ── 主流程 ────────────────────────────────────────────────────────────
 def main():
     raw = sys.argv[1:]
