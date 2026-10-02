@@ -558,6 +558,19 @@ body{
 }
 .postcard-input::placeholder{color:var(--text-muted);opacity:.7}
 .postcard-input:focus{outline:2px solid rgba(199,125,255,.5);outline-offset:1px}
+.postcard-prompts{display:none;gap:.5rem;flex-wrap:wrap;margin-bottom:.55rem}
+/* 焦点在输入框里、或已经写了字 → 才出现（免得这一节太吵） */
+.postcard-write.focused .postcard-prompts,
+.postcard-write.filled .postcard-prompts{display:flex}
+.postcard-chip{
+  padding:.35rem .85rem;border-radius:999px;cursor:pointer;font-family:inherit;
+  font-size:.74rem;line-height:1.6;color:var(--text-dim);
+  background:rgba(155,93,229,.10);border:1px solid rgba(199,125,255,.20);
+  transition:background .25s ease,border-color .25s ease;
+}
+.postcard-chip:hover,.postcard-chip:focus-visible{
+  background:rgba(199,125,255,.20);border-color:rgba(199,125,255,.45);color:var(--text);
+}
 .postcard-count{
   /* ⚠ 放**标签那一行的右端**，别放输入框右下角 ——
      右下角那一片会被**右下角悬浮的生日胶囊**盖住（它是 position:fixed 的），
@@ -777,6 +790,10 @@ body{
          它**不进画布**之外的任何地方 —— 画布重画时它原样留着。 -->
     <div class="postcard-write">
       <label class="postcard-write-label" for="postcardInput">写一句，一起带走</label>
+      <!-- 弹幕圆片：贴**当前那句台词**的预设话术（数据在 data/postcard-prompts.js）。
+           ⚠ 它们**不新增按钮** —— 圆片在输入框拿到焦点时出现、或输入框里已经有字时也在。
+           ⚠ 点一下是**填进输入框**，不是直接上卡 —— 访客还能改（需求原文「可选、可修改」）。 -->
+      <div class="postcard-prompts" id="postcardPrompts" role="group" aria-label="参考话术"></div>
       <textarea class="postcard-input" id="postcardInput" maxlength="200" rows="3"
                 placeholder="想对她说的话，或者想带给她看的话……"></textarea>
       <span class="postcard-count" id="postcardCount">0 / 200</span>

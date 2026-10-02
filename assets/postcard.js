@@ -23,6 +23,8 @@
   var tip = document.getElementById('postcardTip');
   var input = document.getElementById('postcardInput');
   var countEl = document.getElementById('postcardCount');
+  var promptsBox = document.getElementById('postcardPrompts');
+  var writeWrap = input ? input.parentNode : null;
   if (!pool.length || !host || !btnRedraw) return;
 
   /* spec §七：访客写字的**硬上限**。
@@ -382,7 +384,8 @@
 
   btnRedraw.addEventListener('click', function () {
     current = (current + 1) % pool.length;
-    redraw();                                  // ⚠ 不清空访客写的字（下一步加输入框时守住）
+    renderPrompts();                           // ⚠ 弹幕跟着台词换 —— 但**不清空**访客写的字
+    redraw();
   });
 
   btnToggle.addEventListener('click', function () {
@@ -431,10 +434,60 @@
   if (input) {
     input.addEventListener('input', function () {
       syncWrite();
+      if (writeWrap) {
+        if (input.value) writeWrap.classList.add('filled');
+        else writeWrap.classList.remove('filled');
+      }
       clearTimeout(writeT);
       writeT = setTimeout(redraw, 120);        // 防抖：敲字时别每一击都重画
     });
+    input.addEventListener('focus', function () {
+      if (writeWrap) writeWrap.classList.add('focused');
+    });
+    input.addEventListener('blur', function () {
+      /* ⚠ 失焦时：**写了字就留着圆片**（访客可能还想再挑一句），空着才收起。 */
+      if (writeWrap && !input.value) writeWrap.classList.remove('focused');
+    });
     syncWrite();
+  }
+  renderPrompts();
+
+  /* ── 弹幕圆片 ──────────────────────────────────────────────────────────
+     ⚠ 取词是**每次现读** `window.POSTCARD_PROMPTS`，不在加载时缓存 ——
+       这样那个文件整个加载失败时，页面只是「没有弹幕」，别的一概照常。
+     ⚠ 键是**台词逐字**（含「」与省略号写法）—— 对不上就**一条都不出**（静默）。 */
+  function promptWords() {
+    var all = window.POSTCARD_PROMPTS;
+    if (!all) return [];
+    var key = pool[current % pool.length];
+    var hits = all[key];
+    return (hits && hits.length) ? hits : [];
+  }
+
+  function renderPrompts() {
+    if (!promptsBox) return;
+    promptsBox.innerHTML = '';
+    var words = promptWords();
+    for (var i = 0; i < words.length; i++) {
+      (function (txt) {
+        var chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'postcard-chip';
+        chip.textContent = txt;
+        /* ⚠ 按下去时**抢在 blur 之前** preventDefault：不然点圆片会让输入框失焦，
+           容器的「焦点时才显示」规则立刻把它藏起来，这一次点击就落空了。 */
+        chip.addEventListener('mousedown', function (e) { e.preventDefault(); });
+        chip.addEventListener('click', function () {
+          if (!input) return;
+          input.value = txt;                  // 只填进去，不直接上卡 —— 访客还能改
+          if (writeWrap) writeWrap.classList.add('filled');
+          syncWrite();
+          clearTimeout(writeT);
+          writeT = setTimeout(redraw, 120);
+        });
+        promptsBox.appendChild(chip);
+      })(words[i]);
+    }
   }
 
   /* ── 只读验收句柄 ────────────────────────────────────────────────────

@@ -630,6 +630,94 @@ def check_rapid_quote_change(b):
     return (fails, u'连点 8 次：只剩一张画布、且画上了内容' if not fails else u'连点出问题了')
 
 
+# ══ 弹幕圆片（贴当前台词的预设话术）═══════════════════════════════════
+
+CHIPS = '#postcardPrompts .postcard-chip'
+
+
+@browser_check
+def check_prompt_chip_fills_input(b):
+    """点一下弹幕圆片：**填进输入框**（不是直接上卡），而且圆片得**真的看得见**。
+
+    ⚠ 「不是直接上卡」这一半是需求的原文（「可选、**可修改**」）——
+      直接上卡的话访客就没得改了。所以判据查的是 `input.value`。
+
+    另测两条降级（都是**静默**的那一类）：
+      · 键对不上某条台词 → 那一条**没有弹幕**，而且**不许报错**
+      · `POSTCARD_PROMPTS` 整个缺失 → 输入照常、画布照常重绘、不许报错
+    """
+    _reset(b)
+    fails = []
+
+    if not b.click_sel(INPUT):                       # 点一下输入框（拿焦点）
+        return ([u'找不到输入框'], u'—')
+    time.sleep(0.3)
+    n = b.js("document.querySelectorAll('%s').length" % CHIPS)
+    if n != PROMPTS_PER_QUOTE:
+        fails.append(u'输入框拿到焦点之后有 %r 个圆片（应为 %d 个）' % (n, PROMPTS_PER_QUOTE))
+        return (fails, u'圆片没出来')
+
+    # ⚠ 「渲染出来了」和「看得见」是两回事：第一版只数了 DOM 里的元素个数，
+    #   容器 `display:none`（焦点类没加上）照样绿 —— 真到手机上访客一个圆片也看不到
+    #   （2026-10-02 用 cdp.py 点进去才发现）。所以要连**可见性**一起判。
+    vis = b.jso("""(() => {
+        var p = document.getElementById('postcardPrompts');
+        if (!p) return JSON.stringify({ display: null, h: 0 });
+        return JSON.stringify({ display: getComputedStyle(p).display,
+                                h: Math.round(p.getBoundingClientRect().height) });
+    })()""") or {}
+    if vis.get('display') != 'flex' or (vis.get('h') or 0) < 20:
+        fails.append(u'输入框拿到焦点之后，圆片容器是 %r、高 %r px —— 圆片没**显示出来**，'
+                     u'访客一个都点不到' % (vis.get('display'), vis.get('h')))
+
+    # ⚠ 主判据是**输入框里的值**，不是「画布变了」——
+    #   「画布变了」这件事用像素判不出来：底上有 90 颗 `Math.random()` 的星屑，
+    #   右半边亮像素数的噪声就有 ±300，信号完全淹在里面（第一版就是这么假绿的）。
+    #   「填进去的字会不会被画上卡」是 **Task 4 那条**（写满 200 字压不压出栏外）
+    #   在管，走的是同一条重画路径。
+    b.js("(() => { var i = document.querySelector('%s'); i.value = '';"
+         " i.dispatchEvent(new Event('input', { bubbles: true })); return 1; })()" % INPUT)
+    time.sleep(0.5)
+
+    chip_text = b.js("document.querySelector('%s').textContent" % CHIPS)
+    if not b.click_sel(CHIPS):
+        return (fails + [u'点不到第一个圆片（%s）' % CHIPS], u'—')
+    time.sleep(0.5)
+    val = (_hud(b) or {}).get('val')
+    if val != chip_text:
+        fails.append(u'点圆片之后输入框里是 %r，圆片上写的是 %r —— '
+                     u'要么没填进去，要么直接上了卡（需求要的是「可修改」）' % (val, chip_text))
+    cnt = (_hud(b) or {}).get('count') or u''
+    if not cnt.startswith(str(len(chip_text or u''))):
+        fails.append(u'填了 %d 个字，字数显示却是 %r' % (len(chip_text or u''), cnt))
+
+    # ── 降级①：键对不上 → 静默没有弹幕，不许报错 ──
+    b.js("window.POSTCARD_PROMPTS = {'一条对不上的台词': ['甲', '乙', '丙']};")
+    b.js("document.getElementById('postcardRedraw').click()")
+    time.sleep(0.6)
+    n = b.js("document.querySelectorAll('%s').length" % CHIPS)
+    if n:
+        fails.append(u'把键改坏之后还有 %r 个圆片 —— 对不上就该一条都不出' % n)
+
+    # ── 降级②：整个 POSTCARD_PROMPTS 缺失 → 照常能用 ──
+    b.js('try { delete window.POSTCARD_PROMPTS; } catch (e) {}')
+    b.js("document.getElementById('postcardRedraw').click()")
+    time.sleep(0.5)
+    n = b.js("document.querySelectorAll('%s').length" % CHIPS)
+    if n:
+        fails.append(u'`POSTCARD_PROMPTS` 没了之后还有 %r 个圆片' % n)
+    # 还能不能打字 / 渲染会不会抛 —— 抛了的话 `b.js` 返回 None
+    # （⚠ 「页面全程无报错」那条在整轮末尾还会再兜一次）
+    typed = b.js("(() => { var i = document.querySelector('%s'); i.value = '还是能写字';"
+                 " i.dispatchEvent(new Event('input', { bubbles: true })); return i.value; })()" % INPUT)
+    time.sleep(0.5)
+    if typed != u'还是能写字':
+        fails.append(u'`POSTCARD_PROMPTS` 没了之后，往输入框里打字它会返回 %r —— 渲染抛异常了？'
+                     % typed)
+
+    return (fails, u'圆片填进输入框（可改）；两条降级都静默' if not fails else u'弹幕有问题')
+
+
 @browser_check
 def check_page_quiet(b):
     """整轮下来页面不许抛异常、不许有 console.error、不许有资源 404。
