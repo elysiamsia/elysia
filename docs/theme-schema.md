@@ -126,7 +126,7 @@
                               //     **谁先谁后都对**（spec §4.1 / explore.js）
           x:    0.18, y: 0.62,// 相对锚点矩形的百分比 [0..1]，指的是**中心点**
           verb: 'hold',       // click | hold | drag | triple_tap | slide
-          art:  'spore',      // 外观关键字。**现有 15 个**（见下），
+          art:  'spore',      // 外观关键字。**现有 17 个**（见下），
                               //   ⚠ 写错一个字母**不会报错** —— explore.js 会 console.warn
                               //   然后**静默回落到 `glint`**（那颗星星）。
                               //   `check_explore.py` 的「art 都要能解出」那条守着它。
@@ -137,6 +137,9 @@
                               //     mouse 小白鼠 / sleeping 眠 / silhouette 剪影 / brick 砖
                               //   2026-10-01 为 `/sakura/` 添的 3 个：
                               //     petal 樱瓣 / sheath 鞘 / blade 刀
+                              //   2026-10-02 为 `/kosma/` 添的 2 个：
+                              //     dawn 旭光（**半轮**的日轮 —— 他从不觉得自己是完整的那道光）
+                              //     horn 弯角（开场徽记上那对）
                               //   想给她加？照 explore.js 里那张 `ART` 表加一条就行。
           line: '「…」',       // 台词 —— **必须有出处，一个字不能编**
           src:  '蛇主的追忆·其一', // 出处标注，渲染在气泡角落
