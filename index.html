@@ -557,6 +557,9 @@ body{
 <script src="assets/daily.js" defer></script>
 <script src="assets/flowers.js" defer></script>
 <script src="assets/egg.js" defer></script>
+<script src="data/postcard-prompts.js" defer></script>
+<!-- ⚠ 上面这行**必须在** postcard.js 之前：两者都是 defer，按出现顺序执行，
+     明信片要靠 window.POSTCARD_PROMPTS 取弹幕话术。 -->
 <script src="assets/postcard.js" defer></script>
 
 <!-- ===== OPENING ===== -->
