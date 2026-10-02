@@ -66,7 +66,7 @@
 | 今日之语 | `data/quotes.js` + `assets/daily.js` | 按**访客本地日期**取句，同日一致、次日自动换 |
 | 献花互动 | `assets/flowers.js` | 共享计数（KV），**接口不通时静默降级为本地计数** |
 | 隐藏彩蛋 | `assets/egg.js` | 点开场标题 5 次 → 水晶花雨。**台词池为空，所以现在不触发**（有意为之） |
-| 明信片生成 | `assets/postcard.js` | Canvas 出图，手机 1080×1440 / 电脑 1200×800，可手动切换 |
+| 明信片生成 | `assets/postcard.js` + `data/postcard-prompts.js` | Canvas 出图（2026-10-02 重做）：**左边立绘（八张可选 + 随机）/ 右边她的台词 + 访客写的话（200 字硬上限）/ 右下角二维码**（扫得出 `elysiad.top`）。手机 1080×1440 / 电脑 1200×800，可手动切换。断言见 §4.5 的 `check_postcard.py` |
 | 留言簿入口 | `index.html` 谢幕区 | 「想对她说句话吗 →」指向 `/guestbook/` |
 | giscus 留言簿 | `guestbook/index.html` | 需 GitHub 登录 |
 | 匿名花笺 | 同上 + Worker | 不用账号；**先审后发**；提交者凭 token 能看到自己那条 |
@@ -654,13 +654,15 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py "https://elysiad.top/sakura/" size 12
 | `check_explore.py` | **探索系统 / 下方区块断言** —— 走真实用户路径（真滚动 / 真鼠标事件 / 真 reload）。快照测不了「点不到」：被裁掉或被盖住的可发现物，它照样报「✅ 无差异」。⚠ 它**自带探针页** `tools/explore-fixture.html`（在 `tools/` 里，不会上线）。<br>跑法：`[页面路径]` / `--reduced` / **`--only <名字片段>`**（只跑名字含它的断言 —— 给变异测试用，报告里会写明「筛过的」） |
 | `check_timeline_lore.py` | **首页名片档案体检**（`data/timeline-data.js` 的 `lore`）—— 段内不许有重复行 / 前缀行、不许有已知 OCR 坏词。**纯文本、秒级、不用浏览器**：
 这段数据是静态的，**快照只采计算样式（不含文本）、那三个断言也不看它** —— 这类问题原来**没有任何工具看得见** |
+| `check_postcard.py` | **首页明信片断言（12 组）** —— 现有四个工具**一个都测不到它**：整张画在 `<canvas>` 上，快照只有计算样式（画面是像素）、另外三个各有各的视野；而它偏偏是**唯一一个把本站带出去的东西**，坏了不冒烟（画布照样出图，只是图是错的：立绘空白、文字压出边框…）。<br>两部分：**纯文本**（弹幕话术的键要逐字对得上、二维码真解得出来 —— 秒级）+ **浏览器**（真点缩略图与弹幕圆片、真打字、真存图；连**存下来那张 PNG** 也量一遍，二维码当场再解一次）。<br>⚠ 它自带服务器（**8502**）+ 无头 Edge（**9323**），刻意避开 8501/9321/9322。<br>跑法：`PYTHONIOENCODING=utf-8 python tools/check_postcard.py`（不带参数 = 全量）/ `--only <名字片段>`（给变异测试用，报告里会写明「筛过的」） |
 | `pick_og.py` | 分享卡片轮换 |
 | `og_convert.py` | PNG → JPEG（省 82%） |
 | `to_webp.py` | 图片 → WebP（5.0 MB → 0.86 MB 就是它干的） |
 | `convert_audio.py` | wma → mp3 转码 |
 
-> 两个 `check_*` 都**自带服务器（端口 8501）**，刻意避开 8500 的残留陷阱（§6.4），
-> 跑完自己清理，不占端口。
+> `check_*` 这几个都**自带服务器**（`check_aria_labels` / `check_reduced_motion` / `check_explore`
+> 用 **8501**，`check_postcard` 用 **8502**）—— 都是刻意避开 8500 那条「残留的 http.server」
+> 的坑（§6.4），跑完自己清理，不占端口。
 
 **快照工具的五个坑**（都修掉了，改 `snapshot.py` 时别退回去）：
 
@@ -860,6 +862,10 @@ cd worker && wrangler deploy
 
 # 首页名片档案体检（纯文本，秒级）
 PYTHONIOENCODING=utf-8 python tools/check_timeline_lore.py
+
+# 首页明信片断言（12 组：纯文本 + 真点真打字真存图，自带服务器 8502）
+PYTHONIOENCODING=utf-8 python tools/check_postcard.py
+PYTHONIOENCODING=utf-8 python tools/check_postcard.py --only prompt   # 只跑名字含它的（变异测试用）
 
 # 轮换分享卡片
 python tools/pick_og.py            # 随机换一张

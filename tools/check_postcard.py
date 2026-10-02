@@ -55,6 +55,7 @@ QR_PATH = 'images/qr-elysiad.png'
 QR_URL = 'https://elysiad.top/'
 QR_SIZE = 240
 ART_COUNT = 8            # spec §四：八张立绘
+DOWNLOAD_DIR = None      # 保存那条断言要读的文件落在这儿（`main()` 里指到临时 profile 下）
 
 TEXT_CHECKS = []
 BROWSER_CHECKS = []
@@ -357,6 +358,14 @@ def _art_bright_cells(b, thresh=90):
     return n
 
 
+# ⚠ 这两条下限是 2026-10-02 实测定下来的（`_tmp/probe_art_bright.py` / `probe_qr_bright.py`），
+#   两头都留了几倍余量：
+#     · 立绘那块：有图 23071（横版实测）/ 竖版最少也有 ~9500，**空框是 0**
+#     · 二维码那块：有码 10504，**只有域名那行文字时是 52**
+ART_MIN_BRIGHT = 2000
+QR_MIN_BRIGHT = 2000
+
+
 @browser_check
 def check_all_artworks_render(b):
     """八张立绘逐张：**走真用户路径**（点缩略图）+ 画布左栏**真的跟着变**。
@@ -545,9 +554,11 @@ def _bright_in_band(b):
 
 @browser_check
 def check_input_cap_and_no_overflow(b):
-    """访客写字：**200 字硬上限** + 塞满也不许溢出（含绕过 maxlength 硬塞 300 字）。
+    """访客写字：**200 字硬上限** + 塞满也不许溢出（含绕过 maxlength 硬塞 300 字）+ 绕开二维码。
 
     ⚠ 溢出判据见 `_bright_in_band` —— 文字要是压到底部那条安全带里，亮像素数会暴涨。
+    ⚠ 还有一条**像素抓不到**的：字被二维码压住（二维码是后画的，盖得严严实实）——
+      见下面 ④，读的是页面自己记下的排版读数。
     """
     _reset(b)
     fails = []
@@ -592,7 +603,30 @@ def check_input_cap_and_no_overflow(b):
     if n is None or n > 30:
         fails.append(u'硬塞 %d 字之后，底部安全带里有 %d 个亮像素 —— 文字压出栏外了'
                      % (MAX_CHARS + 100, n))
-    return (fails, u'200 字上限生效、写满也不溢出' if not fails else u'输入或排版有问题')
+
+    # ④ 还得**绕开二维码**：一行的字不许被二维码压住
+    #    ⚠ 这条是 2026-10-02 **截图**才发现的：底部那条安全带只取 x 0.15~0.72，
+    #      而二维码在 0.767~0.957 —— 正好被排除在外，字被盖掉它也报绿。
+    #    ⚠ 而且用像素**判不出来**：二维码是后画的，把字盖得严严实实，屏幕上看「一切正常」。
+    #      所以读页面自己记下的排版读数（`userEdge`，只读）。
+    for label in (u'横版', u'竖版'):
+        band = b.jso("""(() => {
+            var p = window.__ELY_POSTCARD__;
+            if (!p) return null;
+            return JSON.stringify({ edge: p.userEdge(), qrX: p.col().qr.x });
+        })()""")
+        if not band:
+            fails.append(u'[%s] 取不到排版读数（验收句柄没了？）' % label)
+        elif band['edge'] > band['qrX'] - 0.012:
+            fails.append(u'[%s] 访客的字在二维码那一行里伸到了 %.3f，二维码左沿在 %.3f —— '
+                         u'**字被二维码压住了**（二维码是后画的，盖掉的部分自己也看不见）'
+                         % (label, band['edge'], band['qrX']))
+        if label == u'横版':
+            if not b.click_sel('#postcardToggle'):
+                fails.append(u'点不到「切换横竖」—— 竖版那一半验不了')
+                break
+            time.sleep(0.8)
+    return (fails, u'200 字上限生效、写满也不溢出、也不压二维码' if not fails else u'输入或排版有问题')
 
 
 @browser_check
@@ -762,6 +796,126 @@ def check_prompt_chip_fills_input(b):
     return (fails, u'圆片填进输入框（可改）；两条降级都静默' if not fails else u'弹幕有问题')
 
 
+# ══ 保存：存下来的那张**不能是空白**（而且二维码还得扫得出来）══════════
+
+SAVE_BTN = '#postcardSave'
+
+
+def _png_bright(img, rect, thresh=90, step=4):
+    """PIL 图上一块矩形里**亮过 `thresh`** 的像素数（每 `step` 个像素取一个）。
+
+    ⚠ 和 `_art_bright_cells` 一个思路（粗采样、只看「亮」），只是这次读的是
+      **存下来的 PNG**，不是屏幕上的画布 —— 判据要落在访客真正拿到的东西上。
+    """
+    x, y, w, h = rect
+    d = list(img.convert('RGB').crop((x, y, x + w, y + h)).getdata())
+    n = 0
+    for i in range(0, len(d), step):
+        r, g, bl = d[i]
+        if (r + g + bl) / 3.0 > thresh:
+            n += 1
+    return n
+
+
+@browser_check
+def check_save_canvas_not_blank(b):
+    """写一句 → 真点「保存明信片」→ **落到盘上那张图**里有立绘、有二维码、尺寸对得上档位。
+
+    ⚠ 这条守的是**唯一一个把本站带出去的动作**：给访客一张空图，他多半不会回来说，
+      只是不会再来第二次 —— 而这事儿**页面上完全看不出来**（屏幕里那张好好的）。
+    ⚠ 所以判的是**存下来的那个文件**，不是「屏幕上那块画布」：
+      尺寸读 PNG 自己的、内容读它自己的像素、二维码**当场再解一次** ——
+      存下来那张要是扫不出来，这一趟就等于白存。
+    ⚠ 文件落在临时 profile 的 `downloads/` 里（`main()` 里配的），收尾一起删。
+    """
+    _reset(b)
+    fails = []
+
+    # 先在**有话要带走**的状态上做（走真输入路径），别在空输入框上验保存
+    if not b.click_sel(INPUT):
+        return ([u'找不到输入框 `%s`' % INPUT], u'—')
+    b.insert_text(u'这是写给她的第一句话')
+    time.sleep(0.6)
+
+    geo = b.jso("""(() => {
+        var p = window.__ELY_POSTCARD__;
+        var c = document.querySelector('#postcardPreview canvas');
+        if (!p || !c) return null;
+        return JSON.stringify({ w: c.width, h: c.height, col: p.col() });
+    })()""")
+    if not geo:
+        return (fails + [u'取不到画布或验收句柄'], u'—')
+
+    # 当前档位问 `#postcardToggle` 自己（它那个 `aria-pressed` 就是它报的状态）
+    vert = b.js("document.getElementById('postcardToggle').getAttribute('aria-pressed')") == 'true'
+    want = (1080, 1440) if vert else (1200, 800)
+    if (geo['w'], geo['h']) != want:
+        fails.append(u'点保存**之前**画布就是 %d×%d，%s档应该是 %d×%d'
+                     % (geo['w'], geo['h'], u'竖' if vert else u'横', want[0], want[1]))
+
+    if not b.click_sel(SAVE_BTN):
+        return (fails + [u'点不到「保存明信片」（%s）' % SAVE_BTN], u'—')
+
+    # 等文件落盘（`toBlob` + 下载都是异步的）
+    path = None
+    for _ in range(40):                       # 最多等 8 秒
+        time.sleep(0.2)
+        try:
+            pngs = [os.path.join(DOWNLOAD_DIR, f) for f in os.listdir(DOWNLOAD_DIR)
+                    if f.lower().endswith('.png') and not f.endswith('.crdownload')]
+        except OSError:
+            pngs = []
+        if pngs:
+            path = max(pngs, key=os.path.getmtime)
+            break
+    if not path:
+        return (fails + [u'点了「保存明信片」，`%s` 里 8 秒都没出现 PNG —— '
+                         u'保存这一步没落地' % DOWNLOAD_DIR], u'保存没落地')
+
+    try:
+        from PIL import Image
+    except ImportError:
+        return (fails + [u'没装 Pillow，存下来的图验不了 —— `pip install pillow`'], u'—')
+
+    img = Image.open(path)
+    W, H = img.size
+    if (W, H) != want:
+        fails.append(u'存下来的图是 %d×%d，%s档应该是 %d×%d'
+                     % (W, H, u'竖' if vert else u'横', want[0], want[1]))
+
+    col = geo['col']
+    for label, key, need in ((u'立绘', 'art', ART_MIN_BRIGHT), (u'二维码', 'qr', QR_MIN_BRIGHT)):
+        c = col[key]
+        if 'w' in c:
+            rect = (int(c['x'] * W), int(c['y'] * H), int(c['w'] * W), int(c['h'] * H))
+        else:                                  # qr 只有半边长 r（按**宽**算）
+            side = int(c['r'] * 2 * W)
+            rect = (int(c['x'] * W), int(c['y'] * H), side, side)
+        n = _png_bright(img, rect)
+        if n < need:
+            fails.append(u'存下来那张图上，%s那块只有 %d 个亮像素（应 ≥%d）—— 那儿是空的'
+                         % (label, n, need))
+
+    # 二维码**当场解一次**：访客存这张图就是要发出去的，扫不出来等于白存
+    try:
+        import zxingcpp
+    except ImportError:
+        fails.append(u'没装解码器，存下来那张的二维码验不了 —— `pip install zxing-cpp`')
+    else:
+        c = col['qr']
+        side = int(c['r'] * 2 * W)
+        crop = img.convert('RGBA').crop((int(c['x'] * W), int(c['y'] * H),
+                                         int(c['x'] * W) + side, int(c['y'] * H) + side))
+        got = zxingcpp.read_barcode(crop)
+        if got is None:
+            fails.append(u'存下来那张图上，二维码**解不出来**（扫码会失败）')
+        elif got.text != QR_URL:
+            fails.append(u'存下来那张图上，二维码解出来是 %r（应为 %r）' % (got.text, QR_URL))
+
+    return (fails, u'存下来的那张：尺寸对得上档位、立绘与二维码都在、二维码还扫得出来'
+            if not fails else u'保存有问题')
+
+
 @browser_check
 def check_page_quiet(b):
     """整轮下来页面不许抛异常、不许有 console.error、不许有资源 404。
@@ -876,6 +1030,15 @@ def main():
         b._send('Page.enable')
         b._send('Runtime.enable')
         b._send('Log.enable')
+        # ⚠ 保存那条断言会**真点**「保存明信片」—— 让下载落进这个临时 profile 里，
+        #   别弄脏访客自己的下载目录（收尾时整棵 profile 一起删）。
+        dl = os.path.join(profile, 'downloads')
+        if not os.path.isdir(dl):
+            os.makedirs(dl)
+        b._send('Browser.setDownloadBehavior',
+                {'behavior': 'allow', 'downloadPath': dl, 'eventsEnabled': False})
+        global DOWNLOAD_DIR
+        DOWNLOAD_DIR = dl
         b._send('Page.navigate', {'url': 'http://127.0.0.1:%d/%s?cb=%d' % (PORT, PAGE, time.time() * 1000)})
         time.sleep(2.2)
 

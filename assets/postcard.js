@@ -75,6 +75,7 @@
   var cur = Math.floor(Math.random() * ART.length);   // spec §四：默认随机一张
   var canvas = null;
   var ctx = null;
+  var userLayout = null;      // 最近一次「访客的字」的排版记录（下面是只读读数用）
 
   /* 图片加载状态：**三态**要分得开 —— 就绪 / 失败 / 还没结果 */
   var artImgs = [];
@@ -143,31 +144,47 @@
   }
 
   /* 访客写的字折行：**先按他自己打的换行分段**，再逐段按宽度折。
-     ⚠ 台词那边不用这个（台词没有换行）—— 这里多一段是因为换行是访客的表达。 */
-  function wrapUser(text, maxWidth) {
+     ⚠ 台词那边不用这个（台词没有换行）—— 这里多一段是因为换行是访客的表达。
+     ⚠ `widthAt(第几行)` 返回的是**那一行**能用的宽度，不是一个常数 ——
+       理由在 `drawUserText`：落到二维码那一行里的行，宽度得先让开。 */
+  function wrapUser(text, widthAt) {
     var out = [];
     var segs = String(text).split('\n');
     for (var si = 0; si < segs.length; si++) {
-      if (!segs[si]) { out.push(''); continue; }
-      var part = wrap(segs[si], maxWidth);
-      for (var k = 0; k < part.length; k++) out.push(part[k]);
+      var seg = segs[si];
+      if (!seg) { out.push(''); continue; }
+      /* ⚠ 一行一行地问宽度。**别**改回 `wrap(seg, 一个宽度)`：那个是「整段一次
+         问一个宽度」，落到二维码那一行里的行也跟着用全宽 —— 这条规则就等于没写
+         （2026-10-02 第一版就是这么写的：量出来还是 0.93，字照样被盖）。 */
+      var at = 0;
+      while (at < seg.length) {
+        var maxW = widthAt(out.length);         // ⚠ 每一行**单独**问一次
+        var n = 0;
+        while (at + n < seg.length &&
+               ctx.measureText(seg.substr(at, n + 1)).width <= maxW) n++;
+        if (n === 0) n = 1;                     // 一个字都放不下（宽度离谱地小）→ 至少排一个
+        out.push(seg.substr(at, n));
+        at += n;
+      }
     }
     return out;
   }
 
   /* 把访客的字排进 (maxW × maxH)：先按初始字号排，塞不下就**逐档缩小**，
      缩到下限还塞不下就不缩了（宁可挤一点，也不许把人家写的字裁掉）。 */
-  function layoutUserText(text, maxW, maxH, font0) {
+  function layoutUserText(text, maxW, maxH, font0, widthAt) {
     var f = font0;
-    /* ⚠ spec §七 写的是「下限约初值的 70%」，**实测改成了 60%**：
-       横版那张卡上 200 字在 70% 时怎么都塞不下（差 ~100px），60% 才装得下。
-       两条路里选了这条 —— 另一条「横版把上限降到 150」会在**切尺寸时截断访客已经写的字**，
-       而「切尺寸不许丢状态」是有断言守着的（Review Focus 4）。 */
-    var floor = Math.round(font0 * 0.6);
+    /* ⚠ spec §七 写的是「下限约初值的 70%」，实测降过两次：
+       ① 横版那张卡上 200 字在 70% 时怎么都塞不下（差 ~100px）→ 先降到 60%；
+       ② 加上「绕开二维码」之后（见 `drawUserText`）60% 也不够了 ——
+          下半段能用的宽度只剩约三分之二，实测要 50%（1200 宽上是 17px）才装得下。
+       另一条路「横版把上限降到 150」会在**切尺寸时截断访客已经写的字**，
+       而「切尺寸不许丢状态」是有断言守着的（Review Focus 4），所以没走那条。 */
+    var floor = Math.round(font0 * 0.5);
     var lines;
     while (true) {
       ctx.font = '300 ' + f + 'px ' + FONT_STACK;
-      lines = wrapUser(text, maxW);
+      lines = wrapUser(text, function (i) { return widthAt(f, i); });
       if (lines.length * f * 1.85 <= maxH || f <= floor) break;
       f = Math.max(floor, Math.round(f * 0.94));
     }
@@ -245,11 +262,29 @@
     return false;                                 // 调用方只管印域名
   }
 
-  /* 访客写的字。空着就不画（那一段留白，卡照出）。 */
+  /* 访客写的字。空着就不画（那一段留白，卡照出）。
+     ⚠ 字要**绕开二维码**：行一旦落到二维码那一行的范围里，可用宽度就缩到二维码左边。
+       这是 2026-10-02 **截图**才发现的问题 —— 横版写满 180 字时，中间几行正好撞在
+       二维码上；而二维码是**后画的**，把字盖掉了。**两条像素判据都报绿**：
+       底部那条安全带只取 x 0.15~0.72，二维码在 0.767~0.957，正好被排除在外。
+       所以这里顺手把排版结果记下来，让「字不许被二维码压住」那条断言问得到。 */
   function drawUserText(x, y, w, h) {
     var raw = input ? String(input.value || '') : '';
+    userLayout = null;
     if (!raw) return;
-    var lay = layoutUserText(raw, w, h, Math.round(size().w * 0.028));
+    var s = size();
+    var q = col().qr;
+    var qrTop = Math.round(q.y * s.h);              // 二维码那一行的上沿
+    var gap = Math.round(s.w * 0.022);              // 字与二维码之间留的空隙
+    var narrow = Math.round(q.x * s.w) - gap - x;
+    if (narrow < Math.round(w * 0.4)) narrow = Math.round(w * 0.4);
+    if (narrow > w) narrow = w;                     // 二维码本来就在栏外 → 规则等于没有
+    var lay = layoutUserText(raw, w, h, Math.round(s.w * 0.028), function (f, i) {
+      /* ⚠ 拿**行框**（top + 行高）判，不拿字形高度 —— 行与行之间有行距，
+         拿字形判的话最后几行的字底会贴着二维码的头。 */
+      return (y + (i + 1) * f * 1.85 > qrTop) ? narrow : w;
+    });
+    userLayout = { x: x, y: y, font: lay.font, lineH: lay.font * 1.85, lines: lay.lines };
     ctx.font = '300 ' + lay.font + 'px ' + FONT_STACK;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
@@ -259,6 +294,26 @@
       ctx.fillText(lay.lines[k], x, y + k * lay.font * 1.85);
     }
     ctx.globalAlpha = 1;
+  }
+
+  /* ⚠ **只读**：访客的字在**二维码那一行**里最右到哪（画布比例；0 = 那一行里没有字）。
+     给「字不许被二维码压住」那条断言用 —— 这件事**像素判不出来**：
+     二维码是后画的，把字盖得严严实实，屏幕上看「一切正常」（2026-10-02 就是这么漏过去的）。 */
+  function userEdgeInQrBand() {
+    if (!userLayout) return 0;
+    var s = size();
+    var q = col().qr;
+    var qrTop = q.y * s.h;
+    var qrBottom = qrTop + q.r * 2 * s.w;          // r 是半边长，按**宽**算
+    ctx.font = '300 ' + userLayout.font + 'px ' + FONT_STACK;
+    var edge = 0;
+    for (var i = 0; i < userLayout.lines.length; i++) {
+      var top = userLayout.y + i * userLayout.lineH;
+      if (top + userLayout.lineH < qrTop || top > qrBottom) continue;
+      var w = ctx.measureText(userLayout.lines[i]).width;
+      if (userLayout.x + w > edge) edge = userLayout.x + w;
+    }
+    return edge / s.w;
   }
 
   function draw() {
@@ -546,6 +601,7 @@
     qrReady: function () { return !!qrImg.ok; },
     qrFailed: qrFailed,
     artCount: function () { return ART.length; },
+    userEdge: function () { return userEdgeInQrBand(); },
     /* ⚠ 缩略图点下去走的是**同一条路**（`pickArt`）——
        句柄里的 `setArt` 也是它，免得「验收走的路径」和「访客走的路径」悄悄分家。 */
     setArt: function (i) { pickArt(i); }
