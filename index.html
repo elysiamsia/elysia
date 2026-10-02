@@ -544,6 +544,72 @@ body{
   color:#fff;background:rgba(155,93,229,.4);border-color:transparent;
 }
 .postcard-tip{font-size:.7rem;color:var(--text-muted);letter-spacing:.06em}
+
+/* ── 访客写字（spec §七）────────────────────────────────────────────────
+   输入框在画布**下面**、不进画布：字由 postcard.js 画上去，
+   而输入框本身是页面的 DOM —— 所以重画画布（换台词 / 切尺寸）时它原样留着。 */
+.postcard-write{position:relative;max-width:640px;margin:0 auto 1rem;text-align:left}
+.postcard-write-label{display:block;font-size:.72rem;letter-spacing:.16em;color:var(--text-muted);margin-bottom:.5rem}
+.postcard-input{
+  display:block;width:100%;box-sizing:border-box;resize:none;
+  padding:.8rem .9rem 1.7rem;border-radius:12px;font-family:inherit;
+  font-size:.85rem;line-height:1.8;color:var(--text);
+  background:rgba(255,200,221,.05);border:1px solid var(--glass-border);
+}
+.postcard-input::placeholder{color:var(--text-muted);opacity:.7}
+.postcard-art{
+  /* 立绘缩略图一行（spec §四）：八张 + 一个「随机」。
+     ⚠ 手机上一行放不下九个 → 这一行**自己横滑**（spec 原文「手机可横滑」），
+       所以是 `overflow-x:auto` + 定高，别把整节的高度撑起来。 */
+  display:flex;gap:.4rem;overflow-x:auto;padding:.15rem 0 .25rem;
+  max-width:640px;margin:0 auto .85rem;
+  scrollbar-width:none;
+  /* ⚠ 右端渐隐 —— 给「右边还有」这件事一个提示。没有它的话，手机上一行正好
+     停在屏幕边上，看着像「就这么多」，访客不会去横滑，「随机」和最后两张就**永远看不到**。
+     宽屏上九个格子本来就放得下（555px < 640px），渐隐落在空白处，什么也不影响。 */
+  -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
+          mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
+}
+.postcard-art::-webkit-scrollbar{display:none}
+.postcard-thumb{
+  /* ⚠ 里面用 `object-fit:contain`（**不裁切**）—— 和卡上那张相片框一个道理：
+     八张里三张是抠图、五张自带背景，裁切会切掉脸或切掉画。 */
+  flex:0 0 auto;width:56px;height:74px;padding:0;display:flex;
+  align-items:center;justify-content:center;overflow:hidden;
+  border-radius:10px;cursor:pointer;font-family:inherit;
+  font-size:.66rem;line-height:1.3;letter-spacing:.06em;color:var(--text-dim);
+  background:rgba(26,14,46,.55);border:1px solid rgba(199,125,255,.20);
+  opacity:.6;
+  transition:opacity .25s ease,border-color .25s ease,box-shadow .25s ease;
+}
+.postcard-thumb img{width:100%;height:100%;object-fit:contain;display:block}
+.postcard-thumb:hover,.postcard-thumb:focus-visible{opacity:1;border-color:rgba(199,125,255,.45)}
+.postcard-thumb[aria-pressed="true"]{
+  opacity:1;border-color:rgba(199,125,255,.7);
+  box-shadow:0 0 0 1px rgba(199,125,255,.4),0 0 12px rgba(199,125,255,.22);
+}
+
+.postcard-input:focus{outline:2px solid rgba(199,125,255,.5);outline-offset:1px}
+.postcard-prompts{display:none;gap:.5rem;flex-wrap:wrap;margin-bottom:.55rem}
+/* 焦点在输入框里、或已经写了字 → 才出现（免得这一节太吵） */
+.postcard-write.focused .postcard-prompts,
+.postcard-write.filled .postcard-prompts{display:flex}
+.postcard-chip{
+  padding:.35rem .85rem;border-radius:999px;cursor:pointer;font-family:inherit;
+  font-size:.74rem;line-height:1.6;color:var(--text-dim);
+  background:rgba(155,93,229,.10);border:1px solid rgba(199,125,255,.20);
+  transition:background .25s ease,border-color .25s ease;
+}
+.postcard-chip:hover,.postcard-chip:focus-visible{
+  background:rgba(199,125,255,.20);border-color:rgba(199,125,255,.45);color:var(--text);
+}
+.postcard-count{
+  /* ⚠ 放**标签那一行的右端**，别放输入框右下角 ——
+     右下角那一片会被**右下角悬浮的生日胶囊**盖住（它是 position:fixed 的），
+     字数就看不见了（2026-10-02 截图发现）。 */
+  position:absolute;right:0;top:0;
+  font-size:.68rem;color:var(--text-muted);letter-spacing:.08em;
+}
 @media(prefers-reduced-motion:reduce){
   .postcard-btn{transition:none}
 }
@@ -557,6 +623,9 @@ body{
 <script src="assets/daily.js" defer></script>
 <script src="assets/flowers.js" defer></script>
 <script src="assets/egg.js" defer></script>
+<script src="data/postcard-prompts.js" defer></script>
+<!-- ⚠ 上面这行**必须在** postcard.js 之前：两者都是 defer，按出现顺序执行，
+     明信片要靠 window.POSTCARD_PROMPTS 取弹幕话术。 -->
 <script src="assets/postcard.js" defer></script>
 
 <!-- ===== OPENING ===== -->
@@ -749,6 +818,62 @@ body{
   </div>
   <div class="postcard-zone">
     <div class="postcard-preview" id="postcardPreview"></div>
+    <!-- 立绘缩略图一行（spec §四）：八张可选 + 一个「随机」。
+         ⚠ 顺序必须与 `assets/postcard.js` 里的 `ART` **一一对应** ——
+           断言是逐个点、逐个核对句柄里的 `art`，写错了会被抓出来。
+         ⚠ 不新增资源：就是首页本来在用的那八张 webp；而且明信片在页面加载时
+           已经把八张都预载了（`loadImages()`），这一行**不会多出一个请求**。
+         ⚠ 图上的 `alt` 留空 —— 名字在按钮的 `aria-label` 上，免得读屏念两遍。 -->
+    <div class="postcard-art" id="postcardArt" role="group" aria-label="换一张立绘">
+      <button class="postcard-thumb" type="button" aria-pressed="false"
+              aria-label="第 1 张立绘：装甲 · 粉色妖精小姐" data-art="0">
+        <img src="images/armor-pink.webp" alt="">
+      </button>
+      <button class="postcard-thumb" type="button" aria-pressed="false"
+              aria-label="第 2 张立绘：装甲 · 嗨爱愿妖精" data-art="1">
+        <img src="images/armor-elf.webp" alt="">
+      </button>
+      <button class="postcard-thumb" type="button" aria-pressed="false"
+              aria-label="第 3 张立绘：装甲 · 真我人之律者" data-art="2">
+        <img src="images/armor-ego.webp" alt="">
+      </button>
+      <button class="postcard-thumb" type="button" aria-pressed="false"
+              aria-label="第 4 张立绘：皮肤 · 粉色甜心小姐" data-art="3">
+        <img src="images/skin-1.webp" alt="">
+      </button>
+      <button class="postcard-thumb" type="button" aria-pressed="false"
+              aria-label="第 5 张立绘：皮肤 · 夏日妖精小姐" data-art="4">
+        <img src="images/skin-2.webp" alt="">
+      </button>
+      <button class="postcard-thumb" type="button" aria-pressed="false"
+              aria-label="第 6 张立绘：皮肤 · 褪色妖精小姐" data-art="5">
+        <img src="images/skin-3.webp" alt="">
+      </button>
+      <button class="postcard-thumb" type="button" aria-pressed="false"
+              aria-label="第 7 张立绘：皮肤 · 春好桃夭" data-art="6">
+        <img src="images/skin-4.webp" alt="">
+      </button>
+      <button class="postcard-thumb" type="button" aria-pressed="false"
+              aria-label="第 8 张立绘：皮肤 · 霁月婵娟" data-art="7">
+        <img src="images/skin-5.webp" alt="">
+      </button>
+      <!-- 第九个是**动作**（重抽一张），不是一种「选中态」——
+           所以它没有 `aria-pressed`。抽完亮起来的是被抽中的那一张。 -->
+      <button class="postcard-thumb" type="button" aria-label="随机换一张立绘" data-art="random">随机</button>
+    </div>
+
+    <!-- ⚠ 访客写的那句话（spec §七）：200 字硬上限，边上实时显示字数。
+         它**不进画布**之外的任何地方 —— 画布重画时它原样留着。 -->
+    <div class="postcard-write">
+      <label class="postcard-write-label" for="postcardInput">写一句，一起带走</label>
+      <!-- 弹幕圆片：贴**当前那句台词**的预设话术（数据在 data/postcard-prompts.js）。
+           ⚠ 它们**不新增按钮** —— 圆片在输入框拿到焦点时出现、或输入框里已经有字时也在。
+           ⚠ 点一下是**填进输入框**，不是直接上卡 —— 访客还能改（需求原文「可选、可修改」）。 -->
+      <div class="postcard-prompts" id="postcardPrompts" role="group" aria-label="参考话术"></div>
+      <textarea class="postcard-input" id="postcardInput" maxlength="200" rows="3"
+                placeholder="想对她说的话，或者想带给她看的话……"></textarea>
+      <span class="postcard-count" id="postcardCount">0 / 200</span>
+    </div>
     <div class="postcard-row">
       <button class="postcard-btn" id="postcardRedraw" type="button">换一句</button>
       <button class="postcard-btn" id="postcardToggle" type="button" aria-pressed="false">切换横竖</button>
