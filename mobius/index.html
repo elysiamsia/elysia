@@ -339,7 +339,7 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
   box-shadow:0 0 40px rgba(61,220,132,.15);max-width:92vw;max-height:56vh;touch-action:none;
 }
 .game-msg{color:var(--serpent);font-size:.9rem;letter-spacing:.08em;min-height:1.6em;text-align:center}
-.game-btns{display:flex;gap:.8rem;margin-top:.3rem}
+.game-btns{display:flex;gap:.8rem;margin-top:.3rem;justify-content:center}
 .game-btn{
   min-height:44px;padding:.55rem 1.5rem;border-radius:999px;cursor:pointer;font-family:inherit;
   border:1px solid var(--glass-border);background:rgba(61,220,132,.1);color:var(--serpent);
@@ -347,6 +347,15 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
 }
 .game-btn:hover{background:rgba(61,220,132,.2);box-shadow:0 0 16px rgba(61,220,132,.25)}
 .game-btn.ghost{color:var(--text-muted);background:transparent}
+/* ⚠ 「逃离实验室」**挪到整个遮罩的右上角**，不再待在那排按钮里。
+   原来它就在**方向键 `#dpad` 正下方 18px** —— 而 dpad 正是手机上用来转向的东西，
+   玩家一直在点它，手指落低 18px（约 1.2 毫米）就正中退出键。
+   2026-10-02 在线上实测：dpad 底边往下 +5 ~ +55px 那一段点下去**必退**。
+   ⚠ 做法与 `/sakura/` 那页的「收刀」（`.sk-close`）一致 —— 两页的退出键都在右上角，
+     位置一致，也都不贴着操作区。
+   ⚠ 它是绝对定位，定位基准是 `#gameOverlay`（fixed）。**别**给 `.game-btns`
+     或别的祖先加 `position`，否则它会被拽回那排按钮里去。 */
+#gameClose{position:absolute;top:1rem;right:1rem}
 #dpad{display:none;grid-template-columns:repeat(3,56px);grid-template-rows:repeat(2,52px);gap:6px;margin-top:.5rem}
 #dpad button{
   border-radius:12px;border:1px solid var(--glass-border);background:rgba(61,220,132,.08);

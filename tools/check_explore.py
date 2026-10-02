@@ -2403,6 +2403,94 @@ def check_mobius_game_runs_under_reduced(b, page, expected):
     return (fails, summary)
 
 
+MB_GEO = """(() => {
+    var o = document.getElementById('gameOverlay');
+    var c = document.getElementById('snakeCanvas');
+    var p = document.getElementById('dpad');
+    var x = document.getElementById('gameClose');
+    if (!o || !c || !x) return JSON.stringify({ missing: true });
+    var R = function (n) { var r = n.getBoundingClientRect();
+        return { t: r.top, b: r.bottom, l: r.left, r: r.right }; };
+    var X = R(x), C = R(c);
+    var P = (p && p.getBoundingClientRect().height > 0) ? R(p) : null;
+    /* 两个矩形的最小间距：都为正才算真的分开。 */
+    var gap = function (A, B) {
+        return Math.max(Math.max(A.l - B.r, B.l - A.r), Math.max(A.t - B.b, B.t - A.b));
+    };
+    return JSON.stringify({
+        on: o.classList.contains('on'),
+        gapCanvas: Math.round(gap(C, X)),
+        gapDpad: P ? Math.round(gap(P, X)) : null,
+        playBottom: Math.round(P ? P.b : C.b),
+        /* ⚠ 落点的 x 取**操作区的右边缘**，不是中线 —— 退出键的左边缘恰好只比
+           放哨的中线偏 2px，打空过（变异测试里该红不红）。 */
+        playRight: Math.round(P ? P.r : C.r),
+        closeAt: [Math.round(X.l), Math.round(X.t), Math.round(X.r - X.l)],
+    });
+})()"""
+
+
+@check
+@mobius_only
+def check_mobius_game_close_far_from_play(b, page, expected):
+    """⑥ 「逃离实验室」离**操作区**够远 —— 手机上操作区是 `#dpad`，不是画布。
+
+    ⚠ 2026-10-02 实测，和 `/sakura/` 那页的「收刀」是**同一类问题**：
+      它原来就在 **`#dpad` 正下方 18px** —— 而 dpad 正是手机上用来转向的东西，
+      玩家一直在点它，手指落低 18px（约 1.2 毫米）就正中退出键。
+      线上逐点扫过：**dpad 底边往下 +5 ~ +55px 那一段点下去必退**。
+      已挪到整个遮罩的右上角（**与樱那页的「收刀」位置一致**）。
+
+    ⚠ 为什么判据要挑 `dpad` 而不是画布：贪吃蛇是**滑动 / 方向盘**玩的，
+      手指落在画布上的是**滑动**（不是连点），而**连点的是 dpad**。
+      只看画布的话，这条断言对真正的误触路径是瞎的。
+      （桌面没有 dpad，那时退回到量画布。）
+
+    判据：① 到**最近的**操作区 ≥ 100px ② 在它正下方 8px 点一下 → **不许关**
+    """
+    b._send('Emulation.setDeviceMetricsOverride',
+            {'width': 375, 'height': 812, 'deviceScaleFactor': 1, 'mobile': True})
+    b._send('Emulation.setTouchEmulationEnabled', {'enabled': True, 'maxTouchPoints': 5})
+    time.sleep(0.6)
+    fails = []
+    try:
+        _reset(b)
+        if not _touch_tap_sel(b, '.bottom-game .game-card-start'):
+            return ([u'用触摸点不到游戏卡上的「开始实验」按钮'], u'—')
+        time.sleep(0.5)
+
+        d = b.jso(MB_GEO)
+        if not d or d.get('missing'):
+            return ([u'找不到 `#gameOverlay` / `#snakeCanvas` / `#gameClose`'], u'—')
+        if not d['on']:
+            return ([u'点了「开始实验」，遮罩没打开'], u'—')
+
+        near = d['gapDpad'] if d['gapDpad'] is not None else d['gapCanvas']
+        what = u'dpad' if d['gapDpad'] is not None else u'画布'
+        if near < CLOSE_FAR_MIN:
+            fails.append(u'①「逃离实验室」离 %s 只有 **%dpx**（要求 ≥ %d）—— '
+                         u'手机上手指落低一点就误触退出（它在 x=%d y=%d 宽 %d）'
+                         % (what, near, CLOSE_FAR_MIN,
+                            d['closeAt'][0], d['closeAt'][1], d['closeAt'][2]))
+
+        # ⚠ 落点要落在**原来那个退出键的位置**上（它当时从「操作区下方 18px」开始，
+        #   往下 62px）。取 +24 —— 修好之后那一点上什么都没有，改回去就一定命中。
+        #   ⚠ 别贪小取 +8：那样打空 —— 变异测试会绿，这条断言就成了一句空话
+        #     （2026-10-02 实测踩过：+8 在撤销修复后**照样绿**，是它自己抓出来的）。
+        _sk_touch(b, d['playRight'], d['playBottom'] + 24)
+        time.sleep(0.45)
+        if not _overlay_open(b):
+            fails.append(u'② 在 %s 正下方 24px 点了一下，游戏就退出了 —— '
+                         u'这正是「正下方就是退出键」那个 bug' % what)
+
+        return (fails, u'「逃离实验室」够远（离 %s %dpx）' % (what, near)
+                if not fails else u'「逃离实验室」还是贴着操作区')
+    finally:
+        b._send('Emulation.setTouchEmulationEnabled', {'enabled': False})
+        b._send('Emulation.clearDeviceMetricsOverride')
+        time.sleep(0.6)
+
+
 @check
 def check_game_card_matches_module(b, page, expected):
     """游戏卡上的文案**必须来自模块自己声明的那份**。
