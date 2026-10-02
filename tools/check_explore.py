@@ -2833,6 +2833,259 @@ def check_sakura_finds_not_in_quotes(b, page, expected):
     return ([], u'12 条与语录区零重复（语录区 %d 条）' % len(quotes))
 
 
+# ══ 樱：刀 × 可发现物不打架（Task 7 / Review Focus 4）═════════════════
+#   三个可发现物（sakura-04 / 05 / 06）就撒在 `#blade` 这一节里，而这一节的
+#   主体是那个刀舞台。**两个方向都要验，而且缺一不可**：
+#     · 只验「点舞台正中 → 刀有反应」：一个「可发现物永远点不到」的实现照样能过。
+#     · 只验「点 find → 记下它」：一个「点哪都触发刀」的实现也能过。
+#   这一对是**互相印证**的 —— 单看任何一条都能被糊弄过去。
+#
+#   ⚠ 判「刀有没有反应」**不能点完再查 `.refused`**：它只挂 **190ms**
+#     （`refuseShake()` 里那个 setTimeout），而 CDP 一个来回就要几十毫秒 ——
+#     等点完再查必定扑空，这条断言就成了一句永远绿的空话。
+#     所以先装一个 MutationObserver，把它**出现过**这件事记下来。
+
+BLADE_FINDS = ('sakura-04', 'sakura-05', 'sakura-06')
+
+BLADE_WATCH = """
+(() => {
+  var s = document.getElementById('bladeStage');
+  if (!s) return 0;
+  window.__bladeSaw = { refused: false, floats: 0 };
+  new MutationObserver(function (muts) {
+    if (s.classList.contains('refused')) window.__bladeSaw.refused = true;
+    for (var i = 0; i < muts.length; i++) {
+      var add = muts[i].addedNodes;
+      for (var j = 0; j < add.length; j++) {
+        var n = add[j];
+        if (n.classList && n.classList.contains('blade-float')) window.__bladeSaw.floats++;
+      }
+    }
+  }).observe(s, { attributes: true, attributeFilter: ['class'], childList: true });
+  return 1;
+})()
+"""
+
+
+def _blade_watch(b):
+    """装上「刀刚才有没有反应」的记录器（`.refused` + 「纹丝不动」浮字）。"""
+    return b.js(BLADE_WATCH)
+
+
+def _blade_saw(b):
+    return b.jso('JSON.stringify(window.__bladeSaw || null)')
+
+
+def _blade_count(b):
+    return b.js("(() => { var e = document.getElementById('bladeCount');"
+                " return e ? e.textContent : null; })()")
+
+
+def _reset_blade(b):
+    """清掉探索进度**和**「已收花」，再 reload —— 让刀从「没送过花」出发。
+
+    ⚠ `sakuraFlower` 必须一起清：收过花之后 `tryDraw` 不再 `tries++`，
+      计数行会停在「她给了你一朵花」—— 而这两条断言看的正是**计数有没有动**。
+      （不这么做的话，断言的结果会取决于前面跑过哪几条 —— 那种依赖迟早变成假红。）
+    """
+    b.js("(() => { try {"
+         " localStorage.removeItem('elysia:explore:' + ElysiaExplore.pageId());"
+         " localStorage.removeItem('sakuraFlower');"
+         " } catch (e) {} return 1; })()")
+    _reload(b)
+
+
+def _hit_at(b, sel):
+    """`elementFromPoint` 在那个元素中心命中了什么。
+
+    ⚠ 失败信息里必须带上它 —— 只说「刀没反应」的话，下一个人还得自己再查一遍
+      「到底是谁压在上面」。这类断言的价值一半在**报出来的原因**。
+    """
+    return b.js("""(() => {
+        var n = document.querySelector('%s');
+        if (!n) return '(元素本身就不存在)';
+        var r = n.getBoundingClientRect();
+        var e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        if (!e) return '(null)';
+        var c = e.className;
+        if (c && typeof c !== 'string') c = c.baseVal;
+        var f = e.closest ? e.closest('.explore-find') : null;
+        return e.tagName + (e.id ? '#' + e.id : '')
+             + (c ? '.' + String(c).split(' ').join('.') : '')
+             + (f ? '  ← 可发现物 ' + f.getAttribute('data-find-id') : '');
+    })()""" % sel)
+
+
+@check
+@sakura_only
+def check_sakura_blade_click_not_stolen(b, page, expected):
+    """① 点**刀舞台的正中** → 刀有反应（拒了一下 + 浮字 + 计数），且探索度**不动**。
+
+    这一半挡的是「可发现物的热区把舞台盖住」：那样点下去会落到 find 上，
+    `tryDraw` 根本收不到事件 —— 用户看到的是「刀点不动了」，而没有任何报错。
+    """
+    _reset_blade(b)
+    before_count = _blade_count(b)
+    if before_count is None:
+        return ([u'这一页没有 #bladeStage / #bladeCount —— 「鞘中刀」模块不在？'], u'—')
+
+    before_found = b.found_ids()
+    _blade_watch(b)
+
+    if not _click_sel(b, '#bladeStage'):
+        return ([u'点不到 #bladeStage'], u'—')
+    time.sleep(0.3)
+
+    saw = _blade_saw(b) or {}
+    after_found = b.found_ids()
+    hit = _hit_at(b, '#bladeStage')
+
+    fails = []
+    if not saw.get('refused'):
+        fails.append(u'点了刀舞台的**正中**，`.refused` 那一下没出现过 —— '
+                     u'那个点上命中的是 %s，刀的点击被截走了' % hit)
+    if not saw.get('floats'):
+        fails.append(u'点了刀舞台的正中，没有「纹丝不动」浮字（命中的是 %s）' % hit)
+    if _blade_count(b) == before_count:
+        fails.append(u'点了刀舞台的正中，计数行没动（一直是 %r）—— `tryDraw` 没跑到'
+                     % before_count)
+    if after_found != before_found:
+        fails.append(u'点**刀舞台**却把可发现物也触发了（%r → %r）—— 两边在互相误触'
+                     % (before_found, after_found))
+
+    return (fails, u'点舞台：刀有反应、探索度不动' if not fails else u'刀舞台被截走了')
+
+
+@check
+@sakura_only
+def check_sakura_blade_finds_dont_swing(b, page, expected):
+    """② 点 `#blade` 上那三个可发现物**各自的中心** → 它被记下，且刀**没有反应**。
+
+    这一半挡的是「点哪都触发刀」：那样想找东西反而在拔刀，而 `tries++` 是**有副作用**的
+    —— 拔够三次她会把「勿忘我」送出去，于是「我只是想点点看」变成了改掉这一页的状态。
+    """
+    _reset_blade(b)
+    before_count = _blade_count(b)
+    if before_count is None:
+        return ([u'这一页没有 #bladeStage / #bladeCount —— 「鞘中刀」模块不在？'], u'—')
+
+    _blade_watch(b)
+
+    fails = []
+    for fid in BLADE_FINDS:
+        if fid in b.found_ids():
+            fails.append(u'%s 在测之前就已经是「已发现」了 —— 前面的检查污染了它' % fid)
+            continue
+        if not _trigger(b, fid):
+            fails.append(u'触发不了 %s —— 它没被渲染出来，或者拿不到它的中心点' % fid)
+            continue
+        time.sleep(0.2)
+        if fid not in b.found_ids():
+            fails.append(u'点了 %s 的中心，它却没被记为「已发现」（那个点上命中的是 %s）'
+                         % (fid, _hit_at(b, '[data-find-id="%s"]' % fid)))
+
+    time.sleep(0.2)
+    saw = _blade_saw(b) or {}
+    if saw.get('refused'):
+        fails.append(u'点可发现物的时候，**刀也被惊动了**（`.refused` 出现过）—— '
+                     u'两个系统在打架')
+    if saw.get('floats'):
+        fails.append(u'点可发现物的时候，刀浮出了「纹丝不动」× %d 次' % saw['floats'])
+    if _blade_count(b) != before_count:
+        fails.append(u'点可发现物的时候，刀的计数行动了（%r → %r）—— `tryDraw` 被误触发了'
+                     % (before_count, _blade_count(b)))
+
+    return (fails, u'点可发现物：记下了它、刀没反应' if not fails else u'可发现物被刀抢了')
+
+
+# 三个可发现物相对**刀舞台**的位置。
+# ⚠ 判据是「find 的**中心**落不落在舞台矩形里」—— 和 `check_finds_not_on_text`
+#   用同一个口径（那边也是取中心点）。用户瞄的就是那个中心。
+MEASURE_BLADE_OVERLAP = """
+(() => {
+  var sec = document.getElementById('blade');
+  var st = document.getElementById('bladeStage');
+  if (!sec || !st) return null;
+  var R = st.getBoundingClientRect();
+  var secR = sec.getBoundingClientRect();
+  var out = [].slice.call(sec.querySelectorAll('.explore-find')).map(function (n) {
+    var r = n.getBoundingClientRect();
+    var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    /* dist > 0 = 中心在舞台外面，数值就是**离得多远**（px）；
+       dist <= 0 = 中心落在舞台矩形里。报告里要带上它 ——
+       绿色的运行也该说清楚「绿得有多勉强」。 */
+    var dx = Math.max(R.left - cx, cx - R.right);
+    var dy = Math.max(R.top - cy, cy - R.bottom);
+    return {
+      id: n.getAttribute('data-find-id'),
+      onStage: cx >= R.left && cx <= R.right && cy >= R.top && cy <= R.bottom,
+      inside: st.contains(n),
+      dist: Math.round(Math.max(dx, dy)),
+      x: +(secR.width ? (cx - secR.left) / secR.width : 0).toFixed(3),
+    };
+  });
+  return JSON.stringify({ finds: out });
+})()
+"""
+
+
+@check
+@sakura_only
+def check_sakura_blade_finds_clear_of_stage(b, page, expected):
+    """③ 三个可发现物**不许压在刀舞台上**（两个视口都要量）。
+
+    ⚠ 为什么①②这一对之外还要单独一条**几何**的：
+      那两条只采「舞台**正中**」这**一个点**。一个 find 要是挪到舞台的左三分之一上，
+      ① 照样绿 —— 而用户点那一片想拔刀，落到的是 find，没有任何东西会报出来。
+      几何这条把整块舞台都盖住了。
+
+    ⚠ **两个视口都要量**，而且手机那一遍才是关键：
+      坐标是 `#blade` 宽度的百分比，而舞台的占比**随视口剧变** ——
+      实测 1280 下舞台占 `#blade` 的 x `0.379~0.621`，**360 宽下是 `0.071~0.929`**。
+      也就是说 `x:0.10` 这种坐标在桌面上离舞台很远、在手机上却紧贴着它。
+      （同一条教训见 `check_finds_not_on_text`：2026-10-02 实测 375 下 4 个压着字，
+        而当时那条断言只看桌面 —— 「只测桌面 = 这条防线对手机是空的」。）
+    """
+    fails = []
+    total = 0
+    tight = None          # (余量px, id, 视口) —— 全站最紧的那一处
+    for (w, h, label) in ((None, None, u'默认'), (375, 812, u'375')):
+        if w:
+            b._send('Emulation.setDeviceMetricsOverride',
+                    {'width': w, 'height': h, 'deviceScaleFactor': 1, 'mobile': True})
+            time.sleep(0.6)
+        d = b.jso(MEASURE_BLADE_OVERLAP)
+        if d is None:
+            fails.append(u'[%s] 这一页没有 #blade / #bladeStage —— 「鞘中刀」模块不在？' % label)
+            continue
+        finds = d['finds']
+        total = max(total, len(finds))
+        if not finds:
+            fails.append(u'[%s] `#blade` 里一个可发现物都没有 —— 锚点选择器写错了？' % label)
+        for n in finds:
+            if tight is None or n['dist'] < tight[0]:
+                tight = (n['dist'], n['id'], label)
+            if n['inside']:
+                fails.append(u'[%s] %s：**被放进了舞台里面** —— 点它会顺着冒泡去拔刀'
+                             % (label, n['id']))
+            elif n['onStage']:
+                fails.append(u'[%s] %s：中心落在刀舞台上（x≈%s）—— 这里本该是「拔刀」，'
+                             u'用户点到的是它' % (label, n['id'], n['x']))
+
+    # ⚠ **必须清掉** —— 否则这个 375 的模拟会跟着后面**所有**断言，
+    #   把一整轮后续结果都变成「在手机上测的」，而人会以为自己测的是桌面。
+    b._send('Emulation.clearDeviceMetricsOverride')
+    time.sleep(0.6)
+
+    if fails:
+        return (fails, u'%d 处压在刀舞台上' % len(fails))
+    # 顺手报出**最小余量**：绿色的运行也该说清楚「绿得有多勉强」——
+    # 2026-10-02 实测手机上 sakura-04 只剩 **44px**（桌面是 333px），
+    # 是全站最紧的一处。数字不动地挂在这里，缩水了看得见。
+    return ([], u'%d 个都躲开了刀舞台（两个视口，最小余量 %dpx：%s @ %s）'
+            % (total, tight[0], tight[1], tight[2]))
+
+
 # ══ 樱的小游戏「一瞬」（Task 6）══════════════════════════════════════
 #   和 mobius 那条同一个思路：游戏状态在 canvas 上、拿不到内部变量（脚本是 IIFE），
 #   所以判「在不在动」只能靠**画面本身**。
