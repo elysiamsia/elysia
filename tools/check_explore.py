@@ -2478,7 +2478,7 @@ def check_mobius_game_close_far_from_play(b, page, expected):
         #   往下 62px）。取 +24 —— 修好之后那一点上什么都没有，改回去就一定命中。
         #   ⚠ 别贪小取 +8：那样打空 —— 变异测试会绿，这条断言就成了一句空话
         #     （2026-10-02 实测踩过：+8 在撤销修复后**照样绿**，是它自己抓出来的）。
-        _sk_touch(b, d['playRight'], d['playBottom'] + 24)
+        _touch_pt(b, d['playRight'], d['playBottom'] + 24)
         time.sleep(0.45)
         if not _overlay_open(b):
             fails.append(u'② 在 %s 正下方 24px 点了一下，游戏就退出了 —— '
@@ -2490,6 +2490,423 @@ def check_mobius_game_close_far_from_play(b, page, expected):
         b._send('Emulation.setTouchEmulationEnabled', {'enabled': False})
         b._send('Emulation.clearDeviceMetricsOverride')
         time.sleep(0.6)
+
+
+# ══ 小游戏：三页通用那几条（mobius / sakura / kosma）═══════════════════
+#   ⚠ 为什么要有这一层：到科斯魔为止已经有**三页**各带一个小游戏，而它们要守的
+#     东西里有三条是**完全通用**的 —— 再往后还有 9 位，一页抄一份就是给自己埋雷
+#     （HANDOVER §10.5 合并 `BUILT` 的教训：同一件事两处维护，迟早漏一处）。
+#
+#   ⚠ **「判定」那一条不通用**（每位玩法都不一样），各页自己写：
+#     sakura → `check_sakura_judgment`；kosma → `check_kosma_judgment`。
+#
+#   每页报上来的东西：
+#     overlay  遮罩的 **id**
+#     canvas   画布选择器
+#     close    退出键选择器
+#     play     **操作区**：手机上玩家真正一直在点的那个东西。
+#              ⚠ sakura / kosma 就是画布本身；**mobius 是 `#dpad`** ——
+#                贪吃蛇是滑动/方向盘玩的，手指落在画布上的是滑动，连点的是方向键。
+#                照「离画布多远」去量 mobius，它会报 254px、看着很安全，
+#                而**真正的误触路径一个字都没提**（实测栽过，见 §10.10 五）。
+#              `None` = 与画布同一个。
+#     guard    退出键有没有「刚打开不许关」的保护期（mobius 那页没有）
+#   ⚠ **这里只收「模块式」的游戏页** —— 也就是遮罩由 `assets/games/*.js`
+#     **自己建**、结构是「遮罩 → 面板 → 画布 + 退出键」的那一类。
+#     `/mobius/` **不在里面**：它那页的遮罩是**页面自己拥有的老写法**
+#     （没有面板层、画布是**滑动面**、手机上真正连点的是 `#dpad`），
+#     所以它另有一套自己的断言（`check_mobius_game_*`），保持原样。
+#
+#     ⚠ 通用那三条**跑在 mobius 身上时翻出了两个真问题**（2026-10-02 实测）：
+#       · **横屏放不下**：640×360 下画布 y=-34、dpad 一直伸到 369 —— 上下都被切，
+#         而 fixed 遮罩没有滚动条，切掉的够不着（它的内容总高 ~718px，横屏只有 360）
+#       · **退出键离画布只有 58px**（离 dpad 是 502px ✓）—— 它那页的画布是**滑动面**，
+#         玩家在上面拖而不是点，风险比连点低，但 58px 仍然偏紧
+#     两条都记进了 HANDOVER §5.2 **另开一轮修**（要动它的遮罩布局，属那一页自己的事）。
+GAMES = {
+    'sakura/index.html':  {'overlay': 'sakuraGameOverlay', 'canvas': '.sk-canvas',
+                           'close': '.sk-close', 'play': None, 'guard': True},
+    'kosma/index.html':   {'overlay': 'kosmaGameOverlay', 'canvas': '.km-canvas',
+                           'close': '.km-close', 'play': None, 'guard': True},
+}
+GAME_PAGES = tuple(sorted(GAMES.keys()))
+
+CLOSE_FAR_MIN = 100        # 退出键到操作区的最小间距（px）
+
+
+def game_pages(fn):
+    """收窄成「只对这些带小游戏的页成立」。"""
+    fn.pages = GAME_PAGES
+    return fn
+
+
+def _g_sig(b, cfg):
+    """画布画面的签名 —— 游戏状态取不到（脚本是 IIFE），只能看画面本身。"""
+    return b.js("(() => { var c = document.querySelector('%s');"
+                " return c ? c.toDataURL() : null; })()" % cfg['canvas'])
+
+
+def _g_open(b, cfg):
+    v = b.js("(() => { var o = document.getElementById('%s');"
+             " return o ? o.classList.contains('on') : null; })()" % cfg['overlay'])
+    return v == 'true' or v is True
+
+
+def _g_state(b, cfg):
+    """遮罩开合 **和** `aria-hidden`（两个都要读）。
+
+    ⚠ 漏了 `aria-hidden` 就会漏掉 HANDOVER §10.9 六 那个坑：面板「视觉上开着、
+      屏幕阅读器却以为它藏着」，只因代码只 `classList.add('on')`。快照**测不出属性**。
+    """
+    return b.jso("""(() => {
+        var o = document.getElementById('%s');
+        if (!o) return JSON.stringify({ missing: true });
+        return JSON.stringify({ open: o.classList.contains('on'),
+                                aria: o.getAttribute('aria-hidden') });
+    })()""" % cfg['overlay'])
+
+
+def _g_rect(b, sel):
+    return b.jso("""(() => {
+        var n = document.querySelector('%s');
+        if (!n) return null;
+        var r = n.getBoundingClientRect();
+        return JSON.stringify({ l: r.left, t: r.top, r: r.right, b: r.bottom,
+                                w: r.width, h: r.height, vw: innerWidth, vh: innerHeight });
+    })()""" % sel)
+
+
+def _g_gap(a, c):
+    """两个矩形的最小间距（>0 = 真的分开了）。"""
+    if not a or not c:
+        return None
+    return max(max(a['l'] - c['r'], c['l'] - a['r']), max(a['t'] - c['b'], c['t'] - a['b']))
+
+
+def _g_probe(b, cfg):
+    """「开始」→ 遮罩打开（含 aria）→ 画面在动；再关掉 → 静止。
+
+    ⚠ 后半段（关掉之后必须静止）不是多余的 —— 没有它，「两次采样不同」有可能
+      只是 canvas 的 dataURL 编码本身不稳定，那这条断言就是恒真式。
+      前几轮反复出现的正是这一类问题。
+    """
+    fails = []
+    st = _g_state(b, cfg) or {}
+    if st.get('missing'):
+        fails.append(u'页面里没有 #%s —— 模块的 mount(host) 没建出来？' % cfg['overlay'])
+    else:
+        if st.get('open'):
+            fails.append(u'还没点，遮罩就是打开的')
+        if st.get('aria') != 'true':
+            fails.append(u'遮罩关着，`aria-hidden` 却是 %r —— 该是 "true"' % st.get('aria'))
+
+    if not _click_sel(b, '.bottom-game .game-card-start'):
+        return ([u'找不到游戏卡上的「开始」按钮 —— 模块的 mount(host) 没跑？'], u'—')
+
+    st = _g_state(b, cfg) or {}
+    if not st.get('open'):
+        fails.append(u'点了「开始」，遮罩却没有打开')
+    if st.get('aria') != 'false':
+        fails.append(u'遮罩开了，`aria-hidden` 却是 %r —— 面板视觉上开着、'
+                     u'屏幕阅读器却以为它藏着（HANDOVER §10.9 六 那个坑）' % st.get('aria'))
+
+    # ⚠ **采三次，不是两次。** 2026-10-02 实测：两采样的判据**挡不住
+    #   「只画了那一帧」** —— 点「开始」时那一帧总会被画出来，于是 s1≠s2 就成立了，
+    #   而一个「循环不再排下一帧」的实现照样绿（变异测试 M1 就这么漏过去的）。
+    #   三次采样要求**至少有一对相邻不同**，才真的说明它在持续动。
+    s1 = _g_sig(b, cfg)
+    time.sleep(0.45)
+    s2 = _g_sig(b, cfg)
+    time.sleep(0.45)
+    s3 = _g_sig(b, cfg)
+    if s1 is None or s2 is None or s3 is None:
+        fails.append(u'取不到画布（%s）' % cfg['canvas'])
+    elif s2 == s3:
+        # ⚠ 判据盯的是**稳态**：**最后两次必须不同**。
+        #   2026-10-02 实测（连撞两次）：
+        #   ① 两采样（s1/s2）挡不住「只画一帧」—— 开始那一帧总会被画出来；
+        #   ② 改成「三次全等才算没动」**还是挡不住** —— 调试打出来是
+        #      `siglen 7174/9546/9546`：第一帧落在 s1 与 s2 之间（headless 下首帧
+        #      合成偏慢），于是 s1≠s2 又把它放过去了。
+        #   **只有「s2 与 s3 相同」才真的说明它停着不动。**
+        fails.append(u'开始之后**后两次采样一模一样**（%s）—— 画面没在动；'
+                     u'只画一帧的实现也会在这里露馅' % len(s3 or ''))
+
+    # ── 证伪那半段：关掉之后画面必须静止 ──
+    if not _click_sel(b, cfg['close']):
+        fails.append(u'找不到遮罩上的退出键（%s）' % cfg['close'])
+        return (fails, u'（没能做反向验证）')
+
+    st = _g_state(b, cfg) or {}
+    if st.get('open'):
+        fails.append(u'点了退出键，遮罩却没关')
+    if st.get('aria') != 'true':
+        fails.append(u'遮罩关了，`aria-hidden` 却是 %r' % st.get('aria'))
+
+    c1 = _g_sig(b, cfg)
+    time.sleep(0.45)
+    c2 = _g_sig(b, cfg)
+    if c1 is not None and c2 is not None and c1 != c2:
+        fails.append(u'关掉之后画面**还在变** —— 说明上面那个判据是恒真式，测了等于没测')
+
+    return (fails, u'开局在动、关掉静止（判据有牙齿）' if not fails else u'游戏没跑起来')
+
+
+@check
+@game_pages
+def check_game_runs(b, page, expected):
+    """① 「开始」→ 遮罩打开（含 `aria-hidden` 同步）→ 画面在动；关掉 → 静止。"""
+    _reset(b)
+    return _g_probe(b, GAMES[page])
+
+
+@check_reduced
+@game_pages
+def check_game_runs_under_reduced(b, page, expected):
+    """② 减动偏好下小游戏**照常能玩**（Review Focus #5）。
+
+    ⚠ 游戏内部的动画由「开始」**显式触发**，不属「自动播放的装饰动效」——
+      有人在减动段里一刀切 `animation:none` / 停掉 rAF 时，这一条会红。
+      （判据与 ① 同一套，含「关掉之后必须静止」那半段。）
+    """
+    _set_motion(b, 'reduce')
+    _reset(b)
+    fails, summary = _g_probe(b, GAMES[page])
+    _set_motion(b, 'reduce')      # 收尾：把模式留给后面的减动断言
+    return (fails, summary)
+
+
+@check
+@game_pages
+def check_game_fits_mobile(b, page, expected):
+    """③ 手机上**玩得起来**：关键元素放得下 + 画布不拉扁 + 真触摸能开局。
+
+    ⚠ 为什么量「关键元素」而不是「面板」：mobius 那页的遮罩里**根本没有面板这一层**
+      （画布 / 方向键 / 按钮直接挂在遮罩上）。量 画布 + 操作区 + 退出键 这三样，
+      三页都说得通，而且在手机上是**最容易出事**的三样。
+
+    ⚠ **开局那一步故意放在 320 宽**：那一档 `visualViewport.offsetTop` 是 **63px**，
+      比按钮本身（41px）还高 —— 不换算坐标就**一定**点偏。375 那一档只有个位数，
+      算错了也照样点得中，**验不出东西**（见 §6.4 那条坐标偏移）。
+    """
+    cfg = GAMES[page]
+    play_sel = cfg['play'] or cfg['canvas']
+    fails = []
+
+    b._send('Emulation.setDeviceMetricsOverride',
+            {'width': 320, 'height': 568, 'deviceScaleFactor': 1, 'mobile': True})
+    b._send('Emulation.setTouchEmulationEnabled', {'enabled': True, 'maxTouchPoints': 5})
+    time.sleep(0.6)
+    try:
+        _reset(b)
+        if not _touch_tap_sel(b, '.bottom-game .game-card-start'):
+            return ([u'用触摸点不到游戏卡上的「开始」按钮'], u'—')
+        time.sleep(0.5)
+        if not _g_open(b, cfg):
+            return ([u'用触摸点了「开始」，遮罩却没打开 —— 手机上玩不了'], u'—')
+
+        # ── 关键元素放得下 + 画布不拉扁（四个视口）──
+        for (w, h) in ((375, 812), (360, 640), (320, 568), (640, 360)):
+            b._send('Emulation.setDeviceMetricsOverride',
+                    {'width': w, 'height': h, 'deviceScaleFactor': 1, 'mobile': True})
+            time.sleep(0.55)
+            cv = _g_rect(b, cfg['canvas'])
+            if not cv:
+                fails.append(u'[%d] 找不到画布（%s）' % (w, cfg['canvas']))
+                continue
+            for label, sel in ((u'画布', cfg['canvas']), (u'操作区', play_sel), (u'退出键', cfg['close'])):
+                r = _g_rect(b, sel)
+                if not r:
+                    fails.append(u'[%d] 找不到%s（%s）' % (w, label, sel))
+                elif r['l'] < -0.5 or r['r'] > r['vw'] + 0.5 or r['t'] < -0.5 or r['b'] > r['vh'] + 0.5:
+                    fails.append(u'[%d] %s 超出视口：x %d~%d / y %d~%d，视口 %dx%d —— '
+                                 u'会被切掉，而 fixed 遮罩没有滚动条，切掉的够不着'
+                                 % (w, label, round(r['l']), round(r['r']), round(r['t']),
+                                    round(r['b']), r['vw'], r['vh']))
+            # ⚠ 画布必须是方的：显式定宽 + `max-height` 同时生效会把画面**拉扁**
+            if abs(cv['w'] - cv['h']) > 1:
+                fails.append(u'[%d] 画布被拉扁了：%.1f × %.1f（该等比缩）' % (w, cv['w'], cv['h']))
+            _g_open(b, cfg) or fails.append(u'[%d] 缩放之后遮罩被关掉了' % w)
+
+        return (fails, u'手机上放得下 + 摸得到（320 开局 / 四个视口）' if not fails
+                else u'手机上有问题')
+    finally:
+        b._send('Emulation.setTouchEmulationEnabled', {'enabled': False})
+        b._send('Emulation.clearDeviceMetricsOverride')
+        time.sleep(0.6)
+
+
+@check
+@game_pages
+def check_game_close_far_from_play(b, page, expected):
+    """④ 退出键离**操作区**够远，而且（有保护期的页）刚打开那一下不许关。
+
+    ⚠ 2026-10-02 需求方报的真 bug：「点一下就退出去了」。实测：能关掉它的
+      **只有退出键和 Escape**，而樱那页的「收刀」就在**画布正下方 55px** ——
+      反应类游戏里手指落低一点就误触（画布底 +55~+100px 那一段点下去**必退**）。
+      mobius 更紧：它的「逃离实验室」在 **`#dpad` 正下方 18px**（约 1.2 毫米）。
+      两页都已挪到**整个遮罩的右上角**。
+
+    判据：① 到**最近的**操作区 ≥ 100px
+          ② 在**它原来那个位置**（操作区正下方 24px）点一下 → **不许关**
+          ③ 有保护期的页：刚打开就点它 → 不许关；过了保护期 → 要能关
+    """
+    cfg = GAMES[page]
+    play_sel = cfg['play'] or cfg['canvas']
+    fails = []
+
+    b._send('Emulation.setDeviceMetricsOverride',
+            {'width': 375, 'height': 812, 'deviceScaleFactor': 1, 'mobile': True})
+    b._send('Emulation.setTouchEmulationEnabled', {'enabled': True, 'maxTouchPoints': 5})
+    time.sleep(0.6)
+    try:
+        _reset(b)
+        if not _touch_tap_sel(b, '.bottom-game .game-card-start'):
+            return ([u'用触摸点不到游戏卡上的「开始」按钮'], u'—')
+        time.sleep(0.5)
+
+        cl = _g_rect(b, cfg['close'])
+        cv = _g_rect(b, cfg['canvas'])
+        pl = _g_rect(b, play_sel)
+        if not cl or not cv:
+            return ([u'找不到退出键（%s）或画布（%s）' % (cfg['close'], cfg['canvas'])], u'—')
+
+        gaps = [(u'画布', _g_gap(cv, cl))]
+        if cfg['play']:
+            # ⚠ 只在**操作区真的显示着**时把它算进来（mobius 的 dpad 只在
+            #   粗指针 / 触摸环境下出现，靠触摸模拟才会显示）。
+            if pl and pl['h'] > 1:
+                gaps.append((u'操作区', _g_gap(pl, cl)))
+        near_label, near = min(gaps, key=lambda kv: kv[1])
+        if near < CLOSE_FAR_MIN:
+            fails.append(u'① 退出键离%s只有 **%dpx**（要求 ≥ %d）—— 反应类游戏里'
+                         u'手指落低一点就误触退出' % (near_label, near, CLOSE_FAR_MIN))
+
+        # ② 在操作区**正下方 24px**（原来那个退出键的位置）点一下 → 不许关
+        base = (pl if (cfg['play'] and pl and pl['h'] > 1) else cv)
+        _touch_pt(b, base['r'] - 30, base['b'] + 24)
+        time.sleep(0.45)
+        if not _g_open(b, cfg):
+            fails.append(u'② 在%s正下方 24px 点了一下，游戏就退出了 —— '
+                         u'这正是「正下方就是退出键」那个 bug' % near_label)
+
+        # ③ 保护期（只有带这道保险的页才查）
+        if cfg['guard']:
+            if _g_open(b, cfg):
+                _touch_tap_at(b, cfg['close'])      # 正常关掉（早就过了保护期）
+                time.sleep(0.45)
+            if not _touch_tap_sel(b, '.bottom-game .game-card-start'):
+                fails.append(u'③ 重开时点不到「开始」按钮')
+            else:
+                # ⚠ **这里不能 sleep** —— 此刻离打开才一百多毫秒，必须落在保护期内
+                _touch_tap_at(b, cfg['close'])
+                time.sleep(0.35)
+                if not _g_open(b, cfg):
+                    fails.append(u'③ 刚打开就点退出键，游戏当场关了 —— '
+                                 u'400ms 的保护期没生效')
+                else:
+                    time.sleep(0.6)
+                    _touch_tap_at(b, cfg['close'])
+                    time.sleep(0.35)
+                    if _g_open(b, cfg):
+                        fails.append(u'③ 过了保护期，退出键还是关不掉 —— 那就没法退出了')
+
+        return (fails, u'退出键离%s %dpx、原位不禁触%s'
+                % (near_label, near, u'、保护期有效' if cfg['guard'] else '')
+                if not fails else u'退出键还是贴着操作区')
+    finally:
+        b._send('Emulation.setTouchEmulationEnabled', {'enabled': False})
+        b._send('Emulation.clearDeviceMetricsOverride')
+        time.sleep(0.6)
+
+
+KOSMA = 'kosma/index.html'
+
+
+def kosma_only(fn):
+    """收窄成「只对 /kosma/ 成立」—— 查的是他那一页的内容规格。"""
+    fn.pages = (KOSMA,)
+    return fn
+
+
+KOSMA_HUD = """(() => {
+    var o = document.getElementById('kosmaGameOverlay');
+    var q = function (s) { var n = o && o.querySelector(s); return n ? n.textContent : null; };
+    return JSON.stringify({ on: o ? o.classList.contains('on') : null,
+                            kept: q('.km-kept'), run: q('.km-run'),
+                            best: q('.km-best'), msg: q('.km-msg') });
+})()"""
+
+
+@check
+@kosma_only
+def check_kosma_judgment(b, page, expected):
+    """⑤ 「守灯」的判定真的生效 —— **三半都要验**（玩法专属，不通用）。
+
+    ① **按住把框托着扫过整根柱子** → 「守住」**必须变多**。
+       ⚠ 这一半的可信度来自**扫过的必然性**：框会从柱底一路升到柱顶，
+         中途**一定会**经过光点 —— 所以它不依赖任何时机运气，是可证伪的。
+    ② **一直按住不放** → 框顶到头上不动了，光点迟早溜出去 → 风涨满 →
+       **「灯灭了」必须出现**。（判定要是反了，按住反而会一直守住、永远不灭。）
+    ③ 结算之后 HUD 上的**「最佳」要跟得上「守住」**。
+       ⚠ 这里真出过一个 bug：`best` 存的就是**秒**，`syncHud()` 里又除了一次 1000，
+         于是「最佳」永远是 0.0 —— **存对了、显示错了**。
+         是「按住 2.5 秒然后读 HUD」的探针跑出来的（渲染对 ≠ 能玩），这条把它钉住。
+    """
+    cfg = GAMES[page]
+    _reset(b)
+    if not _click_sel(b, '.bottom-game .game-card-start'):
+        return ([u'找不到游戏卡上的「开始」按钮'], u'—')
+    time.sleep(0.4)
+    if not _g_open(b, cfg):
+        return ([u'点了「开始」，遮罩没打开'], u'—')
+
+    cv = _g_rect(b, cfg['canvas'])
+    if not cv:
+        return ([u'找不到画布（%s）' % cfg['canvas']], u'—')
+    cx, cy = (cv['l'] + cv['r']) / 2, (cv['t'] + cv['b']) / 2
+
+    fails = []
+
+    # ── ① 按住 2.5 秒：守住必须变多 ──
+    b.press(cx, cy)
+    time.sleep(2.5)
+    d = b.jso(KOSMA_HUD) or {}
+    try:
+        kept = float(d.get('kept') or 0)
+    except ValueError:
+        kept = -1.0
+    if kept <= 0:
+        fails.append(u'① 按住 2.5 秒，「守住」还是 %r —— 框明明扫过整根柱子，'
+                     u'却一次都没罩住光点，判定没生效' % d.get('kept'))
+
+    # ── ② 继续按住（框已经顶到头了）→ 光点迟早溜走 → 灯灭了 ──
+    died = False
+    for _ in range(24):                       # 最多 12 秒
+        time.sleep(0.5)
+        d = b.jso(KOSMA_HUD) or {}
+        if u'灯灭了' in (d.get('msg') or u''):
+            died = True
+            break
+    b.release(cx, cy)
+    if not died:
+        fails.append(u'② 一直按住不放，「灯灭了」始终没出现（msg=%r）—— '
+                     u'要么风压不涨、要么罩住判定反了' % (d.get('msg') or u''))
+
+    # ── ③ 最佳要跟得上守住 ──
+    d = b.jso(KOSMA_HUD) or {}
+    try:
+        k = float(d.get('kept') or 0)
+        bs = float(d.get('best') or 0)
+    except ValueError:
+        k, bs = -1.0, -2.0
+    if abs(k - bs) > 0.15:
+        fails.append(u'③ 结算后 HUD 上「守住 %s」但「最佳 %s」—— 对不上。'
+                     u'（⚠ 真出现过：`best` 已经是秒，显示时又除了一次 1000）'
+                     % (d.get('kept'), d.get('best')))
+
+    return (fails, u'按住→守住涨 / 一直按住→灯灭了 / 最佳跟得上（守住 %.1f 秒）' % kept
+            if not fails else u'判定不对')
 
 
 @check
@@ -2567,6 +2984,32 @@ MEASURE_FIND_SPOTS = """(() => {
 })()"""
 
 
+def _wait_text_settles(b, timeout=8.0):
+    """等页面上的文字**不再增长** —— 打字机写完再量。
+
+    ⚠ 为什么要等（2026-10-02 实测）：打字机是**逐字**写的，写到一半时元素的
+      高度跟写完不一样。樱页的开场 `<h1>` 打完字之后**会长高一截**，于是
+      `sakura-01` 在**默认视口**下正好压在它身上。
+      而这条断言原先只是**靠时机侥幸**在过 —— 前一条断言跑得快，量到的还是半截字。
+      给工具加了几条断言、把时机往后推之后它就红了：**红得对，是断言原来没守住。**
+
+    ⚠ 判据用「`body.innerText` 长度连续三次不变」，不写死页面上某个元素的 id ——
+      不然这条通用断言就只能在樱那一页跑了。
+    """
+    prev, stable, t0 = -1, 0, time.time()
+    while time.time() - t0 < timeout:
+        n = b.js('document.body.innerText.length')
+        if n == prev:
+            stable += 1
+            if stable >= 3:
+                return True
+        else:
+            stable = 0
+            prev = n
+        time.sleep(0.25)
+    return False
+
+
 @check
 def check_finds_not_on_text(b, page, expected):
     """可发现物应该落在**容器**上，不该压在**文字**上。
@@ -2582,6 +3025,11 @@ def check_finds_not_on_text(b, page, expected):
     判据：把可发现物临时藏起来，看它中心点上 `elementFromPoint` 命中的元素
     有没有**直接文字**、或本身就是 `p / span / h2 / h3 / b / a / img` 这类叶子。
     """
+    # ⚠ **先等打字机写完再量** —— 见 `_wait_text_settles` 上的那段（这条断言
+    #   原先只是靠时机侥幸在过）。`_reset` 会重载页面，打字机随之从头开始。
+    _reset(b)
+    _wait_text_settles(b)
+
     d = b.jso(MEASURE_FIND_SPOTS)
     LEAF = ('p', 'span', 'h1', 'h2', 'h3', 'h4', 'b', 'strong', 'em', 'a', 'img', 'li')
     fails = []
@@ -3183,124 +3631,6 @@ def check_sakura_blade_finds_clear_of_stage(b, page, expected):
 #     少了后半段，「两次采样不同」有可能只是 dataURL 编码本身不稳定，
 #     那这条断言就是恒真式，测了等于没测。
 
-def _sk_game_sig(b):
-    return b.js("(() => { var c = document.querySelector('#sakuraGameOverlay canvas');"
-                " return c ? c.toDataURL() : null; })()")
-
-
-def _sk_overlay_state(b):
-    """遮罩的开合状态 **和 `aria-hidden`**。
-
-    ⚠ 两个都要读 —— HANDOVER §10.9 六 记着同一个坑：生日面板「视觉上开着、
-      屏幕阅读器却以为它藏着」，只因为代码只 `classList.add('open')`、
-      **没同步 `aria-hidden`**。快照**测不出属性**，这类问题只能靠断言守。
-    """
-    return b.jso("""(() => {
-        var o = document.getElementById('sakuraGameOverlay');
-        if (!o) return JSON.stringify({ missing: true });
-        return JSON.stringify({ open: o.classList.contains('on'),
-                                aria: o.getAttribute('aria-hidden') });
-    })()""")
-
-
-def _sk_game_probe(b):
-    fails = []
-
-    st = _sk_overlay_state(b) or {}
-    if st.get('missing'):
-        fails.append(u'页面里没有 #sakuraGameOverlay —— 模块的 mount(host) 没建出来？')
-    else:
-        if st.get('open'):
-            fails.append(u'还没点，遮罩就是打开的')
-        if st.get('aria') != 'true':
-            fails.append(u'遮罩关着，`aria-hidden` 却是 %r —— 该是 \'true\''
-                         % st.get('aria'))
-
-    if not _click_sel(b, '.bottom-game .game-card-start'):
-        return ([u'找不到游戏卡上的「开始」按钮 —— 模块的 mount(host) 没跑？'], u'—')
-
-    st = _sk_overlay_state(b) or {}
-    if not st.get('open'):
-        fails.append(u'点了「开始」，遮罩却没有打开')
-    if st.get('aria') != 'false':
-        fails.append(u'遮罩开了，`aria-hidden` 却是 %r —— 面板视觉上开着、'
-                     u'屏幕阅读器却以为它藏着（HANDOVER §10.9 六 那个坑）'
-                     % st.get('aria'))
-
-    s1 = _sk_game_sig(b)
-    time.sleep(0.45)
-    s2 = _sk_game_sig(b)
-    if s1 is None or s2 is None:
-        fails.append(u'取不到游戏 canvas（模块没把画布渲染出来？）')
-    elif s1 == s2:
-        fails.append(u'开始之后两次采样**一模一样** —— 目标没在动'
-                     u'（也可能已经结算停下来了）')
-
-    # 关掉 → 用**同一个判据**验它抓得到「不动」
-    if not _click_sel(b, '#sakuraGameOverlay .sk-close'):
-        fails.append(u'找不到遮罩上的关闭按钮')
-        return (fails, u'（没能做反向验证）')
-
-    st = _sk_overlay_state(b) or {}
-    if st.get('open'):
-        fails.append(u'点了「收刀」，遮罩却没关')
-    if st.get('aria') != 'true':
-        fails.append(u'遮罩关了，`aria-hidden` 却是 %r' % st.get('aria'))
-
-    c1 = _sk_game_sig(b)
-    time.sleep(0.45)
-    c2 = _sk_game_sig(b)
-    if c1 is not None and c2 is not None and c1 != c2:
-        fails.append(u'关掉之后画面**还在变** —— 说明「两次采样不同」这件事本身不可靠，'
-                     u'这条判据是恒真式')
-
-    return (fails, u'开局在动、关掉静止（判据有牙齿）' if not fails else u'游戏没跑起来')
-
-
-@check
-@sakura_only
-def check_sakura_game_runs(b, page, expected):
-    """① 点「开始」之后，目标**真的在动**。
-
-    ⚠ 判据的可信度来自「**同一个判据既认得出动、也认得出不动**」——
-      所以 `_sk_game_probe` 一定会跑反向那半段。见它上面的注释。
-    """
-    _reset(b)
-    return _sk_game_probe(b)
-
-
-@check_reduced
-@sakura_only
-def check_sakura_game_runs_under_reduced(b, page, expected):
-    """② **Review Focus #5**：减动偏好下，游戏**仍然在动**。
-
-    ⚠ 游戏由「开始」**显式触发**，不属「自动播放的装饰动效」——
-      「关掉动画」不等于「关掉功能」。这条断言就是钉这件事的。
-      （spec §5.5 表里最后一行；上一轮 mobius 也有一条同样的。）
-
-    ⚠ 同时**反向也要验**（关掉后静止）—— 不然减动下这条最容易变成恒真式。
-    """
-    _set_motion(b, 'reduce')
-    try:
-        _reset(b)
-        return _sk_game_probe(b)
-    finally:
-        _set_motion(b, 'no-preference')
-
-
-# ── 樱的小游戏：**判定本身**（不是「在不在动」）──────────────────────
-#   ⚠ 「在动」和「判定对了」是两件事。上面那两条只证明**循环在跑** ——
-#     一个「点一下就加分」的实现照样能让它们全绿。
-#     所以判定要单独验，而且**正反两半都要**：
-#       · 花瓣还在远处时出刀 → 不许得分（挡住「点一下就算中」）
-#       · 花瓣压在斩线上时出刀 → 必须得分（挡住「永远不加分」）
-#     只验一半等于没验 —— 这正是前几轮反复踩的那类「看起来在守、其实守不住」。
-#
-#   ⚠ 怎么知道花瓣在哪儿：`sakura.js` 是 IIFE，`tgtX` 取不到。
-#     这里**像玩家一样看画面** —— 读画布上粉色像素的质心。
-#     比「固定等 1.15 秒再点」稳得多：`dt` 有 50ms 的上限（掉帧时游戏钟
-#     比墙钟慢），等待式判据会在慢机器上假红。2026-10-02 实测这台机器
-#     headless 下是 **40fps**、不是 60 —— 拿 60 去算的时机模型早晚会翻车。
 SK_CANVAS = '#sakuraGameOverlay canvas'
 
 
@@ -3449,7 +3779,7 @@ def _vv_offset(b):
     return d or {'x': 0, 'y': 0}
 
 
-def _sk_touch(b, x, y):
+def _touch_pt(b, x, y):
     """派发一次**真的触摸**（`touchStart` + `touchEnd`，中间不移动）。
 
     ⚠ 传进来的 x/y 是**布局视口**坐标（照 `getBoundingClientRect()` 量的），
@@ -3474,143 +3804,8 @@ def _touch_tap_sel(b, sel):
     })()""" % sel)
     if not c:
         return False
-    _sk_touch(b, c['x'], c['y'])
+    _touch_pt(b, c['x'], c['y'])
     return True
-
-
-@check
-@sakura_only
-def check_sakura_game_touch(b, page, expected):
-    """④ 手机上**玩得起来** —— 两半：面板放得下 + 真触摸能用。
-
-    ── 第一半：面板放得下（**这一半是可证伪的**）────────────────────
-    ⚠ 2026-10-02 实测：`.sk-canvas` 原先只写 `max-width:88vw`（没算面板自己
-      2×1.4rem 的内边距）—— 360px 宽的手机上**余量只剩 1px**（面板 364 / 视口 366），
-      是靠 `flex-shrink` 硬收进去才没溢出；**横屏则是真的溢出**（画布 320 →
-      面板 542 > 360，而遮罩是 `position:fixed`、没有滚动条，**切掉的永远够不着**）。
-      已改成 `calc(100vw - 4rem)` + `calc(100vh - 15rem)`。
-      ⚠ **更正**：Task 6 的提交信息里写「360 上溢出约 4px」，那是**按算式推的、错了** ——
-      实测它当时**没有溢出**。所以这条断言守的是「**别退回去**」，不是「修好了一个溢出」。
-    ⚠ 四个视口都要量：375 是最常见的、360 那一档余量最紧、
-      320 更窄，**横屏 640×360 专门管竖向那一半**（它是 `max-height` 唯一的行使场景 ——
-      不加这一档，那条 `calc(100vh - 15rem)` 就没有任何断言守着）。
-
-    ── 第二半：真触摸（**从 320 开局**，不是 375）──────────────────
-    ⚠ 320 那一档 `visualViewport.offsetTop` 是 **63px**，比按钮本身（41px）还高 ——
-      不换算坐标就**一定**点偏。375 那一档只有个位数，算错了也照样点得中，
-      验不出东西。所以断言从 320 开局。见 `_vv_offset`。
-    ⚠ **说清楚它守得住什么、守不住什么**：实测把 `pointerdown` 换成 `mousedown`，
-      这一半**照样绿** —— 因为 Chrome 会给 tap 补一套**兼容鼠标事件**
-      （mousedown / mouseup / click）。所以它**不是**「事件类型」的守卫，
-      是一条**端到端冒烟**：375 下按钮点得到、遮罩开得了、画布中心那一下真能算分。
-      （别的断言走的全是鼠标路径，默认视口 —— 这一页面向的却是手机。）
-
-    ⚠ `setTouchEmulationEnabled` / `setDeviceMetricsOverride` **必须关掉**：
-      否则后面每一条断言都会在「手机 + 触摸」的环境里跑，而人会以为测的是桌面。
-    """
-    fails = []
-
-    # ── 第一半：面板放得下（三个宽度）──
-    PANEL = """(() => {
-        var p = document.querySelector('.sk-panel');
-        var c = document.querySelector('.sk-canvas');
-        if (!p) return JSON.stringify({ missing: true });
-        var r = p.getBoundingClientRect();
-        var q = c ? c.getBoundingClientRect() : null;
-        return JSON.stringify({ l: Math.round(r.left), t: Math.round(r.top),
-                                r: Math.round(r.right), b: Math.round(r.bottom),
-                                vw: innerWidth, vh: innerHeight,
-                                cl: q ? Math.round(q.left) : null,
-                                cr: q ? Math.round(q.right) : null,
-                                cw: q ? +q.width.toFixed(1) : null,
-                                ch: q ? +q.height.toFixed(1) : null });
-    })()"""
-
-    b._send('Emulation.setDeviceMetricsOverride',
-            {'width': 320, 'height': 568, 'deviceScaleFactor': 1, 'mobile': True})
-    b._send('Emulation.setTouchEmulationEnabled', {'enabled': True, 'maxTouchPoints': 5})
-    time.sleep(0.6)
-
-    try:
-        _reset(b)                      # 重载一次，让窄屏布局真的生效
-
-        # ⚠ **故意从最窄的 320 开局**（不是 375）：这一档 `visualViewport.offsetTop`
-        #   是 **63px**，比按钮本身还高（41px）—— 即「不换算坐标就**一定**点偏」。
-        #   所以这一步同时钉住两件事：手机上点得开、坐标换算是对的。
-        #   （375 那一档偏移只有个位数，算错了也照样点得中 —— 验不出东西。）
-        if not _touch_tap_sel(b, '.bottom-game .game-card-start'):
-            return ([u'用触摸点不到游戏卡上的「开始」按钮'], u'—')
-        time.sleep(0.5)
-
-        st = _sk_overlay_state(b) or {}
-        if not st.get('open'):
-            return ([u'用触摸点了「开始」，遮罩却没打开 —— 手机上玩不了'], u'—')
-
-        for (w, h) in ((375, 812), (360, 640), (320, 568), (640, 360)):
-            b._send('Emulation.setDeviceMetricsOverride',
-                    {'width': w, 'height': h, 'deviceScaleFactor': 1, 'mobile': True})
-            time.sleep(0.6)
-            d = b.jso(PANEL)
-            if not d or d.get('missing'):
-                fails.append(u'[%d] 找不到 .sk-panel —— 遮罩的结构变了？' % w)
-                continue
-            # ⚠ 横向这一半**要挑对变异才验得出来**（2026-10-02 实测）：
-            #   · 把 `max-width` 改回 `88vw` → **不红**。因为 `#sakuraGameOverlay`
-            #     是 flex 行容器，面板横向放不下时 `flex-shrink` 会把它收进去。
-            #   · 改成显式 `width:320px` → **红**（画布不肯缩，面板真的溢出 -6~361）。
-            #   所以它守得住「画布不肯缩」这一类，守不住「只是 max-width 算小了」那类。
-            if d['l'] < 0 or d['r'] > d['vw']:
-                fails.append(u'[%d] 游戏面板**横向溢出**：面板 x %d~%d，视口宽 %d —— '
-                             u'两边会被切掉，而 fixed 遮罩没有滚动条，切掉的够不着'
-                             % (w, d['l'], d['r'], d['vw']))
-            # 竖向这一半**有牙齿**：flex 行方向不管纵向，超出就是真的被切。
-            if d['t'] < 0 or d['b'] > d['vh']:
-                fails.append(u'[%d] 游戏面板**竖向溢出**：面板 y %d~%d，视口高 %d —— '
-                             u'横屏 / 矮视口下上下会被切掉'
-                             % (w, d['t'], d['b'], d['vh']))
-            # 画布本身也要在视口里。
-            if d.get('cl') is not None and (d['cl'] < 0 or d['cr'] > d['vw']):
-                fails.append(u'[%d] 游戏**画布**横向超出视口：%d~%d，视口宽 %d'
-                             % (w, d['cl'], d['cr'], d['vw']))
-            # ⚠ **画布必须是方的** —— 这是最容易踩的那个陷阱：
-            #   给画布显式定宽（`width:320px`）之后，`max-height` 生效时高度被压
-            #   而宽度不变，画面就被**拉扁**了（樱瓣会变成椭圆、斩线位置也会错）。
-            #   两个都不写、只给上下限，浏览器才会等比缩。短边那些档测不出来，
-            #   只有横屏（`max-height` 真正生效）才验得到 —— 这就是 (640,360) 那一档的用处。
-            if d.get('cw') is not None and abs(d['cw'] - d['ch']) > 1:
-                fails.append(u'[%d] 游戏画布**被拉扁了**：%.1f × %.1f —— '
-                             u'显式定宽 + `max-height` 同时生效就会这样。'
-                             u'画布该等比缩（内部是 320×320）' % (w, d['cw'], d['ch']))
-
-        # ── 第二半：回到 375，真触摸出刀 ──
-        b._send('Emulation.setDeviceMetricsOverride',
-                {'width': 375, 'height': 812, 'deviceScaleFactor': 1, 'mobile': True})
-        time.sleep(0.6)
-
-        t0 = time.time()
-        while time.time() - t0 < 6.0:
-            p = _sk_petal(b)
-            if p and p.get('x') is not None and abs(p['x'] - p['mid']) <= 6:
-                c = _sk_canvas_rect(b)
-                if not c:
-                    break
-                _sk_touch(b, c['x'], c['y'])
-                time.sleep(0.35)
-                hud = _sk_hud(b) or {}
-                if hud.get('hits') not in ('0', None):
-                    return (fails, u'手机上放得下 + 摸得到（320 开局 / 四个视口）' if not fails
-                            else u'面板放不下')
-                break
-            time.sleep(0.015)
-
-        fails.append(u'用手指（真 touchStart / touchEnd）在斩线上出刀，一次都没中 —— '
-                     u'**触摸这条路走不通**')
-        return (fails, u'触摸玩不了')
-
-    finally:
-        b._send('Emulation.setTouchEmulationEnabled', {'enabled': False})
-        b._send('Emulation.clearDeviceMetricsOverride')
-        time.sleep(0.6)
 
 
 def _touch_tap_at(b, sel):
@@ -3627,108 +3822,8 @@ def _touch_tap_at(b, sel):
     })()""" % sel)
     if not c:
         return False
-    _sk_touch(b, c['x'], c['y'])
+    _touch_pt(b, c['x'], c['y'])
     return True
-
-
-CLOSE_FAR_MIN = 100        # 「收刀」到画布的最小间距（px）
-
-GAME_GEO = """(() => {
-    var c = document.querySelector('.sk-canvas');
-    var x = document.querySelector('.sk-close');
-    var o = document.getElementById('sakuraGameOverlay');
-    if (!c || !x || !o) return JSON.stringify({ missing: true });
-    var C = c.getBoundingClientRect(), X = x.getBoundingClientRect();
-    /* 两个矩形的最小间距：dx / dy 各自算「水平 / 竖直上分开多远」，都为正才算真的分开。 */
-    var dx = Math.max(C.left - X.right, X.left - C.right);
-    var dy = Math.max(C.top - X.bottom, X.top - C.bottom);
-    return JSON.stringify({
-        on: o.classList.contains('on'),
-        cx: Math.round(C.left + C.width / 2),
-        cb: Math.round(C.bottom),
-        gap: Math.round(Math.max(dx, dy)),
-        closeAt: [Math.round(X.left), Math.round(X.top), Math.round(X.width)],
-    });
-})()"""
-
-
-@check
-@sakura_only
-def check_sakura_game_close_far_from_play(b, page, expected):
-    """⑤ 「收刀」离游戏区**够远**，而且**刚打开那一下不许关**。
-
-    ⚠ 2026-10-02 需求方报的真 bug：「点一下就退出去了」。实测根因 ——
-      `收刀` 原来就在画布**正下方 55px**，而这是反应类游戏，玩家正连点画布下半部分：
-      ```
-      画布底边 +5 ~ +40px    → 还开着
-      画布底边 +55 ~ +100px  → ★ 关掉了      ← 手指落低一点点就到这儿
-      画布底边 +110px 以下   → 还开着
-      ```
-      修法：挪到**整个遮罩的右上角**（不是面板的右上角 —— 那儿离画布上边缘
-      也只有 ~60px，等于没修），并在刚打开的前 400ms 里拒收它的点击。
-
-    三条判据，**都在 375 的手机视口上量**（出事的就是手机）：
-      ① 它与画布的最小间距 ≥ 100px（修后实测 ~200px）
-      ② 在**它原来那个位置**（画布下方 60px）点一下 → **不许关**
-      ③ 刚打开就点它 → **不许关**；过了保护期再点 → **要能关**
-    """
-    b._send('Emulation.setDeviceMetricsOverride',
-            {'width': 375, 'height': 812, 'deviceScaleFactor': 1, 'mobile': True})
-    b._send('Emulation.setTouchEmulationEnabled', {'enabled': True, 'maxTouchPoints': 5})
-    time.sleep(0.6)
-    fails = []
-    try:
-        _reset(b)
-        if not _touch_tap_sel(b, '.bottom-game .game-card-start'):
-            return ([u'用触摸点不到游戏卡上的「开始」按钮'], u'—')
-        time.sleep(0.5)
-
-        d = b.jso(GAME_GEO)
-        if not d or d.get('missing'):
-            return ([u'找不到 `.sk-canvas` / `.sk-close` / 游戏遮罩'], u'—')
-        if not d['on']:
-            return ([u'点了「开始」，遮罩没打开'], u'—')
-
-        # ── ① 间距 ──
-        if d['gap'] < CLOSE_FAR_MIN:
-            fails.append(u'①「收刀」离游戏区只有 **%dpx**（要求 ≥ %d）—— 反应类游戏里'
-                         u'手指落低一点就误触退出（它现在在 x=%d y=%d 宽 %d，画布底边 y=%d）'
-                         % (d['gap'], CLOSE_FAR_MIN, d['closeAt'][0], d['closeAt'][1],
-                            d['closeAt'][2], d['cb']))
-
-        # ── ② 它原来那个位置：点一下不许关 ──
-        _sk_touch(b, d['cx'], d['cb'] + 60)
-        time.sleep(0.45)
-        st = _sk_overlay_state(b) or {}
-        if not st.get('open'):
-            fails.append(u'② 在**画布下方 60px** 点了一下，游戏就关掉了 —— '
-                         u'这正是需求方报的那个 bug（那一段原来点下去必退）')
-
-        # ── ③ 保护期 ──
-        if (_sk_overlay_state(b) or {}).get('open'):
-            _touch_tap_at(b, '.sk-close')          # 正常关掉（早就过了保护期）
-            time.sleep(0.45)
-        if not _touch_tap_sel(b, '.bottom-game .game-card-start'):
-            fails.append(u'③ 重开时点不到「开始」按钮')
-        else:
-            # ⚠ **这里不能 sleep** —— 此刻离 open() 才一百多毫秒，必须落在保护期内
-            _touch_tap_at(b, '.sk-close')
-            time.sleep(0.35)
-            if not (_sk_overlay_state(b) or {}).get('open'):
-                fails.append(u'③ 刚打开就点「收刀」，游戏当场关了 —— 400ms 的保护期没生效')
-            else:
-                time.sleep(0.6)                    # 等过保护期
-                _touch_tap_at(b, '.sk-close')
-                time.sleep(0.35)
-                if (_sk_overlay_state(b) or {}).get('open'):
-                    fails.append(u'③ 过了保护期，「收刀」还是关不掉 —— 那玩家就没法退出了')
-
-        return (fails, u'「收刀」够远（%dpx）、原位不禁触、保护期有效' % d['gap']
-                if not fails else u'「收刀」还是容易误触')
-    finally:
-        b._send('Emulation.setTouchEmulationEnabled', {'enabled': False})
-        b._send('Emulation.clearDeviceMetricsOverride')
-        time.sleep(0.6)
 
 
 # ── 主流程 ────────────────────────────────────────────────────────────
@@ -3738,7 +3833,7 @@ def main():
 
     # ⚠ `--only <名字片段>`：**只跑**名字里含这个片段的断言。
     #   为什么需要它：变异测试（「证明断言抓得到错」）要把同一条断言跑很多遍，
-    #   而整轮 34 组要两分钟 —— 跑五次就是十分钟，而变异测试是每个任务的标准动作。
+    #   而整轮要两分钟 —— 跑五次就是十分钟，而变异测试是每个任务的标准动作。
     #   ⚠ 报告里**必须写明这是筛过的**：一次筛过的运行长得和全量通过一模一样，
     #     那正是这个工具最想防的那种谎（「看起来在守、其实守不住」）。
     only = None
