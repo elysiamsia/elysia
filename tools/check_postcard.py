@@ -243,21 +243,22 @@ class Browser(object):
         比「直接设 .value」更接近真人打字。⚠ 先点一下目标元素拿到焦点。"""
         self._send('Input.insertText', {'text': text})
 
-    def center_of(self, selector):
-        """滚进视口后返回**视口中心坐标**。
+    def center_of(self, selector, idx=0):
+        """滚进视口后返回**视口中心坐标**（`idx` = 取第几个匹配）。
         ⚠ 必须先滚 —— CDP 派发的是视口坐标，元素在视口外会静默落空（HANDOVER §6.4）。
         """
         return self.jso("""(() => {
-            var n = document.querySelector('%s');
+            var els = document.querySelectorAll('%s');
+            var n = els[%d];
             if (!n) return null;
             n.scrollIntoView({ block: 'center', behavior: 'instant' });
             var r = n.getBoundingClientRect();
             return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
-        })()""" % selector)
+        })()""" % (selector, idx))
 
-    def click_sel(self, selector):
+    def click_sel(self, selector, idx=0):
         """真鼠标点一下（走完整 down/up）。"""
-        c = self.center_of(selector)
+        c = self.center_of(selector, idx)
         if not c:
             return False
         self.press(c['x'], c['y'])
@@ -332,30 +333,73 @@ def _handle(b, expr):
 ART_REGION = 'art'
 QR_REGION = 'qr'
 
+# 缩略图那一行：8 张立绘 + 第 9 个「随机」（spec §四）
+ART_THUMBS = '#postcardArt .postcard-thumb'
+
+
+def _art_bright_cells(b, thresh=90):
+    """左栏粗网格里**亮过 `thresh`** 的格子数 —— 「这儿真的画了一张图」的判据。
+
+    ⚠ 为什么不复用 `_region_sig` 那套「相邻两张比差异」：那个只能证明
+      **画布变了**，一张**空白**的图（读了但没画上去）照样能换来一大片差异。
+    ⚠ 阈值是 2026-10-02 实测定下来的（`_tmp/probe_art_bright.py`）：
+      八张有图时是 **83 ~ 447** 格（>90），**空框时是 0 格、最亮只到 52**（卡底色很暗）。
+      所以取 ≥30 格 —— 离两头都有几倍余量，星屑也够不着 90。
+    """
+    r = _region_sig(b, ART_REGION)
+    if not r or 'sig' not in r:
+        return None
+    n = 0
+    for s in r['sig']:
+        a, c, d = [int(x) for x in s.split(',')]
+        if (a + c + d) / 3.0 > thresh:
+            n += 1
+    return n
+
 
 @browser_check
 def check_all_artworks_render(b):
-    """八张立绘逐张：**状态就绪** + 画布左栏**真的跟着变**。
+    """八张立绘逐张：**走真用户路径**（点缩略图）+ 画布左栏**真的跟着变**。
 
+    ⚠ 原来这条是拿验收句柄 `setArt()` 一张张换的 —— 那验的是「句柄能用」，
+      不是「访客点得到」。现在改成**点 `#postcardArt` 里那 9 个按钮**（真鼠标），
+      顺手把选中态（`aria-pressed`）也验了。
     ⚠ 「跟着变」这一半是关键：只查 `artReady` 的话，一个「读了图但没画上去」
       的实现照样绿。所以拿**相邻两张的区域签名**比，差异要**成片**（≥15% 的采样格）。
       「不成片」也说明问题 —— 那个量级正好是星屑噪音该有的样子。
+    ⚠ 另外每张都单独查一次「左栏有亮的格子」：相邻比差异**抓不到「只有一张是空的」**
+      （空的跟前后都不一样，差异反而更大）。
     """
     _reset(b)
-    st = _handle(b, '{handle: 1, art: p.art(), ready: p.artReady(), failed: p.artFailed()}')
-    if not st or st.get('noHandle'):
-        return ([u'页面上没有 `window.__ELY_POSTCARD__` —— 验收句柄没建出来？'], u'—')
+    n = b.js("document.querySelectorAll('%s').length" % ART_THUMBS)
+    if n != ART_COUNT + 1:
+        return ([u'`#postcardArt` 里有 %r 个缩略图（应为 %d 个：%d 张立绘 + 1 个「随机」）'
+                 % (n, ART_COUNT + 1, ART_COUNT)], u'缩略图没出来')
 
     fails = []
     prev, prev_i = None, None
     for i in range(ART_COUNT):
-        b.js('window.__ELY_POSTCARD__.setArt(%d)' % i)
-        time.sleep(0.5)
+        if not b.click_sel(ART_THUMBS, i):
+            fails.append(u'点不到第 %d 个缩略图（%s）' % (i, ART_THUMBS))
+            break
+        time.sleep(0.45)
+        pressed = b.js("(() => { var e = document.querySelectorAll('%s')[%d];"
+                       " return e ? e.getAttribute('aria-pressed') : null; })()"
+                       % (ART_THUMBS, i))
+        if pressed != 'true':
+            fails.append(u'点了第 %d 张缩略图，它的 `aria-pressed` 是 %r（应为 true）—— '
+                         u'选中态没跟上' % (i, pressed))
         st = _handle(b, '{art: p.art(), ready: p.artReady(), failed: p.artFailed()}') or {}
         if st.get('art') != i:
-            fails.append(u'setArt(%d) 之后，句柄里的 art 是 %r' % (i, st.get('art')))
+            fails.append(u'点第 %d 张缩略图之后，句柄里的 art 是 %r' % (i, st.get('art')))
         if not st.get('ready'):
             fails.append(u'第 %d 张立绘没就绪（ready=false, failed=%r）' % (i, st.get('failed')))
+        bright = _art_bright_cells(b)
+        if bright is None:
+            fails.append(u'第 %d 张取不到区域签名（采样的画布对不对？）' % i)
+        elif bright < 30:
+            fails.append(u'第 %d 张的左栏**只有 %d 个亮格子**（有图时应 ≥83）—— '
+                         u'这儿是一块空的' % (i, bright))
         cur = _region_sig(b, ART_REGION)
         if prev is not None:
             d = _sig_diff(prev, cur)

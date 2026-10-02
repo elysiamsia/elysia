@@ -24,6 +24,7 @@
   var input = document.getElementById('postcardInput');
   var countEl = document.getElementById('postcardCount');
   var promptsBox = document.getElementById('postcardPrompts');
+  var artBox = document.getElementById('postcardArt');
   var writeWrap = input ? input.parentNode : null;
   if (!pool.length || !host || !btnRedraw) return;
 
@@ -452,6 +453,47 @@
   }
   renderPrompts();
 
+  /* ── 立绘缩略图（spec §四）─────────────────────────────────────────────
+     八张可选 + 一个「随机」。默认那张在页面加载时已经抽好了（上面 `cur` 那行）。
+     ⚠ 换立绘**只动 `cur`** —— 不碰台词，也不碰访客已经写的字。 */
+  function syncThumbs() {
+    if (!artBox) return;
+    var bs = artBox.getElementsByClassName('postcard-thumb');
+    for (var i = 0; i < ART.length && i < bs.length; i++) {
+      bs[i].setAttribute('aria-pressed', i === cur ? 'true' : 'false');
+    }
+  }
+
+  function pickArt(i) {
+    cur = i;
+    syncThumbs();
+    redraw();
+  }
+
+  if (artBox) {
+    /* ⚠ 用**事件委托**：九个格子只挂一个监听。`e.target` 可能是格子里的 `<img>`
+       （图占满整格），所以要往回走到 `.postcard-thumb` —— 不往回走的话，
+       点在图上那一下会落空。 */
+    artBox.addEventListener('click', function (e) {
+      var el = e.target;
+      while (el && el !== artBox && el.className.indexOf('postcard-thumb') < 0) {
+        el = el.parentNode;
+      }
+      if (!el || el === artBox) return;
+      var who = el.getAttribute('data-art');
+      if (who === 'random') {
+        /* ⚠ 「随机」要**不等于现在这张** —— 抽到同一张的话，访客会以为按钮坏了。 */
+        var n = cur;
+        if (ART.length > 1) { while (n === cur) n = Math.floor(Math.random() * ART.length); }
+        pickArt(n);
+      } else {
+        var idx = parseInt(who, 10);
+        if (idx >= 0 && idx < ART.length) pickArt(idx);
+      }
+    });
+  }
+  syncThumbs();
+
   /* ── 弹幕圆片 ──────────────────────────────────────────────────────────
      ⚠ 取词是**每次现读** `window.POSTCARD_PROMPTS`，不在加载时缓存 ——
        这样那个文件整个加载失败时，页面只是「没有弹幕」，别的一概照常。
@@ -504,7 +546,9 @@
     qrReady: function () { return !!qrImg.ok; },
     qrFailed: qrFailed,
     artCount: function () { return ART.length; },
-    setArt: function (i) { cur = i; redraw(); }
+    /* ⚠ 缩略图点下去走的是**同一条路**（`pickArt`）——
+       句柄里的 `setArt` 也是它，免得「验收走的路径」和「访客走的路径」悄悄分家。 */
+    setArt: function (i) { pickArt(i); }
   };
 
   /* ── 开跑：先画一版，全部有结果（或超时）之后再画一版 ── */
