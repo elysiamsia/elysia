@@ -384,6 +384,69 @@ body{
   .harmonica-inner{font-size:.82rem;padding:.9rem 1rem;min-height:6.4em}
   .seal{width:50px;height:50px;font-size:1.2rem}
 }
+/* ══════ SECTION: 小游戏「守灯」（2026-10-02）══════════════════════════
+   ⚠ 这几条**留在本页**、不进共享层 —— 「游戏是最各写各的部分」（与 mobius / sakura 一致：
+     两页各自的 `.game-card*` 也都写在各自页面上）。
+   配色取他自己的：旭光橙 `--dawn` / 墨绿底 `--bg-abyss`（与千劫那页的红橙刻意分开）♥ */
+.game-card{
+  max-width:26rem;margin:0 auto;padding:1.6rem 1.5rem;border-radius:16px;
+  background:rgba(255,255,255,.03);border:1px solid var(--glass-border);
+}
+.game-card-title{margin:0 0 .6rem;font-size:1.05rem;letter-spacing:.1em;color:var(--dawn)}
+.game-card-hint{margin:0 0 1.2rem;font-size:.8rem;line-height:1.9;color:var(--text-muted)}
+.game-card-start{
+  padding:.6rem 1.8rem;border-radius:999px;cursor:pointer;
+  font-size:.85rem;letter-spacing:.14em;color:var(--text);
+  background:rgba(249,161,82,.12);border:1px solid var(--glass-border);
+  transition:background .25s ease,box-shadow .25s ease;
+}
+.game-card-start:hover{background:rgba(249,161,82,.22);box-shadow:0 0 20px rgba(249,161,82,.25)}
+
+/* 遮罩：**他自己造的**（这一页没有现成的 `#gameOverlay`）。
+   ⚠ 关掉只是去掉 `.on`，节点留着 —— 关掉之后画布仍然存在且静止，
+     测试才能拿它做「同一判据也认得出不动」的反向验证。
+   ⚠ 不用 `inset:0`（较新的写法，大陆手机上的老内核未必认），老实写四边。 */
+#kosmaGameOverlay{
+  position:fixed;top:0;right:0;bottom:0;left:0;z-index:9995;
+  display:none;align-items:center;justify-content:center;
+  background:rgba(4,6,4,.92);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+}
+#kosmaGameOverlay.on{display:flex}
+.km-panel{
+  padding:1.5rem 1.4rem;border-radius:20px;text-align:center;
+  background:rgba(7,10,8,.96);border:1px solid var(--glass-border);
+  box-shadow:0 12px 40px rgba(0,0,0,.5);
+}
+.km-title{margin:0 0 .5rem;font-size:1.1rem;letter-spacing:.3em;color:var(--dawn)}
+.km-hud{margin:0 0 1rem;font-size:.78rem;letter-spacing:.1em;color:var(--text-muted)}
+.km-hud b{color:var(--dawn-soft);font-weight:400}
+.km-canvas{
+  display:block;margin:0 auto .9rem;
+  /* ⚠ 两个上限都要，照樱那页 `.sk-canvas` 的做法：
+     · max-width 要**减掉面板自己的左右内边距**再加点余量（只写 `88vw` 的话余量只剩 1px）
+     · max-height 管**横屏 / 矮视口** —— 面板比视口高的话上下会被切，而 fixed 遮罩没有滚动条
+     ⚠ 刻意**不写** `width:320px` —— 显式定宽时 `max-height` 生效会把画面**拉扁** */
+  max-width:calc(100vw - 4rem);max-height:calc(100vh - 15rem);
+  border-radius:12px;border:1px solid var(--glass-border);
+  /* ⚠ 只有这里用 touch-action:none —— 这是个**游戏台**，手指落上去就该是「托住」，
+     不该把页面滚走。（可发现物那边**刻意没写**，理由见 explore.css。） */
+  touch-action:none;user-select:none;-webkit-user-select:none;
+}
+.km-msg{margin:0 0 1rem;font-size:.78rem;line-height:1.9;color:var(--text-dim);min-height:2.4em}
+/* 「收工」—— 在**整个遮罩的右上角**（屏幕角落），**不在面板里**。
+   ⚠ 樱那页 2026-10-02 实测过：退出键贴着操作区时，玩家手指落低一点就**误触退出**
+     （她那边只有 55px：画布底 +55~+100px 那一段点下去必退）。屏幕角落有 ~200px。
+   ⚠ 所以它是 `.km-panel` 的**兄弟**、直接挂在遮罩上（见 `kosma.js` 的 `buildOverlay()`）。
+     **别把它挪回面板里**，也别给 `.km-*` 之外的祖先加 position。 */
+.km-close{
+  position:absolute;top:1rem;right:1rem;z-index:1;
+  min-height:44px;padding:.5rem 1.2rem;border-radius:999px;cursor:pointer;
+  font-size:.78rem;letter-spacing:.14em;color:var(--text);
+  background:rgba(249,161,82,.1);border:1px solid var(--glass-border);
+  transition:background .25s ease;
+}
+.km-close:hover{background:rgba(249,161,82,.2)}
 </style>
 </head>
 <body>
@@ -663,8 +726,9 @@ body{
 <script src="/assets/bottom.js"></script>
 <script src="/data/bdays.js"></script>
 <script src="/assets/bday.js"></script>
-<!-- ⚠ 他的小游戏 `assets/games/kosma.js` 是下一步才建的 ——
-     那一行等文件存在了再加，否则 404 会让「页面无报错」那条断言报红。 -->
+<!-- 他的小游戏「守灯」。⚠ 这一行**必须**在 bottom.js 之后 ——
+     `ElysiaBottom.mount` 会用它去建游戏槽（找不到就只 warn，不抛）。 -->
+<script src="/assets/games/kosma.js"></script>
 <script>
 (function(){
   /* SECTION: quotes data */
