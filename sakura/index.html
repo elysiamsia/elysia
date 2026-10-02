@@ -55,6 +55,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
 <link rel="stylesheet" href="/assets/site.css">
+<!-- 呀！探索系统 + 下方区块 + 生日胶囊的共享样式。
+     ⚠ **必须在页面 <style> 之前** —— 页面自己的规则要能覆盖共享层（全站一致的加载顺序）。 -->
+<link rel="stylesheet" href="/assets/explore.css">
 <meta name="referrer" content="same-origin">
 <title>elysiad.top/sakura — 致樱</title>
 <!-- SECTION: styles -->
@@ -69,6 +72,32 @@
   --text:#eaf0ff;--text-dim:#aebbd8;--text-muted:#7686a6;
   --glass-bg:rgba(255,183,197,.05);--glass-border:rgba(143,220,255,.14);
   --glass-bg2:rgba(79,184,232,.05);--glass-border2:rgba(255,183,197,.14);
+
+  /* ── 生日胶囊 / 面板（共享层 `explore.css`）─────────────────────────
+     ⚠ 这一组**必须逐页覆盖**：`explore.css` 里那 15 个变量都带兜底，
+       而兜底值是**首页爱莉希雅**的粉紫 + 金 —— 不覆盖就会「串页」，
+       在她这页上冒出一块别人的配色，而且**不报错、看不出是哪儿来的**。
+       （原话见 `mobius/index.html` 里同一段注释。）
+
+     她这一页是「夜」：冷靛黑的底、夜樱的粉、冰蓝那一线光。
+     所以 —— 壳子（底 / 边框 / 光晕 / 四格）走**冰蓝**（那柄「寒狱冰天」，
+     只作细细一道光）；圆点与强调走**樱粉**；倒计时那四位数走冰蓝，
+     和日期那抹 `--sakura-soft` 拉开层次。 */
+  --bday-ink:#eaf0ff;                                  /* = --text */
+  --bday-accent:#ffb7c5;                               /* = --sakura，圆点与强调 */
+  --bday-title:#aebbd8;                                /* = --text-dim */
+  --bday-date:#ffd6e0;                                 /* = --sakura-soft */
+  --bday-num:#8fdcff;                                  /* = --ice，倒计时那四位数 */
+  --bday-unit:#7686a6;                                 /* = --text-muted */
+  --bday-egg-bg:linear-gradient(135deg,rgba(255,183,197,.16),rgba(143,220,255,.10));
+  --bday-egg-border:rgba(255,183,197,.25);
+  --bday-egg-glow:rgba(255,183,197,.18);
+  --bday-egg-glow-hover:rgba(255,183,197,.3);
+  --bday-panel-bg:linear-gradient(150deg,rgba(7,10,20,.92),rgba(19,28,51,.92));
+  --bday-panel-border:rgba(143,220,255,.22);
+  --bday-panel-glow:rgba(143,220,255,.12);
+  --bday-cell-bg:rgba(143,220,255,.07);
+  --bday-cell-border:rgba(143,220,255,.14);
 }
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
@@ -380,6 +409,74 @@ body{
   .profile-card{padding:1.5rem}
   .quote-card{min-height:120px;padding:1.2rem}
 }
+
+/* ══════ SECTION: 小游戏「一瞬」（2026-10-02）══════════════════════════
+   ⚠ 这几条**留在本页**、不进共享层 —— spec §3.1：「游戏是最各写各的部分」。
+     和梅比乌斯那边同一个道理：每位英桀的小游戏长什么样是她自己的事。
+   配色取她自己的：樱粉 --sakura / 冰蓝 --ice。 */
+.game-card{
+  max-width:26rem;margin:0 auto;padding:1.6rem 1.5rem;border-radius:16px;
+  background:rgba(255,255,255,.03);border:1px solid var(--glass-border);
+}
+.game-card-title{margin:0 0 .6rem;font-size:1.05rem;letter-spacing:.1em;color:var(--sakura)}
+.game-card-hint{margin:0 0 1.2rem;font-size:.8rem;line-height:1.9;color:var(--text-muted)}
+.game-card-start{
+  padding:.6rem 1.8rem;border-radius:999px;cursor:pointer;
+  font-size:.85rem;letter-spacing:.14em;color:var(--text);
+  background:rgba(255,183,197,.12);border:1px solid var(--glass-border);
+  transition:background .25s ease,box-shadow .25s ease;
+}
+.game-card-start:hover{background:rgba(255,183,197,.22);box-shadow:0 0 20px rgba(255,183,197,.25)}
+
+/* 遮罩：**她自己造的**（樱没有现成的 #gameOverlay，不像梅比乌斯那页）。
+   ⚠ 关掉只是去掉 .on，节点留着 —— 关掉之后画布仍然存在且静止，
+     测试才能拿它做「同一判据也认得出不动」的反向验证。
+   ⚠ 不用 `inset:0`（较新的写法，大陆手机上的老内核未必认），老实写四边。 */
+#sakuraGameOverlay{
+  position:fixed;top:0;right:0;bottom:0;left:0;z-index:9995;
+  display:none;align-items:center;justify-content:center;
+  background:rgba(4,6,14,.92);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+}
+#sakuraGameOverlay.on{display:flex}
+.sk-panel{
+  padding:1.5rem 1.4rem;border-radius:20px;text-align:center;
+  background:rgba(11,16,32,.96);border:1px solid var(--glass-border);
+  box-shadow:0 12px 40px rgba(0,0,0,.5);
+}
+.sk-title{margin:0 0 .5rem;font-size:1.1rem;letter-spacing:.3em;color:var(--sakura)}
+.sk-hud{margin:0 0 1rem;font-size:.78rem;letter-spacing:.1em;color:var(--text-muted)}
+.sk-hud b{color:var(--ice);font-weight:400}
+.sk-canvas{
+  display:block;margin:0 auto .9rem;
+  /* ⚠ 两个上限都要，照 mobius 那个 `#snakeCanvas` 的做法：
+     · max-width 要**减掉面板自己的左右内边距**（2×1.4rem）**并且留够余量** ——
+       别指望 flex 会把面板压回去。
+       ⚠ 2026-10-02 实测：只写 `88vw` 的话，360px 宽的手机（大陆最常见的一档）上
+       **余量只剩 1px**（面板 364 / 视口 366），是靠 `flex-shrink` 把面板硬收进去
+       才没溢出的 —— 能用，但挤。换成本式之后是 **12px**。
+       ⚠ **更正**：Task 6 的提交信息里写「360 上溢出约 4px」，那是**按算式推的、错了**；
+       实测它当时**没有溢出**。真正溢出的是**竖向**（见下）。
+     · max-height 管**横屏 / 矮视口**：面板比视口高的话上下会被切掉，
+       而这个遮罩是 fixed、没有滚动条，切掉的部分**永远够不着**。
+     ⚠ 刻意**不写** `width:320px` —— 画布的固有尺寸就是 320×320（JS 里
+       `cv.width = W`）。一旦显式定宽，`max-height` 生效时高度被压而宽度不变，
+       画面就被**拉扁**了；两个都不写、只给上限，浏览器才会等比缩。 */
+  max-width:calc(100vw - 4rem);max-height:calc(100vh - 15rem);
+  border-radius:12px;border:1px solid var(--glass-border);
+  /* ⚠ 只有这里用 touch-action:none —— 这是个**游戏台**，
+     手指落在上面就该是出刀，不该把页面滚走。
+     （可发现物那边**刻意没写**这一条，理由见 explore.css：那会让纵向滚动被吃掉。） */
+  touch-action:none;user-select:none;-webkit-user-select:none;
+}
+.sk-msg{margin:0 0 1rem;font-size:.78rem;line-height:1.9;color:var(--text-dim);min-height:2.4em}
+.sk-close{
+  padding:.5rem 1.6rem;border-radius:999px;cursor:pointer;
+  font-size:.8rem;letter-spacing:.14em;color:var(--text);
+  background:rgba(255,183,197,.1);border:1px solid var(--glass-border);
+  transition:background .25s ease;
+}
+.sk-close:hover{background:rgba(255,183,197,.2)}
 </style>
 </head>
 <body>
@@ -655,6 +752,18 @@ body{
 
 <!-- SECTION: scripts -->
 <script src="/assets/site.js"></script>
+<!-- ⚠ 顺序不可调换（全站一致）：site → explore → bottom → bdays → bday
+     `bday.js` 与 `explore.js` / `bottom.js` 是**彼此独立**的 —— 它不依赖另外两个，
+     所以首页（没有探索系统）也用它。
+     ⚠ `games/sakura.js` 等 Task 6 建好再加 —— 现在加就是 404，
+       而 404 在 check_explore.py 里**算失败**（它收了 CDP 的 Log 域）。 -->
+<script src="/assets/explore.js"></script>
+<script src="/assets/bottom.js"></script>
+<script src="/data/bdays.js"></script>
+<script src="/assets/bday.js"></script>
+<!-- 她的小游戏「一瞬」。⚠ 这一行**必须**在 bottom.js 之后 ——
+     `ElysiaBottom.mount` 会用它去建游戏槽（找不到就只 warn，不抛）。 -->
+<script src="/assets/games/sakura.js"></script>
 <script>
 (function(){
   /* SECTION: quotes data */
@@ -918,10 +1027,20 @@ body{
 
   function renderBlade(){
     bladeCountEl.textContent = gifted ? '她给了你一朵花' : ('已伸手 × ' + tries);
+    /* ⚠ 收过花之后**刀仍然可以点**（2026-10-01 修的那个 bug），
+       所以这句不能再说「你没有再伸手」—— 那在刀重新可点的那一刻**自己就变成假话**了。
+       也不要写成「你可以再试一次」那种催促口气：她是「你越用力她越不肯」的性格。 */
     bladeHintEl.textContent = gifted
-      ? '刀还在鞘里。你没有再伸手——这样很好。'
+      ? '刀还在鞘里。花也还开着。'
       : '刀在鞘里。你可以试试。';
     if (gifted) bladeFlower.classList.add('bloom');
+    /* ⚠ 刀光也要按状态补回来（2026-10-01 补）。
+       原先只有「送花那一瞬间」`bladeGlow.classList.add('lit')`，`renderBlade()` 不管它 ——
+       于是**收过花之后的下一次访问**：花是开的、刀光是灭的，两处状态自相矛盾。
+       （这是改动前就有的不一致，Task 3 的四项范围里没列它，所以当时没动。）
+       ⚠ 现在更要补：刀已经**永远可点**，所以那个送花分支不会再进第二次 ——
+         不在这里补，「刀光」对老访客就是**永远不再亮**。 */
+    if (gifted) bladeGlow.classList.add('lit');
   }
 
   /* 拔不动的那一下：整柄刀往左一顿、又弹回来 —— 「拒」是有形状的 */
@@ -931,11 +1050,17 @@ body{
   }
 
   function tryDraw(){
-    if (gifted){ showToast('……嗯。花还开着。', false); return; }
+    /* ⚠ `gifted` 只决定「**还会不会再送花**」，不决定「刀还能不能点」。
+       2026-10-01 修的 bug：原写法一见 gifted 就 `showToast('……嗯。花还开着。'); return;`，
+       于是拿到花之后这一整块**永远只弹那一句**，再点什么都不会发生。
+       她的花是**纪念品**（勿忘我，名字就意味着不该忘），但刀是**性格** ——
+       一柄不肯出鞘的刀本就该永远不驯，不该因为送过一次花就变成摆设。 */
+    var alreadyGifted = gifted;
 
-    tries++;
-    try { localStorage.setItem('sakuraTries', String(tries)); } catch(err){}
-    renderBlade();
+    if (!alreadyGifted){
+      tries++;
+      renderBlade();
+    }
     bladeSound();
     refuseShake();
 
@@ -951,6 +1076,12 @@ body{
       petalBurst(r.left + r.width * 0.62, r.top + r.height * 0.5, 5, ['#8fdcff','#4fb8e8']);
     }
 
+    if (alreadyGifted){
+      /* 收过花了 —— 刀照样拒你（用**有出处的那句**，与第一次相同），但不再送第二朵 */
+      showToast('「你是说『寒狱冰天』？……很抱歉，它决不能就这样轻易出鞘。对我来说，这是『戒律』的一部分。」', false);
+      return;
+    }
+
     if (tries >= 3){
       /* 呀，第三次了 —— 她没有拔刀。她说的是另一件事♥ */
       gifted = true;
@@ -962,6 +1093,9 @@ body{
         petalBurst(r.left + r.width / 2, r.top + r.height / 2, 26,
                    ['#ffb7c5','#ffd6e0','#8fdcff','#e8f4ff']);
       }
+      /* ⚠ 收花的**同一瞬间**就把结尾解锁掉 —— 不然「收下花 → 往下滚到结尾」
+         当场看不到那句话，要刷新才有（2026-10-01 修的第二处）。 */
+      renderEndingFlower();
     } else if (tries === 1){
       showToast('「你是说『寒狱冰天』？……很抱歉，它决不能就这样轻易出鞘。对我来说，这是『戒律』的一部分。」', false);
     } else {
@@ -988,14 +1122,20 @@ body{
   var endingSub = document.getElementById('endingSub');
   var endingFlower = document.getElementById('endingFlower');
 
-  var gotFlower = false;
-  try { gotFlower = localStorage.getItem('sakuraFlower') === '1'; } catch(err){ gotFlower = false; }
-
-  if (gotFlower){
+  /* ⚠ 抽成函数，是因为它要在**两个时刻**各跑一次：
+     ① 页面加载时（上一趟就已经收过花的人）；② **收花的那一瞬间**（见 tryDraw 里那行）。
+     原先只有 ① —— 于是「收下花 → 往下滚到结尾」当场看不到那句话，**要刷新才有**，
+     而交接文档把这个彩蛋描述成「收过花才多一句」，读起来像当场就能看到。它该当场出现。
+     ⚠ 必须**幂等**：状态每次从 localStorage 现读，重复调用不产生副作用。 */
+  function renderEndingFlower(){
+    var gotFlower = false;
+    try { gotFlower = localStorage.getItem('sakuraFlower') === '1'; } catch(err){ gotFlower = false; }
+    if (!gotFlower) return;
     endingSub.textContent = '「她一直是个怕寂寞的孩子……真希望她迎来的，是一个平静安稳的结局啊。」';
     endingSub.classList.add('visible');
     if (endingFlower) endingFlower.classList.add('bloom');
   }
+  renderEndingFlower();
 
   /* SECTION: easter egg - 「等待」
    *
@@ -1107,6 +1247,87 @@ body{
       dur: [2.4, 4], delay: [0, 5],
       colors: { pool: ['#fff', '#ffb7c5', '#8fdcff'] },
     },
+
+    /* ── 探索系统（2026-10-02 接入）────────────────────────────────────
+       ⚠ **`pageId` 必填** —— 进度按它分页存进 `elysia:explore:<pageId>`。
+         **改名 = 玩家进度丢失。**
+       ⚠ 12 个可发现物由 Task 5 填（台词全部取自官方档案馆，一条不编）。
+         这一步先把线接好，`finds` 先空着。
+       ⚠ `game` 不在这一批里 —— `games/sakura.js` 要等 Task 6 才建，
+         现在写进来就是一份**用不上的配置**（正是上一轮在 mobius 上修掉的毛病）。 */
+    explore: {
+      pageId: 'sakura',      /* ⚠ 这 12 条的 `line` 与 `src` 是**逐字抄自官方档案馆「事件-樱」**的，
+         核准记录见 `docs/superpowers/plans/2026-10-01-sakura-finds-table.md`。
+         **一个字都不许改**（连 `······` 六个中点也别「规范化」成 `……`）。
+         ⚠ 改台词必须同时改 `tools/check_explore.py` 里的 `SAKURA_FINDS` ——
+           那是这条底线的落点，逼改动变成一次刻意动作。
+         ⚠ 坐标 x/y 是**中心点**的百分比，且要避开文字（有断言守）。 */
+      finds: [
+        { id:'sakura-01', at:'#opening', x:0.45, y:0.60, verb:'click',      art:'petal',
+          line:'等待······对于此处的我们来说，又能有什么意义呢？',
+          src:'官方档案馆 · 事件-樱 · 关于自身·其一' },
+        { id:'sakura-02', at:'#about',   x:0.10, y:0.35, verb:'hold',       art:'sheath',
+          line:'对我来说，这是必要的举措，能够在很多情境对我加以提醒，让我不会忘记自己的立场。',
+          src:'官方档案馆 · 事件-樱 · 关于戒律·其一' },
+        { id:'sakura-03', at:'#about',   x:0.90, y:0.70, verb:'slide',      art:'glint',
+          line:'换做是任何一位融合战士，都一样能结束那场事故——因为「阻止梅比乌斯」这件事，苏其实已经做到了。',
+          src:'官方档案馆 · 事件-樱 · 关于自身·其三' },
+        { id:'sakura-04', at:'#blade',   x:0.10, y:0.30, verb:'hold',       art:'blade',
+          line:'而这把剑每出鞘一次，那份记忆就会重现一分。',
+          src:'官方档案馆 · 事件-樱 · 关于戒律·其一' },
+        { id:'sakura-05', at:'#blade',   x:0.90, y:0.10, verb:'triple_tap', art:'blade',
+          line:'为了求生，我曾钻研诸武，但到最后，我仅有、却也最实用的，不过只此「一刀」。',
+          src:'官方档案馆 · 事件-樱 · 落樱的追忆·其二' },
+        { id:'sakura-06', at:'#blade',   x:0.50, y:0.86, verb:'drag',       art:'sheath',
+          line:'是的，每当我再次对自己的同类举剑，所面对的就不再是一时权衡，而是因记忆重现成倍而来的压力。',
+          src:'官方档案馆 · 事件-樱 · 关于戒律·其一' },
+        { id:'sakura-07', at:'#journey', x:0.12, y:0.30, verb:'click',      art:'petal',
+          line:'在成为融合战士前，我就已隶属于一支名为「毒蛹」的秘密行动部队。和其他人不同，我们不能知道太多事。',
+          src:'官方档案馆 · 事件-樱 · 关于毒蛹·其一' },
+        { id:'sakura-08', at:'#journey', x:0.88, y:0.55, verb:'hold',       art:'blade',
+          line:'我······我和千劫正好相反。我不希望有其他人和我一起行动。',
+          src:'官方档案馆 · 事件-樱 · 关于毒蛹·其一' },
+        { id:'sakura-09', at:'#journey', x:0.12, y:0.80, verb:'slide',      art:'petal',
+          line:'看着二位，让我回想起曾经和妹妹相依为命的日子。那段时间虽然艰苦，但对我们两人来说，却是生命中最快乐的时光。',
+          src:'官方档案馆 · 事件-樱 · 关于自身·其四' },
+        { id:'sakura-10', at:'#quotes',  x:0.95, y:0.25, verb:'click',      art:'glint',
+          line:'虽然刻印的寓意最终是由爱莉希雅决定，但它并没有那么复杂。我曾说过「刹那」是一种技艺，而它所蕴含的所有，也只有「一刀」这么简单。',
+          src:'官方档案馆 · 事件-樱 · 落樱的追忆·其二' },
+        { id:'sakura-11', at:'#ending',  x:0.20, y:0.45, verb:'slide',      art:'silhouette',
+          line:'其实，我也已经很久没有见到过樱花了。最后一次，还是在和千劫一起执行任务的路上。',
+          src:'官方档案馆 · 事件-樱 · 落樱的追忆·其七' },
+        { id:'sakura-12', at:'#bottom',  x:0.50, y:0.89, verb:'click',      art:'petal',
+          line:'我曾经教导过一些后继者制作简单便捷的食物，如果你有需要的话，也可以来找我。',
+          src:'官方档案馆 · 事件-樱 · 关于料理·其一' },
+      ],
+
+      /* 找齐 12 个之后展开，只出现这一次。
+         ⚠ `title` 是**站点 UI 文案**；`text` / `src` 是台词，必须逐字有出处。
+         这一句同时是 `unlock` 和「她给你一刀」的份量 ——
+         ⚠ 它**不再**与 `sakura-11` 重复（原先两处同句，Task 1 核准时改成互换）。 */
+      unlock: {
+        title: '她已经等了你很久',
+        text: '「如果能够做到的话，或许······我会试着把自己从未有机会使出的那一剑交予你，它会对你有所帮助的。」',
+        src: '官方档案馆 · 事件-樱 · 落樱的追忆·其二',
+      },
+
+      /* 陪伴层台词池：冷却结束后的**第 3 次**点击说一句，**按顺序**推进（绝不做概率）。
+         这几句都短 —— 她本来就是话少的人，短短的更像「她在旁边」。 */
+      whisper: [
+        '「发生过太多事了。」',
+        '「我认为这不重要。」',
+        '「那只是原因之一。」',
+        '「谢谢你们。」',
+      ],
+      whisperCooldownMs: 11000,
+    },
+
+    /* 她的小游戏「一瞬」（Task 6）。
+       ⚠ **只有 `module`，没有 `title` / `hint`** —— 卡上的文案归**模块**所有
+         （`assets/games/sakura.js` 的 `ElysiaGames.sakura.title/hint`）。
+         两边各写一份的话，`bottom.js` 只会用其中一份，另一份就成了改不动的死配置 ——
+         上一轮在 mobius 上修过这个，而且有断言守着。 */
+    game: { module: 'sakura' },
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
   /* SECTION: resize guard */
@@ -1118,6 +1339,24 @@ body{
       if (petals[j].x > W) petals[j].x = Math.random() * W;
     }
   });
+
+  /* ══ 接新模块（2026-10-02）══════════════════════════════════════════
+     ⚠ `ElysiaExplore.init` 与 `ElysiaBottom.mount` 的**先后顺序本来都行** ——
+       可发现物的锚点可以挂在下文区块上（那是 `mount` 才建出来的），
+       共享层的 `ensureAttached` 会在挂载探索度时补扫。
+       这里保持与 mobius 一致：**先 init 再 mount**。
+     ⚠ 小游戏（`THEME.game` 与 `games/sakura.js`）留到 Task 6 ——
+       现在写进来就是一份用不上的配置，而且模块文件还不存在。 */
+  ElysiaExplore.init(THEME.explore);
+  ElysiaBottom.mount({ game: THEME.game });
+
+  /* 生日胶囊。⚠ **不传 `birthMsg`** —— 档案馆里没有可用的生日台词：
+     355 条里唯一像「礼物」的那句（「…我今天来，是准备了一份礼物给你…」）
+     **已经被她现有的送花彩蛋用掉了**；材料包的 `audio/` 目录也是空的
+     （包自己写着「未获取到任何可直接下载的语音文件」）。
+     按纪律「**没有就空着**」：胶囊照常工作（天/时/分/秒照走），只是生日当天不多那一句。
+     ⚠ 不许拿首页爱莉希雅那句顶替，更不许现编。 */
+  ElysiaBday.mount({});
 })();
 </script>
 </body>

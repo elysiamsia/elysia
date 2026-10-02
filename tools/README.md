@@ -23,10 +23,17 @@
 
   用法：
   ```
-  PYTHONIOENCODING=utf-8 python tools/check_explore.py                    # 探针页（31 条）
-  PYTHONIOENCODING=utf-8 python tools/check_explore.py mobius/index.html  # 某页（31 条）
-  PYTHONIOENCODING=utf-8 python tools/check_explore.py --reduced          # 减动模式（5 条）
+  PYTHONIOENCODING=utf-8 python tools/check_explore.py                    # 探针页（35 条）
+  PYTHONIOENCODING=utf-8 python tools/check_explore.py sakura/index.html  # 某页（樱页 38 条）
+  PYTHONIOENCODING=utf-8 python tools/check_explore.py --reduced          # 减动模式（5 / 6 条）
+  PYTHONIOENCODING=utf-8 python tools/check_explore.py <页> --only <片段>  # **只跑**名字含这个片段的
   ```
+
+  ⚠ **条数逐页不同**（`pages` 维度会把与这页无关的筛掉，报告里会写「本页跳过 N 条」）。
+
+  ⚠ `--only <名字片段>` 是给**变异测试**用的（「证明断言抓得到错」要把同一条跑很多遍，
+  而整轮要两分钟）。**报告开头和结尾都会写明「这是筛过的」** ——
+  别把一次筛过的运行当成全量验收，那正是这个工具最想防的那种谎。
   自带服务器走 8501；每次用**全新临时 profile**（`cdp.py` 那个固定 profile 会留存缓存）。
   空跑的话它**会 red** —— 全靠**功能断言**（如「游戏卡上找不到按钮」）。所以本脚本收了 CDP 的
   **`Log` 域**：`level=error` 的条目算失败。⚠ 页面**必须**声明 favicon，否则浏览器去要
@@ -35,7 +42,8 @@
   每条断言带两个维度：
   - `modes` —— `normal` / `reduced`（减动那几条只在 `--reduced` 时跑）
   - `pages` —— 适用于哪些页。默认 `('*',)` = 任何页都该满足；
-    写死了 `fx-01` 这类**探针页 id** 的用 `@fixture_only`，mobius 专属的用 `@mobius_only`
+    写死了 `fx-01` 这类**探针页 id** 的用 `@fixture_only`，mobius 专属的用 `@mobius_only`，
+    樱专属的用 `@sakura_only`
 
   ⚠ **新页接入时**：断言要分清「这页特有的」和「每页都该满足的」——
   前者收窄、后者参数化（存储键那一类要走 `ElysiaExplore.pageId()`，别写死页名）。

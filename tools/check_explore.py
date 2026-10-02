@@ -19,6 +19,11 @@ tools/check_explore.py — 探索系统断言
   不传页面 = `tools/explore-fixture.html`（探针页）。
   真页面：`python tools/check_explore.py mobius/index.html`
 
+  `--reduced` —— 只跑减动（`prefers-reduced-motion`）那几条。
+  `--only <名字片段>` —— **只跑名字里含这个片段的断言**。
+    ⚠ 给变异测试用的（「证明断言抓得到错」要把同一条跑很多遍，
+      而整轮要两分钟）。报告里会写明「筛过的」，别把它当成一次全量验收。
+
   自带服务器（**端口 8501**，刻意避开 8500）—— 见 HANDOVER §6.4：
   8500 上常残留别的 `http.server`，请求落到哪个不确定，会测出「内容完全错」的结果。
 
@@ -51,7 +56,33 @@ EDGE = r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
 EXPECTED_FINDS = {
     'tools/explore-fixture.html': 6,
     'mobius/index.html': 12,
+    'sakura/index.html': 12,
 }
+
+# ── 樱这一页的**台词登记表** ─────────────────────────────────────────
+#   (id, at, line, src 子事件) —— 2026-10-01 逐字核准自官方档案馆「事件-樱」，
+#   核准记录见 `docs/superpowers/plans/2026-10-01-sakura-finds-table.md`。
+#
+# ⚠ **改台词必须同时改这里** —— 与 `check_aria_labels.py` 的 `EXPECTED` 同一个思路：
+#   逼它变成一次**刻意动作**，而不是静默漂移。
+# ⚠ 「**台词一条不编**」是本站底线，这张表就是那条底线的落点。
+SAKURA_FINDS = [
+    ('sakura-01', '#opening', '等待······对于此处的我们来说，又能有什么意义呢？', '关于自身·其一'),
+    ('sakura-02', '#about', '对我来说，这是必要的举措，能够在很多情境对我加以提醒，让我不会忘记自己的立场。', '关于戒律·其一'),
+    ('sakura-03', '#about', '换做是任何一位融合战士，都一样能结束那场事故——因为「阻止梅比乌斯」这件事，苏其实已经做到了。', '关于自身·其三'),
+    ('sakura-04', '#blade', '而这把剑每出鞘一次，那份记忆就会重现一分。', '关于戒律·其一'),
+    ('sakura-05', '#blade', '为了求生，我曾钻研诸武，但到最后，我仅有、却也最实用的，不过只此「一刀」。', '落樱的追忆·其二'),
+    ('sakura-06', '#blade', '是的，每当我再次对自己的同类举剑，所面对的就不再是一时权衡，而是因记忆重现成倍而来的压力。', '关于戒律·其一'),
+    ('sakura-07', '#journey', '在成为融合战士前，我就已隶属于一支名为「毒蛹」的秘密行动部队。和其他人不同，我们不能知道太多事。', '关于毒蛹·其一'),
+    ('sakura-08', '#journey', '我······我和千劫正好相反。我不希望有其他人和我一起行动。', '关于毒蛹·其一'),
+    ('sakura-09', '#journey', '看着二位，让我回想起曾经和妹妹相依为命的日子。那段时间虽然艰苦，但对我们两人来说，却是生命中最快乐的时光。', '关于自身·其四'),
+    ('sakura-10', '#quotes', '虽然刻印的寓意最终是由爱莉希雅决定，但它并没有那么复杂。我曾说过「刹那」是一种技艺，而它所蕴含的所有，也只有「一刀」这么简单。', '落樱的追忆·其二'),
+    ('sakura-11', '#ending', '其实，我也已经很久没有见到过樱花了。最后一次，还是在和千劫一起执行任务的路上。', '落樱的追忆·其七'),
+    ('sakura-12', '#bottom', '我曾经教导过一些后继者制作简单便捷的食物，如果你有需要的话，也可以来找我。', '关于料理·其一'),
+]
+
+# 出处的前缀。⚠ 渲染进气泡角落的就是它，所以「出处」这件事是**看得见**的。
+SAKURA_SRC_PREFIX = '官方档案馆 · 事件-樱 · '
 
 
 # ── 服务器 ────────────────────────────────────────────────────────────
@@ -211,6 +242,20 @@ MOBIUS = 'mobius/index.html'
 def mobius_only(fn):
     """收窄成「只对 /mobius/ 成立」—— 这些断言查的是她那一页的内容规格。"""
     fn.pages = (MOBIUS,)
+    return fn
+
+
+SAKURA = 'sakura/index.html'
+
+
+def sakura_only(fn):
+    """收窄成「只对 /sakura/ 成立」。
+
+    ⚠ 樱这一页有一块**全站独有**的东西 ——「鞘中刀」（`#bladeStage`）：
+    一柄不肯出鞘的刀，点三次她会改赠一朵「勿忘我」。那是 2026-09-17 建页时
+    照她的性格设计的，别的页没有，所以这些断言只能在樱这一页上跑。
+    """
+    fn.pages = (SAKURA,)
     return fn
 
 
@@ -2406,6 +2451,33 @@ def check_game_card_matches_module(b, page, expected):
     return (fails, u'卡片文案与模块一致' if not fails else u'卡片文案对不上')
 
 
+# 落点探针：把可发现物临时藏起来，看它中心点上命中的是什么。
+# ⚠ 每个 find 都要**先滚到跟前** —— 不然 elementFromPoint 在视口外一律返回 null。
+MEASURE_FIND_SPOTS = """(() => {
+    var out = [];
+    document.querySelectorAll('.explore-find').forEach(function (n) {
+        n.scrollIntoView({ block: 'center', behavior: 'instant' });
+        var r = n.getBoundingClientRect();
+        var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        n.style.visibility = 'hidden';
+        var under = document.elementFromPoint(cx, cy);
+        n.style.visibility = '';
+        var text = '';
+        if (under) {
+            for (var i = 0; i < under.childNodes.length; i++) {
+                if (under.childNodes[i].nodeType === 3) text += under.childNodes[i].nodeValue;
+            }
+        }
+        out.push({
+            id: n.getAttribute('data-find-id'),
+            tag: under ? under.tagName.toLowerCase() : null,
+            text: text.trim().slice(0, 24),
+        });
+    });
+    return JSON.stringify(out);
+})()"""
+
+
 @check
 def check_finds_not_on_text(b, page, expected):
     """可发现物应该落在**容器**上，不该压在**文字**上。
@@ -2421,50 +2493,1059 @@ def check_finds_not_on_text(b, page, expected):
     判据：把可发现物临时藏起来，看它中心点上 `elementFromPoint` 命中的元素
     有没有**直接文字**、或本身就是 `p / span / h2 / h3 / b / a / img` 这类叶子。
     """
-    d = b.jso("""(() => {
-        var out = [];
-        document.querySelectorAll('.explore-find').forEach(function (n) {
-            // ⚠ 必须先滚到跟前 —— 不然 elementFromPoint 在视口外一律返回 null
-            n.scrollIntoView({ block: 'center', behavior: 'instant' });
-            var r = n.getBoundingClientRect();
-            var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-            n.style.visibility = 'hidden';
-            var under = document.elementFromPoint(cx, cy);
-            n.style.visibility = '';
-            var text = '';
-            if (under) {
-                for (var i = 0; i < under.childNodes.length; i++) {
-                    if (under.childNodes[i].nodeType === 3) text += under.childNodes[i].nodeValue;
-                }
-            }
-            out.push({
-                id: n.getAttribute('data-find-id'),
-                tag: under ? under.tagName.toLowerCase() : null,
-                text: text.trim().slice(0, 24),
-            });
-        });
-        return JSON.stringify(out);
-    })()""")
-    if d is None:
-        return ([u'取不到可发现物的落点信息'], u'—')
-
+    d = b.jso(MEASURE_FIND_SPOTS)
     LEAF = ('p', 'span', 'h1', 'h2', 'h3', 'h4', 'b', 'strong', 'em', 'a', 'img', 'li')
     fails = []
-    for n in d:
-        if n['text']:
-            fails.append(u"%s：正压着文字「%s」（<%s>）—— 看着会像渲染故障"
-                         % (n['id'], n['text'], n['tag']))
-        elif n['tag'] in LEAF:
-            fails.append(u'%s：落在 <%s> 这种**文字叶子**上，该挪到容器（卡片 / 区块）上去'
-                         % (n['id'], n['tag']))
+    total = 0
 
-    return (fails, u'%d 个都落在容器上' % len(d) if not fails else u'%d 个压着东西' % len(fails))
+    # ⚠ **两个视口都要量。** 这条断言原先只在默认视口（约 1256）跑 ——
+    #   而本站的主要访客是**手机**。2026-10-02 实测：1256 下 0 个压字，
+    #   **375 宽下有 4 个**压着（档案标签「出处」/「鞘中刀」/「点击切换」…）。
+    #   **只测桌面 = 这条防线对手机是空的**，而移动端恰恰是主战场。
+    #   （坐标是锚点宽度的百分比，换个宽度就落到别的内容上 —— 所以必须两个都量。）
+    for (w, h, label) in ((None, None, u'默认'), (375, 812, u'375')):
+        if w:
+            b._send('Emulation.setDeviceMetricsOverride',
+                    {'width': w, 'height': h, 'deviceScaleFactor': 1, 'mobile': True})
+            time.sleep(0.6)
+        d = b.jso(MEASURE_FIND_SPOTS)
+        if d is None:
+            fails.append(u'[%s] 取不到可发现物的落点信息' % label)
+            continue
+        total = max(total, len(d))
+        for n in d:
+            if n['text']:
+                fails.append(u'[%s] %s：正压着文字「%s」（<%s>）—— 看着会像渲染故障'
+                             % (label, n['id'], n['text'], n['tag']))
+            elif n['tag'] in LEAF:
+                fails.append(u'[%s] %s：落在 <%s> 这种**文字叶子**上，该挪到容器上去'
+                             % (label, n['id'], n['tag']))
+
+    # ⚠ **必须清掉** —— 否则这个 375 的模拟会跟着后面**所有**断言，
+    #   把一整轮后续结果都变成「在手机上测的」，而人会以为自己测的是桌面。
+    b._send('Emulation.clearDeviceMetricsOverride')
+    time.sleep(0.6)
+
+    return (fails, u'%d 个都落在容器上（两个视口）' % total if not fails
+            else u'%d 处压着东西' % len(fails))
+
+
+@check
+def check_art_keywords_resolve(b, page, expected):
+    """每个可发现物的 `art` 都要**能解出真正的图形**，不能悄悄回落到默认。
+
+    ⚠ `explore.js` 的 `artSvg()` 遇到未知关键字会 `console.warn` 并**回落到 `glint`** ——
+      于是「关键字打了个错字」在页面上只表现为「那个东西长得不对」：
+      **不报错、不影响别的断言、快照也照不出来**（它只是个 22px 的装饰）。
+      这条把它变成可见的。
+
+    ⚠ 换个说法：它是给**新页接入**用的 —— 新页要加自己的 art 关键字，
+      写错一个字母不会有任何提示，只会让某个可发现物长得像别的。
+
+    判据：`data-art` 声明的关键字必须真的在 `ElysiaExplore.ART` 里。
+    """
+    d = b.jso("""(() => {
+        var bad = [], n = 0;
+        document.querySelectorAll('.explore-find').forEach(function (el) {
+            n++;
+            var key = el.getAttribute('data-art');
+            if (!key || !window.ElysiaExplore || !window.ElysiaExplore.ART[key]) {
+                bad.push(el.getAttribute('data-find-id') + ' → ' + key);
+            }
+        });
+        return JSON.stringify({ n: n, bad: bad });
+    })()""")
+    if d is None:
+        return ([u'取不到可发现物的 art 关键字 —— explore.js 没加载？'], u'—')
+    if not d['n']:
+        return ([], u'本页没有可发现物（跳过）')
+    if d['bad']:
+        return ([u'这些 find 的 art 在 ART 表里找不到（会**静默回落**成默认图形）：%s'
+                 % u'、'.join(d['bad'])], u'%d 个对不上' % len(d['bad']))
+    return ([], u'%d 个 art 都能解出' % d['n'])
+
+
+# ══ 樱：「鞘中刀」══════════════════════════════════════════════════════
+def _click_sel(b, sel):
+    """把选择器滚到视口中间，再用**真实指针事件**点它。
+
+    ⚠ 不能用 `.click()` —— 那是合成事件，站点里不少监听器认的是真实指针路径。
+    ⚠ 必须先滚动：CDP 派发的是**视口坐标**，元素在视口外时事件会落到别处，**而且不报错**
+      （HANDOVER §6.4）。`behavior:'instant'` 也是必须的 —— 站点有 `scroll-behavior:smooth`。
+    """
+    c = b.jso("""(() => {
+        var n = document.querySelector('%s');
+        if (!n) return null;
+        n.scrollIntoView({ block: 'center', behavior: 'instant' });
+        var r = n.getBoundingClientRect();
+        return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    })()""" % sel)
+    if not c:
+        return False
+    b.press(c['x'], c['y'])
+    time.sleep(0.05)
+    b.release(c['x'], c['y'])
+    return True
+
+
+@check
+@sakura_only
+def check_sakura_blade_alive_after_gift(b, page, expected):
+    """**收过花之后，刀照样能点、照样拒你** —— 那个 bug 的回归断言。
+
+    需求方 2026-10-01：「鞘中刀有个 bug，**触发成功一次之后就不会恢复了**」。
+
+    原写法是 `if (gifted){ showToast('……嗯。花还开着。', false); return; }` ——
+    拿到花之后整块**永远只弹那一句**，再点什么都不会发生。
+
+    修法是把 `gifted` 的语义收窄成「**还会不会再送花**」，而不是「刀还能不能点」。
+    名字本身（**勿忘我**）意味着花不该忘；但一柄不肯出鞘的刀，本就该**永远不驯**。
+    花是纪念品，刀是性格 —— 前者留，后者不该因为送过花就没了。
+    """
+    # 把「已经收过花」这个状态直接造出来
+    b.js("(() => { try { localStorage.setItem('sakuraFlower', '1'); } catch (e) {} return 1; })()")
+    _reload(b)
+
+    st = b.jso("""(() => {
+        var s = document.getElementById('bladeStage');
+        var c = document.getElementById('bladeCount');
+        return JSON.stringify({ stage: !!s, count: c ? c.textContent : null });
+    })()""")
+    if not st or not st['stage']:
+        return ([u'这一页没有 #bladeStage —— 「鞘中刀」模块不在？'], u'—')
+    if st['count'] != u'她给了你一朵花':
+        return ([u'造出来的「已收花」状态没生效：计数行是 %r' % st['count']], u'—')
+
+    if not _click_sel(b, '#bladeStage'):
+        return ([u'点不到 #bladeStage'], u'—')
+    time.sleep(0.35)
+
+    d = b.jso("""(() => {
+        var f = document.querySelector('.blade-float');
+        var t = document.getElementById('skToast');
+        return JSON.stringify({
+            float: f ? f.textContent : null,
+            toast: t ? t.textContent : null,
+            flower: localStorage.getItem('sakuraFlower'),
+        });
+    })()""")
+    if d is None:
+        return ([u'取不到点击后的状态'], u'—')
+
+    fails = []
+    # ① 反馈还在 —— 原写法在这一步就 return 了，所以什么都不会出现
+    if d['float'] != u'纹丝不动':
+        fails.append(u'收过花之后点刀，**没有「纹丝不动」那一下**，反馈没了 —— '
+                     u'这正是那个 bug：原写法一见 gifted 就 return')
+    # ② 弹的是**有出处的「拒绝」那句**，不是「……嗯。花还开着。」
+    if not d['toast'] or u'决不能就这样轻易出鞘' not in d['toast']:
+        fails.append(u'收过花之后点刀，该弹「拒绝」那句台词，实际弹的是 %r' % d['toast'])
+    # ③ 不再重复送花
+    if d['flower'] != '1':
+        fails.append(u'sakuraFlower 变成了 %r —— 不该被改写' % d['flower'])
+
+    return (fails, u'收过花后刀仍是活的' if not fails else u'刀死了')
+
+
+@check
+@sakura_only
+def check_sakura_ending_unlocks_immediately(b, page, expected):
+    """**收下花的同一瞬间**，结尾那句和多出来的那朵花就该出现 —— 不用刷新。
+
+    ⚠ 原先那段只在**页面加载时**判一次，所以「收下花 → 往下滚到结尾」当场看不到，
+      要刷新才有。而 HANDOVER §10.3 把这个跨彩蛋描述成「收过花才多一句」，
+      读起来像当场就能看到 —— **它该当场出现。**
+    """
+    b.js("(() => { try { localStorage.removeItem('sakuraFlower'); } catch (e) {} return 1; })()")
+    _reload(b)
+
+    for _ in range(3):
+        if not _click_sel(b, '#bladeStage'):
+            return ([u'点不到 #bladeStage'], u'—')
+        time.sleep(0.25)
+    time.sleep(0.3)
+
+    d = b.jso("""(() => {
+        var s = document.getElementById('endingSub');
+        var f = document.getElementById('endingFlower');
+        return JSON.stringify({
+            text: s ? s.textContent : null,
+            visible: !!s && s.classList.contains('visible'),
+            bloom: !!f && f.classList.contains('bloom'),
+            flower: localStorage.getItem('sakuraFlower'),
+        });
+    })()""")
+    if d is None:
+        return ([u'取不到结尾状态'], u'—')
+
+    fails = []
+    if d['flower'] != '1':
+        fails.append(u'点了三次却没拿到花（sakuraFlower=%r）—— 前提就不成立' % d['flower'])
+    if not d['text']:
+        fails.append(u'**收下花的当下**，结尾那句还是空的 —— 要刷新才出现（这就是要修的）')
+    elif not d['visible']:
+        fails.append(u'结尾那句有文字但没有 .visible —— 看不见')
+    if not d['bloom']:
+        fails.append(u'**收下花的当下**，结尾那朵花没有开（缺 .bloom）')
+
+    return (fails, u'收花当下结尾就解锁' if not fails else u'要刷新才出现')
+
+
+@check
+@sakura_only
+def check_sakura_no_dead_write(b, page, expected):
+    """点刀**不再往 localStorage 里写那个只写不读的 `sakuraTries`**。
+
+    ⚠ 原代码 `localStorage.setItem('sakuraTries', String(tries))` **只写不读** ——
+      页面上是 `var tries = 0`，每次访问从零开始，存进去的值**永远没人看**。
+      死代码不只是碍眼：它让「已伸手 × N」看起来像是跨访问累计的，**但它不是**。
+    """
+    b.js("""(() => {
+        try {
+            localStorage.removeItem('sakuraFlower');
+            localStorage.removeItem('sakuraTries');
+        } catch (e) {}
+        return 1;
+    })()""")
+    _reload(b)
+
+    for _ in range(3):
+        if not _click_sel(b, '#bladeStage'):
+            return ([u'点不到 #bladeStage'], u'—')
+        time.sleep(0.25)
+
+    v = b.js("String(localStorage.getItem('sakuraTries'))")
+    if v != 'null':
+        return ([u'点完三次之后 localStorage 里还有 `sakuraTries=%s` —— '
+                 u'那是**只写不读**的死代码，该删的那行还在' % v], u'死写入还在')
+    return ([], u'不再写 sakuraTries')
+
+
+@check
+@sakura_only
+def check_blade_state_restores_together(b, page, expected):
+    """收过花的人**下次访问**时，刀的两个状态要**一起**恢复（花 + 刀光）。
+
+    ⚠ 这条对应 Task 3 交付时**主动交代「没做」**的那件事：
+      `renderBlade()` 只补了花的 `.bloom`，**没补 `bladeGlow` 的 `.lit`** ——
+      于是「花开着、光灭着」，两处状态自相矛盾。它是**改动前就有的不一致**
+      （Task 3 的四项范围里没列它，所以当时没动）。
+
+    ⚠ 但**现在更要紧**：刀已经永远可点，那个「送花」分支**不会再进第二次** ——
+      不在这里补，刀光对收过花的老访客就是**永远不再亮**。
+
+    做法：写 `sakuraFlower` → 重载 → 查两个类名是否都在。
+    （⚠ 注意不能靠「点三次」来构造这个状态 —— 那走的是**送花那一瞬间**的路径，
+      而这里要验的是**下次访问时从存储恢复**的路径。）
+    """
+    b.js("""(() => {
+        try { localStorage.setItem('sakuraFlower', '1'); } catch (e) {}
+        location.reload();
+        return 1;
+    })()""")
+    time.sleep(3.5)
+
+    d = b.jso("""(() => {
+        var f = document.getElementById('bladeFlower');
+        var g = document.getElementById('bladeGlow');
+        return JSON.stringify({
+            flower: !!f && f.classList.contains('bloom'),
+            glow:   !!g && g.classList.contains('lit'),
+        });
+    })()""")
+    if d is None:
+        return ([u'取不到刀的状态'], u'—')
+
+    fails = []
+    if not d['flower']:
+        fails.append(u'重载后花没有开着 —— `renderBlade()` 没从存储恢复 `bloom`')
+    if not d['glow']:
+        fails.append(u'花开着、**刀光却是灭的** —— `renderBlade()` 漏补了 `.lit`，'
+                     u'而刀现在永远可点、送花那支不会再进，所以它**永远亮不起来**了')
+
+    return (fails, u'花与刀光一起恢复' if not fails else u'状态不一致')
+
+
+@check
+@sakura_only
+def check_sakura_finds_match_registry(b, page, expected):
+    """樱那 12 条的 `id` / `at` / `verb` / `art` / `line` / `src` 与**登记表**逐字一致。
+
+    ⚠ 这是「**台词一条不编**」那条底线的落点 —— 台词逐字抄自官方档案馆，
+      核准记录在 `docs/superpowers/plans/2026-10-01-sakura-finds-table.md`。
+      **改台词必须同时改本文件的 `SAKURA_FINDS`**，逼它变成一次刻意动作。
+
+    ⚠ 判据读的是**源码**不是 DOM：`THEME` 在 IIFE 里（`window.THEME` 读不到），
+      而 `line` 只有触发时才进气泡，所以 DOM 侧拿不全这 12 条。
+    """
+    src = io.open(os.path.join(ROOT, page), encoding='utf-8').read()
+    i = src.find('explore: {')
+    if i < 0:
+        return ([u'源码里找不到 `explore: {`'], u'—')
+    got = re.findall(
+        r"\{\s*id:'([^']*)',\s*at:'([^']*)',\s*x:[-0-9.]+,\s*y:[-0-9.]+,\s*"
+        r"verb:'([^']*)',\s*art:'([^']*)',\s*\n\s*line:'([^']*)',\s*\n\s*src:'([^']*)'",
+        src[i:])
+
+    fails = []
+    if len(got) != len(SAKURA_FINDS):
+        fails.append(u'解析出 %d 条 find，登记表有 %d 条 —— 条数对不上（格式被改过？）'
+                     % (len(got), len(SAKURA_FINDS)))
+    for k, (wid, wat, wline, wsub) in enumerate(SAKURA_FINDS):
+        if k >= len(got):
+            break
+        gid, gat, gverb, gart, gline, gsrc = got[k]
+        if gid != wid:
+            fails.append(u'第 %d 条的 id 是 %r，登记表是 %r' % (k + 1, gid, wid))
+        if gat != wat:
+            fails.append(u'%s 的锚点是 %r，登记表是 %r' % (wid, gat, wat))
+        if gline != wline:
+            fails.append(u'%s 的**台词**与登记表不一致：\n        页面：%s\n        登记：%s'
+                         % (wid, gline, wline))
+        if gsrc != SAKURA_SRC_PREFIX + wsub:
+            fails.append(u'%s 的**出处**与登记表不一致：\n        页面：%s\n        登记：%s'
+                         % (wid, gsrc, SAKURA_SRC_PREFIX + wsub))
+    return (fails, u'12 条与登记表逐字一致' if not fails else u'%d 处对不上' % len(fails))
+
+
+@check
+@sakura_only
+def check_sakura_finds_not_in_quotes(b, page, expected):
+    """12 条可发现物的台词**不与语录区那 10 条重复**。
+
+    语录区是一张 10 张卡片的网格，读者**一眼能看到全部**；
+    可发现物再用同一句，就成了「你找到了一句你已经读过的话」——探索的甜头当场没了。
+    （上一轮 mobius 12 条里只撞了 1 条，基本是避开的；樱这边素材够，可以完全避开。）
+    """
+    src = io.open(os.path.join(ROOT, page), encoding='utf-8').read()
+    i = src.find('var quotes = [')
+    if i < 0:
+        return ([u'源码里找不到 `var quotes = [`'], u'—')
+    quotes = [m.group(1) for m in
+              re.finditer(u'「(.+?)」', src[i:src.find(u'];', i)])]
+    if len(quotes) < 5:
+        return ([u'语录区只解析出 %d 条 —— 解析器可能坏了' % len(quotes)], u'—')
+
+    dup = [wid for (wid, _at, line, _s) in SAKURA_FINDS
+           if any(line == q or line in q for q in quotes)]
+    if dup:
+        return ([u'这些可发现物的台词与语录区重复：%s' % u'、'.join(dup)], u'%d 条重复' % len(dup))
+    return ([], u'12 条与语录区零重复（语录区 %d 条）' % len(quotes))
+
+
+# ══ 樱：刀 × 可发现物不打架（Task 7 / Review Focus 4）═════════════════
+#   三个可发现物（sakura-04 / 05 / 06）就撒在 `#blade` 这一节里，而这一节的
+#   主体是那个刀舞台。**两个方向都要验，而且缺一不可**：
+#     · 只验「点舞台正中 → 刀有反应」：一个「可发现物永远点不到」的实现照样能过。
+#     · 只验「点 find → 记下它」：一个「点哪都触发刀」的实现也能过。
+#   这一对是**互相印证**的 —— 单看任何一条都能被糊弄过去。
+#
+#   ⚠ 判「刀有没有反应」**不能点完再查 `.refused`**：它只挂 **190ms**
+#     （`refuseShake()` 里那个 setTimeout），而 CDP 一个来回就要几十毫秒 ——
+#     等点完再查必定扑空，这条断言就成了一句永远绿的空话。
+#     所以先装一个 MutationObserver，把它**出现过**这件事记下来。
+
+BLADE_FINDS = ('sakura-04', 'sakura-05', 'sakura-06')
+
+BLADE_WATCH = """
+(() => {
+  var s = document.getElementById('bladeStage');
+  if (!s) return 0;
+  window.__bladeSaw = { refused: false, floats: 0 };
+  new MutationObserver(function (muts) {
+    if (s.classList.contains('refused')) window.__bladeSaw.refused = true;
+    for (var i = 0; i < muts.length; i++) {
+      var add = muts[i].addedNodes;
+      for (var j = 0; j < add.length; j++) {
+        var n = add[j];
+        if (n.classList && n.classList.contains('blade-float')) window.__bladeSaw.floats++;
+      }
+    }
+  }).observe(s, { attributes: true, attributeFilter: ['class'], childList: true });
+  return 1;
+})()
+"""
+
+
+def _blade_watch(b):
+    """装上「刀刚才有没有反应」的记录器（`.refused` + 「纹丝不动」浮字）。"""
+    return b.js(BLADE_WATCH)
+
+
+def _blade_saw(b):
+    return b.jso('JSON.stringify(window.__bladeSaw || null)')
+
+
+def _blade_count(b):
+    return b.js("(() => { var e = document.getElementById('bladeCount');"
+                " return e ? e.textContent : null; })()")
+
+
+def _reset_blade(b):
+    """清掉探索进度**和**「已收花」，再 reload —— 让刀从「没送过花」出发。
+
+    ⚠ `sakuraFlower` 必须一起清：收过花之后 `tryDraw` 不再 `tries++`，
+      计数行会停在「她给了你一朵花」—— 而这两条断言看的正是**计数有没有动**。
+      （不这么做的话，断言的结果会取决于前面跑过哪几条 —— 那种依赖迟早变成假红。）
+    """
+    b.js("(() => { try {"
+         " localStorage.removeItem('elysia:explore:' + ElysiaExplore.pageId());"
+         " localStorage.removeItem('sakuraFlower');"
+         " } catch (e) {} return 1; })()")
+    _reload(b)
+
+
+def _hit_at(b, sel):
+    """`elementFromPoint` 在那个元素中心命中了什么。
+
+    ⚠ 失败信息里必须带上它 —— 只说「刀没反应」的话，下一个人还得自己再查一遍
+      「到底是谁压在上面」。这类断言的价值一半在**报出来的原因**。
+    """
+    return b.js("""(() => {
+        var n = document.querySelector('%s');
+        if (!n) return '(元素本身就不存在)';
+        var r = n.getBoundingClientRect();
+        var e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        if (!e) return '(null)';
+        var c = e.className;
+        if (c && typeof c !== 'string') c = c.baseVal;
+        var f = e.closest ? e.closest('.explore-find') : null;
+        return e.tagName + (e.id ? '#' + e.id : '')
+             + (c ? '.' + String(c).split(' ').join('.') : '')
+             + (f ? '  ← 可发现物 ' + f.getAttribute('data-find-id') : '');
+    })()""" % sel)
+
+
+@check
+@sakura_only
+def check_sakura_blade_click_not_stolen(b, page, expected):
+    """① 点**刀舞台的正中** → 刀有反应（拒了一下 + 浮字 + 计数），且探索度**不动**。
+
+    这一半挡的是「可发现物的热区把舞台盖住」：那样点下去会落到 find 上，
+    `tryDraw` 根本收不到事件 —— 用户看到的是「刀点不动了」，而没有任何报错。
+    """
+    _reset_blade(b)
+    before_count = _blade_count(b)
+    if before_count is None:
+        return ([u'这一页没有 #bladeStage / #bladeCount —— 「鞘中刀」模块不在？'], u'—')
+
+    before_found = b.found_ids()
+    _blade_watch(b)
+
+    if not _click_sel(b, '#bladeStage'):
+        return ([u'点不到 #bladeStage'], u'—')
+    time.sleep(0.3)
+
+    saw = _blade_saw(b) or {}
+    after_found = b.found_ids()
+    hit = _hit_at(b, '#bladeStage')
+
+    fails = []
+    if not saw.get('refused'):
+        fails.append(u'点了刀舞台的**正中**，`.refused` 那一下没出现过 —— '
+                     u'那个点上命中的是 %s，刀的点击被截走了' % hit)
+    if not saw.get('floats'):
+        fails.append(u'点了刀舞台的正中，没有「纹丝不动」浮字（命中的是 %s）' % hit)
+    if _blade_count(b) == before_count:
+        fails.append(u'点了刀舞台的正中，计数行没动（一直是 %r）—— `tryDraw` 没跑到'
+                     % before_count)
+    if after_found != before_found:
+        fails.append(u'点**刀舞台**却把可发现物也触发了（%r → %r）—— 两边在互相误触'
+                     % (before_found, after_found))
+
+    return (fails, u'点舞台：刀有反应、探索度不动' if not fails else u'刀舞台被截走了')
+
+
+@check
+@sakura_only
+def check_sakura_blade_finds_dont_swing(b, page, expected):
+    """② 点 `#blade` 上那三个可发现物**各自的中心** → 它被记下，且刀**没有反应**。
+
+    这一半挡的是「点哪都触发刀」：那样想找东西反而在拔刀，而 `tries++` 是**有副作用**的
+    —— 拔够三次她会把「勿忘我」送出去，于是「我只是想点点看」变成了改掉这一页的状态。
+    """
+    _reset_blade(b)
+    before_count = _blade_count(b)
+    if before_count is None:
+        return ([u'这一页没有 #bladeStage / #bladeCount —— 「鞘中刀」模块不在？'], u'—')
+
+    _blade_watch(b)
+
+    fails = []
+    for fid in BLADE_FINDS:
+        if fid in b.found_ids():
+            fails.append(u'%s 在测之前就已经是「已发现」了 —— 前面的检查污染了它' % fid)
+            continue
+        if not _trigger(b, fid):
+            fails.append(u'触发不了 %s —— 它没被渲染出来，或者拿不到它的中心点' % fid)
+            continue
+        time.sleep(0.2)
+        if fid not in b.found_ids():
+            fails.append(u'点了 %s 的中心，它却没被记为「已发现」（那个点上命中的是 %s）'
+                         % (fid, _hit_at(b, '[data-find-id="%s"]' % fid)))
+
+    time.sleep(0.2)
+    saw = _blade_saw(b) or {}
+    if saw.get('refused'):
+        fails.append(u'点可发现物的时候，**刀也被惊动了**（`.refused` 出现过）—— '
+                     u'两个系统在打架')
+    if saw.get('floats'):
+        fails.append(u'点可发现物的时候，刀浮出了「纹丝不动」× %d 次' % saw['floats'])
+    if _blade_count(b) != before_count:
+        fails.append(u'点可发现物的时候，刀的计数行动了（%r → %r）—— `tryDraw` 被误触发了'
+                     % (before_count, _blade_count(b)))
+
+    return (fails, u'点可发现物：记下了它、刀没反应' if not fails else u'可发现物被刀抢了')
+
+
+# 三个可发现物相对**刀舞台**的位置。
+# ⚠ 判据是「find 的**中心**落不落在舞台矩形里」—— 和 `check_finds_not_on_text`
+#   用同一个口径（那边也是取中心点）。用户瞄的就是那个中心。
+MEASURE_BLADE_OVERLAP = """
+(() => {
+  var sec = document.getElementById('blade');
+  var st = document.getElementById('bladeStage');
+  if (!sec || !st) return null;
+  var R = st.getBoundingClientRect();
+  var secR = sec.getBoundingClientRect();
+  var out = [].slice.call(sec.querySelectorAll('.explore-find')).map(function (n) {
+    var r = n.getBoundingClientRect();
+    var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    /* dist > 0 = 中心在舞台外面，数值就是**离得多远**（px）；
+       dist <= 0 = 中心落在舞台矩形里。报告里要带上它 ——
+       绿色的运行也该说清楚「绿得有多勉强」。 */
+    var dx = Math.max(R.left - cx, cx - R.right);
+    var dy = Math.max(R.top - cy, cy - R.bottom);
+    return {
+      id: n.getAttribute('data-find-id'),
+      onStage: cx >= R.left && cx <= R.right && cy >= R.top && cy <= R.bottom,
+      inside: st.contains(n),
+      dist: Math.round(Math.max(dx, dy)),
+      x: +(secR.width ? (cx - secR.left) / secR.width : 0).toFixed(3),
+    };
+  });
+  return JSON.stringify({ finds: out });
+})()
+"""
+
+
+@check
+@sakura_only
+def check_sakura_blade_finds_clear_of_stage(b, page, expected):
+    """③ 三个可发现物**不许压在刀舞台上**（两个视口都要量）。
+
+    ⚠ 为什么①②这一对之外还要单独一条**几何**的：
+      那两条只采「舞台**正中**」这**一个点**。一个 find 要是挪到舞台的左三分之一上，
+      ① 照样绿 —— 而用户点那一片想拔刀，落到的是 find，没有任何东西会报出来。
+      几何这条把整块舞台都盖住了。
+
+    ⚠ **两个视口都要量**，而且手机那一遍才是关键：
+      坐标是 `#blade` 宽度的百分比，而舞台的占比**随视口剧变** ——
+      实测 1280 下舞台占 `#blade` 的 x `0.379~0.621`，**360 宽下是 `0.071~0.929`**。
+      也就是说 `x:0.10` 这种坐标在桌面上离舞台很远、在手机上却紧贴着它。
+      （同一条教训见 `check_finds_not_on_text`：2026-10-02 实测 375 下 4 个压着字，
+        而当时那条断言只看桌面 —— 「只测桌面 = 这条防线对手机是空的」。）
+    """
+    fails = []
+    total = 0
+    tight = None          # (余量px, id, 视口) —— 全站最紧的那一处
+    for (w, h, label) in ((None, None, u'默认'), (375, 812, u'375')):
+        if w:
+            b._send('Emulation.setDeviceMetricsOverride',
+                    {'width': w, 'height': h, 'deviceScaleFactor': 1, 'mobile': True})
+            time.sleep(0.6)
+        d = b.jso(MEASURE_BLADE_OVERLAP)
+        if d is None:
+            fails.append(u'[%s] 这一页没有 #blade / #bladeStage —— 「鞘中刀」模块不在？' % label)
+            continue
+        finds = d['finds']
+        total = max(total, len(finds))
+        if not finds:
+            fails.append(u'[%s] `#blade` 里一个可发现物都没有 —— 锚点选择器写错了？' % label)
+        for n in finds:
+            if tight is None or n['dist'] < tight[0]:
+                tight = (n['dist'], n['id'], label)
+            if n['inside']:
+                fails.append(u'[%s] %s：**被放进了舞台里面** —— 点它会顺着冒泡去拔刀'
+                             % (label, n['id']))
+            elif n['onStage']:
+                fails.append(u'[%s] %s：中心落在刀舞台上（x≈%s）—— 这里本该是「拔刀」，'
+                             u'用户点到的是它' % (label, n['id'], n['x']))
+
+    # ⚠ **必须清掉** —— 否则这个 375 的模拟会跟着后面**所有**断言，
+    #   把一整轮后续结果都变成「在手机上测的」，而人会以为自己测的是桌面。
+    b._send('Emulation.clearDeviceMetricsOverride')
+    time.sleep(0.6)
+
+    if fails:
+        return (fails, u'%d 处压在刀舞台上' % len(fails))
+    # 顺手报出**最小余量**：绿色的运行也该说清楚「绿得有多勉强」——
+    # 2026-10-02 实测手机上 sakura-04 只剩 **44px**（桌面是 333px），
+    # 是全站最紧的一处。数字不动地挂在这里，缩水了看得见。
+    return ([], u'%d 个都躲开了刀舞台（两个视口，最小余量 %dpx：%s @ %s）'
+            % (total, tight[0], tight[1], tight[2]))
+
+
+# ══ 樱的小游戏「一瞬」（Task 6）══════════════════════════════════════
+#   和 mobius 那条同一个思路：游戏状态在 canvas 上、拿不到内部变量（脚本是 IIFE），
+#   所以判「在不在动」只能靠**画面本身**。
+#   ⚠ 关键在于**同一个判据要既认得出「动」、也认得出「不动」** ——
+#     所以每次都先验「开局后在动」，再验「关掉后静止」。
+#     少了后半段，「两次采样不同」有可能只是 dataURL 编码本身不稳定，
+#     那这条断言就是恒真式，测了等于没测。
+
+def _sk_game_sig(b):
+    return b.js("(() => { var c = document.querySelector('#sakuraGameOverlay canvas');"
+                " return c ? c.toDataURL() : null; })()")
+
+
+def _sk_overlay_state(b):
+    """遮罩的开合状态 **和 `aria-hidden`**。
+
+    ⚠ 两个都要读 —— HANDOVER §10.9 六 记着同一个坑：生日面板「视觉上开着、
+      屏幕阅读器却以为它藏着」，只因为代码只 `classList.add('open')`、
+      **没同步 `aria-hidden`**。快照**测不出属性**，这类问题只能靠断言守。
+    """
+    return b.jso("""(() => {
+        var o = document.getElementById('sakuraGameOverlay');
+        if (!o) return JSON.stringify({ missing: true });
+        return JSON.stringify({ open: o.classList.contains('on'),
+                                aria: o.getAttribute('aria-hidden') });
+    })()""")
+
+
+def _sk_game_probe(b):
+    fails = []
+
+    st = _sk_overlay_state(b) or {}
+    if st.get('missing'):
+        fails.append(u'页面里没有 #sakuraGameOverlay —— 模块的 mount(host) 没建出来？')
+    else:
+        if st.get('open'):
+            fails.append(u'还没点，遮罩就是打开的')
+        if st.get('aria') != 'true':
+            fails.append(u'遮罩关着，`aria-hidden` 却是 %r —— 该是 \'true\''
+                         % st.get('aria'))
+
+    if not _click_sel(b, '.bottom-game .game-card-start'):
+        return ([u'找不到游戏卡上的「开始」按钮 —— 模块的 mount(host) 没跑？'], u'—')
+
+    st = _sk_overlay_state(b) or {}
+    if not st.get('open'):
+        fails.append(u'点了「开始」，遮罩却没有打开')
+    if st.get('aria') != 'false':
+        fails.append(u'遮罩开了，`aria-hidden` 却是 %r —— 面板视觉上开着、'
+                     u'屏幕阅读器却以为它藏着（HANDOVER §10.9 六 那个坑）'
+                     % st.get('aria'))
+
+    s1 = _sk_game_sig(b)
+    time.sleep(0.45)
+    s2 = _sk_game_sig(b)
+    if s1 is None or s2 is None:
+        fails.append(u'取不到游戏 canvas（模块没把画布渲染出来？）')
+    elif s1 == s2:
+        fails.append(u'开始之后两次采样**一模一样** —— 目标没在动'
+                     u'（也可能已经结算停下来了）')
+
+    # 关掉 → 用**同一个判据**验它抓得到「不动」
+    if not _click_sel(b, '#sakuraGameOverlay .sk-close'):
+        fails.append(u'找不到遮罩上的关闭按钮')
+        return (fails, u'（没能做反向验证）')
+
+    st = _sk_overlay_state(b) or {}
+    if st.get('open'):
+        fails.append(u'点了「收刀」，遮罩却没关')
+    if st.get('aria') != 'true':
+        fails.append(u'遮罩关了，`aria-hidden` 却是 %r' % st.get('aria'))
+
+    c1 = _sk_game_sig(b)
+    time.sleep(0.45)
+    c2 = _sk_game_sig(b)
+    if c1 is not None and c2 is not None and c1 != c2:
+        fails.append(u'关掉之后画面**还在变** —— 说明「两次采样不同」这件事本身不可靠，'
+                     u'这条判据是恒真式')
+
+    return (fails, u'开局在动、关掉静止（判据有牙齿）' if not fails else u'游戏没跑起来')
+
+
+@check
+@sakura_only
+def check_sakura_game_runs(b, page, expected):
+    """① 点「开始」之后，目标**真的在动**。
+
+    ⚠ 判据的可信度来自「**同一个判据既认得出动、也认得出不动**」——
+      所以 `_sk_game_probe` 一定会跑反向那半段。见它上面的注释。
+    """
+    _reset(b)
+    return _sk_game_probe(b)
+
+
+@check_reduced
+@sakura_only
+def check_sakura_game_runs_under_reduced(b, page, expected):
+    """② **Review Focus #5**：减动偏好下，游戏**仍然在动**。
+
+    ⚠ 游戏由「开始」**显式触发**，不属「自动播放的装饰动效」——
+      「关掉动画」不等于「关掉功能」。这条断言就是钉这件事的。
+      （spec §5.5 表里最后一行；上一轮 mobius 也有一条同样的。）
+
+    ⚠ 同时**反向也要验**（关掉后静止）—— 不然减动下这条最容易变成恒真式。
+    """
+    _set_motion(b, 'reduce')
+    try:
+        _reset(b)
+        return _sk_game_probe(b)
+    finally:
+        _set_motion(b, 'no-preference')
+
+
+# ── 樱的小游戏：**判定本身**（不是「在不在动」）──────────────────────
+#   ⚠ 「在动」和「判定对了」是两件事。上面那两条只证明**循环在跑** ——
+#     一个「点一下就加分」的实现照样能让它们全绿。
+#     所以判定要单独验，而且**正反两半都要**：
+#       · 花瓣还在远处时出刀 → 不许得分（挡住「点一下就算中」）
+#       · 花瓣压在斩线上时出刀 → 必须得分（挡住「永远不加分」）
+#     只验一半等于没验 —— 这正是前几轮反复踩的那类「看起来在守、其实守不住」。
+#
+#   ⚠ 怎么知道花瓣在哪儿：`sakura.js` 是 IIFE，`tgtX` 取不到。
+#     这里**像玩家一样看画面** —— 读画布上粉色像素的质心。
+#     比「固定等 1.15 秒再点」稳得多：`dt` 有 50ms 的上限（掉帧时游戏钟
+#     比墙钟慢），等待式判据会在慢机器上假红。2026-10-02 实测这台机器
+#     headless 下是 **40fps**、不是 60 —— 拿 60 去算的时机模型早晚会翻车。
+SK_CANVAS = '#sakuraGameOverlay canvas'
+
+
+def _sk_canvas_rect(b):
+    """画布中心的**视口坐标**。
+
+    ⚠ 不 `scrollIntoView`（`center_of` 会做那件事）—— 遮罩是 `position:fixed`
+      且居中的，画布必然在视口里；对一个 fixed 元素调 scrollIntoView 反而
+      可能把页面滚到别处。
+    """
+    return b.jso("""(() => {
+        var c = document.querySelector('%s');
+        if (!c) return null;
+        var r = c.getBoundingClientRect();
+        return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    })()""" % SK_CANVAS)
+
+
+def _sk_petal(b):
+    """读画布上那枚樱瓣的位置（**粉色像素的质心**），还有斩线在哪。
+
+    ⚠ 只扫中间那一条横带（y 125~195）—— 顺手避开两处会污染质心的字：
+      「刹那 / 太早了 / 晚了」那行画在 y≈114（基线），连击数画在 y≈222。
+      「刹那」用的也是 `#ffb7c5`，全画布扫的话它一出现质心就跳。
+    """
+    return b.jso("""(() => {
+        var c = document.querySelector('%s');
+        if (!c) return JSON.stringify({ missing: true });
+        var y0 = 125, bh = 70, W = c.width;
+        var d = c.getContext('2d').getImageData(0, y0, W, bh).data;
+        var n = 0, sx = 0;
+        for (var i = 0; i < d.length; i += 4) {
+          var r = d[i], g = d[i + 1], bl = d[i + 2], a = d[i + 3];
+          /* 樱粉 #ffb7c5。⚠ 连击那行的 #ffd6e0（g=214）被 g<205 挡在外面。 */
+          if (a > 200 && r > 230 && g > 150 && g < 205 && bl > 165 && bl < 240) {
+            n++; sx += ((i / 4) %% W);
+          }
+        }
+        return JSON.stringify({ n: n, x: n ? sx / n : null, mid: W / 2 });
+    })()""" % SK_CANVAS)
+
+
+def _sk_hud(b):
+    return b.jso("""(() => {
+        var o = document.getElementById('sakuraGameOverlay');
+        var q = function (s) { var n = o && o.querySelector(s); return n ? n.textContent : null; };
+        return JSON.stringify({ hits: q('.sk-hits'), combo: q('.sk-combo') });
+    })()""")
+
+
+def _sk_wait_petal(b, pred, timeout):
+    """等花瓣自己飞到满足 `pred` 的位置（不干预它）。
+
+    ⚠ 取样要密（15ms）：花瓣 150px/s，15ms 才走 2px 多一点，
+      才来得及在「压着斩线」那一小段里出刀。
+    """
+    t0 = time.time()
+    while time.time() - t0 < timeout:
+        p = _sk_petal(b)
+        if p and not p.get('missing') and p.get('x') is not None and pred(p):
+            return p
+        time.sleep(0.015)
+    return None
+
+
+def _sk_strike(b):
+    """在画布上出刀一次 —— 走**真实鼠标路径**（模块接的是 `pointerdown`）。"""
+    c = _sk_canvas_rect(b)
+    if not c:
+        return False
+    b.press(c['x'], c['y'])
+    time.sleep(0.03)
+    b.release(c['x'], c['y'])
+    return True
+
+
+@check
+@sakura_only
+def check_sakura_judgment(b, page, expected):
+    """③ 出刀**判定**真的生效（正反两半都验）。
+
+    ① 花瓣还在远处（离斩线 60px 以上）时出刀 → **不许得分**
+    ② 花瓣压在斩线上（±6px）时出刀 → **必须得分**，且连击 +1
+    """
+    _reset(b)
+    if not _click_sel(b, '.bottom-game .game-card-start'):
+        return ([u'找不到游戏卡上的「开始」按钮'], u'—')
+    time.sleep(0.3)
+
+    fails = []
+
+    # ── ① 远处出刀：不许得分 ──
+    far = _sk_wait_petal(b, lambda p: p['x'] < p['mid'] - 60, 5.0)
+    if far is None:
+        fails.append(u'等不到一枚还在远处的花瓣 —— 读不到画面？')
+    elif not _sk_strike(b):
+        fails.append(u'找不到游戏画布')
+    else:
+        time.sleep(0.3)
+        hud = _sk_hud(b) or {}
+        if hud.get('hits') != '0':
+            fails.append(u'花瓣离斩线还有 %.0fpx 就出刀，却得分了（正中 %s）——'
+                         u'判定没生效，成了「点一下算一下」'
+                         % (far['mid'] - far['x'], hud.get('hits')))
+
+    # ── ② 斩线上出刀：必须得分 ──
+    landed = False
+    for _try in range(3):
+        near = _sk_wait_petal(b, lambda p: abs(p['x'] - p['mid']) <= 6, 4.0)
+        if near is None or not _sk_strike(b):
+            break
+        time.sleep(0.3)
+        hud = _sk_hud(b) or {}
+        if hud.get('hits') not in ('0', None):
+            landed = True
+            if hud.get('combo') != '1':
+                fails.append(u'掐准了却只加了「正中」、没加连击（连击 = %s）'
+                             % hud.get('combo'))
+            break
+    if not landed:
+        fails.append(u'花瓣明明压在斩线上（±6px）出刀，一次都没中 —— 判定没生效')
+
+    return (fails, u'远处不中、斩线上的中（判定有牙齿）' if not fails else u'判定不对')
+
+
+# ── 真·触摸（不是鼠标）────────────────────────────────────────────────
+def _vv_offset(b):
+    """派发输入坐标前要减掉的那个偏移（**只在 mobile 模拟下不为 0**）。
+
+    ⚠ 2026-10-02 实测，这是本条断言最要紧的一块知识：
+      `Emulation.setDeviceMetricsOverride(mobile:true)` 会让**布局视口 ≠ 视觉视口**。
+      以 320×568 那一档为例：`innerHeight` 631、`visualViewport.height` 568、
+      `visualViewport.offsetTop` **63**。
+      而 CDP 的 `Input.*` 坐标走**视觉视口**，页面里 `getBoundingClientRect()`
+      给的却是**布局视口** —— 于是「照着 rect 派发」会**统一偏低 offsetTop 像素**：
+
+          照着按钮中心 (160, 504) 派发 → 事件落到 clientY=566 的 `sakura-12` 上（遮罩不开）
+          减掉 63 → clientY=503，命中的才是 `BUTTON.game-card-start` ✓
+
+    ⚠ 默认视口（不设 mobile）下 offsetTop 恒为 0，所以**老断言不受影响**。
+      但**任何将来要在手机视口上点/摸东西的断言，都必须先减这个偏移** ——
+      否则它会「点到了别的东西」，而且**不报错**（点空/点偏都是静默的）。
+    """
+    d = b.jso("(() => { var v = window.visualViewport;"
+              " return JSON.stringify({ x: v ? v.offsetLeft : 0, y: v ? v.offsetTop : 0 }); })()")
+    return d or {'x': 0, 'y': 0}
+
+
+def _sk_touch(b, x, y):
+    """派发一次**真的触摸**（`touchStart` + `touchEnd`，中间不移动）。
+
+    ⚠ 传进来的 x/y 是**布局视口**坐标（照 `getBoundingClientRect()` 量的），
+      这里负责换算成 CDP 要的**视觉视口**坐标 —— 见 `_vv_offset`。
+    """
+    o = _vv_offset(b)
+    x, y = x - o['x'], y - o['y']
+    b._send('Input.dispatchTouchEvent',
+            {'type': 'touchStart', 'touchPoints': [{'x': x, 'y': y}]})
+    time.sleep(0.05)
+    b._send('Input.dispatchTouchEvent', {'type': 'touchEnd', 'touchPoints': []})
+
+
+def _touch_tap_sel(b, sel):
+    """滚进视口 → 用**真触摸**点它的中心。"""
+    c = b.jso("""(() => {
+        var n = document.querySelector('%s');
+        if (!n) return null;
+        n.scrollIntoView({ block: 'center', behavior: 'instant' });
+        var r = n.getBoundingClientRect();
+        return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    })()""" % sel)
+    if not c:
+        return False
+    _sk_touch(b, c['x'], c['y'])
+    return True
+
+
+@check
+@sakura_only
+def check_sakura_game_touch(b, page, expected):
+    """④ 手机上**玩得起来** —— 两半：面板放得下 + 真触摸能用。
+
+    ── 第一半：面板放得下（**这一半是可证伪的**）────────────────────
+    ⚠ 2026-10-02 实测：`.sk-canvas` 原先只写 `max-width:88vw`（没算面板自己
+      2×1.4rem 的内边距）—— 360px 宽的手机上**余量只剩 1px**（面板 364 / 视口 366），
+      是靠 `flex-shrink` 硬收进去才没溢出；**横屏则是真的溢出**（画布 320 →
+      面板 542 > 360，而遮罩是 `position:fixed`、没有滚动条，**切掉的永远够不着**）。
+      已改成 `calc(100vw - 4rem)` + `calc(100vh - 15rem)`。
+      ⚠ **更正**：Task 6 的提交信息里写「360 上溢出约 4px」，那是**按算式推的、错了** ——
+      实测它当时**没有溢出**。所以这条断言守的是「**别退回去**」，不是「修好了一个溢出」。
+    ⚠ 四个视口都要量：375 是最常见的、360 那一档余量最紧、
+      320 更窄，**横屏 640×360 专门管竖向那一半**（它是 `max-height` 唯一的行使场景 ——
+      不加这一档，那条 `calc(100vh - 15rem)` 就没有任何断言守着）。
+
+    ── 第二半：真触摸（**从 320 开局**，不是 375）──────────────────
+    ⚠ 320 那一档 `visualViewport.offsetTop` 是 **63px**，比按钮本身（41px）还高 ——
+      不换算坐标就**一定**点偏。375 那一档只有个位数，算错了也照样点得中，
+      验不出东西。所以断言从 320 开局。见 `_vv_offset`。
+    ⚠ **说清楚它守得住什么、守不住什么**：实测把 `pointerdown` 换成 `mousedown`，
+      这一半**照样绿** —— 因为 Chrome 会给 tap 补一套**兼容鼠标事件**
+      （mousedown / mouseup / click）。所以它**不是**「事件类型」的守卫，
+      是一条**端到端冒烟**：375 下按钮点得到、遮罩开得了、画布中心那一下真能算分。
+      （别的断言走的全是鼠标路径，默认视口 —— 这一页面向的却是手机。）
+
+    ⚠ `setTouchEmulationEnabled` / `setDeviceMetricsOverride` **必须关掉**：
+      否则后面每一条断言都会在「手机 + 触摸」的环境里跑，而人会以为测的是桌面。
+    """
+    fails = []
+
+    # ── 第一半：面板放得下（三个宽度）──
+    PANEL = """(() => {
+        var p = document.querySelector('.sk-panel');
+        var c = document.querySelector('.sk-canvas');
+        if (!p) return JSON.stringify({ missing: true });
+        var r = p.getBoundingClientRect();
+        var q = c ? c.getBoundingClientRect() : null;
+        return JSON.stringify({ l: Math.round(r.left), t: Math.round(r.top),
+                                r: Math.round(r.right), b: Math.round(r.bottom),
+                                vw: innerWidth, vh: innerHeight,
+                                cl: q ? Math.round(q.left) : null,
+                                cr: q ? Math.round(q.right) : null,
+                                cw: q ? +q.width.toFixed(1) : null,
+                                ch: q ? +q.height.toFixed(1) : null });
+    })()"""
+
+    b._send('Emulation.setDeviceMetricsOverride',
+            {'width': 320, 'height': 568, 'deviceScaleFactor': 1, 'mobile': True})
+    b._send('Emulation.setTouchEmulationEnabled', {'enabled': True, 'maxTouchPoints': 5})
+    time.sleep(0.6)
+
+    try:
+        _reset(b)                      # 重载一次，让窄屏布局真的生效
+
+        # ⚠ **故意从最窄的 320 开局**（不是 375）：这一档 `visualViewport.offsetTop`
+        #   是 **63px**，比按钮本身还高（41px）—— 即「不换算坐标就**一定**点偏」。
+        #   所以这一步同时钉住两件事：手机上点得开、坐标换算是对的。
+        #   （375 那一档偏移只有个位数，算错了也照样点得中 —— 验不出东西。）
+        if not _touch_tap_sel(b, '.bottom-game .game-card-start'):
+            return ([u'用触摸点不到游戏卡上的「开始」按钮'], u'—')
+        time.sleep(0.5)
+
+        st = _sk_overlay_state(b) or {}
+        if not st.get('open'):
+            return ([u'用触摸点了「开始」，遮罩却没打开 —— 手机上玩不了'], u'—')
+
+        for (w, h) in ((375, 812), (360, 640), (320, 568), (640, 360)):
+            b._send('Emulation.setDeviceMetricsOverride',
+                    {'width': w, 'height': h, 'deviceScaleFactor': 1, 'mobile': True})
+            time.sleep(0.6)
+            d = b.jso(PANEL)
+            if not d or d.get('missing'):
+                fails.append(u'[%d] 找不到 .sk-panel —— 遮罩的结构变了？' % w)
+                continue
+            # ⚠ 横向这一半**要挑对变异才验得出来**（2026-10-02 实测）：
+            #   · 把 `max-width` 改回 `88vw` → **不红**。因为 `#sakuraGameOverlay`
+            #     是 flex 行容器，面板横向放不下时 `flex-shrink` 会把它收进去。
+            #   · 改成显式 `width:320px` → **红**（画布不肯缩，面板真的溢出 -6~361）。
+            #   所以它守得住「画布不肯缩」这一类，守不住「只是 max-width 算小了」那类。
+            if d['l'] < 0 or d['r'] > d['vw']:
+                fails.append(u'[%d] 游戏面板**横向溢出**：面板 x %d~%d，视口宽 %d —— '
+                             u'两边会被切掉，而 fixed 遮罩没有滚动条，切掉的够不着'
+                             % (w, d['l'], d['r'], d['vw']))
+            # 竖向这一半**有牙齿**：flex 行方向不管纵向，超出就是真的被切。
+            if d['t'] < 0 or d['b'] > d['vh']:
+                fails.append(u'[%d] 游戏面板**竖向溢出**：面板 y %d~%d，视口高 %d —— '
+                             u'横屏 / 矮视口下上下会被切掉'
+                             % (w, d['t'], d['b'], d['vh']))
+            # 画布本身也要在视口里。
+            if d.get('cl') is not None and (d['cl'] < 0 or d['cr'] > d['vw']):
+                fails.append(u'[%d] 游戏**画布**横向超出视口：%d~%d，视口宽 %d'
+                             % (w, d['cl'], d['cr'], d['vw']))
+            # ⚠ **画布必须是方的** —— 这是最容易踩的那个陷阱：
+            #   给画布显式定宽（`width:320px`）之后，`max-height` 生效时高度被压
+            #   而宽度不变，画面就被**拉扁**了（樱瓣会变成椭圆、斩线位置也会错）。
+            #   两个都不写、只给上下限，浏览器才会等比缩。短边那些档测不出来，
+            #   只有横屏（`max-height` 真正生效）才验得到 —— 这就是 (640,360) 那一档的用处。
+            if d.get('cw') is not None and abs(d['cw'] - d['ch']) > 1:
+                fails.append(u'[%d] 游戏画布**被拉扁了**：%.1f × %.1f —— '
+                             u'显式定宽 + `max-height` 同时生效就会这样。'
+                             u'画布该等比缩（内部是 320×320）' % (w, d['cw'], d['ch']))
+
+        # ── 第二半：回到 375，真触摸出刀 ──
+        b._send('Emulation.setDeviceMetricsOverride',
+                {'width': 375, 'height': 812, 'deviceScaleFactor': 1, 'mobile': True})
+        time.sleep(0.6)
+
+        t0 = time.time()
+        while time.time() - t0 < 6.0:
+            p = _sk_petal(b)
+            if p and p.get('x') is not None and abs(p['x'] - p['mid']) <= 6:
+                c = _sk_canvas_rect(b)
+                if not c:
+                    break
+                _sk_touch(b, c['x'], c['y'])
+                time.sleep(0.35)
+                hud = _sk_hud(b) or {}
+                if hud.get('hits') not in ('0', None):
+                    return (fails, u'手机上放得下 + 摸得到（320 开局 / 四个视口）' if not fails
+                            else u'面板放不下')
+                break
+            time.sleep(0.015)
+
+        fails.append(u'用手指（真 touchStart / touchEnd）在斩线上出刀，一次都没中 —— '
+                     u'**触摸这条路走不通**')
+        return (fails, u'触摸玩不了')
+
+    finally:
+        b._send('Emulation.setTouchEmulationEnabled', {'enabled': False})
+        b._send('Emulation.clearDeviceMetricsOverride')
+        time.sleep(0.6)
 
 
 # ── 主流程 ────────────────────────────────────────────────────────────
 def main():
     raw = sys.argv[1:]
     mode = 'reduced' if '--reduced' in raw else 'normal'
+
+    # ⚠ `--only <名字片段>`：**只跑**名字里含这个片段的断言。
+    #   为什么需要它：变异测试（「证明断言抓得到错」）要把同一条断言跑很多遍，
+    #   而整轮 34 组要两分钟 —— 跑五次就是十分钟，而变异测试是每个任务的标准动作。
+    #   ⚠ 报告里**必须写明这是筛过的**：一次筛过的运行长得和全量通过一模一样，
+    #     那正是这个工具最想防的那种谎（「看起来在守、其实守不住」）。
+    only = None
+    if '--only' in raw:
+        i = raw.index('--only')
+        if i + 1 >= len(raw):
+            print(u'--only 后面要跟一个名字片段')
+            return 1
+        only = raw[i + 1]
+        raw = raw[:i] + raw[i + 2:]
+    if only and not any(only in f.__name__ for f in CHECKS):
+        print(u'❌ 没有哪条断言的名字里含 %r —— 筛口写错了？' % only)
+        return 1
+
     args = [a for a in raw if not a.startswith('--')]
     page = args[0] if args else 'tools/explore-fixture.html'
     expected = EXPECTED_FINDS.get(page)
@@ -2492,6 +3573,9 @@ def main():
 
     print(u'\U0001f50d 探索系统断言 —— %s%s'
           % (page, u'（减动模式）' if mode == 'reduced' else u''))
+    if only:
+        print(u'   ⚠ **只跑**了名字含 %r 的断言（`--only`）—— 这不是一次全量验收'
+              % only)
     print()
 
     # ⚠ 用**全新临时 profile**。cdp.py 那个 C:/tmp/edge_cdp 会跨次留存缓存
@@ -2539,6 +3623,8 @@ def main():
         pool = [f for f in CHECKS
                 if mode in getattr(f, 'modes', ('normal',))
                 and ('*' in f.pages or page in f.pages)]
+        if only:
+            pool = [f for f in pool if only in f.__name__]
         skipped = len(CHECKS) - len(pool)
         if skipped:
             print(u'（本页跳过 %d 条只适用于其他页的断言）' % skipped)
@@ -2572,7 +3658,10 @@ def main():
     if failures:
         print(u'\u274c %d 项断言失败' % len(failures))
         return 1
-    print(u'\u2705 全部通过：%d 组断言' % len(ordered))
+    if only:
+        print(u'\u2705 全部通过：%d 组断言（`--only` 筛过的，**不是全量**）' % len(ordered))
+    else:
+        print(u'\u2705 全部通过：%d 组断言' % len(ordered))
     return 0
 
 
