@@ -2296,226 +2296,6 @@ def check_mobius_egg_d_scroll_back(b, page, expected):
     return (fails, u'往回滚触发了临别句' if not fails else u'D 没触发')
 
 
-# ══ 小游戏（Task 12）══════════════════════════════════════════════════
-def _canvas_sig(b):
-    """蛇画在 canvas 上，**内部状态取不到**（脚本是 IIFE）。
-    所以判「在不在动」只能靠画面本身 —— 取一次 dataURL。"""
-    return b.js("(() => { var c = document.getElementById('snakeCanvas');"
-                " return c ? c.toDataURL() : null; })()")
-
-
-def _overlay_open(b):
-    return b.js("(() => { var o = document.getElementById('gameOverlay');"
-                " return o ? o.classList.contains('on') : null; })()")
-
-
-def _click_sel(b, sel):
-    """按选择器找元素 → 滚进视口 → **走真实鼠标路径**点一下。"""
-    c = b.jso("""(() => {
-        var n = document.querySelector('%s');
-        if (!n) return null;
-        n.scrollIntoView({ block: 'center', behavior: 'instant' });
-        var r = n.getBoundingClientRect();
-        return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
-    })()""" % sel)
-    if not c:
-        return False
-    b.press(c['x'], c['y'])
-    time.sleep(0.06)
-    b.release(c['x'], c['y'])
-    time.sleep(0.4)
-    return True
-
-
-def _game_probe(b):
-    """点游戏卡的「开始实验」→ 验遮罩打开且**蛇真的在动**；
-    再关掉 → 验**同一个判据抓得到「不动」**。
-
-    ⚠ 后半段（关掉之后必须静止）不是多余的 —— 没有它，
-      「两次采样不同」有可能只是因为 canvas 的 dataURL 编码本身不稳定，
-      那这条断言就成了恒真式，测了等于没测。
-      前几轮反复出现的就是这类问题。
-    """
-    fails = []
-
-    if _overlay_open(b):
-        fails.append(u'还没点，遮罩就是打开的')
-
-    if not _click_sel(b, '.bottom-game .game-card-start'):
-        return ([u'找不到游戏卡上的「开始实验」按钮 —— 模块的 mount(host) 没跑？'], u'—')
-
-    if not _overlay_open(b):
-        fails.append(u'点了「开始实验」，#gameOverlay 却没有打开')
-
-    s1 = _canvas_sig(b)
-    time.sleep(0.25)
-    s2 = _canvas_sig(b)
-    if s1 is None or s2 is None:
-        fails.append(u'取不到 #snakeCanvas')
-    elif s1 == s2:
-        fails.append(u'开始之后两次采样**一模一样** —— 蛇没在动'
-                     u'（也可能已经「实验失败」停下来了）')
-
-    # ── 证伪那半段：关掉游戏，画面必须静止 ──
-    if not _click_sel(b, '#gameOverlay #gameClose'):
-        fails.append(u'找不到「逃离实验室」按钮')
-    else:
-        time.sleep(0.3)
-        t1 = _canvas_sig(b)
-        time.sleep(0.25)
-        t2 = _canvas_sig(b)
-        if t1 != t2:
-            fails.append(u'关掉之后画面**还在变** —— 说明上面「在动」那个判据是恒真式，'
-                         u'测了等于没测')
-
-    return (fails, u'开始后蛇在动；关掉后静止（判据有牙齿）' if not fails else u'游戏没跑起来')
-
-
-@check
-@mobius_only
-def check_mobius_game_runs(b, page, expected):
-    """① 点下方区块游戏卡上的「开始实验」→ 遮罩打开，且蛇真的在动。
-
-    ⚠ 点的是**卡片上的按钮**（`.bottom-game .game-card-start`），
-      不是遮罩里那个 —— 用户看到的入口就是这个，验它才有意义。
-    ⚠ 走**真实鼠标路径**：这些页的脚本是 IIFE，游戏状态不是全局的，
-      `typeof startGame === 'function'` 会得到 `undefined`（HANDOVER §10.6）。
-    """
-    _reset(b)
-    return _game_probe(b)
-
-
-@check_reduced
-@mobius_only
-def check_mobius_game_runs_under_reduced(b, page, expected):
-    """② **Review Focus #5**：减动模式下小游戏**照常能玩**。
-
-    spec §5.5 最后一条：小游戏**内部**的动画在减动下**保留** ——
-    它由「开始」按钮**显式触发**，不属于「自动播放的装饰动效」。
-    ⚠ 这条要防的失败模式是：有人在减动段里一刀切 `animation:none` / 停掉 rAF，
-      顺手把游戏也停了 —— 那不是「关动画」，是「关功能」。
-
-    判据与 ① 同一套（含「关掉之后必须静止」那半段）。
-    """
-    _set_motion(b, 'reduce')
-    _reset(b)
-    fails, summary = _game_probe(b)
-    _set_motion(b, 'reduce')      # 收尾：把模式留给后面的减动断言
-    return (fails, summary)
-
-
-MB_GEO = """(() => {
-    var o = document.getElementById('gameOverlay');
-    var c = document.getElementById('snakeCanvas');
-    var p = document.getElementById('dpad');
-    var x = document.getElementById('gameClose');
-    if (!o || !c || !x) return JSON.stringify({ missing: true });
-    var R = function (n) { var r = n.getBoundingClientRect();
-        return { t: r.top, b: r.bottom, l: r.left, r: r.right }; };
-    var X = R(x), C = R(c);
-    var P = (p && p.getBoundingClientRect().height > 0) ? R(p) : null;
-    /* 两个矩形的最小间距：都为正才算真的分开。 */
-    var gap = function (A, B) {
-        return Math.max(Math.max(A.l - B.r, B.l - A.r), Math.max(A.t - B.b, B.t - A.b));
-    };
-    return JSON.stringify({
-        on: o.classList.contains('on'),
-        gapCanvas: Math.round(gap(C, X)),
-        gapDpad: P ? Math.round(gap(P, X)) : null,
-        playBottom: Math.round(P ? P.b : C.b),
-        /* ⚠ 落点的 x 取**操作区的右边缘**，不是中线 —— 退出键的左边缘恰好只比
-           放哨的中线偏 2px，打空过（变异测试里该红不红）。 */
-        playRight: Math.round(P ? P.r : C.r),
-        closeAt: [Math.round(X.l), Math.round(X.t), Math.round(X.r - X.l)],
-    });
-})()"""
-
-
-@check
-@mobius_only
-def check_mobius_game_close_far_from_play(b, page, expected):
-    """⑥ 「逃离实验室」离**操作区**够远 —— 手机上操作区是 `#dpad`，不是画布。
-
-    ⚠ 2026-10-02 实测，和 `/sakura/` 那页的「收刀」是**同一类问题**：
-      它原来就在 **`#dpad` 正下方 18px** —— 而 dpad 正是手机上用来转向的东西，
-      玩家一直在点它，手指落低 18px（约 1.2 毫米）就正中退出键。
-      线上逐点扫过：**dpad 底边往下 +5 ~ +55px 那一段点下去必退**。
-      已挪到整个遮罩的右上角（**与樱那页的「收刀」位置一致**）。
-
-    ⚠ 为什么判据要挑 `dpad` 而不是画布：贪吃蛇是**滑动 / 方向盘**玩的，
-      手指落在画布上的是**滑动**（不是连点），而**连点的是 dpad**。
-      只看画布的话，这条断言对真正的误触路径是瞎的。
-      （桌面没有 dpad，那时退回到量画布。）
-
-    判据：① 到**最近的**操作区 ≥ 100px ② 在它正下方 8px 点一下 → **不许关**
-    """
-    b._send('Emulation.setDeviceMetricsOverride',
-            {'width': 375, 'height': 812, 'deviceScaleFactor': 1, 'mobile': True})
-    b._send('Emulation.setTouchEmulationEnabled', {'enabled': True, 'maxTouchPoints': 5})
-    time.sleep(0.6)
-    fails = []
-    try:
-        _reset(b)
-        if not _touch_tap_sel(b, '.bottom-game .game-card-start'):
-            return ([u'用触摸点不到游戏卡上的「开始实验」按钮'], u'—')
-        time.sleep(0.5)
-
-        d = b.jso(MB_GEO)
-        if not d or d.get('missing'):
-            return ([u'找不到 `#gameOverlay` / `#snakeCanvas` / `#gameClose`'], u'—')
-        if not d['on']:
-            return ([u'点了「开始实验」，遮罩没打开'], u'—')
-
-        near = d['gapDpad'] if d['gapDpad'] is not None else d['gapCanvas']
-        what = u'dpad' if d['gapDpad'] is not None else u'画布'
-        if near < CLOSE_FAR_MIN:
-            fails.append(u'①「逃离实验室」离 %s 只有 **%dpx**（要求 ≥ %d）—— '
-                         u'手机上手指落低一点就误触退出（它在 x=%d y=%d 宽 %d）'
-                         % (what, near, CLOSE_FAR_MIN,
-                            d['closeAt'][0], d['closeAt'][1], d['closeAt'][2]))
-
-        # ⚠ 落点要落在**原来那个退出键的位置**上（它当时从「操作区下方 18px」开始，
-        #   往下 62px）。取 +24 —— 修好之后那一点上什么都没有，改回去就一定命中。
-        #   ⚠ 别贪小取 +8：那样打空 —— 变异测试会绿，这条断言就成了一句空话
-        #     （2026-10-02 实测踩过：+8 在撤销修复后**照样绿**，是它自己抓出来的）。
-        _touch_pt(b, d['playRight'], d['playBottom'] + 24)
-        time.sleep(0.45)
-        if not _overlay_open(b):
-            fails.append(u'② 在 %s 正下方 24px 点了一下，游戏就退出了 —— '
-                         u'这正是「正下方就是退出键」那个 bug' % what)
-
-        return (fails, u'「逃离实验室」够远（离 %s %dpx）' % (what, near)
-                if not fails else u'「逃离实验室」还是贴着操作区')
-    finally:
-        b._send('Emulation.setTouchEmulationEnabled', {'enabled': False})
-        b._send('Emulation.clearDeviceMetricsOverride')
-        time.sleep(0.6)
-
-
-# ══ 小游戏：三页通用那几条（mobius / sakura / kosma）═══════════════════
-#   ⚠ 为什么要有这一层：到科斯魔为止已经有**三页**各带一个小游戏，而它们要守的
-#     东西里有三条是**完全通用**的 —— 再往后还有 9 位，一页抄一份就是给自己埋雷
-#     （HANDOVER §10.5 合并 `BUILT` 的教训：同一件事两处维护，迟早漏一处）。
-#
-#   ⚠ **「判定」那一条不通用**（每位玩法都不一样），各页自己写：
-#     sakura → `check_sakura_judgment`；kosma → `check_kosma_judgment`。
-#
-#   每页报上来的东西：
-#     overlay  遮罩的 **id**
-#     canvas   画布选择器
-#     close    退出键选择器
-#     play     **操作区**：手机上玩家真正一直在点的那个东西。
-#              ⚠ sakura / kosma 就是画布本身；**mobius 是 `#dpad`** ——
-#                贪吃蛇是滑动/方向盘玩的，手指落在画布上的是滑动，连点的是方向键。
-#                照「离画布多远」去量 mobius，它会报 254px、看着很安全，
-#                而**真正的误触路径一个字都没提**（实测栽过，见 §10.10 五）。
-#              `None` = 与画布同一个。
-#     guard    退出键有没有「刚打开不许关」的保护期（mobius 那页没有）
-#   ⚠ **这里只收「模块式」的游戏页** —— 也就是遮罩由 `assets/games/*.js`
-#     **自己建**、结构是「遮罩 → 面板 → 画布 + 退出键」的那一类。
-#     `/mobius/` **不在里面**：它那页的遮罩是**页面自己拥有的老写法**
-#     （没有面板层、画布是**滑动面**、手机上真正连点的是 `#dpad`），
-#     所以它另有一套自己的断言（`check_mobius_game_*`），保持原样。
 #
 #     ⚠ 通用那三条**跑在 mobius 身上时翻出了两个真问题**（2026-10-02 实测）：
 #       · **横屏放不下**：640×360 下画布 y=-34、dpad 一直伸到 369 —— 上下都被切，
@@ -2524,6 +2304,8 @@ def check_mobius_game_close_far_from_play(b, page, expected):
 #         玩家在上面拖而不是点，风险比连点低，但 58px 仍然偏紧
 #     两条都记进了 HANDOVER §5.2 **另开一轮修**（要动它的遮罩布局，属那一页自己的事）。
 GAMES = {
+    'mobius/index.html':  {'overlay': 'gameOverlay', 'canvas': '#snakeCanvas',
+                           'close': '#gameClose', 'play': '#dpad', 'guard': False},
     'sakura/index.html':  {'overlay': 'sakuraGameOverlay', 'canvas': '.sk-canvas',
                            'close': '.sk-close', 'play': None, 'guard': True},
     'kosma/index.html':   {'overlay': 'kosmaGameOverlay', 'canvas': '.km-canvas',
@@ -2531,7 +2313,8 @@ GAMES = {
 }
 GAME_PAGES = tuple(sorted(GAMES.keys()))
 
-CLOSE_FAR_MIN = 100        # 退出键到操作区的最小间距（px）
+CLOSE_FAR_MIN = 100        # 退出键到**连点**处的最小间距（px）
+CLOSE_SWIPE_MIN = 50       # 退出键到**滑动面**的最小间距（px）—— 手指落点偏移的量级
 
 
 def game_pages(fn):
@@ -2771,16 +2554,30 @@ def check_game_close_far_from_play(b, page, expected):
         if not cl or not cv:
             return ([u'找不到退出键（%s）或画布（%s）' % (cfg['close'], cfg['canvas'])], u'—')
 
-        gaps = [(u'画布', _g_gap(cv, cl))]
-        if cfg['play']:
-            # ⚠ 只在**操作区真的显示着**时把它算进来（mobius 的 dpad 只在
-            #   粗指针 / 触摸环境下出现，靠触摸模拟才会显示）。
-            if pl and pl['h'] > 1:
-                gaps.append((u'操作区', _g_gap(pl, cl)))
-        near_label, near = min(gaps, key=lambda kv: kv[1])
-        if near < CLOSE_FAR_MIN:
+        # ⚠ **「点它」和「在它上面拖」是两回事**，间距要求也不同：
+        #   · 玩家**连点**的地方（tap 目标）→ CLOSE_FAR_MIN（100px）：手指落低一点就误触
+        #   · 玩家**在它上面拖动**的地方（swipe 面）→ CLOSE_SWIPE_MIN（50px）：
+        #     滑动是**有意的拖**、起点必在面上，风险比连点低；50 是手指落点偏移的量级
+        #     ⚠ 为什么必须分开：mobius 那页的画布是**滑动面**，而它的内容占了竖屏的绝大部分
+        #       （524 / 568）—— **矮屏上「离画布 100px」几何上做不到**（实测余量只有 44px）。
+        #       而它真正被连点的是 `#dpad`，那个量到 502px ✓。
+        checks = [(u'画布', cv, CLOSE_SWIPE_MIN if cfg['play'] else CLOSE_FAR_MIN)]
+        if cfg['play'] and pl and pl['h'] > 1:
+            # ⚠ 只在操作区**真的显示着**时算进来（mobius 的 dpad 只在粗指针 / 触摸
+            #   环境下出现，靠触摸模拟才会显示）。
+            checks.append((u'操作区', pl, CLOSE_FAR_MIN))
+
+        worst_label, worst_gap, worst_min = None, None, None
+        for label, rect, need in checks:
+            g = _g_gap(rect, cl)
+            if g is None:
+                continue
+            if worst_min is None or (need - g) > (worst_min - worst_gap):
+                worst_label, worst_gap, worst_min = label, g, need
+        near_label, near = worst_label, worst_gap
+        if worst_min is not None and near < worst_min:
             fails.append(u'① 退出键离%s只有 **%dpx**（要求 ≥ %d）—— 反应类游戏里'
-                         u'手指落低一点就误触退出' % (near_label, near, CLOSE_FAR_MIN))
+                         u'手指落低一点就误触退出' % (near_label, near, worst_min))
 
         # ② 在操作区**正下方 24px**（原来那个退出键的位置）点一下 → 不许关
         base = (pl if (cfg['play'] and pl and pl['h'] > 1) else cv)
@@ -2834,7 +2631,8 @@ KOSMA_HUD = """(() => {
     var q = function (s) { var n = o && o.querySelector(s); return n ? n.textContent : null; };
     return JSON.stringify({ on: o ? o.classList.contains('on') : null,
                             kept: q('.km-kept'), run: q('.km-run'),
-                            best: q('.km-best'), msg: q('.km-msg') });
+                            best: q('.km-best'), wind: q('.km-wind'),
+                            msg: q('.km-msg') });
 })()"""
 
 
@@ -2846,9 +2644,12 @@ def check_kosma_judgment(b, page, expected):
     ① **按住把框托着扫过整根柱子** → 「守住」**必须变多**。
        ⚠ 这一半的可信度来自**扫过的必然性**：框会从柱底一路升到柱顶，
          中途**一定会**经过光点 —— 所以它不依赖任何时机运气，是可证伪的。
-    ② **一直按住不放** → 框顶到头上不动了，光点迟早溜出去 → 风涨满 →
-       **「灯灭了」必须出现**。（判定要是反了，按住反而会一直守住、永远不灭。）
-    ③ 结算之后 HUD 上的**「最佳」要跟得上「守住」**。
+    ② **按住把框顶在头上不动** → 光点必然有大段时间在框外 → **「风」必须涨过 0**。
+       ⚠ 原来写的是「等『灯灭了』出现（最多 12 秒）」，**偶发** —— 光点赖在框里十几秒
+         这一局就不结束，于是假红。**偶发的断言比没有断言更坏**（它会教人忽略红灯）。
+         改成看 HUD 上的「风」：可证伪，且不赌时机。
+    ③ **等这一局结束**（最多 35 秒）之后，HUD 上的**「最佳」要跟得上「守住」**。
+       ⚠ 必须等结算 —— `最佳` 只在 `finish()` 里更新，局中它还是上一次的纪录。
        ⚠ 这里真出过一个 bug：`best` 存的就是**秒**，`syncHud()` 里又除了一次 1000，
          于是「最佳」永远是 0.0 —— **存对了、显示错了**。
          是「按住 2.5 秒然后读 HUD」的探针跑出来的（渲染对 ≠ 能玩），这条把它钉住。
@@ -2880,18 +2681,31 @@ def check_kosma_judgment(b, page, expected):
         fails.append(u'① 按住 2.5 秒，「守住」还是 %r —— 框明明扫过整根柱子，'
                      u'却一次都没罩住光点，判定没生效' % d.get('kept'))
 
-    # ── ② 继续按住（框已经顶到头了）→ 光点迟早溜走 → 灯灭了 ──
-    died = False
-    for _ in range(24):                       # 最多 12 秒
+    # ── ② 继续按住（框已经顶到头了）→ 光点迟早溜出框 → **风要涨** ──
+    #   ⚠ 原来这里写的是「等『灯灭了』出现（最多 12 秒）」，**偶发**：
+    #     光点要是赖在框里十几秒，风就一直退、这一局不结束 → 假红。
+    #     改成看**风**（已经显示在 HUD 上）：按住不动时，光点必然有大段时间在框外，
+    #     风一定涨过 0 —— 这是可证伪的，而且不赌时机。
+    saw_wind = 0
+    for _ in range(12):                       # 最多 6 秒
         time.sleep(0.5)
         d = b.jso(KOSMA_HUD) or {}
-        if u'灯灭了' in (d.get('msg') or u''):
-            died = True
-            break
+        try:
+            saw_wind = max(saw_wind, int(float(d.get('wind') or 0)))
+        except ValueError:
+            pass
+    if saw_wind <= 0:
+        fails.append(u'② 按住把框顶在头上、盯了 6 秒，「风」一直是 %r%% —— '
+                     u'光点总有溜出去的时候，风却没涨（罩住判定或风压反了）' % saw_wind)
+
+    # ── ③ 等这一局结束，再比「最佳」与「守住」 ──
+    #   ⚠ 必须等**结算之后**再比：`最佳` 只在 `finish()` 里更新，局中它还是上一次的纪录。
     b.release(cx, cy)
-    if not died:
-        fails.append(u'② 一直按住不放，「灯灭了」始终没出现（msg=%r）—— '
-                     u'要么风压不涨、要么罩住判定反了' % (d.get('msg') or u''))
+    for _ in range(70):                       # 最多 35 秒（一局 30 秒）
+        time.sleep(0.5)
+        d = b.jso(KOSMA_HUD) or {}
+        if u'守住' in (d.get('msg') or u'') or u'灯灭了' in (d.get('msg') or u''):
+            break
 
     # ── ③ 最佳要跟得上守住 ──
     d = b.jso(KOSMA_HUD) or {}
@@ -2905,7 +2719,7 @@ def check_kosma_judgment(b, page, expected):
                      u'（⚠ 真出现过：`best` 已经是秒，显示时又除了一次 1000）'
                      % (d.get('kept'), d.get('best')))
 
-    return (fails, u'按住→守住涨 / 一直按住→灯灭了 / 最佳跟得上（守住 %.1f 秒）' % kept
+    return (fails, u'按住→守住涨 / 罩不住→风涨 / 结算后最佳跟得上（守住 %.1f 秒）' % kept
             if not fails else u'判定不对')
 
 
