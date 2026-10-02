@@ -57,6 +57,9 @@
 <link rel="stylesheet" href="/assets/site.css">
 <meta name="referrer" content="same-origin">
 <title>elysiad.top/kosma — 致科斯魔</title>
+<!-- 探索系统 / 下方区块 / 生日胶囊的样式（2026-10-02 按位铺开接入）。
+     ⚠ 必须在下面那一块**页面自己的 `<style>` 之前** —— 页面里的规则要能盖住它。 -->
+<link rel="stylesheet" href="/assets/explore.css">
 <!-- SECTION: styles -->
 <style>
 :root{
@@ -656,6 +659,12 @@ body{
 
 <!-- SECTION: scripts -->
 <script src="/assets/site.js"></script>
+<script src="/assets/explore.js"></script>
+<script src="/assets/bottom.js"></script>
+<script src="/data/bdays.js"></script>
+<script src="/assets/bday.js"></script>
+<!-- ⚠ 他的小游戏 `assets/games/kosma.js` 是下一步才建的 ——
+     那一行等文件存在了再加，否则 404 会让「页面无报错」那条断言报红。 -->
 <script>
 (function(){
   /* SECTION: quotes data */
@@ -1224,8 +1233,101 @@ body{
       dur: [2.4, 4], delay: [0, 5],
       colors: { pool: ['#fff', '#f9a152', '#8fa082'] },
     },
+
+    /* ── 探索系统（2026-10-02 按位铺开接入）─────────────────────────
+       ⚠ 这 12 条的 `line` 与 `src` 是**逐字抄自官方档案馆「事件-科斯魔」**的，
+         核准记录见 `docs/superpowers/plans/2026-10-02-kosma-finds-table.md`。
+         **一个字都不许改** —— 连 `······`（六个中点）也别「规范化」成 `……`。
+       ⚠ 改台词必须**同时**改 `tools/check_explore.py` 里的 `KOSMA_FINDS`：
+         逼它变成一次刻意动作，而不是静默漂移。
+       ⚠ 查重（「与语录区零重复」）**要先把两种省略号归一化** —— 档案馆用
+         `······`、本页语录区与口琴那 6 条用 `……`。不归一化的话，同一句话会因为
+         标点不同被判成「不重复」，那条断言就白守了。
+       ⚠ `pageId` 必填，**改名 = 玩家进度丢失**。 */
+    explore: {
+      pageId: 'kosma',
+      finds: [
+        /* ⚠ x/y 是**锚点矩形的百分比、指的是中心点** —— 换个视口宽度就会落到
+           别的内容上，所以「不压文字」那条断言**两个视口都要量**（§10.10 二）。*/
+        { id:'kosma-01', at:'#opening',   x:0.15, y:0.70, verb:'click',      art:'dawn',
+          line:'你都看到了什么？',
+          src:'官方档案馆 · 事件-科斯魔 · 少年的追忆·其一' },
+        { id:'kosma-02', at:'#about',     x:0.10, y:0.25, verb:'hold',       art:'dawn',
+          line:'我们的确都融合了末法级崩坏兽的因子，但我之所以会变成现在的样子，只是因为「毗湿奴」的特性。',
+          src:'官方档案馆 · 事件-科斯魔 · 少年的追忆·其四' },
+        { id:'kosma-03', at:'#about',     x:0.90, y:0.75, verb:'triple_tap', art:'horn',
+          line:'他们也给过我选择。成为囚徒，或是就此加入。',
+          src:'官方档案馆 · 事件-科斯魔 · 少年的追忆·其五' },
+        { id:'kosma-04', at:'#harmonica', x:0.15, y:0.25, verb:'click',      art:'horn',
+          line:'没错，是一种声波攻击。',
+          src:'官方档案馆 · 事件-科斯魔 · 少年的追忆·其三' },
+        { id:'kosma-05', at:'#harmonica', x:0.90, y:0.25, verb:'hold',       art:'dawn',
+          line:'（······是发现我刚才吹错了两个音吗？）',
+          src:'官方档案馆 · 事件-科斯魔 · 少年的追忆·其三' },
+        { id:'kosma-06', at:'#harmonica', x:0.50, y:0.95, verb:'drag',       art:'horn',
+          line:'（我要不要跟她解释说这是remix？）',
+          src:'官方档案馆 · 事件-科斯魔 · 少年的追忆·其三' },
+        { id:'kosma-07', at:'#journey',   x:0.10, y:0.20, verb:'slide',      art:'dawn',
+          line:'后来她比其他人更早牺牲了，就在我面前。',
+          src:'官方档案馆 · 事件-科斯魔 · 少年的追忆·其九' },
+        { id:'kosma-08', at:'#journey',   x:0.90, y:0.45, verb:'click',      art:'horn',
+          line:'千劫······他并非对我友善，只是不反感我送的礼物吧。',
+          src:'官方档案馆 · 事件-科斯魔 · 少年的追忆·其九' },
+        { id:'kosma-09', at:'#journey',   x:0.50, y:0.95, verb:'drag',       art:'dawn',
+          line:'你已经选择了这条道路······那就必须前往这条路的尽头。',
+          src:'官方档案馆 · 事件-科斯魔 · 给予刻印·其三' },
+        { id:'kosma-10', at:'#quotes',    x:0.90, y:0.20, verb:'triple_tap', art:'horn',
+          line:'你不需要这么频繁地向我提起他。',
+          src:'官方档案馆 · 事件-科斯魔 · 少年的追忆·其八' },
+        { id:'kosma-11', at:'#ending',    x:0.50, y:0.90, verb:'click',      art:'dawn',
+          line:'知晓这种细枝末节，对你在乐土中的旅途并无益处。',
+          src:'官方档案馆 · 事件-科斯魔 · 少年的追忆·其七' },
+        { id:'kosma-12', at:'#bottom',    x:0.50, y:0.10, verb:'hold',       art:'horn',
+          line:'······吃完这个，不要忘记刷牙。',
+          src:'官方档案馆 · 事件-科斯魔 · 少年的追忆·其六' },
+      ],
+
+      /* 找齐 12 个之后展开，**只出现这一次**。
+         ⚠ 台词照旧逐字取自档案馆（其九 —— 他「送礼物」那段），`src` 如实标注。
+         `title` 是**站点 UI 文案**，不是他说的话。 */
+      unlock: {
+        title: '他一直在替别人记着',
+        text: '「所以我延续了她的习惯，继续给那些人准备礼物。但我的目的和她不同。」',
+        src: '官方档案馆 · 事件-科斯魔 · 少年的追忆·其九',
+      },
+
+      /* 陪伴层台词池：冷却结束后的**第 3 次**点击说一句，**按顺序**推进（绝不做概率）。
+         ⚠ **他话最少** —— 冷却比 mobius（12000）/ sakura（11000）都稀疏。 */
+      whisper: [
+        '「有何贵干？」',
+        '「职责所在，仅此而已。」',
+        '「我是说······我只是喜欢和孩子们一起玩。」',
+        '「善用工具，雷之律者。」',
+      ],
+      whisperCooldownMs: 13000,
+    },
+
+    /* 他的小游戏「守灯」（下一步才建）。
+       ⚠ **只有 `module`，没有 `title` / `hint`** —— 卡上的文案归**模块自己**所有
+         （`assets/games/kosma.js` 的 `ElysiaGames.kosma.title/hint`）。
+         两边各写一份的话，`bottom.js` 只会用其中一份，另一份就成了改不动的死配置
+         —— 上一轮在 mobius 上修过这个，而且有断言守着。 */
+    game: { module: 'kosma' },
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+
+  /* SECTION: 探索系统 / 下方区块 / 生日胶囊（2026-10-02 接入）
+     ⚠ 顺序：先 init 再 mount（共享层的 ensureAttached 会补扫后建的锚点，
+       所以谁先谁后其实都对 —— 但保持与其它页一致）。 */
+  ElysiaExplore.init(THEME.explore);
+  ElysiaBottom.mount({ game: THEME.game });
+
+  /* 生日胶囊。⚠ **不传 `birthMsg`** —— 他的生日**待考**（材料包与档案馆都没有），
+     所以 `data/bdays.js` 里没有他这一条，胶囊**整个不会出现**。
+     ⚠ 哪天查到生日：① 加进 `data/bdays.js` ② **同时补那 15 个 `--bday-*` 变量**
+       （不然会吃共享层的默认值 = 首页爱莉希雅的粉紫，串页。见 HANDOVER §4.1.2 / §5.2）。 */
+  ElysiaBday.mount({});
+
   /* SECTION: resize guard */
   window.addEventListener('resize', function(){
     for (var j = 0; j < motes.length; j++){

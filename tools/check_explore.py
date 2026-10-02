@@ -57,6 +57,7 @@ EXPECTED_FINDS = {
     'tools/explore-fixture.html': 6,
     'mobius/index.html': 12,
     'sakura/index.html': 12,
+    'kosma/index.html': 12,
 }
 
 # ── 樱这一页的**台词登记表** ─────────────────────────────────────────
