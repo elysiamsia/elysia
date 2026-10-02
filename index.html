@@ -544,6 +544,27 @@ body{
   color:#fff;background:rgba(155,93,229,.4);border-color:transparent;
 }
 .postcard-tip{font-size:.7rem;color:var(--text-muted);letter-spacing:.06em}
+
+/* ── 访客写字（spec §七）────────────────────────────────────────────────
+   输入框在画布**下面**、不进画布：字由 postcard.js 画上去，
+   而输入框本身是页面的 DOM —— 所以重画画布（换台词 / 切尺寸）时它原样留着。 */
+.postcard-write{position:relative;max-width:640px;margin:0 auto 1rem;text-align:left}
+.postcard-write-label{display:block;font-size:.72rem;letter-spacing:.16em;color:var(--text-muted);margin-bottom:.5rem}
+.postcard-input{
+  display:block;width:100%;box-sizing:border-box;resize:none;
+  padding:.8rem .9rem 1.7rem;border-radius:12px;font-family:inherit;
+  font-size:.85rem;line-height:1.8;color:var(--text);
+  background:rgba(255,200,221,.05);border:1px solid var(--glass-border);
+}
+.postcard-input::placeholder{color:var(--text-muted);opacity:.7}
+.postcard-input:focus{outline:2px solid rgba(199,125,255,.5);outline-offset:1px}
+.postcard-count{
+  /* ⚠ 放**标签那一行的右端**，别放输入框右下角 ——
+     右下角那一片会被**右下角悬浮的生日胶囊**盖住（它是 position:fixed 的），
+     字数就看不见了（2026-10-02 截图发现）。 */
+  position:absolute;right:0;top:0;
+  font-size:.68rem;color:var(--text-muted);letter-spacing:.08em;
+}
 @media(prefers-reduced-motion:reduce){
   .postcard-btn{transition:none}
 }
@@ -752,6 +773,14 @@ body{
   </div>
   <div class="postcard-zone">
     <div class="postcard-preview" id="postcardPreview"></div>
+    <!-- ⚠ 访客写的那句话（spec §七）：200 字硬上限，边上实时显示字数。
+         它**不进画布**之外的任何地方 —— 画布重画时它原样留着。 -->
+    <div class="postcard-write">
+      <label class="postcard-write-label" for="postcardInput">写一句，一起带走</label>
+      <textarea class="postcard-input" id="postcardInput" maxlength="200" rows="3"
+                placeholder="想对她说的话，或者想带给她看的话……"></textarea>
+      <span class="postcard-count" id="postcardCount">0 / 200</span>
+    </div>
     <div class="postcard-row">
       <button class="postcard-btn" id="postcardRedraw" type="button">换一句</button>
       <button class="postcard-btn" id="postcardToggle" type="button" aria-pressed="false">切换横竖</button>

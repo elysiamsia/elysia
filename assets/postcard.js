@@ -21,7 +21,14 @@
   var btnToggle = document.getElementById('postcardToggle');
   var btnSave = document.getElementById('postcardSave');
   var tip = document.getElementById('postcardTip');
+  var input = document.getElementById('postcardInput');
+  var countEl = document.getElementById('postcardCount');
   if (!pool.length || !host || !btnRedraw) return;
+
+  /* spec §七：访客写字的**硬上限**。
+     ⚠ 光靠 `maxlength` 不够 —— 粘贴 / 脚本都能绕过，所以输入事件里**再截一次**。
+        （200 是需求方定的；这里截断是**明确的规格**，不是「悄悄丢掉用户的话」。） */
+  var MAX_USER = 200;
 
   var VERTICAL = { w: 1080, h: 1440 };
   var HORIZONTAL = { w: 1200, h: 800 };
@@ -51,9 +58,13 @@
      —— 截图才看出来。现在有 `check_regions_fit_card` 守着。 */
   var COL = {
     vert: { art: { x: 0.055, y: 0.09, w: 0.42, h: 0.80 },
-            qr: { x: 0.807, y: 0.807, r: 0.075 } },
+            qr: { x: 0.807, y: 0.807, r: 0.075 },
+            quoteShare: 0.42 },
     horz: { art: { x: 0.045, y: 0.115, w: 0.355, h: 0.77 },
-            qr: { x: 0.767, y: 0.62, r: 0.095 } }
+            qr: { x: 0.767, y: 0.62, r: 0.095 },
+            /* ⚠ 横版这张卡**矮得多**（800 vs 1440），台词块得让一截给访客写的字 ——
+               2026-10-02 实测：0.42 的话，200 字怎么缩都压到底边（安全带里冒出 1846 个亮像素）。 */
+            quoteShare: 0.34 }
   };
   function col() { return COL[vert ? 'vert' : 'horz']; }
 
@@ -66,6 +77,9 @@
   var artImgs = [];
   var qrImg = { el: null, ok: false, failed: false };
   var LOAD_MS = 1500;      // 网络慢时不能让卡片一直不出图
+
+  var FONT_STACK = '-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",'
+                 + '"Hiragino Sans GB","Microsoft YaHei",sans-serif';
 
   function size() { return vert ? VERTICAL : HORIZONTAL; }
   function artReady() { var r = artImgs[cur]; return !!(r && r.ok); }
@@ -123,6 +137,38 @@
     }
     if (line) lines.push(line);
     return lines;
+  }
+
+  /* 访客写的字折行：**先按他自己打的换行分段**，再逐段按宽度折。
+     ⚠ 台词那边不用这个（台词没有换行）—— 这里多一段是因为换行是访客的表达。 */
+  function wrapUser(text, maxWidth) {
+    var out = [];
+    var segs = String(text).split('\n');
+    for (var si = 0; si < segs.length; si++) {
+      if (!segs[si]) { out.push(''); continue; }
+      var part = wrap(segs[si], maxWidth);
+      for (var k = 0; k < part.length; k++) out.push(part[k]);
+    }
+    return out;
+  }
+
+  /* 把访客的字排进 (maxW × maxH)：先按初始字号排，塞不下就**逐档缩小**，
+     缩到下限还塞不下就不缩了（宁可挤一点，也不许把人家写的字裁掉）。 */
+  function layoutUserText(text, maxW, maxH, font0) {
+    var f = font0;
+    /* ⚠ spec §七 写的是「下限约初值的 70%」，**实测改成了 60%**：
+       横版那张卡上 200 字在 70% 时怎么都塞不下（差 ~100px），60% 才装得下。
+       两条路里选了这条 —— 另一条「横版把上限降到 150」会在**切尺寸时截断访客已经写的字**，
+       而「切尺寸不许丢状态」是有断言守着的（Review Focus 4）。 */
+    var floor = Math.round(font0 * 0.6);
+    var lines;
+    while (true) {
+      ctx.font = '300 ' + f + 'px ' + FONT_STACK;
+      lines = wrapUser(text, maxW);
+      if (lines.length * f * 1.85 <= maxH || f <= floor) break;
+      f = Math.max(floor, Math.round(f * 0.94));
+    }
+    return { font: f, lines: lines };
   }
 
   /* 圆角矩形路径 —— ⚠ 不用 ctx.roundRect（大陆手机的老内核未必认） */
@@ -196,6 +242,22 @@
     return false;                                 // 调用方只管印域名
   }
 
+  /* 访客写的字。空着就不画（那一段留白，卡照出）。 */
+  function drawUserText(x, y, w, h) {
+    var raw = input ? String(input.value || '') : '';
+    if (!raw) return;
+    var lay = layoutUserText(raw, w, h, Math.round(size().w * 0.028));
+    ctx.font = '300 ' + lay.font + 'px ' + FONT_STACK;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#f0e6ff';
+    ctx.globalAlpha = 0.94;
+    for (var k = 0; k < lay.lines.length; k++) {
+      ctx.fillText(lay.lines[k], x, y + k * lay.font * 1.85);
+    }
+    ctx.globalAlpha = 1;
+  }
+
   function draw() {
     var s = size();
     var c = col();
@@ -254,8 +316,14 @@
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
 
+    /* 右栏切成两块：**上面是她的台词**（含落款），**下面是访客写的字**。
+       ⚠ 访客能写到 200 字，所以下面那块必须留得下 —— 上限在 layoutUserText 里兜底。 */
+    var quoteH = Math.round(th * c.quoteShare);
+    var userY = ty + quoteH + Math.round(s.h * 0.035);
+    var userH = ty + th - userY;
+
     var lines = wrap(text, tw);
-    if (lines.length * lineH > th * 0.72) {       // 台词太长就整块缩一档
+    if (lines.length * lineH > quoteH) {          // 台词太长就整块缩一档
       fontSize = Math.round(fontSize * 0.9);
       lineH = fontSize * 1.85;
       ctx.font = '300 ' + fontSize + 'px -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif';
@@ -277,6 +345,17 @@
     ctx.textAlign = 'right';
     ctx.fillText('—— 爱莉希雅', tx + tw, ty + lines.length * lineH + fontSize * 0.5);
     ctx.globalAlpha = 1;
+
+    // 分隔：一条很淡的横线 —— 上面是她说的话，下面是你写的
+    ctx.strokeStyle = 'rgba(255,200,221,0.18)';
+    ctx.lineWidth = Math.max(1, Math.round(s.w * 0.0012));
+    ctx.beginPath();
+    ctx.moveTo(tx, userY - Math.round(s.h * 0.018));
+    ctx.lineTo(tx + tw * 0.34, userY - Math.round(s.h * 0.018));
+    ctx.stroke();
+
+    // 访客写的那句话
+    drawUserText(tx, userY, tw, userH);
 
     // 右下角：二维码 + 域名
     var qx = Math.round(c.qr.x * s.w);
@@ -339,6 +418,24 @@
       if (shouldVert !== vert) { vert = shouldVert; redraw(); }
     }, 260);
   });
+
+  /* ── 访客写字 ──────────────────────────────────────────────────────────
+     ⚠ 三件事：① **截到上限**（maxlength 拦不住粘贴）② 更新字数 ③ 防抖重画。
+     ⚠ 只**重画**，绝不碰 input.value —— 那是访客的东西。 */
+  var writeT = null;
+  function syncWrite() {
+    if (!input) return;
+    if (input.value.length > MAX_USER) input.value = input.value.slice(0, MAX_USER);
+    if (countEl) countEl.textContent = input.value.length + ' / ' + MAX_USER;
+  }
+  if (input) {
+    input.addEventListener('input', function () {
+      syncWrite();
+      clearTimeout(writeT);
+      writeT = setTimeout(redraw, 120);        // 防抖：敲字时别每一击都重画
+    });
+    syncWrite();
+  }
 
   /* ── 只读验收句柄 ────────────────────────────────────────────────────
      ⚠ 页面自己留的一小块**给验收读状态**的口子（`explore.js` 的

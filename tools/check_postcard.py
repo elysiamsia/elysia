@@ -238,6 +238,11 @@ class Browser(object):
         self._send('Input.dispatchMouseEvent', {'type': 'mouseReleased', 'x': x, 'y': y,
                                                 'button': 'left', 'buttons': 0, 'clickCount': 1})
 
+    def insert_text(self, text):
+        """往**当前聚焦的元素**里插字（会触发 `input` 事件）——
+        比「直接设 .value」更接近真人打字。⚠ 先点一下目标元素拿到焦点。"""
+        self._send('Input.insertText', {'text': text})
+
     def center_of(self, selector):
         """滚进视口后返回**视口中心坐标**。
         ⚠ 必须先滚 —— CDP 派发的是视口坐标，元素在视口外会静默落空（HANDOVER §6.4）。
@@ -452,6 +457,177 @@ def check_regions_fit_card(b):
                 fails.append(u'[%s] %s 越出内描边：x %.2f~%.2f、y %.2f~%.2f（允许 %.3f~%.3f）'
                              % (label, name, x0, x1, y0, y1, M, 1 - M))
     return (fails, u'两块区域都在内描边里（两档）' if not fails else u'有越界')
+
+
+# ══ 访客写的字 ═══════════════════════════════════════════════════════
+
+INPUT = '#postcardInput'
+
+
+def _hud(b):
+    return b.jso("""(() => {
+        var i = document.querySelector('%s');
+        var n = document.getElementById('postcardCount');
+        return JSON.stringify({ val: i ? i.value : null, count: n ? n.textContent : null,
+                                max: i ? i.getAttribute('maxlength') : null });
+    })()""" % INPUT)
+
+
+def _bright_in_band(b):
+    """卡片**底部那条安全带**里的亮像素数。
+
+    ⚠ 为什么是「亮像素数」而不是「逐点相同」：底上有 90 颗 `Math.random()` 的星屑，
+      两次出图必然有几颗不同 —— 逐点比会**永远不等**。
+      而访客写的字是 `#f0e6ff`（很亮）、星屑只有几个像素，
+      所以「亮像素超过几十个」就说明**有字压下来了**。
+    ⚠ 横坐标只取 0.15~0.72 那一段：左边 0.052 与右边 0.948 是**两朵水晶花**
+      （卡片的装饰，本来就该在那儿），再往右是二维码与域名 —— 都要避开，
+      否则「空白时也有几百个亮像素」，这条判据就废了（第一版就是这么废的）。
+    """
+    return b.js("""(() => {
+        var c = document.querySelector('#postcardPreview canvas');
+        if (!c) return null;
+        var ctx = c.getContext('2d');
+        var W = c.width, H = c.height;
+        var y0 = Math.round(H * 0.90), h = Math.round(H * 0.065);
+        var img = ctx.getImageData(Math.round(W * 0.15), y0, Math.round(W * 0.57), h).data;
+        var n = 0;
+        for (var i = 0; i < img.length; i += 4) {
+          if ((img[i] + img[i + 1] + img[i + 2]) / 3 > 140) n++;
+        }
+        return n;
+    })()""")
+
+
+@browser_check
+def check_input_cap_and_no_overflow(b):
+    """访客写字：**200 字硬上限** + 塞满也不许溢出（含绕过 maxlength 硬塞 300 字）。
+
+    ⚠ 溢出判据见 `_bright_in_band` —— 文字要是压到底部那条安全带里，亮像素数会暴涨。
+    """
+    _reset(b)
+    fails = []
+    blank = _bright_in_band(b)
+    if blank is None:
+        return ([u'取不到画布（`#postcardPreview` 里没有 canvas？）'], u'—')
+    if blank > 30:
+        fails.append(u'**一个字都没写**的时候，底部安全带里就有 %d 个亮像素 —— '
+                     u'那这块判据没法用（先查版式，别急着查输入）' % blank)
+
+    # ① 硬上限：maxlength 是 200
+    h = _hud(b) or {}
+    if h.get('max') != str(MAX_CHARS):
+        fails.append(u'`%s` 的 maxlength 是 %r，spec §七 要求 %d'
+                     % (INPUT, h.get('max'), MAX_CHARS))
+
+    # ② 走真输入路径塞 200 字（`Input.insertText` 会触发 input 事件）
+    if not b.click_sel(INPUT):
+        return ([u'找不到输入框 `%s`'], u'—')
+    b.insert_text(u'字' * MAX_CHARS)
+    time.sleep(0.6)
+    h = _hud(b) or {}
+    if len(h.get('val') or u'') != MAX_CHARS:
+        fails.append(u'塞了 %d 个字，输入框里只有 %d 个' % (MAX_CHARS, len(h.get('val') or u'')))
+    if u'%d / %d' % (MAX_CHARS, MAX_CHARS) not in (h.get('count') or u''):
+        fails.append(u'字数显示是 %r，应该是「%d / %d」' % (h.get('count'), MAX_CHARS, MAX_CHARS))
+    n = _bright_in_band(b)
+    if n is None or n > 30:
+        fails.append(u'写满 %d 字之后，底部安全带里有 %d 个亮像素 —— 文字压出栏外了'
+                     % (MAX_CHARS, n))
+
+    # ③ 绕过 maxlength 硬塞 300 字（粘贴 / 脚本都做得到）
+    b.js("(() => { var i = document.querySelector('%s');"
+         " i.value = '字'.repeat(%d); i.dispatchEvent(new Event('input', { bubbles: true }));"
+         " return 1; })()" % (INPUT, MAX_CHARS + 100))
+    time.sleep(0.6)
+    h = _hud(b) or {}
+    if len(h.get('val') or u'') > MAX_CHARS:
+        fails.append(u'硬塞 %d 字之后，输入框里还留着 %d 个 —— 没有按上限截住'
+                     % (MAX_CHARS + 100, len(h.get('val') or u'')))
+    n = _bright_in_band(b)
+    if n is None or n > 30:
+        fails.append(u'硬塞 %d 字之后，底部安全带里有 %d 个亮像素 —— 文字压出栏外了'
+                     % (MAX_CHARS + 100, n))
+    return (fails, u'200 字上限生效、写满也不溢出' if not fails else u'输入或排版有问题')
+
+
+@browser_check
+def check_quote_change_keeps_input(b):
+    """**Review Focus 4 的前半**：换一句（换台词）不许清空访客写的字。"""
+    _reset(b)
+    if not b.click_sel(INPUT):
+        return ([u'找不到输入框'], u'—')
+    b.insert_text(u'写一句试试')
+    time.sleep(0.4)
+    before = (_hud(b) or {}).get('val')
+    b.click_sel('#postcardRedraw')
+    time.sleep(0.6)
+    after = (_hud(b) or {}).get('val')
+    fails = []
+    if after != before:
+        fails.append(u'点了「换一句」之后，输入框从 %r 变成了 %r —— 字被清掉了' % (before, after))
+    if before != u'写一句试试':
+        fails.append(u'输入本身就没进去（%r）' % before)
+    return (fails, u'换台词不清空输入' if not fails else u'换台词把字弄丢了')
+
+
+@browser_check
+def check_size_toggle_keeps_state(b):
+    """**Review Focus 4 的后半**：切尺寸之后，字还在、立绘还是那一张。"""
+    _reset(b)
+    if not b.click_sel(INPUT):
+        return ([u'找不到输入框'], u'—')
+    b.insert_text(u'切一下尺寸')
+    time.sleep(0.4)
+    b.js('window.__ELY_POSTCARD__.setArt(2)')
+    time.sleep(0.4)
+    before = (_hud(b) or {}).get('val')
+    art_before = b.js('window.__ELY_POSTCARD__.art()')
+    b.click_sel('#postcardToggle')
+    time.sleep(0.8)
+    after = (_hud(b) or {}).get('val')
+    art_after = b.js('window.__ELY_POSTCARD__.art()')
+    fails = []
+    if after != before:
+        fails.append(u'切尺寸之后，输入框从 %r 变成了 %r' % (before, after))
+    if art_after != art_before:
+        fails.append(u'切尺寸之后，立绘从第 %r 张变成了第 %r 张' % (art_before, art_after))
+    return (fails, u'切尺寸不丢字、不换立绘' if not fails else u'切尺寸把状态弄丢了')
+
+
+@browser_check
+def check_rapid_quote_change(b):
+    """**Review Focus 5**：连点「换一句」不许出现旧图残留或报错。
+
+    ⚠ 几张画布是**每次重画都新建一个**（`makeCanvas`），而 `document.fonts.ready`
+      的回调是异步的 —— 连点最容易把「旧画布的回调」画到新画布上，或者干脆画不完。
+    """
+    _reset(b)
+    fails = []
+    for _ in range(8):
+        b.js("document.getElementById('postcardRedraw').click()")
+        time.sleep(0.04)
+    time.sleep(0.9)
+    c = b.jso("""(() => {
+        var n = document.querySelectorAll('#postcardPreview canvas');
+        var cv = document.querySelector('#postcardPreview canvas');
+        if (!cv) return JSON.stringify({ none: true });
+        var ctx = cv.getContext('2d');
+        var d = ctx.getImageData(0, 0, cv.width, cv.height).data;
+        var bright = 0;
+        for (var i = 0; i < d.length; i += 40) {
+          if ((d[i] + d[i + 1] + d[i + 2]) / 3 > 90) bright++;
+        }
+        return JSON.stringify({ canvases: n.length, bright: bright });
+    })()""")
+    if not c or c.get('none'):
+        fails.append(u'连点之后画布不见了')
+    else:
+        if c.get('canvases') != 1:
+            fails.append(u'连点之后有 %r 张画布（应该只有 1 张）' % c.get('canvases'))
+        if not c.get('bright'):
+            fails.append(u'连点之后画布是**空的**（亮像素 0）—— 最后一次没画上去')
+    return (fails, u'连点 8 次：只剩一张画布、且画上了内容' if not fails else u'连点出问题了')
 
 
 @browser_check
