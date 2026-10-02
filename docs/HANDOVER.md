@@ -627,16 +627,16 @@ taskkill //F //PID <pid>                               # 杀
 
 | 目录 | 是什么 | 用途 |
 |---|---|---|
-| `baseline` | **P1 动手前**（`origin/main` worktree） | P1 最终验收（Task 10/11/12 做完时用） |
-| **`after-postcard`** | **明信片重做做完之后**（2026-10-02，11 页） | **下次改动用这个**<br>实测（对 `after-postcard-home`）：**16 处，全在 `index.html`** —— 9 处是高度（三个视口一致 **+284.9px** = 明信片那一节长高了），7 处是结尾区装饰（`.ending-star` / `.hero-card`）被**随机流重洗**；其余 **10 页零差异** |
-| `after-postcard-home` | 明信片**动手前**（`6453233`，在一个 worktree 里跑出来的） | 这一轮的参照点本身 —— **已被取代，可以删了**<br>⚠ **它是「新建」出来的，不是随手挑的**：当时最新的 `after-kosma` 比本轮还早两轮，拿它比会把「首页名片档案」和 mobius 的差异一起报进来 |
-| ~~`after-kosma`~~ | 科斯魔那一页做完之后（2026-10-02） | **已被 `after-postcard` 取代，可以删了**<br>它当年对 `after-sakura` 的差分：9 处，全在 kosma，全是高度 |
-| ~~`after-sakura`~~ / ~~`after-bday`~~ | 樱那一页 / 生日组件之后（2026-10-01~02） | **早就不用了，删掉**<br>⚠ 上一版这里写着「对 mobius 已过期，`lab-06` 那几处会多出来」——**实测是错的**：<br>快照的 `SELECTORS` 里根本没有 `.explore-find`，改坐标它**本来就看不见**。见 §6.4 |
+| `baseline` | **P1 动手前**（`origin/main` worktree） | P1 最终验收（Task 10/11/12 做完时用）—— **别删** |
+| **`after-postcard`** | **明信片重做做完之后**（2026-10-02，11 页） | **下次改动用这个**<br>实测（对动手前那一版）：**16 处，全在 `index.html`** —— 9 处是高度（三个视口一致 **+284.9px** = 明信片那一节长高了），7 处是结尾区装饰（`.ending-star` / `.hero-card`）被**随机流重洗**；其余 **10 页零差异** |
+| ~~`after-kosma`~~ · ~~`after-sakura`~~ · ~~`after-bday`~~ · ~~`after-postcard-home`~~ | 更早几轮的参照点（樱 / 科斯魔 / 生日组件 / 明信片动手前） | **2026-10-02 已删**（腾出 **145 MB**，`snap/` 207 MB → 62 MB）<br>⚠ **「动手前那一版」这种基线只对本轮有用** —— 本轮过了就该收掉（`after-postcard-home` 就是这么来的、也是这么删的）<br>⚠ 它们都能从 git 重建：`git worktree add` 到对应 commit 再跑一次 `snapshot.py` |
 
-> 🧹 **2026-10-01 清过两次**：原先堆了 20 个（539 MB），先删到 2 个，
-> 生日组件上线后又把 `after-explore` 也收掉（它已被 `after-bday` 取代）。
+> 🧹 **清过三次**（2026-10-01 两次 + 2026-10-02 一次）：原先堆了 20 个（539 MB）→ 先删到 2 个，
+> 生日组件上线后又收掉 `after-explore`；**2026-10-02 再收掉四个**
+> （`after-postcard-home` / `after-kosma` / `after-sakura` / `after-bday`，腾出 145 MB）。
+> **现在只剩 `after-postcard` 与 `baseline`。**
 > ⚠ **每轮结束就换参照点、顺手清掉上一个** —— 攒着只会让「该用哪个」变模糊
-> （本轮就吃过一次：计划让人用 `baseline-eggs`，而那是 9 页的，多报了 3 处纯噪音）。
+> （有一轮就吃过一次：计划让人用 `baseline-eggs`，而那是 9 页的，多报了 3 处纯噪音）。
 > ⚠ **它们都能从 git 重建**（`git worktree add` 到对应 commit 再跑 `snapshot.py`），
 > 所以删掉不等于丢历史 —— 只是不再占本机。
 > ⚠ `baseline` **留着**是因为 P1 的 Task 10/11/12 还没做，最终验收还要拿它当「动手前」。
