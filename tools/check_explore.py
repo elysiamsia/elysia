@@ -3524,6 +3524,124 @@ def check_sakura_game_touch(b, page, expected):
         time.sleep(0.6)
 
 
+def _touch_tap_at(b, sel):
+    """按选择器取中心 → 真触摸点它，**不滚动**（`fixed` 遮罩里的东西用它）。
+
+    ⚠ `_touch_tap_sel` 会先 `scrollIntoView` —— 对 `position:fixed` 的元素没意义，
+      还可能把背后的页面滚到别处。遮罩里的东西用这个。
+    """
+    c = b.jso("""(() => {
+        var n = document.querySelector('%s');
+        if (!n) return null;
+        var r = n.getBoundingClientRect();
+        return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    })()""" % sel)
+    if not c:
+        return False
+    _sk_touch(b, c['x'], c['y'])
+    return True
+
+
+CLOSE_FAR_MIN = 100        # 「收刀」到画布的最小间距（px）
+
+GAME_GEO = """(() => {
+    var c = document.querySelector('.sk-canvas');
+    var x = document.querySelector('.sk-close');
+    var o = document.getElementById('sakuraGameOverlay');
+    if (!c || !x || !o) return JSON.stringify({ missing: true });
+    var C = c.getBoundingClientRect(), X = x.getBoundingClientRect();
+    /* 两个矩形的最小间距：dx / dy 各自算「水平 / 竖直上分开多远」，都为正才算真的分开。 */
+    var dx = Math.max(C.left - X.right, X.left - C.right);
+    var dy = Math.max(C.top - X.bottom, X.top - C.bottom);
+    return JSON.stringify({
+        on: o.classList.contains('on'),
+        cx: Math.round(C.left + C.width / 2),
+        cb: Math.round(C.bottom),
+        gap: Math.round(Math.max(dx, dy)),
+        closeAt: [Math.round(X.left), Math.round(X.top), Math.round(X.width)],
+    });
+})()"""
+
+
+@check
+@sakura_only
+def check_sakura_game_close_far_from_play(b, page, expected):
+    """⑤ 「收刀」离游戏区**够远**，而且**刚打开那一下不许关**。
+
+    ⚠ 2026-10-02 需求方报的真 bug：「点一下就退出去了」。实测根因 ——
+      `收刀` 原来就在画布**正下方 55px**，而这是反应类游戏，玩家正连点画布下半部分：
+      ```
+      画布底边 +5 ~ +40px    → 还开着
+      画布底边 +55 ~ +100px  → ★ 关掉了      ← 手指落低一点点就到这儿
+      画布底边 +110px 以下   → 还开着
+      ```
+      修法：挪到**整个遮罩的右上角**（不是面板的右上角 —— 那儿离画布上边缘
+      也只有 ~60px，等于没修），并在刚打开的前 400ms 里拒收它的点击。
+
+    三条判据，**都在 375 的手机视口上量**（出事的就是手机）：
+      ① 它与画布的最小间距 ≥ 100px（修后实测 ~200px）
+      ② 在**它原来那个位置**（画布下方 60px）点一下 → **不许关**
+      ③ 刚打开就点它 → **不许关**；过了保护期再点 → **要能关**
+    """
+    b._send('Emulation.setDeviceMetricsOverride',
+            {'width': 375, 'height': 812, 'deviceScaleFactor': 1, 'mobile': True})
+    b._send('Emulation.setTouchEmulationEnabled', {'enabled': True, 'maxTouchPoints': 5})
+    time.sleep(0.6)
+    fails = []
+    try:
+        _reset(b)
+        if not _touch_tap_sel(b, '.bottom-game .game-card-start'):
+            return ([u'用触摸点不到游戏卡上的「开始」按钮'], u'—')
+        time.sleep(0.5)
+
+        d = b.jso(GAME_GEO)
+        if not d or d.get('missing'):
+            return ([u'找不到 `.sk-canvas` / `.sk-close` / 游戏遮罩'], u'—')
+        if not d['on']:
+            return ([u'点了「开始」，遮罩没打开'], u'—')
+
+        # ── ① 间距 ──
+        if d['gap'] < CLOSE_FAR_MIN:
+            fails.append(u'①「收刀」离游戏区只有 **%dpx**（要求 ≥ %d）—— 反应类游戏里'
+                         u'手指落低一点就误触退出（它现在在 x=%d y=%d 宽 %d，画布底边 y=%d）'
+                         % (d['gap'], CLOSE_FAR_MIN, d['closeAt'][0], d['closeAt'][1],
+                            d['closeAt'][2], d['cb']))
+
+        # ── ② 它原来那个位置：点一下不许关 ──
+        _sk_touch(b, d['cx'], d['cb'] + 60)
+        time.sleep(0.45)
+        st = _sk_overlay_state(b) or {}
+        if not st.get('open'):
+            fails.append(u'② 在**画布下方 60px** 点了一下，游戏就关掉了 —— '
+                         u'这正是需求方报的那个 bug（那一段原来点下去必退）')
+
+        # ── ③ 保护期 ──
+        if (_sk_overlay_state(b) or {}).get('open'):
+            _touch_tap_at(b, '.sk-close')          # 正常关掉（早就过了保护期）
+            time.sleep(0.45)
+        if not _touch_tap_sel(b, '.bottom-game .game-card-start'):
+            fails.append(u'③ 重开时点不到「开始」按钮')
+        else:
+            # ⚠ **这里不能 sleep** —— 此刻离 open() 才一百多毫秒，必须落在保护期内
+            _touch_tap_at(b, '.sk-close')
+            time.sleep(0.35)
+            if not (_sk_overlay_state(b) or {}).get('open'):
+                fails.append(u'③ 刚打开就点「收刀」，游戏当场关了 —— 400ms 的保护期没生效')
+            else:
+                time.sleep(0.6)                    # 等过保护期
+                _touch_tap_at(b, '.sk-close')
+                time.sleep(0.35)
+                if (_sk_overlay_state(b) or {}).get('open'):
+                    fails.append(u'③ 过了保护期，「收刀」还是关不掉 —— 那玩家就没法退出了')
+
+        return (fails, u'「收刀」够远（%dpx）、原位不禁触、保护期有效' % d['gap']
+                if not fails else u'「收刀」还是容易误触')
+    finally:
+        b._send('Emulation.setTouchEmulationEnabled', {'enabled': False})
+        b._send('Emulation.clearDeviceMetricsOverride')
+        time.sleep(0.6)
+
+
 # ── 主流程 ────────────────────────────────────────────────────────────
 def main():
     raw = sys.argv[1:]

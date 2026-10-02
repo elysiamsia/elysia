@@ -27,6 +27,10 @@
  *   · **一枚花瓣只够出一刀。** 空挥也算用掉（见 `strike()` 上那段）——
  *     这条不「显然」，但少了它整个玩法就塌了，所以特意写在这里。
  *
+ *   · ⚠ **「收刀」离游戏区必须够远**（现在挂在**遮罩**的右上角，不是面板里）——
+ *     它原来在画布正下方 55px，反应类游戏里手指落低一点就误触（2026-10-02 实测）。
+ *     见 `buildOverlay()` 与页面 CSS 里 `.sk-close` 那两段注释。
+ *
  *   · **绝不抛异常。** 任何一步出问题都只 `console.warn` ——
  *     一次未捕获的异常会让整页剩下的脚本集体停摆，而页面看上去还是好的。
  *
@@ -48,12 +52,15 @@
   var SPD_UP = 14;           // 每连击 +14
   var SPD_MAX = 460;         // 封顶 —— 再快就不是「把握分寸」而是「拼手速」了
   var BEST_KEY = 'sakuraIsshunBest';
+  /* ⚠ 刚打开的那一小段里，**拒收「收刀」的点击** —— 见 bindOverlay 里那一段。 */
+  var CLOSE_GUARD_MS = 400;
 
   var el = {};
   var bound = false;         // 遮罩上的监听只挂一次（mount 可能被重复调用）
 
   /* 游戏状态。**模块级**，不放在 mount 里 —— 它是单实例的。 */
   var raf = null, lastT = 0, running = false;
+  var openedAt = 0;          // 打开遮罩的时刻（给那个保护期用）
   var tgtX = 0, spd = SPD0, leftMs = ROUND_MS;
   var hits = 0, combo = 0, maxCombo = 0, best = 0;
   var flash = '', flashT = 0;
@@ -284,13 +291,17 @@
     msg.className = 'sk-msg';
     panel.appendChild(msg);
 
+    /* ⚠ 「收刀」是 `.sk-panel` 的**兄弟**，直接挂在遮罩上 —— **不是面板的子节点**。
+       理由见页面 CSS 里 `.sk-close` 那段：它离游戏区必须够远
+       （原来在画布正下方 55px，反应类游戏里手指落低一点就误触）。
+       面板右上角只有 ~60px，屏幕右上角有 ~200px。**别把它挪回面板里。** */
     var close = document.createElement('button');
     close.type = 'button';
     close.className = 'sk-close';
     close.textContent = '收刀';
-    panel.appendChild(close);
 
     ov.appendChild(panel);
+    ov.appendChild(close);
     document.body.appendChild(ov);
 
     el.overlay = ov;
@@ -307,6 +318,7 @@
   function open() {
     buildOverlay();
     if (!el.overlay) return;
+    openedAt = Date.now();          // ⚠ 给「收刀」的保护期用，见 bindOverlay
     el.overlay.classList.add('on');
     el.overlay.setAttribute('aria-hidden', 'false');
     /* ⚠ 卡片上写着「开始」，那它就该**真的开始**（与 mobius 同一条理由：
@@ -329,7 +341,15 @@
 
     try { best = parseInt(global.localStorage.getItem(BEST_KEY) || '0', 10) || 0; } catch (err) { best = 0; }
 
-    el.close.addEventListener('click', close);
+    /* ⚠ **刚打开的那一下不算。** 「收刀」原来是「开始」正下方几十像素 ——
+       用户在卡片上双击、或浏览器补发一个延迟 click 时，第二个 click 会落在
+       刚出现的「收刀」上，游戏当场关掉（需求方 2026-10-02 报的
+       「点一下就退出去」正是这一类）。按钮已经挪到屏幕右上角，这是第二道保险。
+       ⚠ 只挡**这个按钮**：Escape 与内部调用照旧 —— 键盘不会「幽灵点击」。*/
+    el.close.addEventListener('click', function () {
+      if (Date.now() - openedAt < CLOSE_GUARD_MS) return;
+      close();
+    });
 
     /* 出刀：**点画布**（手机上就是点屏幕）。
        ⚠ 用 pointerdown 而不是 click —— 反应类游戏差那一两百毫秒。 */
