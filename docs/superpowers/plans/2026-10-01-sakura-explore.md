@@ -542,7 +542,7 @@ git commit -m "樱：12 个可发现物 + 解锁 + 陪伴层（台词全部有�
 - Consumes: `.bottom-game` 槽（`ElysiaBottom.mount` 建出来的）
 - Produces: `window.ElysiaGames.sakura = { title, hint, mount(host) }`
 
-- [ ] **Step 1: 写断言（两条）**
+- [x] **Step 1: 写断言（两条）**
 
 ```
 ① 点「开始」之后：目标在动、且出刀判定真的生效
@@ -556,9 +556,9 @@ git commit -m "樱：12 个可发现物 + 解锁 + 陪伴层（台词全部有�
 ⚠ 参考 mobius 那条的做法（`check_mobius_game_runs`）：用 canvas 的 `toDataURL()` 比对。
 樱这个游戏也用 canvas 画，同样适用。
 
-- [ ] **Step 2: 跑，确认红**
+- [x] **Step 2: 跑，确认红**
 
-- [ ] **Step 3: 实现 `assets/games/sakura.js`**
+- [x] **Step 3: 实现 `assets/games/sakura.js`**
 
 契约（照 `assets/games/mobius.js` 那份样板）：
 
@@ -591,19 +591,49 @@ window.ElysiaGames.sakura = {
   （先例：`color-mix()` 被特意避开、`classList.toggle(cls, force)` 换成 add/remove）
 - 触摸与鼠标**都要能玩**
 
-- [ ] **Step 4: 跑，确认全绿（含 `--reduced`）**
+- [x] **Step 4: 跑，确认全绿（含 `--reduced`）**
 
 ```bash
 PYTHONIOENCODING=utf-8 python tools/check_explore.py sakura/index.html
 PYTHONIOENCODING=utf-8 python tools/check_explore.py sakura/index.html --reduced
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add assets/games/sakura.js sakura/index.html tools/check_explore.py
 git commit -m "樱：小游戏「一瞬」—— 斩线 + 时机判定（刹那）"
 ```
+
+
+#### 实施记录（2026-10-02）—— 与计划的偏差
+
+**是从 `wip/sakura-task6` 那份草稿接着做的。** 草稿自己标着「一行都没验证过」，
+所以下面每一条都是**重新实测**的，不是照抄。**七处变异全部实测过**（把实现故意改错、
+看断言报不报红）：判定恒真 / 判定从不生效 / 循环冻住 / 关掉不停 / 脚本整行拿掉 /
+两处 `aria-hidden` 不同步 —— 七条全被抓住。
+
+| 计划 | 实际 | 为什么 |
+|---|---|---|
+| 断言**两条** | **五条** | 计划 ① 里「出刀判定真的生效」那半句**没有任何判据覆盖** —— `toDataURL` 比对只证明**循环在跑**。补了真正验判定的那条（`check_sakura_judgment`，正反两半都验）；另把遮罩的 `aria-hidden` 同步也纳入 `_sk_game_probe` |
+| （计划没提） | 判据改成**读画面** | 时间模型不可靠：`dt` 有 50ms 上限，掉帧时游戏钟比墙钟慢 —— 而实测这台机器 headless 只有 **40fps**，不是 60。改成取画布上粉色像素的**质心**，像玩家一样看着花瓣出刀 |
+| 空挥不消耗目标 | **一枚花瓣只够出一刀** | 实测：空挥不消耗时，60ms 连点 13 秒 = **12 次正中**（花瓣步长 9px，而判定窗有 32px 宽，跨不过去）。那就成了「按住就赢」，和「只有那一下」正相反 |
+| `.sk-canvas` 用 `max-width:88vw` | `calc(100vw - 4rem)` **+ `max-height`** | `88vw` 没算面板自己的左右内边距。实测 **360px 宽的手机**（大陆最常见的一档）面板溢出约 4px；横屏更糟 —— 上下被切，而 fixed 遮罩没有滚动条，切掉的**够不着** |
+| 判定窗 `rgba(...,.16)` | `rgba(...,.3)` | 实测只画出约 **6%** 的对比度（`(7,10,20)` → `(17,26,38)`），手机上白天看不见 —— 而代码自己的注释写着「让人看得见『分寸』在哪」 |
+
+**顺手给工具加的口子**：`check_explore.py --only <名字片段>`。
+变异测试要把同一条断言跑很多遍，而整轮 34 组要两分钟 —— 加了口子之后一轮只要几十秒。
+⚠ 报告里**会写明这是筛过的**（开头一行 + 结尾一行），别把它当成一次全量验收。
+
+**实测数字**（留下来，将来调手感时当基准）：
+
+| 项 | 值 |
+|---|---|
+| headless Edge 的 rAF | **40fps** —— 时机类判据别按 60 算 |
+| 修复后狂点 60 / 125 / 250ms，各 6 秒 | 正中 **0** 次 |
+| 对着花瓣掐准了砍，6 秒 | 正中 **6** 次 · 连击 **6** |
+| 面板宽 | 367px = 画布 320 + 2×1.4rem 内边距 + 2px 边框 |
+| 四种视口实测 | 375 / 360 / 320 / 横屏 640×360 —— 面板**都放得下**，画布等比缩（120~320） |
 
 ---
 

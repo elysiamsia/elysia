@@ -19,6 +19,11 @@ tools/check_explore.py — 探索系统断言
   不传页面 = `tools/explore-fixture.html`（探针页）。
   真页面：`python tools/check_explore.py mobius/index.html`
 
+  `--reduced` —— 只跑减动（`prefers-reduced-motion`）那几条。
+  `--only <名字片段>` —— **只跑名字里含这个片段的断言**。
+    ⚠ 给变异测试用的（「证明断言抓得到错」要把同一条跑很多遍，
+      而整轮要两分钟）。报告里会写明「筛过的」，别把它当成一次全量验收。
+
   自带服务器（**端口 8501**，刻意避开 8500）—— 见 HANDOVER §6.4：
   8500 上常残留别的 `http.server`，请求落到哪个不确定，会测出「内容完全错」的结果。
 
@@ -2828,10 +2833,279 @@ def check_sakura_finds_not_in_quotes(b, page, expected):
     return ([], u'12 条与语录区零重复（语录区 %d 条）' % len(quotes))
 
 
+# ══ 樱的小游戏「一瞬」（Task 6）══════════════════════════════════════
+#   和 mobius 那条同一个思路：游戏状态在 canvas 上、拿不到内部变量（脚本是 IIFE），
+#   所以判「在不在动」只能靠**画面本身**。
+#   ⚠ 关键在于**同一个判据要既认得出「动」、也认得出「不动」** ——
+#     所以每次都先验「开局后在动」，再验「关掉后静止」。
+#     少了后半段，「两次采样不同」有可能只是 dataURL 编码本身不稳定，
+#     那这条断言就是恒真式，测了等于没测。
+
+def _sk_game_sig(b):
+    return b.js("(() => { var c = document.querySelector('#sakuraGameOverlay canvas');"
+                " return c ? c.toDataURL() : null; })()")
+
+
+def _sk_overlay_state(b):
+    """遮罩的开合状态 **和 `aria-hidden`**。
+
+    ⚠ 两个都要读 —— HANDOVER §10.9 六 记着同一个坑：生日面板「视觉上开着、
+      屏幕阅读器却以为它藏着」，只因为代码只 `classList.add('open')`、
+      **没同步 `aria-hidden`**。快照**测不出属性**，这类问题只能靠断言守。
+    """
+    return b.jso("""(() => {
+        var o = document.getElementById('sakuraGameOverlay');
+        if (!o) return JSON.stringify({ missing: true });
+        return JSON.stringify({ open: o.classList.contains('on'),
+                                aria: o.getAttribute('aria-hidden') });
+    })()""")
+
+
+def _sk_game_probe(b):
+    fails = []
+
+    st = _sk_overlay_state(b) or {}
+    if st.get('missing'):
+        fails.append(u'页面里没有 #sakuraGameOverlay —— 模块的 mount(host) 没建出来？')
+    else:
+        if st.get('open'):
+            fails.append(u'还没点，遮罩就是打开的')
+        if st.get('aria') != 'true':
+            fails.append(u'遮罩关着，`aria-hidden` 却是 %r —— 该是 \'true\''
+                         % st.get('aria'))
+
+    if not _click_sel(b, '.bottom-game .game-card-start'):
+        return ([u'找不到游戏卡上的「开始」按钮 —— 模块的 mount(host) 没跑？'], u'—')
+
+    st = _sk_overlay_state(b) or {}
+    if not st.get('open'):
+        fails.append(u'点了「开始」，遮罩却没有打开')
+    if st.get('aria') != 'false':
+        fails.append(u'遮罩开了，`aria-hidden` 却是 %r —— 面板视觉上开着、'
+                     u'屏幕阅读器却以为它藏着（HANDOVER §10.9 六 那个坑）'
+                     % st.get('aria'))
+
+    s1 = _sk_game_sig(b)
+    time.sleep(0.45)
+    s2 = _sk_game_sig(b)
+    if s1 is None or s2 is None:
+        fails.append(u'取不到游戏 canvas（模块没把画布渲染出来？）')
+    elif s1 == s2:
+        fails.append(u'开始之后两次采样**一模一样** —— 目标没在动'
+                     u'（也可能已经结算停下来了）')
+
+    # 关掉 → 用**同一个判据**验它抓得到「不动」
+    if not _click_sel(b, '#sakuraGameOverlay .sk-close'):
+        fails.append(u'找不到遮罩上的关闭按钮')
+        return (fails, u'（没能做反向验证）')
+
+    st = _sk_overlay_state(b) or {}
+    if st.get('open'):
+        fails.append(u'点了「收刀」，遮罩却没关')
+    if st.get('aria') != 'true':
+        fails.append(u'遮罩关了，`aria-hidden` 却是 %r' % st.get('aria'))
+
+    c1 = _sk_game_sig(b)
+    time.sleep(0.45)
+    c2 = _sk_game_sig(b)
+    if c1 is not None and c2 is not None and c1 != c2:
+        fails.append(u'关掉之后画面**还在变** —— 说明「两次采样不同」这件事本身不可靠，'
+                     u'这条判据是恒真式')
+
+    return (fails, u'开局在动、关掉静止（判据有牙齿）' if not fails else u'游戏没跑起来')
+
+
+@check
+@sakura_only
+def check_sakura_game_runs(b, page, expected):
+    """① 点「开始」之后，目标**真的在动**。
+
+    ⚠ 判据的可信度来自「**同一个判据既认得出动、也认得出不动**」——
+      所以 `_sk_game_probe` 一定会跑反向那半段。见它上面的注释。
+    """
+    _reset(b)
+    return _sk_game_probe(b)
+
+
+@check_reduced
+@sakura_only
+def check_sakura_game_runs_under_reduced(b, page, expected):
+    """② **Review Focus #5**：减动偏好下，游戏**仍然在动**。
+
+    ⚠ 游戏由「开始」**显式触发**，不属「自动播放的装饰动效」——
+      「关掉动画」不等于「关掉功能」。这条断言就是钉这件事的。
+      （spec §5.5 表里最后一行；上一轮 mobius 也有一条同样的。）
+
+    ⚠ 同时**反向也要验**（关掉后静止）—— 不然减动下这条最容易变成恒真式。
+    """
+    _set_motion(b, 'reduce')
+    try:
+        _reset(b)
+        return _sk_game_probe(b)
+    finally:
+        _set_motion(b, 'no-preference')
+
+
+# ── 樱的小游戏：**判定本身**（不是「在不在动」）──────────────────────
+#   ⚠ 「在动」和「判定对了」是两件事。上面那两条只证明**循环在跑** ——
+#     一个「点一下就加分」的实现照样能让它们全绿。
+#     所以判定要单独验，而且**正反两半都要**：
+#       · 花瓣还在远处时出刀 → 不许得分（挡住「点一下就算中」）
+#       · 花瓣压在斩线上时出刀 → 必须得分（挡住「永远不加分」）
+#     只验一半等于没验 —— 这正是前几轮反复踩的那类「看起来在守、其实守不住」。
+#
+#   ⚠ 怎么知道花瓣在哪儿：`sakura.js` 是 IIFE，`tgtX` 取不到。
+#     这里**像玩家一样看画面** —— 读画布上粉色像素的质心。
+#     比「固定等 1.15 秒再点」稳得多：`dt` 有 50ms 的上限（掉帧时游戏钟
+#     比墙钟慢），等待式判据会在慢机器上假红。2026-10-02 实测这台机器
+#     headless 下是 **40fps**、不是 60 —— 拿 60 去算的时机模型早晚会翻车。
+SK_CANVAS = '#sakuraGameOverlay canvas'
+
+
+def _sk_canvas_rect(b):
+    """画布中心的**视口坐标**。
+
+    ⚠ 不 `scrollIntoView`（`center_of` 会做那件事）—— 遮罩是 `position:fixed`
+      且居中的，画布必然在视口里；对一个 fixed 元素调 scrollIntoView 反而
+      可能把页面滚到别处。
+    """
+    return b.jso("""(() => {
+        var c = document.querySelector('%s');
+        if (!c) return null;
+        var r = c.getBoundingClientRect();
+        return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    })()""" % SK_CANVAS)
+
+
+def _sk_petal(b):
+    """读画布上那枚樱瓣的位置（**粉色像素的质心**），还有斩线在哪。
+
+    ⚠ 只扫中间那一条横带（y 125~195）—— 顺手避开两处会污染质心的字：
+      「刹那 / 太早了 / 晚了」那行画在 y≈114（基线），连击数画在 y≈222。
+      「刹那」用的也是 `#ffb7c5`，全画布扫的话它一出现质心就跳。
+    """
+    return b.jso("""(() => {
+        var c = document.querySelector('%s');
+        if (!c) return JSON.stringify({ missing: true });
+        var y0 = 125, bh = 70, W = c.width;
+        var d = c.getContext('2d').getImageData(0, y0, W, bh).data;
+        var n = 0, sx = 0;
+        for (var i = 0; i < d.length; i += 4) {
+          var r = d[i], g = d[i + 1], bl = d[i + 2], a = d[i + 3];
+          /* 樱粉 #ffb7c5。⚠ 连击那行的 #ffd6e0（g=214）被 g<205 挡在外面。 */
+          if (a > 200 && r > 230 && g > 150 && g < 205 && bl > 165 && bl < 240) {
+            n++; sx += ((i / 4) %% W);
+          }
+        }
+        return JSON.stringify({ n: n, x: n ? sx / n : null, mid: W / 2 });
+    })()""" % SK_CANVAS)
+
+
+def _sk_hud(b):
+    return b.jso("""(() => {
+        var o = document.getElementById('sakuraGameOverlay');
+        var q = function (s) { var n = o && o.querySelector(s); return n ? n.textContent : null; };
+        return JSON.stringify({ hits: q('.sk-hits'), combo: q('.sk-combo') });
+    })()""")
+
+
+def _sk_wait_petal(b, pred, timeout):
+    """等花瓣自己飞到满足 `pred` 的位置（不干预它）。
+
+    ⚠ 取样要密（15ms）：花瓣 150px/s，15ms 才走 2px 多一点，
+      才来得及在「压着斩线」那一小段里出刀。
+    """
+    t0 = time.time()
+    while time.time() - t0 < timeout:
+        p = _sk_petal(b)
+        if p and not p.get('missing') and p.get('x') is not None and pred(p):
+            return p
+        time.sleep(0.015)
+    return None
+
+
+def _sk_strike(b):
+    """在画布上出刀一次 —— 走**真实鼠标路径**（模块接的是 `pointerdown`）。"""
+    c = _sk_canvas_rect(b)
+    if not c:
+        return False
+    b.press(c['x'], c['y'])
+    time.sleep(0.03)
+    b.release(c['x'], c['y'])
+    return True
+
+
+@check
+@sakura_only
+def check_sakura_judgment(b, page, expected):
+    """③ 出刀**判定**真的生效（正反两半都验）。
+
+    ① 花瓣还在远处（离斩线 60px 以上）时出刀 → **不许得分**
+    ② 花瓣压在斩线上（±6px）时出刀 → **必须得分**，且连击 +1
+    """
+    _reset(b)
+    if not _click_sel(b, '.bottom-game .game-card-start'):
+        return ([u'找不到游戏卡上的「开始」按钮'], u'—')
+    time.sleep(0.3)
+
+    fails = []
+
+    # ── ① 远处出刀：不许得分 ──
+    far = _sk_wait_petal(b, lambda p: p['x'] < p['mid'] - 60, 5.0)
+    if far is None:
+        fails.append(u'等不到一枚还在远处的花瓣 —— 读不到画面？')
+    elif not _sk_strike(b):
+        fails.append(u'找不到游戏画布')
+    else:
+        time.sleep(0.3)
+        hud = _sk_hud(b) or {}
+        if hud.get('hits') != '0':
+            fails.append(u'花瓣离斩线还有 %.0fpx 就出刀，却得分了（正中 %s）——'
+                         u'判定没生效，成了「点一下算一下」'
+                         % (far['mid'] - far['x'], hud.get('hits')))
+
+    # ── ② 斩线上出刀：必须得分 ──
+    landed = False
+    for _try in range(3):
+        near = _sk_wait_petal(b, lambda p: abs(p['x'] - p['mid']) <= 6, 4.0)
+        if near is None or not _sk_strike(b):
+            break
+        time.sleep(0.3)
+        hud = _sk_hud(b) or {}
+        if hud.get('hits') not in ('0', None):
+            landed = True
+            if hud.get('combo') != '1':
+                fails.append(u'掐准了却只加了「正中」、没加连击（连击 = %s）'
+                             % hud.get('combo'))
+            break
+    if not landed:
+        fails.append(u'花瓣明明压在斩线上（±6px）出刀，一次都没中 —— 判定没生效')
+
+    return (fails, u'远处不中、斩线上的中（判定有牙齿）' if not fails else u'判定不对')
+
+
 # ── 主流程 ────────────────────────────────────────────────────────────
 def main():
     raw = sys.argv[1:]
     mode = 'reduced' if '--reduced' in raw else 'normal'
+
+    # ⚠ `--only <名字片段>`：**只跑**名字里含这个片段的断言。
+    #   为什么需要它：变异测试（「证明断言抓得到错」）要把同一条断言跑很多遍，
+    #   而整轮 34 组要两分钟 —— 跑五次就是十分钟，而变异测试是每个任务的标准动作。
+    #   ⚠ 报告里**必须写明这是筛过的**：一次筛过的运行长得和全量通过一模一样，
+    #     那正是这个工具最想防的那种谎（「看起来在守、其实守不住」）。
+    only = None
+    if '--only' in raw:
+        i = raw.index('--only')
+        if i + 1 >= len(raw):
+            print(u'--only 后面要跟一个名字片段')
+            return 1
+        only = raw[i + 1]
+        raw = raw[:i] + raw[i + 2:]
+    if only and not any(only in f.__name__ for f in CHECKS):
+        print(u'❌ 没有哪条断言的名字里含 %r —— 筛口写错了？' % only)
+        return 1
+
     args = [a for a in raw if not a.startswith('--')]
     page = args[0] if args else 'tools/explore-fixture.html'
     expected = EXPECTED_FINDS.get(page)
@@ -2859,6 +3133,9 @@ def main():
 
     print(u'\U0001f50d 探索系统断言 —— %s%s'
           % (page, u'（减动模式）' if mode == 'reduced' else u''))
+    if only:
+        print(u'   ⚠ **只跑**了名字含 %r 的断言（`--only`）—— 这不是一次全量验收'
+              % only)
     print()
 
     # ⚠ 用**全新临时 profile**。cdp.py 那个 C:/tmp/edge_cdp 会跨次留存缓存
@@ -2906,6 +3183,8 @@ def main():
         pool = [f for f in CHECKS
                 if mode in getattr(f, 'modes', ('normal',))
                 and ('*' in f.pages or page in f.pages)]
+        if only:
+            pool = [f for f in pool if only in f.__name__]
         skipped = len(CHECKS) - len(pool)
         if skipped:
             print(u'（本页跳过 %d 条只适用于其他页的断言）' % skipped)
@@ -2939,7 +3218,10 @@ def main():
     if failures:
         print(u'\u274c %d 项断言失败' % len(failures))
         return 1
-    print(u'\u2705 全部通过：%d 组断言' % len(ordered))
+    if only:
+        print(u'\u2705 全部通过：%d 组断言（`--only` 筛过的，**不是全量**）' % len(ordered))
+    else:
+        print(u'\u2705 全部通过：%d 组断言' % len(ordered))
     return 0
 
 

@@ -383,6 +383,70 @@ body{
   .profile-card{padding:1.5rem}
   .quote-card{min-height:120px;padding:1.2rem}
 }
+
+/* ══════ SECTION: 小游戏「一瞬」（2026-10-02）══════════════════════════
+   ⚠ 这几条**留在本页**、不进共享层 —— spec §3.1：「游戏是最各写各的部分」。
+     和梅比乌斯那边同一个道理：每位英桀的小游戏长什么样是她自己的事。
+   配色取她自己的：樱粉 --sakura / 冰蓝 --ice。 */
+.game-card{
+  max-width:26rem;margin:0 auto;padding:1.6rem 1.5rem;border-radius:16px;
+  background:rgba(255,255,255,.03);border:1px solid var(--glass-border);
+}
+.game-card-title{margin:0 0 .6rem;font-size:1.05rem;letter-spacing:.1em;color:var(--sakura)}
+.game-card-hint{margin:0 0 1.2rem;font-size:.8rem;line-height:1.9;color:var(--text-muted)}
+.game-card-start{
+  padding:.6rem 1.8rem;border-radius:999px;cursor:pointer;
+  font-size:.85rem;letter-spacing:.14em;color:var(--text);
+  background:rgba(255,183,197,.12);border:1px solid var(--glass-border);
+  transition:background .25s ease,box-shadow .25s ease;
+}
+.game-card-start:hover{background:rgba(255,183,197,.22);box-shadow:0 0 20px rgba(255,183,197,.25)}
+
+/* 遮罩：**她自己造的**（樱没有现成的 #gameOverlay，不像梅比乌斯那页）。
+   ⚠ 关掉只是去掉 .on，节点留着 —— 关掉之后画布仍然存在且静止，
+     测试才能拿它做「同一判据也认得出不动」的反向验证。
+   ⚠ 不用 `inset:0`（较新的写法，大陆手机上的老内核未必认），老实写四边。 */
+#sakuraGameOverlay{
+  position:fixed;top:0;right:0;bottom:0;left:0;z-index:9995;
+  display:none;align-items:center;justify-content:center;
+  background:rgba(4,6,14,.92);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+}
+#sakuraGameOverlay.on{display:flex}
+.sk-panel{
+  padding:1.5rem 1.4rem;border-radius:20px;text-align:center;
+  background:rgba(11,16,32,.96);border:1px solid var(--glass-border);
+  box-shadow:0 12px 40px rgba(0,0,0,.5);
+}
+.sk-title{margin:0 0 .5rem;font-size:1.1rem;letter-spacing:.3em;color:var(--sakura)}
+.sk-hud{margin:0 0 1rem;font-size:.78rem;letter-spacing:.1em;color:var(--text-muted)}
+.sk-hud b{color:var(--ice);font-weight:400}
+.sk-canvas{
+  display:block;margin:0 auto .9rem;
+  /* ⚠ 两个上限都要，照 mobius 那个 `#snakeCanvas` 的做法：
+     · max-width 要**减掉面板自己的左右内边距**（2×1.4rem）再加点余量。
+       只写 `88vw` 的话 —— 360px 宽的手机（大陆最常见的一档）上面板会有
+       约 4px 横向溢出；320px 的窄机更糟。2026-10-02 实测。
+     · max-height 管**横屏 / 矮视口**：面板比视口高的话上下会被切掉，
+       而这个遮罩是 fixed、没有滚动条，切掉的部分**永远够不着**。
+     ⚠ 刻意**不写** `width:320px` —— 画布的固有尺寸就是 320×320（JS 里
+       `cv.width = W`）。一旦显式定宽，`max-height` 生效时高度被压而宽度不变，
+       画面就被**拉扁**了；两个都不写、只给上限，浏览器才会等比缩。 */
+  max-width:calc(100vw - 4rem);max-height:calc(100vh - 15rem);
+  border-radius:12px;border:1px solid var(--glass-border);
+  /* ⚠ 只有这里用 touch-action:none —— 这是个**游戏台**，
+     手指落在上面就该是出刀，不该把页面滚走。
+     （可发现物那边**刻意没写**这一条，理由见 explore.css：那会让纵向滚动被吃掉。） */
+  touch-action:none;user-select:none;-webkit-user-select:none;
+}
+.sk-msg{margin:0 0 1rem;font-size:.78rem;line-height:1.9;color:var(--text-dim);min-height:2.4em}
+.sk-close{
+  padding:.5rem 1.6rem;border-radius:999px;cursor:pointer;
+  font-size:.8rem;letter-spacing:.14em;color:var(--text);
+  background:rgba(255,183,197,.1);border:1px solid var(--glass-border);
+  transition:background .25s ease;
+}
+.sk-close:hover{background:rgba(255,183,197,.2)}
 </style>
 </head>
 <body>
@@ -667,6 +731,9 @@ body{
 <script src="/assets/bottom.js"></script>
 <script src="/data/bdays.js"></script>
 <script src="/assets/bday.js"></script>
+<!-- 她的小游戏「一瞬」。⚠ 这一行**必须**在 bottom.js 之后 ——
+     `ElysiaBottom.mount` 会用它去建游戏槽（找不到就只 warn，不抛）。 -->
+<script src="/assets/games/sakura.js"></script>
 <script>
 (function(){
   /* SECTION: quotes data */
@@ -1159,8 +1226,7 @@ body{
        ⚠ `game` 不在这一批里 —— `games/sakura.js` 要等 Task 6 才建，
          现在写进来就是一份**用不上的配置**（正是上一轮在 mobius 上修掉的毛病）。 */
     explore: {
-      pageId: 'sakura',
-      /* ⚠ 这 12 条的 `line` 与 `src` 是**逐字抄自官方档案馆「事件-樱」**的，
+      pageId: 'sakura',      /* ⚠ 这 12 条的 `line` 与 `src` 是**逐字抄自官方档案馆「事件-樱」**的，
          核准记录见 `docs/superpowers/plans/2026-10-01-sakura-finds-table.md`。
          **一个字都不许改**（连 `······` 六个中点也别「规范化」成 `……`）。
          ⚠ 改台词必须同时改 `tools/check_explore.py` 里的 `SAKURA_FINDS` ——
@@ -1225,6 +1291,13 @@ body{
       ],
       whisperCooldownMs: 11000,
     },
+
+    /* 她的小游戏「一瞬」（Task 6）。
+       ⚠ **只有 `module`，没有 `title` / `hint`** —— 卡上的文案归**模块**所有
+         （`assets/games/sakura.js` 的 `ElysiaGames.sakura.title/hint`）。
+         两边各写一份的话，`bottom.js` 只会用其中一份，另一份就成了改不动的死配置 ——
+         上一轮在 mobius 上修过这个，而且有断言守着。 */
+    game: { module: 'sakura' },
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
   /* SECTION: resize guard */
@@ -1245,7 +1318,7 @@ body{
      ⚠ 小游戏（`THEME.game` 与 `games/sakura.js`）留到 Task 6 ——
        现在写进来就是一份用不上的配置，而且模块文件还不存在。 */
   ElysiaExplore.init(THEME.explore);
-  ElysiaBottom.mount({});
+  ElysiaBottom.mount({ game: THEME.game });
 
   /* 生日胶囊。⚠ **不传 `birthMsg`** —— 档案馆里没有可用的生日台词：
      355 条里唯一像「礼物」的那句（「…我今天来，是准备了一份礼物给你…」）
