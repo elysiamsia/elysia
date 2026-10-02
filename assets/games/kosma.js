@@ -194,6 +194,7 @@
     /* ⚠ `best` 本来就是**秒**（`finish()` 里存的 `keptMs / 1000`）——
        这里再除一次 1000 的话，「最佳」会永远显示 0.0。探针跑出来过。 */
     if (el.best) el.best.textContent = best.toFixed(1);
+    if (el.wind) el.wind.textContent = String(Math.round(Math.min(1, wind) * 100));
   }
 
   /* ── 玩法 ──────────────────────────────────────────────────────────── */
@@ -307,8 +308,10 @@
 
     var hud = document.createElement('p');
     hud.className = 'km-hud';
+    /* ⚠ 把「风」也显示出来 —— 玩家本来就该看得见压力（画布右边那条槽太细了），
+       而且有了它，「罩不住 → 风涨」这件事才**可断言**（断言 ② 就是靠它）。 */
     hud.innerHTML = '守住 <b class="km-kept">0.0</b> 秒 · 最长 <b class="km-run">0.0</b>'
-                  + ' · 最佳 <b class="km-best">0.0</b>';
+                  + ' · 最佳 <b class="km-best">0.0</b> · 风 <b class="km-wind">0</b>%';
     panel.appendChild(hud);
 
     var cv = document.createElement('canvas');
@@ -338,6 +341,7 @@
     el.kept = panel.querySelector('.km-kept');
     /* ⚠ 只有一个「最长」—— 原来这里写了两遍 querySelector('.km-run')，删掉那个多余的 */
     el.bestRun = panel.querySelector('.km-run');
+    el.wind = panel.querySelector('.km-wind');
     el.best = panel.querySelector('.km-best');
     el.msg = msg;
     el.close = close;

@@ -332,6 +332,46 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
   background:rgba(2,8,5,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:1rem;
 }
 #gameOverlay.on{display:flex}
+/* ⚠ 「逃离实验室」—— 挪到**整个遮罩的右上角**（与樱页的「收刀」、科斯魔的「收工」一致）。
+   2026-10-02 实测：它原来在 `#dpad` **正下方 18px**（手机玩家一直点方向键，落低 18px 就退出）；
+   那一轮先把它挪到了遮罩右上角，离 dpad **502px** —— 但离**画布**只有 **58px**。
+   画布是**滑动面**（玩家在上面拖、不是点），风险比连点低；可内容只占 812 里的 625，
+   **没有理由不把间距也拉够** —— 所以下面还按视口把内容摆一摆。 */
+#gameClose{position:absolute;top:1rem;right:1rem;min-height:44px;padding:.55rem 1.2rem}
+
+@media (max-width:520px) and (orientation:portrait) and (min-height:720px){
+  /* 竖屏手机：内容**顶对齐 + 往下推**，把画布顶边推离按钮更远。
+     ⚠ 数值是量出来的：内容总高约 524px，居中时画布顶边在 114px、离按钮 58px；下推之后 ~87px。
+     ⚠⚠ **只在 `min-height:720px` 以上生效** —— 早先写死 7rem 时，640 / 568 高的屏上
+       方向键被顶出了视口（568 那档内容 524 + 下推 112 + 内边距 = 顶出 ~100px）。
+       **矮屏上「离画布 100px」几何上就做不到**（余量只有 44px），所以那些屏保持居中。 */
+  #gameOverlay{justify-content:flex-start;padding-top:7rem}
+}
+
+@media (max-height:520px) and (orientation:landscape){
+  /* 横屏手机：内容总高（约 718px）比视口（360px）高得多 —— 竖着排**必然上下都被切**，
+     而 fixed 遮罩没有滚动条，切掉的**永远够不着**（实测：画布 y=-34、dpad 伸到 369）。
+     所以改**横排**：画布一列，控制（标题/状态/台词/方向键/按钮）一列。
+     ⚠ 选择器带 `.on` —— 基线上的 `#gameOverlay.on{display:flex}` 特异性更高，
+       只写 `#gameOverlay{display:grid}` 会被它压掉。 */
+  #gameOverlay.on{
+    display:grid;justify-content:center;gap:.45rem 1.1rem;
+    grid-template-columns:auto auto;
+    grid-template-areas:"cv head" "cv status" "cv msg" "cv dpad" "cv btns";
+    /* ⚠ `align-content:start` + `padding-top` —— 给右上角那个**绝对定位**的
+       「逃离实验室」让出它那一行。早先写 `align-items:center` 时，它在横屏下
+       **压在标题行的「最高 0」上**（一眼就看出来了，而断言测不到这种重叠 ——
+       这类只能靠肉眼）。让出 ~58px 之后，标题行落到按钮下方。 */
+    align-content:start;
+    padding-top:3.6rem;
+  }
+  #snakeCanvas{grid-area:cv;max-height:74vh}
+  .game-head{grid-area:head}
+  #gameStatus{grid-area:status}
+  #gameMsg{grid-area:msg}
+  #dpad{grid-area:dpad;margin-top:0}
+  .game-btns{grid-area:btns;margin-top:0}
+}
 .game-head{display:flex;align-items:center;gap:1.2rem;color:var(--text-dim);font-size:.85rem;letter-spacing:.1em}
 .game-head .score{color:var(--eye);font-variant-numeric:tabular-nums}
 #snakeCanvas{
@@ -355,7 +395,6 @@ body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
      位置一致，也都不贴着操作区。
    ⚠ 它是绝对定位，定位基准是 `#gameOverlay`（fixed）。**别**给 `.game-btns`
      或别的祖先加 `position`，否则它会被拽回那排按钮里去。 */
-#gameClose{position:absolute;top:1rem;right:1rem}
 #dpad{display:none;grid-template-columns:repeat(3,56px);grid-template-rows:repeat(2,52px);gap:6px;margin-top:.5rem}
 #dpad button{
   border-radius:12px;border:1px solid var(--glass-border);background:rgba(61,220,132,.08);
