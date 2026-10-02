@@ -470,9 +470,17 @@ body{
   touch-action:none;user-select:none;-webkit-user-select:none;
 }
 .sk-msg{margin:0 0 1rem;font-size:.78rem;line-height:1.9;color:var(--text-dim);min-height:2.4em}
+/* 「收刀」—— 在**整个遮罩的右上角**（屏幕角落），**不在面板里**。
+   ⚠ 为什么：2026-10-02 需求方报「点一下就退出去」。实测根因是它原来就在
+     画布**正下方 55px** —— 反应类游戏里玩家正连点画布下半部分，
+     手指落低一点点就正中退出键。实测那一段（画布底 +55~+100px）点下去**必退**。
+   ⚠ 放**面板**的右上角也不够（离画布上边缘仍有 ~60px）；放**屏幕**右上角才有 ~200px。
+   ⚠ 所以它是 `.sk-panel` 的**兄弟**、直接挂在遮罩上（见 `buildOverlay()`）——
+     别把它挪回面板里，也别给 `#sakuraGameOverlay` 之外的东西加 position。 */
 .sk-close{
-  padding:.5rem 1.6rem;border-radius:999px;cursor:pointer;
-  font-size:.8rem;letter-spacing:.14em;color:var(--text);
+  position:absolute;top:1rem;right:1rem;z-index:1;
+  min-height:44px;padding:.5rem 1.2rem;border-radius:999px;cursor:pointer;
+  font-size:.78rem;letter-spacing:.14em;color:var(--text);
   background:rgba(255,183,197,.1);border:1px solid var(--glass-border);
   transition:background .25s ease;
 }
@@ -1195,7 +1203,11 @@ body{
   /* SECTION: click ripple (水面圆环) */
   document.addEventListener('click', function(e){
     if (reducedMotion) return;
-    if (e.target.closest && (e.target.closest('#bladeStage') || e.target.closest('#profileName') || e.target.closest('#endingQuote'))) return;
+    /* ⚠ 名单里要有**游戏遮罩** —— mobius 那页排除了它的 `#gameOverlay`，
+       而樱这个遮罩是**模块动态建的**（建的时候这段早就跑过了），漏了就会
+       边玩游戏边在背后冒水环 + 响点击音（2026-10-02 补上）。 */
+    if (e.target.closest && (e.target.closest('#bladeStage') || e.target.closest('#profileName')
+        || e.target.closest('#endingQuote') || e.target.closest('#sakuraGameOverlay'))) return;
     for (var n = 0; n < 2; n++){
       var ring = document.createElement('div');
       ring.className = 'water-ring';
