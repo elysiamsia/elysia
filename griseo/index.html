@@ -817,12 +817,14 @@ body{
 <script src="/assets/site.js"></script>
 <!-- ⚠ 顺序不可调换（全站一致）：site → explore → bottom → bdays → bday
      `bday.js` 与 `explore.js` / `bottom.js` 是**彼此独立**的 —— 它不依赖另外两个。
-     ⚠ `games/griseo.js` 等计划 B 建好再加 —— 现在加就是 404，
-       而 404 在 check_explore.py 里**算失败**（它收了 CDP 的 Log 域）。 -->
+     ⚠ `games/griseo.js` **必须在 `bottom.js` 之后**：它只负责往 `ElysiaGames`
+       上挂模块，下面那段内联脚本（`ElysiaBottom.mount({ game })`）跑的时候要能找到它。
+       排在 `bday.js` 之后既满足这条，也不打乱上面那条固定顺序。 -->
 <script src="/assets/explore.js"></script>
 <script src="/assets/bottom.js"></script>
 <script src="/data/bdays.js"></script>
 <script src="/assets/bday.js"></script>
+<script src="/assets/games/griseo.js"></script>
 <script>
 (function(){
   /* SECTION: quotes data */
@@ -1623,11 +1625,9 @@ body{
       whisperCooldownMs: 9000,   // 她是小孩子，比樱（11000）密一点
     },
 
-    /* 下方区块的游戏槽（spec §4.5）。⚠ 本任务只**定义**、不启用：
-       `assets/games/griseo.js` 要等**计划 B** 才写；计划 B 会把
-       `ElysiaBottom.mount()` 改成 `ElysiaBottom.mount({ game: THEME.game })`，
-       **连同**加 `<script src="/assets/games/griseo.js">`。
-       ⚠⚠ 在那之前**绝不能**加那行脚本：文件还不存在，404 在 `check_explore.py` 里算失败。 */
+    /* 下方区块的游戏槽（spec §4.5）。**已启用**（计划 B 的 Task 2 接上了）：
+       `assets/games/griseo.js` 已建好并加载，下面把 `game` 真的传给
+       `ElysiaBottom.mount` —— 槽里画的是模块自己声明的 title / hint。 */
     game: { module: 'griseo' },
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
@@ -1636,15 +1636,12 @@ body{
      ⚠ `ElysiaExplore.init` 与 `ElysiaBottom.mount` 的**先后顺序本来都行** ——
        可发现物的锚点可以挂在下文区块上（那是 `mount` 才建出来的），
        共享层的 `ensureAttached` 会在挂载探索度时补扫。
-       这里保持与 mobius / sakura 一致：**先 init 再 mount**。
-     ⚠ 游戏槽留到计划 B（`THEME.game` 已定义好备用），此处**不传 `game`**：
-       传了会建出一个空槽，让 `check_explore.py` 的「游戏卡文案 == 模块声明」
-       断言预期变红（那条只在**没有槽**时跳过）。 */
+       这里保持与 mobius / sakura 一致：**先 init 再 mount**。 */
   ElysiaExplore.init(THEME.explore);
-  /* ⚠ 游戏槽留到计划 B：等 `assets/games/griseo.js` 建好后，
-     这里改成 `ElysiaBottom.mount({ game: THEME.game })`。
-     ⚠ 仍然**不要**加 `<script src="/assets/games/griseo.js">`。 */
-  ElysiaBottom.mount();
+  /* ⚠ 游戏槽**已接线**（计划 B 的 Task 2）：`assets/games/griseo.js` 已建好并加载，
+     这里把 `THEME.game` 传进去 —— `bottom.js` 会按 `module` 找到模块、调 `mount(host)`。
+     （`mount` 可重复调用：重画区块时卡片重建，但遮罩上的监听不会重复挂。） */
+  ElysiaBottom.mount({ game: THEME.game });
 
   /* 生日胶囊（她生日 12/21，`data/bdays.js` 里已登记）。
      ⚠ `birthMsg` 是**天行·绘星之卷 · 生日祝福语音**的原文，逐字取自材料包
