@@ -31,10 +31,15 @@
  *   Task 3：**松手回填** —— 松手时若**笔尖挨着自己的颜色**（四邻有 `1`）
  *     就调 `fillEnclosed` 把围住的区域染成领地（带**晕染动画**）；否则整条笔触
  *     **淡去**回空白（「白画一场」）。
- *   Task 4（本任务）：**造物** —— 场上的「褪色造物」有自己的领地、会自己圈地扩张；
+ *   Task 4：**造物** —— 场上的「褪色造物」有自己的领地、会自己圈地扩张；
  *     与玩家**对称碰撞**（谁碰到谁的笔触，谁的笔触就断）；玩家把它们整块领地吃掉。
  *     难度**分档 + 封顶**（地越大 → 造物越多越快，但有上限）。
- *   Task 5：击杀结算 / 阶段扩张 / 接入页面。
+ *   Task 5（本任务）：**击杀反馈 + 阶段扩张 + 3 分钟结算**。
+ *     · 造物整块领地变玩家色时**闪过它自己的「朋友色」**（FLASH_MS 的一层覆盖）；
+ *     · 累计杀掉 KILLS_PER_STAGE 个 ⇒ **画布解锁更大区域**（STAGES 换一档：
+ *       COLS/ROWS 变大、造物上限提高、造物更多），既有状态**整体搬到新画布中央**；
+ *     · 一局 ROUND_MS=3 分钟，到点弹**结算面板**（完成度 / 击杀 / 最高纪录），
+ *       最高纪录存 localStorage（读写都包 try/catch —— 隐私模式会抛）。
  *
  * ── ⚠ 拖动时**绝不能让页面跟着滚**（本任务最容易踩的坑）──────────────
  *   三层一起上，缺一不可：
@@ -49,10 +54,13 @@
   'use strict';
 
   /* ── 玩法参数 ────────────────────────────────────────────────────────
-     ⚠ 这几个数是**手感**，改它们等于改这一页的手感。 */
-  var COLS = 48, ROWS = 32;      // 网格（brief 钉死）
+     ⚠ 这几个数是**手感**，改它们等于改这一页的手感。
+     ⚠ COLS/ROWS 现在**会变**（阶段扩张，见 STAGES 与 growCanvas）——
+       它们从「常量」提升成**模块级可变状态**，任何派生量（CW/CH/出生点/遍历）都必须
+       在**用到的时候**按当时的 COLS/ROWS 现算，绝不能再抄一份快照。 */
+  var COLS = 48, ROWS = 32;      // 网格（初始档；扩张后更大）
   var CELL = 12;                 // 一格多少画布像素 —— 只影响清晰度，不影响玩法
-  var CW = COLS * CELL;          // 576
+  var CW = COLS * CELL;          // 576（初始档）
   var CH = ROWS * CELL;          // 384（3:2，照 ROWS/COLS）
   var HOME_R = 3;                // 玩家起始占**中央 3×3**（「画布原点」）
   /* ⚠ BRUSH_UP 的单位是**屏幕（CSS）像素**，不是画布像素 —— 见 `eventToCell`：
@@ -77,10 +85,11 @@
    *       真正的「吃掉」由本任务末尾的 `resolveCaptures()` 负责）。
    *
    *   Task 4 定的具体值（**每个造物占两个连号**）：
-   *     造物 k 的**领地** = `3 + 2k`（偶数档：3, 5, 7, 9）
-   *     造物 k 的**笔触** = `4 + 2k`（奇数档：4, 6, 8, 10）
-   *   ⇒ `slot = (v - 3) >> 1`；奇偶区分「领地 / 笔触」。最多 4 个造物（`ENEMY_MAX`），
-   *     最大码 10，离 `Int8Array` 的上限还远得很。
+   *     造物 k 的**领地** = `3 + 2k`（偶数档：3, 5, 7, 9, 11, 13）
+   *     造物 k 的**笔触** = `4 + 2k`（奇数档：4, 6, 8, 10, 12, 14）
+   *   ⇒ `slot = (v - 3) >> 1`；奇偶区分「领地 / 笔触」。槽位最多 `ENEMY_MAX = 6` 个
+   *     （阶段扩张后场上同时最多 6 只 —— 见 `STAGES`），最大码 14，离 `Int8Array`
+   *     的上限还远得很。
    *
    *   ⚠ **造物笔触为什么不能借用 `2`**：算法的「轨迹」写死只认 `2`（玩家的笔触）。
    *     造物若也用 `2`，它自己圈的圈会被当成**玩家的**轨迹参与围合判定 —— 错得离谱。
@@ -93,28 +102,53 @@
 
   /* ── 造物参数 ────────────────────────────────────────────────────────
      ⚠ 这几个数也是**手感**：改它们等于改这一局的节奏。 */
-  var ENEMY_MAX = 4;             // 场上造物**封顶**（难度公式的上限）
+  var ENEMY_MAX = 6;             // **槽位**上限（编码 / 颜色 / 出生角的数组长度）——
+                                 // ⚠ 它不是「场上能同时站几只」，那个是分档的 `enemyCap`。
   var ENEMY_HOME_R = 2;          // 造物起始领地：2×2 一小块
   /* 速度**分档**（毫秒 / 格）—— 下标就是「速度档」（0 最慢）。⚠ 越低越快。 */
   var ENEMY_STEP_MS = [200, 150, 105, 70];
-  /* 难度：**分档 + 封顶**。占 0.2 加一个（封顶 4）；占 0.15 升一档（封顶 3）。 */
-  var DIFF_NUM_STEP = 0.2, DIFF_NUM_CAP = 4;
+  /* 难度：**分档 + 封顶**。占 0.2 加一个（封顶随阶段）；占 0.15 升一档（封顶 3）。 */
+  var DIFF_NUM_STEP = 0.2;
   var DIFF_SPD_STEP = 0.15, DIFF_SPD_CAP = 3;
   /* 圈不到地时的「巡边」探测长度 + 一次计划失败后的停顿（别原地抖动）。 */
   var ENEMY_PROBE_LEN = 6;
   var ENEMY_COOLDOWN_MS = 500;
 
+  /* ── 阶段（Task 5）—— 累计击杀解锁更大的画布 ─────────────────────────
+     下标 = 阶段号；`atKills` 是**进入这一档所需的累计击杀数**（0 = 开局）。
+     · `cols/rows` —— 画布网格；三档都保持 3:2，扩张时既有内容**搬到新画布正中央**。
+     · `cap`       —— 这一档场上造物的**同时上限**（难度公式的封顶）。
+     · `floor`     —— 这一档的造物**保底数量**：地变大了以后「占比」会被稀释，
+                      光靠占比公式反而会掉回 1 只 ⇒ 用保底把「更多造物上场」钉住。
+     开局档（48×32 / 4 / 1）与 Task 4 的公式**逐字一致** ⇒ 未扩张前行为不变。 */
+  var STAGES = [
+    { cols: 48, rows: 32, cap: 4, floor: 1, atKills: 0 },
+    { cols: 60, rows: 40, cap: 5, floor: 3, atKills: 2 },
+    { cols: 72, rows: 48, cap: 6, floor: 4, atKills: 4 }
+  ];
+  var KILLS_PER_STAGE = 2;       // 每累计这么多击杀 → 升一档（上面 atKills 是它的显式写法）
+
+  /* ── 一局与结算（Task 5）───────────────────────────────────────────── */
+  var ROUND_MS = 180000;         // 一局 3 分钟（brief 钉死）
+  var BEST_KEY = 'griseoColorBest';   // 「最高纪录」= 历史最好**完成度(%)**，存 localStorage
+  var FLASH_MS = 380;            // 造物被吃时闪它「朋友色」的时长（ms）
+
   /* 造物登场的位置（2×2 的左上角）—— 四角**向里收一点**，别贴着画布边：
      对称的「矩形环」一圈圈往外扩，贴着边的话几圈就撞墙、领地只有巴掌大。
-     收进来之后每只可长到约 12×12 才被墙挡住（再被挡就走「巡边」，见 `planProbe`）。 */
-  var ENEMY_SPAWN = [
-    [6, 5], [COLS - 8, 5], [6, ROWS - 7], [COLS - 8, ROWS - 7]
-  ];
+     收进来之后每只可长到约 12×12 才被墙挡住（再被挡就走「巡边」，见 `planProbe`）。
+     ⚠ 这是**按当时的 COLS/ROWS 现算**的（扩张后画布更大，出生点也跟着挪）——
+       绝不再存成一份写死的数组。 */
+  function enemySpawnCorners() {
+    return [
+      [6, 5], [COLS - 8, 5], [6, ROWS - 7], [COLS - 8, ROWS - 7],
+      [COLS >> 1, 5], [COLS >> 1, ROWS - 7]
+    ];
+  }
 
   /* 「朋友色」—— 呼应 spec §3.3 她调色盘上的那几抹颜色（天青留给了玩家自己）：
-     紫罗兰 / 暖橙 / 墨绿 / 青。每个造物还有一版更浅的**笔触色**（未干的颜料）。 */
-  var ENEMY_COLORS = ['#c9a0ff', '#ff9b5e', '#4fa870', '#5eead4'];
-  var ENEMY_STROKE_COLORS = ['#e3d2ff', '#ffd0b0', '#a6dcbb', '#b0f2e6'];
+     紫罗兰 / 暖橙 / 墨绿 / 青 / 金 / 堇。每个造物还有一版更浅的**笔触色**（未干的颜料）。 */
+  var ENEMY_COLORS = ['#c9a0ff', '#ff9b5e', '#4fa870', '#5eead4', '#f2c14e', '#e585c8'];
+  var ENEMY_STROKE_COLORS = ['#e3d2ff', '#ffd0b0', '#a6dcbb', '#b0f2e6', '#f7e2a6', '#f4c2e1'];
 
   /* 配色 —— 从她这一页的五罐颜料里取（硬编码，与 sakura/mobius 同一个做法）。 */
   var COL_LINE = '#33203a';      // 底色（露在格子缝里 = 网格线）
@@ -129,8 +163,17 @@
   var MSG_FADE = '笔尖没绕回自己的颜色，这一笔散掉了。';
   var MSG_HIT = '灵感中断 —— 撞上了造物的笔触，这一笔全断了。';
   var MSG_EAT = '这一块也归你了 —— 造物被你整个吃掉了。';
+  var MSG_GROW = '画布亮起了一片新天地 —— 更大的画布、更多的造物上场了。';
   var CLOSE_GUARD_MS = 400;      // 刚打开的那一小段里拒收「收笔」的点击（照 sakura）
   var STYLE_ID = 'griseoGameStyles';
+
+  /* 结算面板与 HUD 的**站点 UI 文案**（⚠ 不是角色台词 —— 契约硬规定）。
+     `%s` / `%d` 用最朴素的字符串拼接填，不引入任何模板。 */
+  var UI_HUD = '剩余 %s · 击杀 %d · 完成度 %s';
+  var UI_RESULT_TITLE = '本局结束';
+  var UI_RESULT_BODY = '完成度 %s（上色 %d / 总格 %d）· 击杀 %d 个 · 最高纪录 %s';
+  var UI_RESULT_NEW = ' · 新纪录';
+  var UI_AGAIN = '再来一局';
 
   /* ── 动画参数（Task 3 的「晕染」/「淡去」）─────────────────────────
      全部以**屏幕/墙钟毫秒**计，用 `Date.now()`（不依赖 performance 计时精度）。 */
@@ -146,7 +189,19 @@
   var raf = null;                // 当前挂着的 rAF（渲染调度 / 关掉时取消）
   var running = false;           // 遮罩是否开着
   var openedAt = 0;              // 打开遮罩的时刻（给保护期用）
-  var best = 0;                  // 最好成绩 —— 领地计分归 Task 3/4，本任务先占位
+  var best = 0;                  // 最高纪录 —— **完成度百分比**（Task 5 结算用，存 localStorage）
+
+  /* 阶段 / 击杀 / 计时（Task 5）——
+     `kills` 是本局累计击杀；`best` 不变；下面这两个是「当前档」的即时参数。 */
+  var kills = 0;
+  var stageIdx = 0;              // 当前阶段下标（STAGES[stageIdx]）
+  var enemyCap = STAGES[0].cap;  // 当前阶段场上造物**同时上限**
+  var enemyFloor = STAGES[0].floor; // 当前阶段造物**保底数量**
+  var leftMs = ROUND_MS;         // 本局剩余时间
+  var finished = false;          // 本局是否已结算
+  /* 「朋友色一闪」——每项 { cells:[{x,y}], color, start }；绘制在**主画布**上（不进缓存），
+     所以它只影响视觉、绝不污染 grid / 缓存。 */
+  var flashGroups = [];
 
   /* 网格与渲染状态 */
   var grid = null;               // Int8Array(COLS*ROWS)，行主序 idx = y*COLS + x
@@ -260,11 +315,15 @@
     });
   }
 
-  /** 把离屏缓存贴到主画布，再画笔尖那枚金圈。 */
+  /** 把离屏缓存贴到主画布，再画：① 造物被吃时的「朋友色」一闪、② 剩余时间条、③ 笔尖金圈。
+      ⚠ 这三样都只画在**主画布**上、**绝不进缓存** —— 缓存里永远是 grid 的干净颜色，
+        所以「关掉之后画布静止」这条反向判据读到的还是缓存贴出来的画面。 */
   function blit() {
     if (!el.ctx || !cache) return;
     el.ctx.clearRect(0, 0, CW, CH);
     el.ctx.drawImage(cache, 0, 0);
+    drawFlash();
+    drawTimerBar();
     if (dragging) {
       el.ctx.save();
       el.ctx.strokeStyle = COL_BRUSH;
@@ -274,6 +333,41 @@
       el.ctx.stroke();
       el.ctx.restore();
     }
+  }
+
+  /** 「朋友色」一闪：造物刚被吃掉时，它的领地先亮成它自己的颜色、再淡掉。
+      ⚠ 只画主画布；用 Date.now() 算衰减，过期即不再画（下一个 tick 自然收手）。 */
+  function drawFlash() {
+    if (flashGroups.length === 0) return;
+    var now = Date.now();
+    var alive = [];
+    for (var g = 0; g < flashGroups.length; g++) {
+      var fg = flashGroups[g];
+      var t = (now - fg.start) / FLASH_MS;
+      if (t >= 1) continue;                         // 过期，丢掉
+      alive.push(fg);
+      var a = 1 - t;
+      el.ctx.save();
+      el.ctx.globalAlpha = a < 0 ? 0 : a;
+      el.ctx.fillStyle = fg.color;
+      for (var k = 0; k < fg.cells.length; k++) {
+        var c = fg.cells[k];
+        el.ctx.fillRect(c.x * CELL + BASE_PAD, c.y * CELL + BASE_PAD, CELL - BASE_PAD * 2, CELL - BASE_PAD * 2);
+      }
+      el.ctx.restore();
+    }
+    flashGroups = alive;
+  }
+
+  /** 剩余时间条：画布顶上一道细线，随剩余时间收短（也是「开局画面在动」的一个真实来源）。 */
+  function drawTimerBar() {
+    if (!running) return;
+    var f = leftMs / ROUND_MS;
+    if (f < 0) f = 0; else if (f > 1) f = 1;
+    el.ctx.save();
+    el.ctx.fillStyle = 'rgba(125,211,252,.85)';
+    el.ctx.fillRect(0, 0, CW * f, 3);
+    el.ctx.restore();
   }
 
   /** 只重画脏格，再贴一次。 */
@@ -438,11 +532,22 @@
    *  二、玩法 —— 拖动，把经过的格标成笔触
    * ══════════════════════════════════════════════════════════════════ */
 
-  /** 开局：清空网格，把中央 3×3 变成她的领地（画布原点），并按难度摆上造物。 */
+  /** 开局：回到**第一阶段**的画布尺寸与参数，清空网格，把中央 3×3 变成她的领地
+      （画布原点），并按难度摆上造物；同时复位击杀 / 计时 / 结算。 */
   function resetGame() {
     settleAnim();                                // 收掉可能挂着的动画（换 grid 之前必须先结算）
+    /* 上一局可能扩张过 —— 先把画布与档位**收回第一阶段**，再重铺。 */
+    stageIdx = 0;
+    kills = 0;
+    finished = false;
+    leftMs = ROUND_MS;
+    flashGroups = [];
+    applyStageCaps(STAGES[0]);
+    setCanvasSize(STAGES[0].cols, STAGES[0].rows);
+    hideResult();
+
     grid = new Int8Array(COLS * ROWS);
-    if (dirtyFlags) dirtyFlags = new Uint8Array(COLS * ROWS);
+    dirtyFlags = new Uint8Array(COLS * ROWS);
     dirtyList.length = 0;
     dragging = false;
     lastCell = null;
@@ -460,6 +565,7 @@
     /* 开局占比 ≈ 9/1536 ≈ 0.006 ⇒ 公式给 **1 个造物 / 速度档 0**。 */
     recomputeDifficulty();
     if (el.msg) el.msg.textContent = MSG_OPEN;
+    syncHud();
     fullRender();
   }
 
@@ -570,8 +676,16 @@
             ⚠ 放在「结算击杀」**之前** —— 否则刚吃掉的造物会被公式当场补一个回来，
               击杀就白杀了。补位只在这一步发生（地长大了），击杀留下的空位不补。 */
       recomputeDifficulty();
-      /* ③ 造物结算：这一笔若把某个造物的领地**整块围死**了，它就被吃掉（全染成你的色）。 */
-      var eaten = resolveCaptures();
+      /* ③ 击杀结算（+ 累计击杀够了就**阶段扩张**）：把整块围死的造物吃掉、全染成你的色。 */
+      var res = resolveKills();
+      if (res.expanded) {
+        /* 阶段扩张：画布整个换成更大的一张、既有内容搬到中央 —— 这一笔的晕染动画
+           就免了（画面本来刚大改过），直接把新画布画平、播一句扩张文案。 */
+        if (el.msg) el.msg.textContent = MSG_GROW;
+        syncHud();
+        fullRender();
+        return;
+      }
       /* ④ 新格 = 现在 `1`、而之前不是 `1` 的格（含被无条件收编的笔触 `2`→`1`、
             以及被吃掉的造物领地）。 */
       var newCells = [];
@@ -581,10 +695,11 @@
       if (newCells.length > 0) {
         var dd = computeDepths(newCells, before);
         startFillAnim(newCells, dd.depth, dd.max); // 带晕染动画
-        if (el.msg) el.msg.textContent = eaten > 0 ? MSG_EAT : MSG_FILL;
+        if (el.msg) el.msg.textContent = res.captured > 0 ? MSG_EAT : MSG_FILL;
       } else {
         fullRender();                              // 空笔（没改动）—— 直接把现状画平
       }
+      syncHud();
       return;
     }
 
@@ -755,10 +870,14 @@
     return c / (COLS * ROWS);
   }
 
-  /** 造物数量 = `1 + floor(占比 / 0.2)`，**封顶 4**。 */
+  /** 造物数量 = `max(占比公式, 本档保底)`，封顶 = **本档上限**（`enemyCap`）。
+      占比公式 `1 + floor(占比 / 0.2)` 与 Task 4 逐字一致；开局档（floor=1 / cap=4）
+      ⇒ 未扩张前结果**分毫不变**。 */
   function enemyCountForRatio(r) {
     var n = 1 + Math.floor(r / DIFF_NUM_STEP);
-    return n > DIFF_NUM_CAP ? DIFF_NUM_CAP : n;
+    if (n < enemyFloor) n = enemyFloor;
+    if (n > enemyCap) n = enemyCap;
+    return n;
   }
 
   /** 速度档 = `floor(占比 / 0.15)`，**封顶 3**。 */
@@ -818,7 +937,8 @@
 
   /** 先试这个槽位的角落，被占了就两格一步地扫一圈，找第一块空地。 */
   function findSpawn(slot) {
-    var pref = ENEMY_SPAWN[slot % ENEMY_SPAWN.length];
+    var corners = enemySpawnCorners();
+    var pref = corners[slot % corners.length];
     if (free2x2(pref[0], pref[1])) return { x: pref[0], y: pref[1] };
     for (var y = 1; y + ENEMY_HOME_R <= ROWS - 1; y += 2) {
       for (var x = 1; x + ENEMY_HOME_R <= COLS - 1; x += 2) {
@@ -971,8 +1091,10 @@
   }
 
   /* ── 击杀：玩家把造物**整块领地**围死 → 全染成玩家色、造物消失 ─────────
-     ⚠ 本任务只建「领地变成玩家的」这条机制（含从 `enemies[]` 摘除）；
-       闪朋友色 / 计数 / 画布扩张等**结算**留给 Task 5。 */
+     Task 5 在 Task 4 的机制上加了三件收口的事：
+       · **闪过它自己的「朋友色」**（captureEnemy 记一条 flashGroups，画在主画布上）；
+       · **计数**（resolveKills 里按 captured 数加 kills）；
+       · **阶段扩张**（累计击杀够 KILLS_PER_STAGE → maybeExpand 换更大的画布）。 */
 
   /**
    * 结算「被吃掉的造物」：把玩家领地当墙，从画布四条外边泛洪；
@@ -1018,14 +1140,36 @@
     return captured.length;
   }
 
-  /** 把一个造物的领地整块染成玩家色、笔触撤掉、标记死亡（由调用方摘除）。 */
+  /**
+   * 击杀结算的**唯一收口**（真实松手路径与 `_test` 诊断口都走它）：
+   * 结算被吃掉的造物 → 记击杀数 → 累计够了就**阶段扩张**。
+   * 返回 `{ captured, expanded }`。
+   * ⚠ 扩张放这里（而不是散在 endStroke 里）：两条入口行为一致，断言才证得准。
+   */
+  function resolveKills() {
+    var captured = resolveCaptures();
+    kills += captured;
+    var expanded = false;
+    if (captured > 0) expanded = maybeExpand();
+    return { captured: captured, expanded: expanded };
+  }
+
+  /** 把一个造物的领地整块染成玩家色、笔触撤掉、标记死亡（由调用方摘除），
+      并记一条「闪它的朋友色」——领地先亮成它自己的颜色、再淡回玩家色。 */
   function captureEnemy(e) {
     if (!grid || !e) return;
     e.dead = true;
     e.plan = null;
+    var flashCells = [];
     for (var i = 0; i < grid.length; i++) {
-      if (grid[i] === e.homeCode) { grid[i] = HOME; markDirty(i); }
-      else if (grid[i] === e.strokeCode) { grid[i] = EMPTY; markDirty(i); }
+      if (grid[i] === e.homeCode) {
+        var x = i % COLS, y = (i - x) / COLS;
+        flashCells.push({ x: x, y: y });
+        grid[i] = HOME; markDirty(i);
+      } else if (grid[i] === e.strokeCode) { grid[i] = EMPTY; markDirty(i); }
+    }
+    if (flashCells.length > 0) {
+      flashGroups.push({ cells: flashCells, color: e.color, start: Date.now() });
     }
   }
 
@@ -1055,8 +1199,16 @@
     lastTick = now;
     if (dt > 250) dt = 250;                       // 掉帧 / 切后台回来，别让造物瞬移一大段
     if (dt < 0) dt = 0;
+    /* ── 计时：到点即结算 ── */
+    leftMs -= dt;
+    if (leftMs <= 0) { leftMs = 0; syncHud(); finish(); return; }
     try { tickEnemies(dt); }
     catch (err) { console.warn('[ElysiaGames.griseo] 造物循环出错：', err); }
+    /* 主画布每帧贴一次：剩余时间条要连续收短、朋友色一闪也要逐帧衰减。
+       ⚠ 缓存层没变时 `drawImage` 只是复制，代价很小；关掉遮罩这个 loop 就停，
+         画布随即静止（`check_game_runs` 的反向那半段靠它）。 */
+    try { blit(); } catch (err2) { console.warn('[ElysiaGames.griseo] blit 出错：', err2); }
+    syncHud();
     tickRaf = global.requestAnimationFrame(tickLoop);
   }
 
@@ -1068,6 +1220,157 @@
 
   function stopLoop() {
     if (tickRaf) { global.cancelAnimationFrame(tickRaf); tickRaf = null; }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════
+   *  二·C、阶段扩张（Task 5）—— 累计击杀解锁更大的画布
+   *
+   *  ⚠ 扩张时**所有既有状态都要跟着搬**，一类都不能漏：
+   *     · 玩家领地（HOME）+ 玩家笔触（STROKE）—— 都在 grid 里，随整张 grid 拷贝；
+   *     · 各造物领地（homeCode）+ 造物笔触（strokeCode）—— 同上；
+   *     · 造物位置（e.x / e.y）与它领地的外接矩形（e.box）—— 逐个 +dx / +dy；
+   *     · 朋友色一闪（flashGroups 的 x / y）—— 逐个 +dx / +dy（否则会闪到错位）；
+   *     · 画布尺寸（el.canvas.width/height = CW/CH；离屏 cache 同步）；
+   *     · 脏格表（dirtyFlags 重分配、dirtyList 清空）。
+   *  内容整体**搬到新画布正中央**（dx = (新-旧)>>1）—— 玩家那块「画布原点」始终
+   *  在正中间，观感是「画布向四周长出去」。
+   * ══════════════════════════════════════════════════════════════════ */
+
+  /** 换画布的**物理尺寸**（grid 尺寸 / 脏表 / 主画布 / 离屏缓存），不搬内容。 */
+  function setCanvasSize(nc, nr) {
+    COLS = nc; ROWS = nr;
+    CW = COLS * CELL; CH = ROWS * CELL;
+    if (el.canvas) { el.canvas.width = CW; el.canvas.height = CH; }
+    if (cache) { cache.width = CW; cache.height = CH; }
+    dirtyFlags = new Uint8Array(COLS * ROWS);
+    dirtyList.length = 0;
+  }
+
+  /** 把某一档的「造物同时上限 / 保底数量」套上去。 */
+  function applyStageCaps(st) {
+    enemyCap = st.cap;
+    enemyFloor = st.floor;
+  }
+
+  /** 累计击杀数对应的阶段下标（封顶最后一档）。 */
+  function stageIndexFor(k) {
+    var s = Math.floor(k / KILLS_PER_STAGE);
+    return s > STAGES.length - 1 ? STAGES.length - 1 : s;
+  }
+
+  /** 击杀够了就升一档：搬状态换更大的画布 + 更多造物。返回是否真的扩张了。 */
+  function maybeExpand() {
+    var si = stageIndexFor(kills);
+    if (si <= stageIdx) return false;
+    stageIdx = si;
+    growCanvas(STAGES[si].cols, STAGES[si].rows);
+    applyStageCaps(STAGES[si]);
+    recomputeDifficulty();                        // 地变大 ⇒ 按本档保底补更多造物上场
+    return true;
+  }
+
+  /** 换更大的画布，并把**既有内容整体搬到正中央**（状态清单见本节小标题）。 */
+  function growCanvas(nc, nr) {
+    if (!grid || (nc === COLS && nr === ROWS)) return;
+    settleAnim();                                 // 先收掉挂着的动画（格索引马上作废）
+    var oldCols = COLS, oldRows = ROWS, oldGrid = grid;
+    var dx = (nc - oldCols) >> 1, dy = (nr - oldRows) >> 1;
+    var ng = new Int8Array(nc * nr);
+    for (var y = 0; y < oldRows; y++) {
+      for (var x = 0; x < oldCols; x++) {
+        var v = oldGrid[y * oldCols + x];
+        if (v !== EMPTY) ng[(y + dy) * nc + (x + dx)] = v;
+      }
+    }
+    setCanvasSize(nc, nr);
+    grid = ng;
+    /* 造物：位置 + 领地外接矩形一起搬；计划作废（索引基于旧坐标）。 */
+    for (var k = 0; k < enemies.length; k++) {
+      var e = enemies[k];
+      e.x += dx; e.y += dy;
+      e.box = { x0: e.box.x0 + dx, y0: e.box.y0 + dy, x1: e.box.x1 + dx, y1: e.box.y1 + dy };
+      e.plan = null; e.planIdx = 0; e.probe = false; e.planRect = null; e.cooldown = ENEMY_COOLDOWN_MS;
+    }
+    /* 朋友色一闪的格坐标一起搬（否则会闪到错位）。 */
+    for (var g = 0; g < flashGroups.length; g++) {
+      var cells = flashGroups[g].cells;
+      for (var c = 0; c < cells.length; c++) { cells[c].x += dx; cells[c].y += dy; }
+    }
+    lastCell = null;
+  }
+
+  /* ── 完成度 / 计时 / 结算（Task 5）────────────────────────────────── */
+
+  /** 数一遍当前画布：玩家上色了几格 / 总格 / 完成度%。 */
+  function completionStat() {
+    var total = COLS * ROWS, colored = 0;
+    if (grid) for (var i = 0; i < grid.length; i++) if (grid[i] === HOME) colored++;
+    return { total: total, colored: colored, pct: total > 0 ? (colored / total) * 100 : 0 };
+  }
+
+  /** 剩余毫秒 → `m:ss`。 */
+  function fmtClock(ms) {
+    if (ms < 0) ms = 0;
+    var s = Math.ceil(ms / 1000);
+    var m = Math.floor(s / 60); s = s - m * 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  /** 刷新 HUD 一行（时间 / 击杀 / 完成度）。只在文字变了时才写 DOM。 */
+  function syncHud() {
+    if (!el.hud) return;
+    var d = completionStat();
+    var txt = UI_HUD.replace('%s', fmtClock(leftMs))
+                    .replace('%d', String(kills))
+                    .replace('%s', d.pct.toFixed(1) + '%');
+    if (el.hud.textContent !== txt) el.hud.textContent = txt;
+  }
+
+  /** 到点（或异常结束）—— 结算：完成度 / 击杀 / 最高纪录（存 localStorage）。 */
+  function finish() {
+    if (finished) return;
+    finished = true;
+    settleAnim();
+    stopLoop();
+    running = false;                              // 到此画面静止；遮罩仍开着，显示结算面板
+    dragging = false;
+    lastCell = null;
+    var d = completionStat();
+    var isNew = d.pct > best;
+    if (isNew) {
+      best = d.pct;
+      /* ⚠ 隐私模式 / 配额满时 setItem 会抛 —— 包住，别让结算整段崩掉。 */
+      try { global.localStorage.setItem(BEST_KEY, String(best)); } catch (err) { /* 隐私模式 */ }
+    }
+    showResult(d.pct, d.colored, d.total, isNew);
+    fullRender();
+  }
+
+  /** 显示结算面板（`.gr-result` 覆盖在面板上；文字全是**站点 UI 文案**）。 */
+  function showResult(pct, colored, total, isNew) {
+    if (!el.result) return;
+    var body = UI_RESULT_BODY
+      .replace('%s', pct.toFixed(1) + '%')
+      .replace('%d', String(colored))
+      .replace('%d', String(total))
+      .replace('%d', String(kills))
+      .replace('%s', best.toFixed(1) + '%');
+    if (isNew) body += UI_RESULT_NEW;
+    if (el.resultBody) el.resultBody.textContent = body;
+    el.result.classList.add('on');
+  }
+
+  function hideResult() {
+    if (el.result) el.result.classList.remove('on');
+  }
+
+  /** 「再来一局」—— 回到开局档、重新计时。 */
+  function startRound() {
+    if (!el.overlay) return;
+    resetGame();
+    running = true;
+    lastTick = Date.now();
+    startLoop();
   }
 
   /* ══════════════════════════════════════════════════════════════════
@@ -1104,12 +1407,17 @@
       '}',
       '#griseoGameOverlay.on{display:flex}',
       '.gr-panel{',
+      'position:relative;',        // 结算面板（.gr-result）要能绝对定位覆盖整块面板
       'padding:1rem;border-radius:18px;text-align:center;max-width:100%;',
       'background:linear-gradient(135deg,rgba(21,14,24,.96),rgba(58,36,64,.94));',
       'border:1px solid var(--glass-border,rgba(255,217,122,.14));',
       'box-shadow:0 12px 40px rgba(0,0,0,.5);',
       '}',
       '.gr-title{margin:0 0 .5rem;font-size:1.05rem;letter-spacing:.3em;color:var(--sky,#7dd3fc)}',
+      /* HUD 一行：剩余时间 / 击杀 / 完成度。`white-space:nowrap` 保证**永远只有一行**
+         （它一变行，居中面板就会把画布往下顶、手指下的画面会跟着挪）。 */
+      '.gr-hud{margin:0 0 .5rem;font-size:.72rem;line-height:1.6;letter-spacing:.06em;',
+      'color:var(--text-dim,#b8a8c8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
       /* ⚠ 只给上限、**绝不给 width/height**：一旦显式定宽，max-height 生效时
          高度被压而宽度不变，画面就被**拉扁**了（照 sakura `.sk-canvas` 那条注释）。 */
       '.gr-canvas{display:block;margin:0 auto .6rem;max-width:100%;',
@@ -1130,6 +1438,20 @@
       'background:rgba(255,217,122,.1);border:1px solid var(--glass-border,rgba(255,217,122,.14));',
       'transition:background .25s ease}',
       '.gr-close:hover{background:rgba(255,217,122,.2)}',
+      /* 结算面板：到点时**覆盖在整块面板上**（绝对定位，不改变基础面板的布局/高度，
+         所以「手机上放得下」那条断言不受影响）。文字全是站点 UI 文案，不是台词。 */
+      '.gr-result{position:absolute;top:0;right:0;bottom:0;left:0;display:none;',
+      'flex-direction:column;align-items:center;justify-content:center;',
+      'gap:1rem;padding:1.4rem;border-radius:18px;box-sizing:border-box;text-align:center;',
+      'background:linear-gradient(135deg,rgba(21,14,24,.98),rgba(58,36,64,.97))}',
+      '.gr-result.on{display:flex}',
+      '.gr-result-title{margin:0;font-size:1.05rem;letter-spacing:.3em;color:var(--sky,#7dd3fc)}',
+      '.gr-result-body{margin:0;font-size:.8rem;line-height:1.9;color:var(--text,#f2e9f8)}',
+      '.gr-again{min-height:44px;padding:.6rem 1.6rem;border-radius:999px;cursor:pointer;',
+      'font-size:.82rem;letter-spacing:.14em;color:var(--text,#f2e9f8);',
+      'background:rgba(125,211,252,.12);border:1px solid var(--glass-border,rgba(255,217,122,.14));',
+      'transition:background .25s ease}',
+      '.gr-again:hover{background:rgba(125,211,252,.22)}',
     ].join('');
     var s = document.createElement('style');
     s.id = STYLE_ID;
@@ -1157,6 +1479,11 @@
     title.textContent = API.title;
     panel.appendChild(title);
 
+    /* HUD：剩余时间 / 击杀 / 完成度（一行，站点 UI 文案）。 */
+    var hud = document.createElement('p');
+    hud.className = 'gr-hud';
+    panel.appendChild(hud);
+
     var cv = document.createElement('canvas');
     cv.width = CW;                 // 只设**固有**尺寸；显示尺寸交给 CSS 等比缩
     cv.height = CH;
@@ -1166,6 +1493,23 @@
     var msg = document.createElement('p');
     msg.className = 'gr-msg';
     panel.appendChild(msg);
+
+    /* 结算面板：绝对定位覆盖在整块面板上，平时 `display:none`（不影响布局）。 */
+    var result = document.createElement('div');
+    result.className = 'gr-result';
+    var rTitle = document.createElement('p');
+    rTitle.className = 'gr-result-title';
+    rTitle.textContent = UI_RESULT_TITLE;
+    var rBody = document.createElement('p');
+    rBody.className = 'gr-result-body';
+    var again = document.createElement('button');
+    again.type = 'button';
+    again.className = 'gr-again';
+    again.textContent = UI_AGAIN;
+    result.appendChild(rTitle);
+    result.appendChild(rBody);
+    result.appendChild(again);
+    panel.appendChild(result);
 
     var close = document.createElement('button');
     close.type = 'button';
@@ -1182,6 +1526,10 @@
     el.canvas = cv;
     el.ctx = cv.getContext('2d');
     el.msg = msg;
+    el.hud = hud;
+    el.result = result;
+    el.resultBody = rBody;
+    el.again = again;
     el.close = close;
 
     /* 离屏缓存 —— 格子画在这里，只在变更时重画那几格。 */
@@ -1223,6 +1571,12 @@
     if (bound) return;
     bound = true;
 
+    /* 最高纪录：读 localStorage。⚠ 隐私模式 / 损坏数据都会抛 —— 包住，退 0。 */
+    try {
+      var v = parseFloat(global.localStorage.getItem(BEST_KEY));
+      best = (v > 0) ? v : 0;
+    } catch (err) { best = 0; }
+
     /* ⚠ 刚打开的那一下不算：「收笔」是屏幕角落的按钮，可浏览器补发的延迟 click
        仍可能落在它上面 —— 400ms 保护期内拒收（与 sakura 同一条理由）。
        Escape 与内部调用不受这条限制：键盘不会「幽灵点击」。 */
@@ -1230,6 +1584,8 @@
       if (Date.now() - openedAt < CLOSE_GUARD_MS) return;
       close();
     });
+
+    if (el.again) el.again.addEventListener('click', function () { startRound(); });
 
     document.addEventListener('keydown', function (e) {
       if (!el.overlay || !el.overlay.classList.contains('on')) return;
@@ -1296,10 +1652,16 @@
       var e = enemies[k];
       list.push({
         slot: e.slot, x: e.x, y: e.y, tier: e.tier, stepMs: e.stepMs,
+        homeCode: e.homeCode, strokeCode: e.strokeCode, color: e.color,
         box: { x0: e.box.x0, y0: e.box.y0, x1: e.box.x1, y1: e.box.y1 },
       });
     }
-    return { ratio: playerRatio(), enemyCount: enemies.length, speedTier: speedTier, enemies: list };
+    return {
+      ratio: playerRatio(), enemyCount: enemies.length, speedTier: speedTier,
+      kills: kills, stage: stageIdx, cols: COLS, rows: ROWS,
+      cap: enemyCap, floor: enemyFloor, leftMs: leftMs, best: best, finished: finished,
+      enemies: list,
+    };
   }
 
   /** 造物 k 的领地格数（验「会自己圈地」/「被吃掉」用）。 */
@@ -1390,6 +1752,23 @@
     return testState();
   }
 
+  /** 直接调 `finish()`（结算断言用）—— 返回结算面板是否显示 + 它的文字。 */
+  function testFinish() {
+    finish();
+    return {
+      state: testState(),
+      shown: el.result ? el.result.classList.contains('on') : null,
+      text: el.resultBody ? el.resultBody.textContent : null,
+    };
+  }
+
+  /** 直接把剩余时间设成 ms（结算 / 计时断言用，避免真等 3 分钟）。 */
+  function testSetLeft(ms) {
+    leftMs = (ms < 0) ? 0 : ms;
+    syncHud();
+    return testState();
+  }
+
   var API = {
     title: '上色',
     hint: '把这张画，涂成你的颜色。',
@@ -1403,10 +1782,12 @@
       enemyStepTo: testEnemyStepTo,
       enemyTerritory: testEnemyTerritory,
       dump: testDumpGrid,
+      finish: testFinish,
+      setLeft: testSetLeft,
       resolveCaptures: function () {
-        var n = resolveCaptures();
+        var r = resolveKills();
         fullRender();
-        return { captured: n, state: testState() };
+        return { captured: r.captured, expanded: r.expanded, state: testState() };
       },
     },
   };

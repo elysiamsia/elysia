@@ -2314,6 +2314,15 @@ GAMES = {
                            'close': '.sk-close', 'play': None, 'guard': True},
     'kosma/index.html':   {'overlay': 'kosmaGameOverlay', 'canvas': '.km-canvas',
                            'close': '.km-close', 'play': None, 'guard': True},
+    # ⚠ 格蕾修「上色」是**拖动型**、且**没有独立操作区**（玩家就在画布上拖）——
+    #   与 sakura/kosma 的「在画布上点/按」不同类。`play: None` 只管「有没有独立操作区」，
+    #   它**分不出**画布是「点触面」还是「拖动面」；所以这里显式加 `swipe: True`，
+    #   把画布按**滑动面**（`CLOSE_SWIPE_MIN=50`）量，而不是点触面（`CLOSE_FAR_MIN=100`）。
+    #   理由：本作手指落点是**有意的拖**、起点必在画布上，风险比连点低（照 §Review Focus 3）。
+    #   ⚠ 不写成 play 的某个值来「凑」：play 一旦为真，`check_game_fits_mobile` 会把
+    #     画布再当成一个「操作区」按 100 量（见下面那条 `checks`），反而更严。
+    'griseo/index.html':  {'overlay': 'griseoGameOverlay', 'canvas': '.gr-canvas',
+                           'close': '.gr-close', 'play': None, 'guard': True, 'swipe': True},
 }
 GAME_PAGES = tuple(sorted(GAMES.keys()))
 
@@ -2360,6 +2369,21 @@ def _g_rect(b, sel):
         var r = n.getBoundingClientRect();
         return JSON.stringify({ l: r.left, t: r.top, r: r.right, b: r.bottom,
                                 w: r.width, h: r.height, vw: innerWidth, vh: innerHeight });
+    })()""" % sel)
+
+
+def _g_canvas_aspect(b, sel):
+    """画布的**内容盒**尺寸 + **固有**像素尺寸 —— 判「有没有被拉扁」用。
+
+    ⚠ 用 `clientWidth/clientHeight`（内容盒，**不含 border**）而不是 bounding rect：
+      这几页的画布都带 1px border，bounding rect 会把 border 算进比例、偏掉约 0.3%，
+      逼出一个「容差得放到 2px 才过」的假宽松。内容盒是干净的（四页都适用）。
+    """
+    return b.jso("""(() => {
+        var n = document.querySelector('%s');
+        if (!n) return null;
+        return JSON.stringify({ w: n.clientWidth, h: n.clientHeight,
+                                iw: n.width, ih: n.height });
     })()""" % sel)
 
 
@@ -2510,9 +2534,18 @@ def check_game_fits_mobile(b, page, expected):
                                  u'会被切掉，而 fixed 遮罩没有滚动条，切掉的够不着'
                                  % (w, label, round(r['l']), round(r['r']), round(r['t']),
                                     round(r['b']), r['vw'], r['vh']))
-            # ⚠ 画布必须是方的：显式定宽 + `max-height` 同时生效会把画面**拉扁**
-            if abs(cv['w'] - cv['h']) > 1:
-                fails.append(u'[%d] 画布被拉扁了：%.1f × %.1f（该等比缩）' % (w, cv['w'], cv['h']))
+            # ⚠ 画布**不许被拉扁**：渲染出来的**长宽比**必须 == 它的**固有长宽比**。
+            #   原来是硬断言「画布是方的」（`abs(w-h)<=1`）—— 那只对正方形画布成立，
+            #   而格蕾修是 48×32（3:2）⇒ **泛化成比例判据**。
+            #   ⚠ **只许泛化、不许削弱**：want==1（方画布）时本式退化成 `abs(h-w)<=1`，
+            #     与原来**逐字等价** —— mobius/sakura/kosma 三页的判据分毫未变。
+            asp = _g_canvas_aspect(b, cfg['canvas'])
+            if asp and asp['w'] > 0 and asp['h'] > 0 and asp['iw'] > 0 and asp['ih'] > 0:
+                exp_h = asp['w'] * asp['ih'] / asp['iw']
+                if abs(asp['h'] - exp_h) > 1.0:
+                    fails.append(u'[%d] 画布被拉扁了：内容盒 %d × %d，固有 %d × %d'
+                                 u'（该等比缩成 %.1f 高）'
+                                 % (w, asp['w'], asp['h'], asp['iw'], asp['ih'], exp_h))
             _g_open(b, cfg) or fails.append(u'[%d] 缩放之后遮罩被关掉了' % w)
 
         return (fails, u'手机上放得下 + 摸得到（320 开局 / 四个视口）' if not fails
@@ -2565,7 +2598,16 @@ def check_game_close_far_from_play(b, page, expected):
         #     ⚠ 为什么必须分开：mobius 那页的画布是**滑动面**，而它的内容占了竖屏的绝大部分
         #       （524 / 568）—— **矮屏上「离画布 100px」几何上做不到**（实测余量只有 44px）。
         #       而它真正被连点的是 `#dpad`，那个量到 502px ✓。
-        checks = [(u'画布', cv, CLOSE_SWIPE_MIN if cfg['play'] else CLOSE_FAR_MIN)]
+        # ⚠ 画布这一面按**什么**量：拖动面（swipe）→ 50 / 点触面（tap）→ 100。
+        #   口径：`cfg` 里**显式**给了 `swipe` 就用它（新页应当显式给）；
+        #   否则沿用旧代理 —— 有独立操作区（play）的页，画布不是玩家的落点 ⇒ 滑动面(50)；
+        #   没有独立操作区的页，画布**就是**玩家的落点 ⇒ 按点触面(100)。
+        #   （mobius/sakura/kosma 三页都没有 `swipe` ⇒ 走的仍是旧代理，**行为一字未变**。）
+        if 'swipe' in cfg:
+            cv_need = CLOSE_SWIPE_MIN if cfg['swipe'] else CLOSE_FAR_MIN
+        else:
+            cv_need = CLOSE_SWIPE_MIN if cfg['play'] else CLOSE_FAR_MIN
+        checks = [(u'画布', cv, cv_need)]
         if cfg['play'] and pl and pl['h'] > 1:
             # ⚠ 只在操作区**真的显示着**时算进来（mobius 的 dpad 只在粗指针 / 触摸
             #   环境下出现，靠触摸模拟才会显示）。
@@ -3734,6 +3776,281 @@ def check_griseo_palette_and_paintings(b, page, expected):
 
     return (fails, u'五抹色 5 句台词各异、出处合法、完成提示只弹一次、两幅画递进/空白都对'
             if not fails else u'调色盘或两幅画的行为不对')
+
+
+# ══ 格蕾修：小游戏「上色」的**玩法专属**断言（Task 5）═══════════════════
+#   照 `check_sakura_judgment` / `check_kosma_judgment` 的模式。四条玩法 +
+#   一条结算，**每条都配变异**（见 task-5-report.md）。
+#
+#   ⚠ 玩法状态是 IIFE 私有的，只能靠模块自带的「诊断口」`ElysiaGames.griseo._test`
+#     （R36 裁决保留）来驱动 / 读取；而**判据**（数格 / 找相邻格）一律在 **Python 侧**
+#     从 `_test.dump()` 的字符图里算 —— 免得「自己证自己」。
+#
+#   ⚠ `GR_BRUSH_UP` 与 griseo.js 里那个常量**同值同义**（笔尖在手指上方 44 个**屏幕** px）：
+#     把「想落笔的格」换算成「手指该按的屏幕点」时要把它加回去，否则笔尖会落到目标格**上方**。
+GR_BRUSH_UP = 44
+GR_CELL = 12          # 与 griseo.js 的 CELL 同值
+
+
+def _gr_state(b):
+    """读诊断口 state（kills / stage / cols / rows / enemyCount / speedTier…）。"""
+    return b.jso("""(() => {
+        var g = window.ElysiaGames && window.ElysiaGames.griseo;
+        return (g && g._test) ? JSON.stringify(g._test.state()) : null;
+    })()""")
+
+
+def _gr_test(b, call):
+    """调 `_test` 上的一个方法并把它的 JSON 结果取回来（call 里用 `g._test`）。"""
+    return b.jso("""(() => {
+        var g = window.ElysiaGames && window.ElysiaGames.griseo;
+        if (!g || !g._test) return null;
+        return JSON.stringify(%s);
+    })()""" % call)
+
+
+def _gr_dump(b):
+    """把 grid 打成字符图（`. H S E s`）—— 计数 / 找格都在 Python 侧算。"""
+    return b.js("""(() => {
+        var g = window.ElysiaGames && window.ElysiaGames.griseo;
+        return (g && g._test) ? g._test.dump() : null;
+    })()""")
+
+
+def _gr_count(dump, ch):
+    return dump.count(ch) if dump else 0
+
+
+def _gr_canvas_geom(b):
+    """遮罩里画布的屏幕矩形 + 固有像素尺寸（换算「该按哪个屏幕点」用）。"""
+    return b.jso("""(() => {
+        var c = document.querySelector('#griseoGameOverlay .gr-canvas');
+        if (!c) return null;
+        var r = c.getBoundingClientRect();
+        return JSON.stringify({ l: r.left, t: r.top, w: r.width, h: r.height,
+                                iw: c.width, ih: c.height, vw: innerWidth, vh: innerHeight });
+    })()""")
+
+
+def _gr_open_overlay(b):
+    """重载 → 点「开始」→ 确认遮罩开着且诊断口可读。返回前提是否成立。"""
+    _reset(b)
+    if not _click_sel(b, '.bottom-game .game-card-start'):
+        return False
+    time.sleep(0.45)
+    return _gr_state(b) is not None and _g_open(b, GAMES[GRISEO])
+
+
+def _gr_cell_screen(g, cx, cy):
+    """格 (cx,cy) 的中心 → 手指该按的**屏幕点**（把 BRUSH_UP 加回去）。"""
+    px = (cx + 0.5) * GR_CELL
+    py = (cy + 0.5) * GR_CELL
+    x = g['l'] + px * g['w'] / g['iw']
+    y = g['t'] + GR_BRUSH_UP + py * g['h'] / g['ih']
+    return x, y
+
+
+def _gr_in_view(g, x, y):
+    """视口外的点派发事件会**静默无操作**（HANDOVER §6.4）—— 先挡一道。"""
+    return (x > 0) and (x < g['vw']) and (y > 0) and (y < g['vh'])
+
+
+def _gr_empty_next_to_stroke(dump):
+    """字符图里找一个「本身是 `.` 且四邻有 `S`」的格 → (x,y)；找不到返回 None。"""
+    if not dump:
+        return None
+    rows = dump.split('\n')
+    h = len(rows)
+    w = len(rows[0]) if h else 0
+    for y in range(h):
+        for x in range(w):
+            if rows[y][x] != '.':
+                continue
+            for (dx, dy) in ((0, -1), (0, 1), (-1, 0), (1, 0)):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < w and 0 <= ny < h and rows[ny][nx] == 'S':
+                    return (x, y)
+    return None
+
+
+@check
+@griseo_only
+def check_griseo_drag_colors(b, page, expected):
+    """① 真在画布上拖一圈回来 → **领地格数（H）显著变多**（不是「画了个圈没回填」）。
+
+    ⚠ 判据是「`H` 真的变多」而非「有笔触」—— 后者对「只画不填」的坏实现也成立。
+    路径严格走在**家的上方**，不覆盖中央那块起始领地，笔尖回到家的四邻。
+    """
+    if not _gr_open_overlay(b):
+        return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
+    fails = []
+    g = _gr_canvas_geom(b)
+    if not g:
+        return ([u'取不到遮罩里画布的几何 —— 前提不成立'], u'—')
+    h0 = _gr_count(_gr_dump(b), 'H')
+    loop = [(24, 14), (30, 14), (30, 20), (18, 20), (18, 14), (24, 14)]
+    sx, sy = _gr_cell_screen(g, loop[0][0], loop[0][1])
+    if not _gr_in_view(g, sx, sy):
+        return ([u'起点 (%.0f,%.0f) 不在视口内（vw=%d vh=%d）—— 派发会静默点空'
+                 % (sx, sy, g['vw'], g['vh'])], u'—')
+    b.press(sx, sy)
+    time.sleep(0.05)
+    for (cx, cy) in loop[1:]:
+        mx, my = _gr_cell_screen(g, cx, cy)
+        b.move(mx, my)
+        time.sleep(0.03)
+    ex, ey = _gr_cell_screen(g, loop[-1][0], loop[-1][1])
+    b.release(ex, ey)
+    time.sleep(1.2)                          # 等回填 + 晕染动画落定
+
+    h1 = _gr_count(_gr_dump(b), 'H')
+    if h1 - h0 < 30:
+        fails.append(u'拖了一圈闭合回路，领地只从 %d 变到 %d（该显著变多）—— '
+                     u'「拖动能上色」没生效' % (h0, h1))
+    return (fails, u'拖一圈真的上了色（H %d → %d）' % (h0, h1)
+            if not fails else u'拖动没上色')
+
+
+@check
+@griseo_only
+def check_griseo_collision_breaks_stroke(b, page, expected):
+    """② 造物笔触挨上玩家笔触 → **玩家笔触整条断**（可证伪：相交的那一步）。
+
+    判据：拖动中笔触格 `S` > 0；让造物在**紧挨某个 S 的空格**落一格 → `S` 归零。
+    ⚠ 拖在远离造物（左上角）的空地上，避免造物 AI 自己先撞上来污染读数。
+    """
+    if not _gr_open_overlay(b):
+        return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
+    fails = []
+    g = _gr_canvas_geom(b)
+    if not g:
+        return ([u'取不到画布几何'], u'—')
+    line = [(30, 26), (36, 26)]
+    sx, sy = _gr_cell_screen(g, line[0][0], line[0][1])
+    if not _gr_in_view(g, sx, sy):
+        return ([u'起点不在视口内 —— 会静默点空'], u'—')
+    b.press(sx, sy)                          # 按住不放：要的就是「拖到一半被撞」
+    time.sleep(0.05)
+    for (cx, cy) in line[1:]:
+        mx, my = _gr_cell_screen(g, cx, cy)
+        b.move(mx, my)
+        time.sleep(0.03)
+    time.sleep(0.15)
+    dump0 = _gr_dump(b)
+    s0 = _gr_count(dump0, 'S')
+    if s0 <= 0:
+        b.release(sx, sy)
+        return ([u'拖了却没画出玩家笔触（S=0）—— 前提不成立'], u'—')
+    target = _gr_empty_next_to_stroke(dump0)
+    if target is None:
+        b.release(sx, sy)
+        return ([u'找不到与玩家笔触相邻的空格 —— 造不出碰撞局面'], u'—')
+    _gr_test(b, "g._test.enemyStepTo(0, %d, %d)" % (target[0], target[1]))
+    time.sleep(0.2)
+    s1 = _gr_count(_gr_dump(b), 'S')
+    b.release(sx, sy)
+    if s1 != 0:
+        fails.append(u'造物笔触挨上玩家笔触，玩家笔触却还剩 %d 格（S %d → %d）—— '
+                     u'「被撞 → 笔触断」没生效' % (s1, s0, s1))
+    return (fails, u'被撞后玩家笔触全断（S %d → 0）' % s0
+            if not fails else u'碰撞没断笔触')
+
+
+@check
+@griseo_only
+def check_griseo_difficulty_scales(b, page, expected):
+    """③ 玩家领地变大 → 造物**数量 / 速度档真的变了**（分档 + 封顶）。"""
+    _reset(b)
+    st0 = _gr_state(b) or {}
+    if 'enemyCount' not in st0:
+        return ([u'读不到 _test.state —— 模块没挂上？'], u'—')
+    fails = []
+    _gr_test(b, "g._test.setPlayerRatio(0.5)")
+    time.sleep(0.1)
+    st1 = _gr_state(b) or {}
+    if not (st1.get('enemyCount', 0) > st0.get('enemyCount', 0)):
+        fails.append(u'占比 0.006 → 0.5，造物数量却没变（%s → %s）—— 难度没随领地走'
+                     % (st0.get('enemyCount'), st1.get('enemyCount')))
+    if not (st1.get('speedTier', 0) > st0.get('speedTier', 0)):
+        fails.append(u'占比 0.006 → 0.5，速度档却没升（%s → %s）'
+                     % (st0.get('speedTier'), st1.get('speedTier')))
+    return (fails, u'领地变大 ⇒ 造物 %s→%s、速度档 %s→%s'
+            % (st0.get('enemyCount'), st1.get('enemyCount'),
+               st0.get('speedTier'), st1.get('speedTier'))
+            if not fails else u'难度没随领地变')
+
+
+@check
+@griseo_only
+def check_griseo_kill_expands_canvas(b, page, expected):
+    """④ 累计杀掉 2 个 → **画布真的扩张**（cols/rows 变大），内容跟着搬。"""
+    _reset(b)
+    st0 = _gr_state(b) or {}
+    if 'cols' not in st0:
+        return ([u'读不到 _test.state'], u'—')
+    fails = []
+    _gr_test(b, "g._test.setPlayerRatio(0.5)")       # 先弄出 3 只造物
+    time.sleep(0.1)
+    cols0, rows0 = st0.get('cols'), st0.get('rows')
+    _gr_test(b, "g._test.encloseEnemy(0)")           # 围死第 1 只
+    r1 = _gr_test(b, "g._test.resolveCaptures()") or {}
+    _gr_test(b, "g._test.encloseEnemy(0)")           # 围死第 2 只
+    r2 = _gr_test(b, "g._test.resolveCaptures()") or {}
+    s2 = r2.get('state') or {}
+    if r1.get('captured', 0) < 1:
+        fails.append(u'套墙后第一只没被吃掉（captured=%s）—— 击杀机制没生效'
+                     % r1.get('captured'))
+    if s2.get('kills', 0) < 2:
+        fails.append(u'连杀两只后 kills=%s（该 ≥2）' % s2.get('kills'))
+    if not (s2.get('cols', 0) > cols0 and s2.get('rows', 0) > rows0):
+        fails.append(u'连杀 2 只后画布没扩张（%s×%s → %s×%s）'
+                     % (cols0, rows0, s2.get('cols'), s2.get('rows')))
+    return (fails, u'杀 2 只 ⇒ 画布 %s×%s → %s×%s、stage=%s'
+            % (cols0, rows0, s2.get('cols'), s2.get('rows'), s2.get('stage'))
+            if not fails else u'击杀没触发扩张')
+
+
+@check
+@griseo_only
+def check_griseo_settlement(b, page, expected):
+    """⑤ 到点 → 结算面板显示（完成度 / 击杀 / 最高纪录），且最高纪录写进 localStorage。"""
+    if not _gr_open_overlay(b):
+        return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
+    fails = []
+    hidden0 = b.js("(() => { var r = document.querySelector('#griseoGameOverlay .gr-result');"
+                   " return r ? r.classList.contains('on') : null; })()")
+    if hidden0 is not False:
+        fails.append(u'还没到点，结算面板就显示着了（on=%r）' % hidden0)
+    # 把剩余时间压到很近，让**真实主循环**把它跑到 0 —— 走的就是「到点」那条路。
+    _gr_test(b, "g._test.setLeft(200)")
+    shown, txt = False, u''
+    for _ in range(16):
+        time.sleep(0.25)
+        d = b.jso("""(() => { var r = document.querySelector('#griseoGameOverlay .gr-result');
+            var t = document.querySelector('#griseoGameOverlay .gr-result-body');
+            return JSON.stringify({ on: r ? r.classList.contains('on') : null,
+                                    text: t ? t.textContent : null }); })()""") or {}
+        if d.get('on'):
+            shown = True
+            txt = d.get('text') or u''
+            for key in (u'完成度', u'击杀', u'最高纪录'):
+                if key not in txt:
+                    fails.append(u'结算面板文字里没有「%s」：%r' % (key, txt))
+            break
+    if not shown:
+        fails.append(u'把剩余时间压到 0.2 秒后，等了 4 秒结算面板也没出现 —— '
+                     u'「到点结算」没生效')
+    best = None
+    try:
+        best = b.js("(() => { try { return window.localStorage.getItem('griseoColorBest'); }"
+                    " catch (e) { return 'ERR'; } })()")
+    except Exception:
+        best = None
+    if best in (None, 'ERR'):
+        fails.append(u'结算后读不到最高纪录（localStorage 的 griseoColorBest）—— '
+                     u'读或写有问题')
+    return (fails, u'到点弹结算（完成度 / 击杀 / 最高纪录）+ 最高纪录落盘'
+            if not fails else u'结算不对')
 
 
 # ── 真·触摸（不是鼠标）────────────────────────────────────────────────
