@@ -2,7 +2,7 @@
  * assets/games/griseo.js — 格蕾修的小游戏：「上色」
  *
  * 呀，她这一页最后一块拼图♥ —— 也是「每位英桀一个**真正独立**的小游戏」
- * 这个契约的第三个实现。前两位是梅比乌斯的贪吃蛇、樱的「一瞬」。
+ * 这个契约的第四个实现。前三位是梅比乌斯的贪吃蛇、樱的「一瞬」、科斯魔的「守灯」。
  *
  * ── 为什么是这个玩法（spec §6.1 / §3.3）──────────────────────────────
  *   她的刻印是「繁星」，可她的母题是**画画** —— 她一辈子都在把世界涂成自己的颜色。
@@ -39,7 +39,11 @@
  *     · 累计杀掉 KILLS_PER_STAGE 个 ⇒ **画布解锁更大区域**（STAGES 换一档：
  *       COLS/ROWS 变大、造物上限提高、造物更多），既有状态**整体搬到新画布中央**；
  *     · 一局 ROUND_MS=3 分钟，到点弹**结算面板**（完成度 / 击杀 / 最高纪录），
- *       最高纪录存 localStorage（读写都包 try/catch —— 隐私模式会抛）。
+ *       最高纪录存 localStorage（读写都包 try/catch —— 隐私模式会抛）；
+ *     · 键盘备选（spec §5.2）：方向键挪笔尖、空格/回车松手；
+ *     · **R38 复审 C1**：`fillEnclosed` 也认「一个封死的环 + 一根死尾巴」的分量
+ *       （`ends.length===1`）—— 玩家「出门绕一圈、顺原路回来」画的正是它；
+ *       并按「有没有围出内部空白」选文案，**没围住就不许说「围住啦」**。
  *
  * ── ⚠ 拖动时**绝不能让页面跟着滚**（本任务最容易踩的坑）──────────────
  *   三层一起上，缺一不可：
@@ -160,6 +164,7 @@
   var MSG_OPEN = '按住画布拖动 —— 笔尖跟着你的手，画过的地方就是你的颜色。';
   var MSG_STROKE = '……笔尖正跟着你的手。';
   var MSG_FILL = '围住啦 —— 这一片都染成了你的颜色。';
+  var MSG_NO_ENCLOSE = '这一笔没有围住什么 —— 只有笔触本身留下了颜色。';
   var MSG_FADE = '笔尖没绕回自己的颜色，这一笔散掉了。';
   var MSG_HIT = '灵感中断 —— 撞上了造物的笔触，这一笔全断了。';
   var MSG_EAT = '这一块也归你了 —— 造物被你整个吃掉了。';
@@ -551,6 +556,7 @@
     dirtyList.length = 0;
     dragging = false;
     lastCell = null;
+    kbDown = false; kbCell = null;               // 键盘那一笔也一并复位
     enemies = [];                                // 造物全部撤下，下面按难度重新登场
     speedTier = 0;
 
@@ -671,7 +677,7 @@
     if (anchored) {
       /* ① 快照「上色前」，好算出这一笔**新染**了哪些格（晕染动画要用）。 */
       var before = new Int8Array(grid);
-      fillEnclosed(grid, COLS, ROWS, HOME);        // ⚠ 原地改 grid（不是纯函数）
+      var fillRes = fillEnclosed(grid, COLS, ROWS, HOME);   // ⚠ 原地改 grid（不是纯函数）
       /* ② 难度重算：玩家的地变了 ⇒ 造物数量 / 速度档跟着变（分档 + 封顶）。
             ⚠ 放在「结算击杀」**之前** —— 否则刚吃掉的造物会被公式当场补一个回来，
               击杀就白杀了。补位只在这一步发生（地长大了），击杀留下的空位不补。 */
@@ -695,7 +701,12 @@
       if (newCells.length > 0) {
         var dd = computeDepths(newCells, before);
         startFillAnim(newCells, dd.depth, dd.max); // 带晕染动画
-        if (el.msg) el.msg.textContent = res.captured > 0 ? MSG_EAT : MSG_FILL;
+        /* ⚠ **诚实文案（R38/C1）**：`fillRes.interior > 0` 才代表「真的围出了内部空白」；
+           否则这一笔只是把自己的笔触收编成了领地 —— **不许再说「围住啦」**（那是谎报成功）。 */
+        if (el.msg) {
+          el.msg.textContent = res.captured > 0 ? MSG_EAT
+                             : (fillRes.interior > 0 ? MSG_FILL : MSG_NO_ENCLOSE);
+        }
       } else {
         fullRender();                              // 空笔（没改动）—— 直接把现状画平
       }
@@ -726,24 +737,46 @@
     var cv = el.canvas;
     if (!cv) return;
 
+    /* ⚠ 起笔的**唯一**入口条件（M1 修）：只认**主指针 / 左键**。
+       · `e.button !== 0`（右键 / 中键）⇒ 不起笔（桌面右键按下原本会起笔）；
+       · `e.isPrimary === false`（多指里的第二根）⇒ 不起笔 —— 否则第二根手指会**再调一次
+         `beginStroke`**（不走路、只标一格），把 `lastCell` 挪走，可能造出**与家断开的
+         笔触**，被规则⑤无条件收编 ⇒ **领地裂成孤岛** ⇒ 正是「51.7% 静默拒收」那个重灾。 */
+    function allowPointer(e) {
+      if (e.button !== undefined && e.button !== 0) return false;
+      if (e.isPrimary === false) return false;
+      return true;
+    }
+    /* 触摸兜底：一次只认**一根**手指（`touches` 里多于一根就不起笔）。 */
+    function allowTouch(e) {
+      return !(e.touches && e.touches.length > 1);
+    }
+
     if (global.PointerEvent) {
       /* 现代内核（含大陆 Android Chrome / Edge）—— mouse 与 touch 都会派 pointer 事件 */
-      addActive(cv, 'pointerdown', function (e) { e.preventDefault(); beginStroke(e.clientX, e.clientY); });
+      addActive(cv, 'pointerdown', function (e) {
+        if (!allowPointer(e)) return;
+        e.preventDefault(); beginStroke(e.clientX, e.clientY);
+      });
       addActive(document, 'pointermove', function (e) { if (dragging) e.preventDefault(); moveStroke(e.clientX, e.clientY); });
       document.addEventListener('pointerup', function () { endStroke(); }, false);
       document.addEventListener('pointercancel', function () { endStroke(); }, false);
     } else {
-      cv.addEventListener('mousedown', function (e) { e.preventDefault(); beginStroke(e.clientX, e.clientY); }, false);
+      cv.addEventListener('mousedown', function (e) {
+        if (e.button !== undefined && e.button !== 0) return;
+        e.preventDefault(); beginStroke(e.clientX, e.clientY);
+      }, false);
       document.addEventListener('mousemove', function (e) { moveStroke(e.clientX, e.clientY); }, false);
       document.addEventListener('mouseup', function () { endStroke(); }, false);
 
       addActive(cv, 'touchstart', function (e) {
+        if (!allowTouch(e)) return;
         var t = e.touches[0]; if (!t) return;
         e.preventDefault();
         beginStroke(t.clientX, t.clientY);
       });
       addActive(document, 'touchmove', function (e) {
-        if (!dragging) return;
+        if (!dragging || !allowTouch(e)) return;
         var t = e.touches[0]; if (!t) return;
         e.preventDefault();
         moveStroke(t.clientX, t.clientY);
@@ -756,6 +789,51 @@
        老内核里 `touch-action:none` 未必生效，这一层是「拖动不滚页」的最后一道闸。
        画布是**游戏台**，落在上面的滑动本来就该是画画，不是滚页面。 */
     addActive(cv, 'touchmove', function (e) { e.preventDefault(); });
+  }
+
+  /* ── 键盘备选（spec §5.2：「另给键盘方向键作为备选」）──────────────────
+     方向键把笔尖挪一格（复用 `markStroke` / `strokeWalk`），**空格 / 回车 = 松手**。
+     第一次按方向键时自动「落笔」（从中央上方那格起，紧挨着「画布原点」）。 */
+  var kbCell = null;             // 键盘笔尖所在格
+  var kbDown = false;            // 键盘这一笔是否正按着（空格/回车松手）
+
+  function kbStartAt(cell) {
+    settleAnim();
+    dragging = true;
+    lastCell = { x: cell.x, y: cell.y };
+    brushX = (cell.x + 0.5) * CELL;
+    brushY = (cell.y + 0.5) * CELL;
+    markStroke(cell.x, cell.y);          // ⚠ 可能当场撞上造物 ⇒ dragging 会被置回 false
+    kbDown = dragging;
+    scheduleRender();
+    return kbDown;
+  }
+
+  function kbStep(dx, dy) {
+    if (finished || !grid) return;
+    if (!kbCell) kbCell = { x: COLS >> 1, y: (ROWS >> 1) - 2 };   // 紧挨着中央领地
+    var nx = kbCell.x + dx, ny = kbCell.y + dy;
+    if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) return;
+    if (!kbDown) {
+      if (el.msg) el.msg.textContent = MSG_STROKE;
+      if (!kbStartAt(kbCell)) { kbCell = { x: nx, y: ny }; return; }   // 起笔当场撞上 ⇒ 只挪笔尖
+    }
+    strokeWalk(kbCell.x, kbCell.y, nx, ny);
+    if (dragging) {
+      kbCell = { x: nx, y: ny };
+      brushX = (nx + 0.5) * CELL; brushY = (ny + 0.5) * CELL;
+      scheduleRender();
+    } else {
+      kbDown = false;                    // 中途被造物撞断 ⇒ 松开
+    }
+  }
+
+  /** 空格 / 回车 = 松手（走与鼠标松手同一条 `endStroke()`）。 */
+  function kbLift() {
+    if (!kbDown) return;
+    endStroke();
+    kbDown = false;
+    kbCell = null;                       // 下一笔从默认起点重新起
   }
 
   /* ══════════════════════════════════════════════════════════════════
@@ -796,7 +874,7 @@
     return v >= ENEMY_BASE && ((v - ENEMY_BASE) & 1) === 1;
   }
 
-  /** 按笔触码找回那个造物（最多 4 个，线性扫足够）。 */
+  /** 按笔触码找回那个造物（最多 6 个，线性扫足够）。 */
   function enemyByStrokeCode(code) {
     for (var k = 0; k < enemies.length; k++) {
       if (enemies[k].strokeCode === code) return enemies[k];
@@ -886,14 +964,16 @@
     return t > DIFF_SPD_CAP ? DIFF_SPD_CAP : t;
   }
 
-  /** 找第一个没被占用的「槽位」（决定颜色 / 出生角落 / 编码）。 */
+  /** 找第一个没被占用的「槽位」（决定颜色 / 出生角落 / 编码）。
+      ⚠ 找不到**返回 null**（不是 `enemies.length` —— 那是「个数」不是「槽位」，
+      越出编码约定；调用方 `recomputeDifficulty` 有 `if (!spawnEnemy(...)) break;` 兜着）。 */
   function freeSlot() {
     for (var s = 0; s < ENEMY_MAX; s++) {
       var used = false;
       for (var k = 0; k < enemies.length; k++) if (enemies[k].slot === s) { used = true; break; }
       if (!used) return s;
     }
-    return enemies.length;
+    return null;
   }
 
   /** 把某个造物的所有格子（领地 + 笔触）清成空白。 */
@@ -905,7 +985,7 @@
   }
 
   /**
-   * 重算难度：数量按占比给（封顶 4），速度档按占比给（封顶 3），
+   * 重算难度：数量按占比给（封顶 = 本档 `enemyCap`，开局 4、扩张后 5/6），速度档按占比给（封顶 3），
    * 不足就补造物、超出就撤造物（正常玩法里占比只涨，所以基本只走「补」那一边）。
    */
   function recomputeDifficulty() {
@@ -951,7 +1031,7 @@
   /**
    * 造物登场：一小块 `ENEMY_HOME_R × ENEMY_HOME_R` 的领地 + 一个「朋友色」。
    * 元素字段：
-   *   slot        槽位（0..3）—— 决定编码 / 颜色 / 出生角落
+   *   slot        槽位（0..5）—— 决定编码 / 颜色 / 出生角落
    *   homeCode    领地格值（`3+2k`）        strokeCode  笔触格值（`4+2k`）
    *   x, y        笔尖当前所在格（画「它在动」靠它；采样方差也读它）
    *   dir         巡边时的朝向
@@ -961,7 +1041,7 @@
    *   planRect    当前这一圈的外接矩形（填完把自己升级成新 box）
    */
   function spawnEnemy(slot) {
-    if (!grid) return null;
+    if (!grid || slot === null || slot === undefined) return null;   // 没有空槽位（freeSlot 返回 null）
     var pos = findSpawn(slot);
     if (!pos) return null;
     var e = {
@@ -1563,6 +1643,7 @@
     running = false;
     dragging = false;
     lastCell = null;
+    kbDown = false; kbCell = null;              // 键盘那一笔也一并复位
     if (raf) { global.cancelAnimationFrame(raf); raf = null; }
   }
 
@@ -1589,7 +1670,20 @@
 
     document.addEventListener('keydown', function (e) {
       if (!el.overlay || !el.overlay.classList.contains('on')) return;
-      if (e.key === 'Escape' || e.key === 'Esc') close();
+      if (e.key === 'Escape' || e.key === 'Esc') { close(); return; }
+      /* 键盘备选（spec §5.2）：方向键挪笔尖、空格/回车松手。⚠ 必须 preventDefault，
+         否则方向键会让**页面滚**（正好违背 §5.2 那条「拖动时页面没有滚动」）。 */
+      var k = e.key;
+      if (k === 'ArrowUp' || k === 'ArrowDown' || k === 'ArrowLeft' || k === 'ArrowRight') {
+        e.preventDefault();
+        if (k === 'ArrowUp') kbStep(0, -1);
+        else if (k === 'ArrowDown') kbStep(0, 1);
+        else if (k === 'ArrowLeft') kbStep(-1, 0);
+        else kbStep(1, 0);
+      } else if (k === ' ' || k === 'Spacebar' || k === 'Enter') {
+        e.preventDefault();
+        kbLift();
+      }
     });
 
     bindDrag();
@@ -1784,7 +1878,9 @@
       dump: testDumpGrid,
       finish: testFinish,
       setLeft: testSetLeft,
-      resolveCaptures: function () {
+      /* ⚠ 名字如实：它调的是 `resolveKills`（击杀结算 **会**触发阶段扩张），
+         不是 Task 4 那个只管「吃掉 + 摘除」的 `resolveCaptures`。 */
+      resolveKills: function () {
         var r = resolveKills();
         fullRender();
         return { captured: r.captured, expanded: r.expanded, state: testState() };
@@ -1797,14 +1893,20 @@
    *
    *  来源：`C:\tmp\griseo_fill_proto.js`（生效原型 R33，210 行，已过 10 轮复核）。
    *  移植清单执行情况见 `task-1-report.md` §11.6（含 (i)(j)(k)）与 §9.8 的 (a)(c)(f)。
-   *  唯一改动：**去掉文件尾的 `module.exports`**（那是给 node 测试用的，游戏文件是 IIFE）。
+   *  移植改动：**去掉文件尾的 `module.exports`**（那是给 node 测试用的，游戏文件是 IIFE）。
+   *  ⚠ **R38（Task 5 复审 C1）在入选规则上改了一处**：`ends.length===1` 的分量也入选
+   *     （「一个封死的环 + 一根死尾巴」—— 玩家「出门绕一圈、顺原路回来」画的正是它）。
+   *     旧规则把它整个丢掉 ⇒ 圈里不填、却还报「围住啦」。**只改这一处**，其余逐字未动；
+   *     证据：Task 1 的 31 条断言**全绿且期望值一格未改** + ≥2000 例随机对拍 0/0。
    *
    *  ── 接口 ──────────────────────────────────────────────────────────
-   *    fillEnclosed(grid, w, h, owner) -> { filled }
+   *    fillEnclosed(grid, w, h, owner) -> { filled, interior }
    *      grid : Int8Array(w*h)，**行主序** idx = y*w + x
    *             0 = 空白 / 1 = 玩家领地 / 2 = 玩家笔触 / >=3 = 造物
    *      owner: 填充成谁（玩家 = 1）；**1 / 2 是写死的哨兵**，owner 只决定输出颜色
-   *      返回 : { filled } = 本次**新填**的格数
+   *      返回 : { filled }   = 本次**新填**的格数
+   *             { interior } = 其中**「被围出来的空白」**的格数（不含被收编的笔触本身）——
+   *              `endStroke` 靠它选文案：interior==0 ⇒ 没围住，不许说「围住啦」。
    *   ⚠ **原地改 grid**（不是纯函数），除此之外无副作用 / 不碰 DOM / ES5。
    *
    *  ── ⚠ 移植时**不许动**的几条（复核点名，改了结论就变）──────────────
@@ -1952,8 +2054,17 @@
       var anchored = (c.ends.length === 2 &&
                       touchesHome(grid, w, h, c.ends[0], homeCode) &&
                       touchesHome(grid, w, h, c.ends[1], homeCode));
-      if (c.ends.length === 0) {
-        ok = true;                                     /* 自己成环 */
+      if (c.ends.length === 0 || c.ends.length === 1) {
+        /* 自己成环；**或**「一个封死的环 + 一根死尾巴」。
+           ⚠ C1 修（R38）：`ends.length===1` 以前被整个丢掉 ⇒ 玩家「出门绕一圈、顺原路
+             回来」画的正是这种形状（自由端只有笔尖那格）⇒ 分量被丢 ⇒ 泛洪灌进圈里 ⇒
+             **只把笔触本身染成色、圈里还是纸白**，而老代码还报「围住啦」。
+           为什么 ends==1 一定是这种形状：连通图里若只有一个度为 1 的顶点、其余度为 2
+           （或 0，单格），则它必含**唯一的环**，环上挂一条路径（lollipop）——
+           环是封死的、尾巴是死路、都不漏 ⇒ 与「自己成环」同理，**无需封口线**。
+           （单格分量在此也落进 ok=true：只有它自己当墙，围不出任何内部，无害。）
+           ⚠ 只改这一处入选规则，其余一律原样 —— 见 Task 5 报告的 §算法回归。 */
+        ok = true;
       } else if (anchored) {
         ok = true;
         e0 = c.ends[0];
@@ -1994,14 +2105,16 @@
       }
     }
 
-    /* ⑤ 上色：内部空白 → owner；**所有 trail 格 → owner**；领地(1)/造物(>=3) 一律不动。 */
-    var filled = 0;
+    /* ⑤ 上色：内部空白 → owner；**所有 trail 格 → owner**；领地(1)/造物(>=3) 一律不动。
+       `interior` 单列出来：**只数「被围出来的空白」**（不含被收编的笔触本身）——
+       `endStroke` 靠它选文案：interior==0 说明「这一笔没围住什么」，就不许再说「围住啦」。 */
+    var filled = 0, interior = 0;
     for (i = 0; i < n; i++) {
       if (grid[i] === trailCode) { grid[i] = owner; filled++; continue; }
       if (grid[i] !== 0) continue;
-      if (outside[i] === 0) { grid[i] = owner; filled++; }
+      if (outside[i] === 0) { grid[i] = owner; filled++; interior++; }
     }
-    return { filled: filled };
+    return { filled: filled, interior: interior };
   }
 
   /* ⚠ 原型文件尾那段 `module.exports` **已按移植清单 (f) 去掉**（游戏文件是 IIFE）。
