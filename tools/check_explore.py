@@ -4168,7 +4168,7 @@ def check_griseo_keyboard_draws(b, page, expected):
     if not _gr_open_overlay(b):
         return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
     fails = []
-    b.js("document.body.focus && document.body.focus();")
+    b.js("if (document.activeElement) document.activeElement.blur();")   # 焦点别停在（遮罩外的）「开始」上
     for _ in range(3):
         _gr_key(b, 'ArrowLeft', 'ArrowLeft', 37)
         time.sleep(0.06)
@@ -4184,6 +4184,58 @@ def check_griseo_keyboard_draws(b, page, expected):
         fails.append(u'按了空格（松手）后还剩 %d 格笔触（该归零）—— 空格没当松手' % s2)
     return (fails, u'方向键画了 %d 格笔触、空格松手归零' % s
             if not fails else u'键盘备选没生效')
+
+
+@check
+@griseo_only
+def check_griseo_keyboard_button_and_play(b, page, expected):
+    """⑧ N1 回归：遮罩开着时，落在**按钮**上的 Enter/Space **不许被吞**
+    （Tab 聚焦「收笔」+ Enter/Space 要能激活它），且**方向键玩法仍在**。
+
+    ⚠ 复核 A/B 实测：旧码聚焦「收笔」按 Enter 关不掉（`defaultPrevented=true`）——
+      键盘备选把按钮的基本操作吃掉了。`check_aria_labels` 不覆盖键盘激活 ⇒ 这条专门守它。
+    """
+    if not _gr_open_overlay(b):
+        return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
+    fails = []
+
+    def prevented(key, code, vk):
+        if not _g_open(b, GAMES[GRISEO]):
+            _click_sel(b, '.bottom-game .game-card-start'); time.sleep(0.45)
+        # 页内挂一枚**一次性**监听，记「收笔」上这次 keydown 有没有被 preventDefault。
+        # ⚠ 必须在 `setTimeout(0)` 里读 `e.defaultPrevented` —— 游戏的 `preventDefault`
+        #   发生在**document 冒泡阶段**，而本监听挂在按钮（target 阶段，先跑）上；
+        #   同步读会永远是 false（假绿），异步读才看得到最终结果。
+        b.js("""(() => { window.__pd = null;
+            var btn = document.querySelector('#griseoGameOverlay .gr-close');
+            btn.addEventListener('keydown', function h(e) {
+                setTimeout(function () { window.__pd = e.defaultPrevented; }, 0);
+                btn.removeEventListener('keydown', h); }, false);
+            return 1; })()""")
+        b.js("var b=document.querySelector('#griseoGameOverlay .gr-close'); if (b) b.focus();")
+        _gr_key(b, key, code, vk)
+        time.sleep(0.3)
+        return b.js("window.__pd")
+
+    pv_enter = prevented('Enter', 'Enter', 13)
+    pv_space = prevented(' ', 'Space', 32)
+    if pv_enter is not False:
+        fails.append(u'聚焦「收笔」后按 Enter 被吞了（defaultPrevented=%r）—— '
+                     u'Tab 聚焦 + Enter 激活不了按钮（N1 可访问性回归）' % pv_enter)
+    if pv_space is not False:
+        fails.append(u'聚焦「收笔」后按 Space 被吞了（defaultPrevented=%r）' % pv_space)
+
+    # 键盘**玩法**不能被这次修复顺手关掉：焦点移开控件，方向键该画得出笔触
+    if not _g_open(b, GAMES[GRISEO]):
+        _click_sel(b, '.bottom-game .game-card-start'); time.sleep(0.45)
+    b.js("if (document.activeElement) document.activeElement.blur();")
+    _gr_key(b, 'ArrowLeft', 'ArrowLeft', 37); time.sleep(0.05)
+    _gr_key(b, 'ArrowLeft', 'ArrowLeft', 37); time.sleep(0.25)
+    s = _gr_count(_gr_dump(b), 'S')
+    if s <= 0:
+        fails.append(u'方向键画不出笔触（S=%d）—— 键盘备选被关掉了' % s)
+    return (fails, u'按钮上的 Enter/Space 不被吞（%r/%r）+ 方向键仍能画（S=%d）'
+            % (pv_enter, pv_space, s) if not fails else u'键盘处理不对')
 
 
 # ── 真·触摸（不是鼠标）────────────────────────────────────────────────

@@ -820,6 +820,11 @@
     }
     strokeWalk(kbCell.x, kbCell.y, nx, ny);
     if (dragging) {
+      /* ⚠ N2 修：`endStroke` 判的是 `lastCell`（笔尖那一格）——
+         键盘也必须**跟着挪**，否则键盘的「笔尖」永远停在起笔那格（挨着家 ⇒ 必定回填），
+         与鼠标「顺原路回来会白画一场」的规则对不上（同一份规则、两套行为）。
+         `moveStroke` 里就是「先 strokeWalk、再把 lastCell 挪到新格」，这里照抄同一顺序。 */
+      lastCell = { x: nx, y: ny };
       kbCell = { x: nx, y: ny };
       brushX = (nx + 0.5) * CELL; brushY = (ny + 0.5) * CELL;
       scheduleRender();
@@ -1671,6 +1676,15 @@
     document.addEventListener('keydown', function (e) {
       if (!el.overlay || !el.overlay.classList.contains('on')) return;
       if (e.key === 'Escape' || e.key === 'Esc') { close(); return; }
+      /* ⚠ N1 修：**遮罩里的**按钮/链接要能被键盘原生激活（Tab 聚焦「收笔」+ Enter/Space）。
+         否则键盘备选会把遮罩的基本操作吃掉（可访问性回归）。
+         ⚠ 只在「焦点落在**遮罩内**的表单控件上」时才放行 —— 不能只看 tagName：
+         点「开始」之后焦点仍停在**遮罩外**那颗按钮上，若按 tagName 一律放行，
+         方向键就会被吞、键盘玩法直接失效。放行只针对遮罩里的控件。
+         放在 Escape 之后：Escape 任何时候都能关。 */
+      var t = e.target;
+      if (t && t.tagName && el.overlay.contains(t) &&
+          /^(BUTTON|A|INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
       /* 键盘备选（spec §5.2）：方向键挪笔尖、空格/回车松手。⚠ 必须 preventDefault，
          否则方向键会让**页面滚**（正好违背 §5.2 那条「拖动时页面没有滚动」）。 */
       var k = e.key;
@@ -2003,14 +2017,14 @@
   function fillEnclosed(grid, w, h, owner, trailCode, homeCode) {
     if (trailCode === undefined) trailCode = STROKE;
     if (homeCode === undefined) homeCode = HOME;
-    if (!w || !h) return { filled: 0 };
+    if (!w || !h) return { filled: 0, interior: 0 };
     var n = w * h;
     var i, t, d, x, y, nx, ny, j;
 
     /* ① 收集轨迹 + 按 4 连通切成【连通分量】 */
     var trail = [];
     for (i = 0; i < n; i++) if (grid[i] === trailCode) trail.push(i);
-    if (trail.length === 0) return { filled: 0 };
+    if (trail.length === 0) return { filled: 0, interior: 0 };
 
     var seen = new Uint8Array(n);
     var comps = [];
