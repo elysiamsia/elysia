@@ -1641,15 +1641,11 @@ body{
       whisperCooldownMs: 9000,   // 她是小孩子，比樱（11000）密一点
     },
 
-    /* 下方区块的游戏槽（spec §4.5）。⚠ 本任务只接线，**不建模块**：
-       `assets/games/griseo.js` 要等**计划 B** 才写 —— 找不到模块时
-       `ElysiaBottom.mount` 只 `console.warn`，不抛（`check_explore` 的「无报错」
-       那条收的是 level=error，warn 不算失败）。
-       ⚠ 但「游戏卡文案 == 模块声明」那条断言（要求槽非空、模块恰好 1 个）
-       在计划 B 落地前会**预期变红** —— 它守的是「有槽就必须有模块」，
-       而模块还没写；这是计划 A→B 之间**已知的过渡态**。
-       ⚠⚠ 所以这里**绝不能**加 `<script src="/assets/games/griseo.js">`：
-       那个文件还不存在，404 在 `check_explore.py` 里算失败。 */
+    /* 下方区块的游戏槽（spec §4.5）。⚠ 本任务只**定义**、不启用：
+       `assets/games/griseo.js` 要等**计划 B** 才写；计划 B 会把
+       `ElysiaBottom.mount()` 改成 `ElysiaBottom.mount({ game: THEME.game })`，
+       **连同**加 `<script src="/assets/games/griseo.js">`。
+       ⚠⚠ 在那之前**绝不能**加那行脚本：文件还不存在，404 在 `check_explore.py` 里算失败。 */
     game: { module: 'griseo' },
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
@@ -1659,10 +1655,14 @@ body{
        可发现物的锚点可以挂在下文区块上（那是 `mount` 才建出来的），
        共享层的 `ensureAttached` 会在挂载探索度时补扫。
        这里保持与 mobius / sakura 一致：**先 init 再 mount**。
-     ⚠ `ElysiaBottom.mount` 找不到 `ElysiaGames.griseo` 时**只 `console.warn`** ——
-       游戏模块（`assets/games/griseo.js`）到计划 B 才建，现在给个 `module` 名即可。 */
+     ⚠ 游戏槽留到计划 B（`THEME.game` 已定义好备用），此处**不传 `game`**：
+       传了会建出一个空槽，让 `check_explore.py` 的「游戏卡文案 == 模块声明」
+       断言预期变红（那条只在**没有槽**时跳过）。 */
   ElysiaExplore.init(THEME.explore);
-  ElysiaBottom.mount({ game: THEME.game });   // ⚠ 先只给 module 名，脚本到计划 B 才加
+  /* ⚠ 游戏槽留到计划 B：等 `assets/games/griseo.js` 建好后，
+     这里改成 `ElysiaBottom.mount({ game: THEME.game })`。
+     ⚠ 仍然**不要**加 `<script src="/assets/games/griseo.js">`。 */
+  ElysiaBottom.mount();
 
   /* 生日胶囊（她生日 12/21，`data/bdays.js` 里已登记）。
      ⚠ `birthMsg` 是**天行·绘星之卷 · 生日祝福语音**的原文，逐字取自材料包
