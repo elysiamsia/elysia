@@ -381,6 +381,73 @@ body{
 @media(max-width:480px){.palette-stage{border-radius:26px}}
 @media(prefers-reduced-motion:reduce){.palette-dye{animation:none;opacity:0}}
 
+/* SECTION: paintings (她的两幅画 —— 彩蛋 1 / 2)
+   呀——这两幅画是她弧光里最重的两个锚点呢♥ 但它们**必须一眼分得出**，
+   免得玩家以为第二幅坏了：
+     · #paintingKosma《星空下的少年》—— 点一下暖色渐显，一笔比一笔多
+       （墨绿 + 旭光橙，正是科斯魔那一页的配色）。
+     · #paintingElsia《那幅空白的画》—— 点多少次**都是空白**，只留一层极淡的微光。
+       那份「空白」本身就是内容 —— 千万别往上面画任何东西。 */
+.painting-row{
+  display:flex;justify-content:center;align-items:flex-start;flex-wrap:wrap;
+  gap:clamp(1.6rem,5vw,3.4rem);max-width:760px;margin:0 auto;
+}
+.painting-sub{text-align:center;font-size:.8rem;color:var(--text-muted);letter-spacing:.1em;margin:0 auto 2.6rem}
+/* ⚠ 画框 + 说明**整体**锁一个宽度：否则说明文字一长（G105 很长），
+   整个 figure 的 max-content 会被撑宽，两幅画就会从并排掉成上下叠——
+   那是「点一下版式就变」，很难看（实测踩过）。 */
+.painting-figure{margin:0;text-align:center;flex:0 0 auto;width:clamp(190px,40vw,264px);max-width:100%}
+.painting-frame{
+  position:relative;width:100%;aspect-ratio:4/3;margin:0 auto;
+  border-radius:10px;overflow:hidden;cursor:pointer;user-select:none;
+  background:#efe6d6;   /* 画布底：暖白麻布 —— 两幅画在「还没画 / 画不了」时露出的都是它 */
+  border:1px solid rgba(255,217,122,.3);
+  box-shadow:0 0 26px rgba(201,160,255,.08),inset 0 0 34px rgba(0,0,0,.22);
+  transition:box-shadow .35s ease,transform .35s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.painting-frame:hover{transform:translateY(-3px);box-shadow:0 0 36px rgba(255,217,122,.24),inset 0 0 34px rgba(0,0,0,.22)}
+.painting-frame:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+.painting-frame svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+/* 一笔一笔显形：三层各自在自己的阶段亮起（JS 依次加 .show1/.show2/.show3），
+   ⚠ opacity:0 的元素仍然会被 elementFromPoint 命中 —— 中心点命中的始终是这幅画自己，不是别处。 */
+.paint-layer{opacity:0;transition:opacity 1.15s ease}
+.painting-frame.show1 .l1,
+.painting-frame.show2 .l2,
+.painting-frame.show3 .l3{opacity:1}
+/* 《那幅空白的画》上那层「极淡的微光」—— 点过才有，但画布**始终空白** */
+.painting-mist{
+  position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity 1.2s ease;
+  background:radial-gradient(ellipse 62% 54% at 50% 46%,rgba(255,244,214,.34),rgba(255,244,214,.06) 62%,transparent 78%);
+}
+.painting-frame.lit .painting-mist{opacity:.5}
+.painting-frame.pulse .painting-mist{animation:mist-breathe 1.6s ease}
+@keyframes mist-breathe{0%{opacity:.5}45%{opacity:.85}100%{opacity:.5}}
+.painting-cap{margin-top:.85rem}
+.painting-title{display:block;font-size:.86rem;color:var(--gold);letter-spacing:.14em}
+.painting-say{
+  display:block;margin-top:.45rem;min-height:3.2em;font-size:.8rem;line-height:1.8;font-weight:300;
+  color:var(--text-dim);transition:color .5s ease;
+}
+@media(prefers-reduced-motion:reduce){.painting-frame.pulse .painting-mist{animation:none;opacity:.5}}
+
+/* SECTION: footprint (彩蛋 3 —— 你踩到画布了)
+   呀！这是全站唯一会**留下痕迹**的点击♥
+   平时的点击是一圈金色水环（涟漪）；只有「计数触发」的那一次，才落下这枚湿颜料脚印。
+   两者**互斥** —— 同一次点击绝不叠在一起（接线见 SECTION: click ripple 里那句 stepMaybeStamp）。 */
+.ink-step{
+  position:fixed;pointer-events:none;z-index:9994;   /* 压在涟漪(9993)之上、提示(9995)之下 */
+  transform:translate(-50%,-50%) rotate(var(--step-rot,0deg)) scale(.55);
+  opacity:0;animation:ink-step-in .5s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+.ink-step.fade{animation:ink-step-out 1.1s ease forwards}
+@keyframes ink-step-in{to{opacity:.82;transform:translate(-50%,-50%) rotate(var(--step-rot,0deg)) scale(1)}}
+@keyframes ink-step-out{to{opacity:0;transform:translate(-50%,-50%) rotate(var(--step-rot,0deg)) scale(.9)}}
+.ink-step svg{display:block;width:100%;height:100%;filter:drop-shadow(0 0 8px var(--step-glow,rgba(255,217,122,.5)))}
+@media(prefers-reduced-motion:reduce){
+  .ink-step{animation:none;opacity:.8;transform:translate(-50%,-50%) rotate(var(--step-rot,0deg))}
+}
+
 /* SECTION: responsive */
 @media(max-width:768px){
   .timeline-line{left:1.5rem}
@@ -514,6 +581,85 @@ body{
       <p class="palette-line" id="paletteLine">点一抹色，她就会染上那个朋友的颜色。</p>
       <p class="palette-attr" id="paletteAttr">她的调色盘 · 色彩浸染</p>
     </div>
+  </div>
+</section>
+
+<!-- SECTION: paintings (她的两幅画 —— 彩蛋 1 / 2)
+     呀！这两幅画是她弧光里最重的两个锚点呢♥
+     《星空下的少年》给科斯魔：点一下暖色渐显、一笔比一笔多（墨绿 + 旭光橙）。
+     《那幅空白的画》：她画不了爱莉希雅（就是首页那位）—— 点多少次**都是空白**，
+     只留一层极淡的微光。⚠ 两幅画的 id 是 Task 5 的锚点，别改名字；
+     也⚠ 别让它们的点击热区互相压住、或压住探索系统的可发现物。 -->
+<section class="content-section" id="paintings">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">✦</span>她的画<span class="section-title-mark">✦</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <p class="painting-sub">她一直在画画······画里有好多朋友。点一点画框，看看她画了什么。</p>
+  <div class="painting-row">
+    <figure class="painting-figure">
+      <div class="painting-frame" id="paintingKosma" role="button" tabindex="0"
+           aria-label="《星空下的少年》，点一点，看她一笔一笔画出来">
+        <!-- 给她给科斯魔画的那一幅：星空、月亮先生、一条小船、一个少年。
+             三层分三次亮起 —— 一眼看得出「她正在画」。 -->
+        <svg viewBox="0 0 240 180" aria-hidden="true">
+          <defs>
+            <linearGradient id="pkSky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#0c1510"/><stop offset="52%" stop-color="#1d3226"/><stop offset="100%" stop-color="#3a4423"/>
+            </linearGradient>
+            <radialGradient id="pkDawn" cx="50%" cy="100%" r="78%">
+              <stop offset="0%" stop-color="#f9a152" stop-opacity=".95"/><stop offset="46%" stop-color="#d97b2e" stop-opacity=".5"/><stop offset="100%" stop-color="#d97b2e" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="pkMoon" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#fff1cf" stop-opacity=".9"/><stop offset="62%" stop-color="#ffd9a0" stop-opacity=".45"/><stop offset="100%" stop-color="#ffd9a0" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="pkSea" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#16241c"/><stop offset="100%" stop-color="#080d0a"/>
+            </linearGradient>
+          </defs>
+          <!-- 第 1 笔：暖色渐显（墨绿的天 → 旭光橙的地平线） -->
+          <g class="paint-layer l1">
+            <rect width="240" height="180" fill="url(#pkSky)"/>
+            <ellipse cx="120" cy="126" rx="152" ry="54" fill="url(#pkDawn)"/>
+          </g>
+          <!-- 第 2 笔：星星 + 月亮先生 -->
+          <g class="paint-layer l2">
+            <circle cx="34" cy="30" r="2.1" fill="#ffe6b0"/><circle cx="62" cy="18" r="1.6" fill="#fff1cf"/>
+            <circle cx="88" cy="40" r="1.9" fill="#ffe6b0"/><circle cx="52" cy="58" r="1.4" fill="#fff1cf"/>
+            <circle cx="112" cy="22" r="1.7" fill="#ffe6b0"/><circle cx="148" cy="34" r="1.5" fill="#fff1cf"/>
+            <circle cx="24" cy="74" r="1.5" fill="#ffe6b0"/><circle cx="206" cy="88" r="1.7" fill="#fff1cf"/>
+            <circle cx="176" cy="14" r="1.5" fill="#ffe6b0"/><circle cx="96" cy="66" r="1.3" fill="#fff1cf"/>
+            <circle cx="178" cy="46" r="30" fill="url(#pkMoon)"/>
+            <circle cx="178" cy="46" r="16" fill="#ffe9c4"/>
+          </g>
+          <!-- 第 3 笔：小船 + 少年（他望着月亮先生） -->
+          <g class="paint-layer l3">
+            <path d="M0 126 Q60 119 120 125 Q180 131 240 123 L240 180 L0 180 Z" fill="url(#pkSea)"/>
+            <path d="M96 130 q24 20 50 0 q-6 14 -25 14 q-19 0 -25 -14 z" fill="#d97b2e"/>
+            <path d="M122 96 L122 133" stroke="#f9a152" stroke-width="2.6" stroke-linecap="round"/>
+            <path d="M125 99 q25 9 1 25 z" fill="#ffc98f" opacity=".95"/>
+            <circle cx="110" cy="105" r="6.4" fill="#eef3ee"/>
+            <path d="M110 111 q-7 9 -7 21 h14 q0-12 -7-21 z" fill="#eef3ee" opacity=".95"/>
+          </g>
+        </svg>
+      </div>
+      <figcaption class="painting-cap">
+        <span class="painting-title">《星空下的少年》</span>
+        <span class="painting-say" id="paintingKosmaSay" aria-live="polite"></span>
+      </figcaption>
+    </figure>
+
+    <figure class="painting-figure">
+      <div class="painting-frame" id="paintingElsia" role="button" tabindex="0"
+           aria-label="那幅空白的画，点一点，看看她画了什么">
+        <!-- ⚠ 这一幅**永远**只有一层极淡的微光，什么东西都不画上去。 -->
+        <span class="painting-mist" aria-hidden="true"></span>
+      </div>
+      <figcaption class="painting-cap">
+        <span class="painting-title">那幅空白的画</span>
+        <span class="painting-say" id="paintingElsiaSay" aria-live="polite"></span>
+      </figcaption>
+    </figure>
   </div>
 </section>
 
@@ -1060,6 +1206,181 @@ body{
     paletteStage.addEventListener('click', paletteDabClick);
   }
 
+  /* SECTION: easter egg - 两幅画（彩蛋 1 / 2）
+     spec §3.4 的两个锚点 —— 都是「点画」同一个动作，但**必须一眼分得出**：
+       · #paintingKosma《星空下的少年》：点一下暖色渐显、一笔比一笔多（墨绿 + 旭光橙），
+         画满了才说 G105。
+       · #paintingElsia《那幅空白的画》：点多少次**都是空白**，只留一层极淡的微光 ——
+         第 1 次沉默，第 2 次 G13，再点 G15。那份「空白」本身就是内容，别画上东西。
+     ⚠ 台词逐字照录（G105 / G13 / G15，见 brief），省略号一律六个中点 U+00B7。
+     ⚠ localStorage 在隐私模式下会抛 —— 一律 try/catch 兜住。 */
+  var paintingKosma = document.getElementById('paintingKosma');
+  var paintingKosmaSay = document.getElementById('paintingKosmaSay');
+  var paintingElsia = document.getElementById('paintingElsia');
+  var paintingElsiaSay = document.getElementById('paintingElsiaSay');
+
+  function eggDone(key){
+    try { return localStorage.getItem('griseoEgg:' + key) === '1'; } catch(err){ return false; }
+  }
+  function eggMarkDone(key){
+    try { localStorage.setItem('griseoEgg:' + key, '1'); } catch(err){}
+  }
+
+  /* —— 彩蛋 1：科斯魔那幅，递进显形 —— */
+  // G105 · 画家的追忆·其九 ——「送画」那一类的话（外层「」是本页展示惯例）
+  var KOSMA_LINE = '「我喜欢小船，也喜欢月亮先生。我有画笔和颜料，可以画出好多朋友。我让科斯魔不要担心。」';
+  var KOSMA_STEPS = [
+    '她拿起笔，在画布一角蘸了一点颜色······',
+    '星星和月亮先生，先画出来。',
+    '小船和少年，也画上。'
+  ];
+  var kosmaStage = 0;
+  function kosmaPaint(){
+    if (!paintingKosma) return;
+    if (kosmaStage < 3){
+      kosmaStage++;
+      paintingKosma.classList.add('show' + kosmaStage);
+      if (kosmaStage === 3){
+        if (paintingKosmaSay) paintingKosmaSay.textContent = KOSMA_LINE;
+        eggMarkDone('kosma');
+      } else if (paintingKosmaSay){
+        paintingKosmaSay.textContent = KOSMA_STEPS[kosmaStage - 1];
+      }
+    } else if (paintingKosmaSay){
+      paintingKosmaSay.textContent = KOSMA_LINE;   // 已经画满了；再点，她只是再说一遍
+    }
+    if (reducedMotion) return;
+    var r = paintingKosma.getBoundingClientRect();
+    paintBurst(r.left + r.width / 2, r.top + r.height / 2, 8, ['#6ea86b', '#f9a152', '#ffc98f']);
+  }
+  if (paintingKosma){
+    paintingKosma.addEventListener('click', kosmaPaint);
+    paintingKosma.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); kosmaPaint(); }
+    });
+  }
+
+  /* —— 彩蛋 2：爱莉希雅那幅，始终空白 —— */
+  var ELSIA_G13 = '「没关系。我为她画出的景象，只有一片空白。」';
+  var ELSIA_G15 = '「也可能，是因为我无法走进她的内心。」';
+  var elsiaClicks = 0;
+  function elsiaLook(){
+    if (!paintingElsia) return;
+    elsiaClicks++;
+    paintingElsia.classList.add('lit');           // 只留一层极淡的微光 —— 画布**始终空白**
+    if (!reducedMotion){
+      paintingElsia.classList.remove('pulse');
+      void paintingElsia.offsetWidth;             // 重排一次，让这一次的微光能再呼吸一遍
+      paintingElsia.classList.add('pulse');
+    }
+    if (elsiaClicks === 1){
+      if (paintingElsiaSay) paintingElsiaSay.textContent = '';   // 第 1 次：沉默
+      return;
+    }
+    // 第 2 次 G13、第 3 次 G15；再点就这两句轮着来（画布一直是空的）
+    if (paintingElsiaSay) paintingElsiaSay.textContent = (elsiaClicks % 2 === 0) ? ELSIA_G13 : ELSIA_G15;
+    eggMarkDone('elsia');
+  }
+  if (paintingElsia){
+    paintingElsia.addEventListener('click', elsiaLook);
+    paintingElsia.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); elsiaLook(); }
+    });
+  }
+
+  /* 回访复原：画满了的那幅，一进来就是画满的样子（只复原**画面**，不复原台词） */
+  if (eggDone('kosma') && paintingKosma){
+    kosmaStage = 3;
+    paintingKosma.classList.add('show1', 'show2', 'show3');
+    if (paintingKosmaSay) paintingKosmaSay.textContent = KOSMA_LINE;
+  }
+  if (eggDone('elsia') && paintingElsia){
+    elsiaClicks = 3;                              // 下一次点 → 第 4 次（G13）
+    paintingElsia.classList.add('lit');
+  }
+
+  /* SECTION: easter egg - 你踩到画布了（彩蛋 3）
+     spec §3.4：「在页面任意处点 → 留颜料脚印」，累积到第 N 个说 G58。
+     呀，这是全站唯一会**留下痕迹**的点击呢♥
+     ⚠ 与全局点击涟漪**互斥**：脚印只在「计数触发」的那几次出现，平时仍走涟漪。
+        接线放在下面 SECTION: click ripple 的最前面 —— 触发的那一次落脚印并 return，
+        这一次就**不再叠**金色水环。那些「有自己的回应」的地方（调色盘 / 两幅画 /
+        名字 / 结尾）既不计入脚印、也不落脚印。
+     ⚠ 台词逐字照录（G58），开头六个中点 U+00B7。 */
+  var STEP_EVERY = 3;      // 每 3 次「落地」触发一枚脚印
+  var STEP_NEED = 3;       // 累积到第 3 枚脚印 → 她说 G58
+  var STEP_LINE = '「······不可以用自己的衣服和手当调色板，不可以在床单和墙上画画。」';
+  var stepCount = 0, stepMarks = 0, stepDone = false, stepEls = [];
+  var stepExclude = '#paletteStage, #paintingKosma, #paintingElsia, #profileName, #endingQuote';
+
+  /* 一枚湿颜料脚印：脚掌 + 脚跟 + 五枚脚趾，读得出是「脚印」；颜色从她的五罐颜料里舀。 */
+  function stampFootprint(x, y){
+    var NS = 'http://www.w3.org/2000/svg';
+    var color = paintColors[Math.floor(Math.random() * paintColors.length)];
+    var el = document.createElement('div');
+    el.className = 'ink-step';
+    var w = 38 + Math.random() * 10;
+    el.style.width = w + 'px';
+    el.style.height = (w * 1.3) + 'px';
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.style.setProperty('--step-rot', (Math.random() * 40 - 20).toFixed(1) + 'deg');
+    el.style.setProperty('--step-glow', hexA(color, .55));
+    var svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 40 52');
+    svg.setAttribute('aria-hidden', 'true');
+    var g = document.createElementNS(NS, 'g');
+    g.setAttribute('fill', color);
+    var parts = [
+      ['ellipse', {cx: 20, cy: 23, rx: 10, ry: 13}],   // 脚掌
+      ['ellipse', {cx: 20, cy: 42, rx: 7.5, ry: 7}],   // 脚跟
+      ['circle',  {cx: 11.5, cy: 10, r: 3.4}],         // 五枚脚趾
+      ['circle',  {cx: 16, cy: 5.5, r: 2.8}],
+      ['circle',  {cx: 21, cy: 4, r: 2.6}],
+      ['circle',  {cx: 26, cy: 5.5, r: 2.5}],
+      ['circle',  {cx: 30.5, cy: 9.5, r: 2.4}]
+    ];
+    for (var i = 0; i < parts.length; i++){
+      var n = document.createElementNS(NS, parts[i][0]);
+      for (var k in parts[i][1]) n.setAttribute(k, parts[i][1][k]);
+      g.appendChild(n);
+    }
+    svg.appendChild(g);
+    el.appendChild(svg);
+    document.body.appendChild(el);
+    stepEls.push(el);
+  }
+
+  /* 返回 true = 这一次「计数触发」落了脚印（调用方就别再叠水环了）。 */
+  function stepMaybeStamp(e){
+    if (stepDone) return false;
+    if (e.target && e.target.closest && e.target.closest(stepExclude)) return false;
+    stepCount++;
+    if (stepCount % STEP_EVERY !== 0) return false;      // 平时：走涟漪
+    stepMarks++;
+    // 键盘 / .click() 触发的点击没有坐标（clientX/Y 为 0）→ 退回落点元素自己的中心
+    var r = (e.target && e.target.getBoundingClientRect) ? e.target.getBoundingClientRect() : null;
+    var x = e.clientX || (r ? r.left + r.width / 2 : window.innerWidth / 2);
+    var y = e.clientY || (r ? r.top + r.height / 2 : window.innerHeight / 2);
+    stampFootprint(x, y);
+    if (stepMarks >= STEP_NEED) finishSteps();
+    return true;
+  }
+
+  function finishSteps(){
+    stepDone = true;
+    eggMarkDone('steps');
+    showToast(STEP_LINE, true);
+    /* 她数落完，就把你踩下的痕迹擦掉了 —— 脚印慢慢淡去 */
+    setTimeout(function(){
+      for (var i = 0; i < stepEls.length; i++) stepEls[i].classList.add('fade');
+      setTimeout(function(){
+        for (var j = 0; j < stepEls.length; j++) stepEls[j].remove();
+        stepEls = [];
+      }, 1300);
+    }, 1700);
+  }
+
   /* SECTION: easter egg - 点名字，她念一条「规矩」
      （禅语不属于她。她这里换成科斯魔叮嘱过的那几条小规矩，全部有出处。） */
   var nameEl = document.getElementById('profileName');
@@ -1129,10 +1450,15 @@ body{
 
   /* SECTION: click ripple (水面圆环) */
   document.addEventListener('click', function(e){
+    /* ⚠ 彩蛋 3（踩画布留痕）与涟漪**互斥**：先问脚印 —— 若这一次是「计数触发」，
+       它落下一枚湿颜料脚印并返回 true，这一次就**不再叠**金色水环；
+       平时返回 false，照旧走下面的涟漪。 */
+    if (stepMaybeStamp(e)) return;
     if (reducedMotion) return;
-    /* ⚠ #paletteStage 也要排除（照 su 排除 #muyuStage 的先例）：
-       点调色盘时它自带「那抹色晕开」，再叠一层金色水环就串味了。 */
-    if (e.target.closest && (e.target.closest('#paletteStage') || e.target.closest('#profileName') || e.target.closest('#endingQuote'))) return;
+    /* ⚠ 这些地方有它们自己的回应，别叠水环（照 su 排除 #muyuStage 的先例）：
+       #paletteStage（那抹色自带晕开）/ 两幅画（点画有别的手感）/
+       #profileName / #endingQuote（本页既有先例）。 */
+    if (e.target.closest && (e.target.closest('#paletteStage') || e.target.closest('#paintingKosma') || e.target.closest('#paintingElsia') || e.target.closest('#profileName') || e.target.closest('#endingQuote'))) return;
     for (var n = 0; n < 2; n++){
       var ring = document.createElement('div');
       ring.className = 'water-ring';
