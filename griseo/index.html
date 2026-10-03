@@ -55,6 +55,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
 <link rel="stylesheet" href="/assets/site.css">
+<!-- 呀！探索系统 + 下方区块 + 生日胶囊的共享样式。
+     ⚠ **必须在页面 <style> 之前** —— 页面自己的规则要能覆盖共享层（全站一致的加载顺序）。 -->
+<link rel="stylesheet" href="/assets/explore.css">
 <meta name="referrer" content="same-origin">
 <title>elysiad.top/griseo — 致格蕾修</title>
 <!-- SECTION: styles -->
@@ -808,6 +811,14 @@ body{
 
 <!-- SECTION: scripts -->
 <script src="/assets/site.js"></script>
+<!-- ⚠ 顺序不可调换（全站一致）：site → explore → bottom → bdays → bday
+     `bday.js` 与 `explore.js` / `bottom.js` 是**彼此独立**的 —— 它不依赖另外两个。
+     ⚠ `games/griseo.js` 等计划 B 建好再加 —— 现在加就是 404，
+       而 404 在 check_explore.py 里**算失败**（它收了 CDP 的 Log 域）。 -->
+<script src="/assets/explore.js"></script>
+<script src="/assets/bottom.js"></script>
+<script src="/data/bdays.js"></script>
+<script src="/assets/bday.js"></script>
 <script>
 (function(){
   /* SECTION: quotes data */
@@ -1531,8 +1542,88 @@ body{
       // 呀，结尾的星也是五色的 —— 她那一整罐颜料，最后都洒成了星星♥
       colors: { pool: ['#fff', '#7dd3fc', '#c9a0ff', '#ff7aa8', '#ffe066', '#5eead4'] },
     },
+
+    /* ── 探索系统（2026-10-03 接入）────────────────────────────────────
+       ⚠ 这 12 条的 `line` 与 `src` 是**逐字抄自官方档案馆「事件-格蕾修」**的，
+         核准记录见 `docs/superpowers/plans/2026-10-03-griseo-finds-table.md`。
+         **一个字都不许改** —— 连 `······`（六个中点）也别「规范化」成 `……`。
+       ⚠ `pageId` 必填，**改名 = 玩家进度丢失**。
+       ⚠ x/y 是**锚点矩形的百分比、指的是中心点** —— 换个视口宽度就会落到
+         别的内容上，所以「不压文字」那条断言**两个视口都要量**（§10.10 二）。
+       ⚠ `game`（`THEME.game`）**不在这一批里** —— 它归 Task 7，
+         `games/griseo.js` 要等计划 B 才建，现在写进来就是一份用不上的配置。 */
+    explore: {
+      pageId: 'griseo',
+      finds: [
+        { id:'griseo-01', at:'#opening', x:0.10, y:0.22, verb:'click',      art:'brush',
+          line:'我······想为你画一幅画。',
+          src:'官方档案馆 · 事件-格蕾修 · 关于绘画·其一' },
+        { id:'griseo-02', at:'#about',   x:0.08, y:0.13, verb:'hold',       art:'palette',
+          line:'嗯，这里有很多新的灵感，能画出许多朋友。',
+          src:'官方档案馆 · 事件-格蕾修 · 画家的追忆·其一' },
+        { id:'griseo-03', at:'#about',   x:0.92, y:0.90, verb:'triple_tap', art:'frame',
+          line:'再后来的事······我记得不是很清楚了。',
+          src:'官方档案馆 · 事件-格蕾修 · 画家的追忆·其一' },
+        { id:'griseo-04', at:'#palette', x:0.08, y:0.82, verb:'hold',       art:'brush',
+          line:'颜料，找不到了······没有颜料的话······就找不到朋友们了。',
+          src:'官方档案馆 · 事件-格蕾修 · 给予刻印·其一' },
+        { id:'griseo-05', at:'#palette', x:0.92, y:0.25, verb:'slide',      art:'palette',
+          line:'蓝色的太阳、紫色的湖、红色的猎人和绿宝石的猫······啊！还有天空中的白鲸和云上的松鼠，还有······还有······',
+          src:'官方档案馆 · 事件-格蕾修 · 给予刻印·其九' },
+        { id:'griseo-06', at:'#journey', x:0.08, y:0.16, verb:'click',      art:'ark',
+          line:'嗯，爸爸妈妈都在这里工作，他们告诉我，基地是世界上最安全的地方。',
+          src:'官方档案馆 · 事件-格蕾修 · 画家的追忆·其八' },
+        { id:'griseo-07', at:'#journey', x:0.92, y:0.34, verb:'hold',       art:'moon',
+          line:'好像睡了很长的一觉，醒来的时候，爸爸妈妈都不见了，一直都是科斯魔和阿波尼亚妈妈在照顾我。',
+          src:'官方档案馆 · 事件-格蕾修 · 画家的追忆·其一' },
+        { id:'griseo-08', at:'#journey', x:0.08, y:0.56, verb:'drag',       art:'ark',
+          line:'一艘小船，坐着它，可以飞往天上。',
+          src:'官方档案馆 · 事件-格蕾修 · 画家的追忆·九' },
+        { id:'griseo-09', at:'#journey', x:0.92, y:0.80, verb:'slide',      art:'crab',
+          line:'他更想像芽衣姐姐说的那样，去「战斗」。',
+          src:'官方档案馆 · 事件-格蕾修 · 画家的追忆·九' },
+        { id:'griseo-10', at:'#quotes',  x:0.95, y:0.38, verb:'click',      art:'moon',
+          line:'阿波尼亚妈妈的声音很好听······像天上的海浪······在云朵的贝壳里睡觉······',
+          src:'官方档案馆 · 事件-格蕾修 · 给予刻印·其四' },
+        { id:'griseo-11', at:'#ending',  x:0.12, y:0.44, verb:'click',      art:'frame',
+          line:'芽衣姐姐到这里来，时间应该已经过去很久了吧。',
+          src:'官方档案馆 · 事件-格蕾修 · 画家的追忆·九' },
+        { id:'griseo-12', at:'#bottom',  x:0.50, y:0.10, verb:'hold',       art:'crab',
+          line:'帕朵姐姐的尾巴很暖，很舒服······罐头的毛也很好摸，就像······像好吃的麦田。',
+          src:'官方档案馆 · 事件-格蕾修 · 给予刻印·其十二' },
+      ],
+
+      /* 找齐 12 个之后展开，**只出现这一次**。
+         ⚠ `title` 是**站点 UI 文案**（不是她说的话）；`text` / `src` 是台词，
+           逐字取自档案馆「给予刻印·其七」，`src` 如实标注。 */
+      unlock: {
+        title: '她说，画里的都是朋友',
+        text: '「和我一起画吧，这样，它们也是你的朋友了。你喜欢什么？海底的帆船？还是云朵里的螃蟹？」',
+        src: '官方档案馆 · 事件-格蕾修 · 给予刻印·其七',
+      },
+
+      /* 陪伴层台词池：冷却结束后的**第 3 次**点击说一句，**按顺序**推进（绝不做概率）。
+         ⚠ 这四句都是「给予刻印」里的独白（M16 / M14 / M15 / M2），逐字照录。 */
+      whisper: [
+        '「你······最喜欢什么颜色呢？」',
+        '「你的眼睛里······有我从来没见过的颜色。」',
+        '「碰撞与改变，有时候会诞生新的色彩······我们也一样。」',
+        '「我画了很多东西，它们就在这里，你看到了吗？」',
+      ],
+      whisperCooldownMs: 9000,   // 她是小孩子，比樱（11000）密一点
+    },
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+
+  /* ══ 接新模块（2026-10-03）══════════════════════════════════════════
+     ⚠ `ElysiaExplore.init` 与 `ElysiaBottom.mount` 的**先后顺序本来都行** ——
+       可发现物的锚点可以挂在下文区块上（那是 `mount` 才建出来的），
+       共享层的 `ensureAttached` 会在挂载探索度时补扫。
+       这里保持与 mobius / sakura 一致：**先 init 再 mount**。
+     ⚠ `THEME.game` 与 `ElysiaBday.mount(...)` 归 Task 7（下方区块 / 生日胶囊）；
+       `bottom.js` / `bday.js` / `data/bdays.js` 这一批**只接线、不调用**。 */
+  ElysiaExplore.init(THEME.explore);
+  ElysiaBottom.mount({});
   /* SECTION: resize guard */
   window.addEventListener('resize', function(){
     for (var j = 0; j < dusts.length; j++){

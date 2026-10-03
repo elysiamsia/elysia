@@ -58,6 +58,10 @@ EXPECTED_FINDS = {
     'mobius/index.html': 12,
     'sakura/index.html': 12,
     'kosma/index.html': 12,
+    # ⚠ 2026-10-03 由 **Task 6** 提前登记（计划把登记排在 Task 8，但 Task 6 自己
+    #   就要跑本脚本 —— 未登记的新页会先挂一条与内容无关的断言，见 ledger Ruling R1）。
+    #   Task 8 只做其余 7 个登记点。
+    'griseo/index.html': 12,
 }
 
 # ── 樱这一页的**台词登记表** ─────────────────────────────────────────
