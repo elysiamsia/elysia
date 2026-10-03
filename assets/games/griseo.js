@@ -484,6 +484,12 @@
     var tip = cell ? (cell.y * COLS + cell.x) : -1;
     var anchored = tip >= 0 && touchesHome(grid, COLS, ROWS, tip);
 
+    /* ⚠ 闸门**只查笔尖那一端**；而 `fillEnclosed` 内部要求「轨迹**两端**各自四邻都贴家」
+       （`ends.length===2 && touchesHome(e0) && touchesHome(e1)`）—— 二者**不等价**：
+       只一端贴家时，闸门放行、算法**收不了内部**，但按算法 ⑤「所有 `2` 格无条件变 owner」，
+       这条线本身仍会被收编成领地。这是 brief「笔尖落在自己的颜色上」的直译，不是 bug。
+       ⚠ **Task 4** 的对称碰撞 / 断笔触若复用 `anchored`，务必注意这处语义差（交接里已点名）。 */
+
     if (anchored) {
       /* ① 快照「上色前」，好算出这一笔**新染**了哪些格（晕染动画要用）。 */
       var before = new Int8Array(grid);
