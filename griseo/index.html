@@ -73,6 +73,29 @@
   --text:#f2e9f8;--text-dim:#b8a8c8;--text-muted:#7d6e8c;
   --glass-bg:rgba(201,160,255,.05);--glass-border:rgba(255,217,122,.14);
   --glass-bg2:rgba(125,211,252,.05);--glass-border2:rgba(255,217,122,.12);
+
+  /* 生日倒计时的配色覆盖（assets/explore.css 里那组 --bday-*）。
+     ⚠ 一个字都不新发明：全部从上面这套**五罐颜料 + 金**里取 ——
+       她这一页没有单一主色（「五罐颜料一起当主角」），
+       所以壳子走紫(--violet) 与天蓝(--sky)，圆点与收边统一交给金(--gold)，
+       那是她发饰与星星的颜色，别让胶囊也花掉。
+       不覆盖的话它会吃共享层的默认值，那是**首页爱莉希雅的粉紫**，串页。 */
+  --bday-ink:#f2e9f8;                                  /* = --text */
+  --bday-accent:#ffd97a;                               /* = --gold，圆点与强调 */
+  --bday-title:#b8a8c8;                                /* = --text-dim */
+  --bday-date:#7dd3fc;                                 /* = --sky，日期那一行 */
+  --bday-num:#c9a0ff;                                  /* = --violet，倒计时那四位数 */
+  --bday-unit:#7d6e8c;                                 /* = --text-muted */
+  --bday-egg-bg:linear-gradient(135deg,rgba(201,160,255,.16),rgba(125,211,252,.12));
+  --bday-egg-border:rgba(201,160,255,.25);
+  --bday-egg-glow:rgba(255,217,122,.18);
+  --bday-egg-glow-hover:rgba(255,217,122,.3);
+  --bday-panel-bg:linear-gradient(150deg,rgba(16,11,19,.92),rgba(36,23,38,.92));
+  --bday-panel-border:rgba(201,160,255,.22);
+  --bday-panel-glow:rgba(255,217,122,.12);
+  --bday-cell-bg:rgba(255,217,122,.07);
+  --bday-cell-border:rgba(255,217,122,.14);
+  --bday-src:rgba(184,168,200,.55);
 }
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
@@ -1617,6 +1640,17 @@ body{
       ],
       whisperCooldownMs: 9000,   // 她是小孩子，比樱（11000）密一点
     },
+
+    /* 下方区块的游戏槽（spec §4.5）。⚠ 本任务只接线，**不建模块**：
+       `assets/games/griseo.js` 要等**计划 B** 才写 —— 找不到模块时
+       `ElysiaBottom.mount` 只 `console.warn`，不抛（`check_explore` 的「无报错」
+       那条收的是 level=error，warn 不算失败）。
+       ⚠ 但「游戏卡文案 == 模块声明」那条断言（要求槽非空、模块恰好 1 个）
+       在计划 B 落地前会**预期变红** —— 它守的是「有槽就必须有模块」，
+       而模块还没写；这是计划 A→B 之间**已知的过渡态**。
+       ⚠⚠ 所以这里**绝不能**加 `<script src="/assets/games/griseo.js">`：
+       那个文件还不存在，404 在 `check_explore.py` 里算失败。 */
+    game: { module: 'griseo' },
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
 
@@ -1625,10 +1659,20 @@ body{
        可发现物的锚点可以挂在下文区块上（那是 `mount` 才建出来的），
        共享层的 `ensureAttached` 会在挂载探索度时补扫。
        这里保持与 mobius / sakura 一致：**先 init 再 mount**。
-     ⚠ `THEME.game` 与 `ElysiaBday.mount(...)` 归 Task 7（下方区块 / 生日胶囊）；
-       `bottom.js` / `bday.js` / `data/bdays.js` 这一批**只接线、不调用**。 */
+     ⚠ `ElysiaBottom.mount` 找不到 `ElysiaGames.griseo` 时**只 `console.warn`** ——
+       游戏模块（`assets/games/griseo.js`）到计划 B 才建，现在给个 `module` 名即可。 */
   ElysiaExplore.init(THEME.explore);
-  ElysiaBottom.mount({});
+  ElysiaBottom.mount({ game: THEME.game });   // ⚠ 先只给 module 名，脚本到计划 B 才加
+
+  /* 生日胶囊（她生日 12/21，`data/bdays.js` 里已登记）。
+     ⚠ `birthMsg` 是**天行·绘星之卷 · 生日祝福语音**的原文，逐字取自材料包
+       `materials/格蕾修/text_materials.md`【彩蛋专用】第 4 条；省略号照原文用 `……`
+       （这一句不是「事件-格蕾修」页的文本，不受「六个中点」那条约束）。
+     ⚠ 绝不拿首页爱莉希雅那句顶替 —— 那是**她自己**的生日台词。 */
+  ElysiaBday.mount({
+    birthMsg: '「今天是个特别的日子，所以……新发现的小行星，就以你的名字来命名，怎么样？」',
+    src: '官方档案馆 · 天行·绘星之卷 · 生日祝福语音',
+  });
   /* SECTION: resize guard */
   window.addEventListener('resize', function(){
     for (var j = 0; j < dusts.length; j++){
