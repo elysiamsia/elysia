@@ -892,11 +892,25 @@
   /**
    * 巡边计划：圈地不成时的退路 —— 朝一个空方向直走一小段（沿途落笔触），
    * 走完就撤销。**保证造物在这种局面下仍在动**（不卡死、不原地抖）。
-   */
+   *
+   * ⚠⚠ 方向优先级 = **直行 → 转（垂直于当前方向的两向）→ 反向**，反向**必须排最后**。
+   *    踩过的坑（review 点名 R37）：原来用 `(e.dir + t) & 3` 顺着 `DIRS`
+   *    （上/下/左/右）取候选，于是「面朝上」时第二顺位就是**下（反向）** ——
+   *    前方是墙、旁边明明是空地，它却先往回走 ⇒ 贴墙 / 1 格宽走廊里**来回踱步**，
+   *    看着像原地抖（spec §5.1 明令「别原地抖动」）。
+   *    0=上 1=下 2=左 3=右（与 `DIRS` 对齐）；每行把「反向」放在第四位。 */
+  var PROBE_ORDER = [
+    [0, 2, 3, 1],   // 面朝上：上 / 左 / 右 / 下（反向最后）
+    [1, 2, 3, 0],   // 面朝下：下 / 左 / 右 / 上
+    [2, 0, 1, 3],   // 面朝左：左 / 上 / 下 / 右
+    [3, 0, 1, 2]    // 面朝右：右 / 上 / 下 / 左
+  ];
+
   function planProbe(e) {
     if (!grid) return null;
+    var order = PROBE_ORDER[e.dir & 3] || PROBE_ORDER[0];
     for (var t = 0; t < 4; t++) {
-      var d = (e.dir + t) & 3;
+      var d = order[t];
       var dx = DIRS[d][0], dy = DIRS[d][1];
       var path = [], x = e.x, y = e.y;
       for (var s = 0; s < ENEMY_PROBE_LEN; s++) {
@@ -1445,6 +1459,7 @@
      ⚠ Task 4 参数化：`homeCode` 是「谁算家」（默认 `HOME=1`，玩家）。
        造物复用这套算法时传自己的领地码。**默认值一填，玩家那条路径逐字不变。** */
   function buildLid(grid, w, h, from, to, out, homeCode) {
+    if (homeCode === undefined) homeCode = HOME;   // ⚠ 与 fillEnclosed / touchesHome 保持同一默认值
     var n = w * h;
     var INF = 1 << 28;
     var bestD = new Int32Array(n);
