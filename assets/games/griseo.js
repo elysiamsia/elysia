@@ -28,10 +28,13 @@
  *
  * ── 任务进度 ────────────────────────────────────────────────────────
  *   Task 2：骨架 + 遮罩 + 网格 + 离屏渲染 + **玩家可拖动**（笔触落成 `2`）。
- *   Task 3（本任务）：**松手回填** —— 松手时若**笔尖挨着自己的颜色**（四邻有 `1`）
+ *   Task 3：**松手回填** —— 松手时若**笔尖挨着自己的颜色**（四邻有 `1`）
  *     就调 `fillEnclosed` 把围住的区域染成领地（带**晕染动画**）；否则整条笔触
  *     **淡去**回空白（「白画一场」）。
- *   Task 4：造物（`>=3`）；Task 5：击杀 / 结算 / 接入页面。
+ *   Task 4（本任务）：**造物** —— 场上的「褪色造物」有自己的领地、会自己圈地扩张；
+ *     与玩家**对称碰撞**（谁碰到谁的笔触，谁的笔触就断）；玩家把它们整块领地吃掉。
+ *     难度**分档 + 封顶**（地越大 → 造物越多越快，但有上限）。
+ *   Task 5：击杀结算 / 阶段扩张 / 接入页面。
  *
  * ── ⚠ 拖动时**绝不能让页面跟着滚**（本任务最容易踩的坑）──────────────
  *   三层一起上，缺一不可：
@@ -63,12 +66,55 @@
   var BRUSH_UP = 44;             // 笔尖在手指**上方** 44 个屏幕 px（防手指挡视线）
   var BASE_PAD = 1;              // 每格四周留 1px 当网格线
 
-  /* 格子的编码（**哨兵，写死，别改成通用 owner**）——
-     ⚠ 这套编码是 `fillEnclosed` 的契约（见下半节的文件头），别动。 */
+  /* ════════════════════════════════════════════════════════════════════
+   *  格子的编码 —— **一套数字，三方共用**（玩家 / 造物 / 算法）。
+   *
+   *   ⚠ 这套编码是 `fillEnclosed` 的契约（见下半节的文件头），**别动**：
+   *     · `0` 空白、`1` 玩家领地、`2` 玩家笔触 —— **只有 `1` 和 `2` 是墙**。
+   *     · **`>= 3` 一律是造物**，而造物格在算法里是**可通行的、不是墙**
+   *       （移植清单 (j) 附近有记）—— 所以玩家能把自己的笔触从造物领地「外面」绕一圈，
+   *       把它整块圈进去（算法 ⑤ 只填内部空白 + 收编 `2` 格，`>=3` 原样留着；
+   *       真正的「吃掉」由本任务末尾的 `resolveCaptures()` 负责）。
+   *
+   *   Task 4 定的具体值（**每个造物占两个连号**）：
+   *     造物 k 的**领地** = `3 + 2k`（偶数档：3, 5, 7, 9）
+   *     造物 k 的**笔触** = `4 + 2k`（奇数档：4, 6, 8, 10）
+   *   ⇒ `slot = (v - 3) >> 1`；奇偶区分「领地 / 笔触」。最多 4 个造物（`ENEMY_MAX`），
+   *     最大码 10，离 `Int8Array` 的上限还远得很。
+   *
+   *   ⚠ **造物笔触为什么不能借用 `2`**：算法的「轨迹」写死只认 `2`（玩家的笔触）。
+   *     造物若也用 `2`，它自己圈的圈会被当成**玩家的**轨迹参与围合判定 —— 错得离谱。
+   *     所以造物笔触必须是 `>=3` 的另一档；又因为 `>=3` 可通行，
+   *     造物笔触对**玩家**的围合既不挡路也不被收编，正合「对称但不干扰」的意图。 */
   var EMPTY = 0;     // 空白
   var HOME = 1;      // 玩家领地
   var STROKE = 2;    // 玩家笔触
-  // >= 3 是造物（Task 4 才登场）；本任务不会出现，但绘制要兜住。
+  var ENEMY_BASE = 3;            // 造物编码的起点（>=3 全是造物）
+
+  /* ── 造物参数 ────────────────────────────────────────────────────────
+     ⚠ 这几个数也是**手感**：改它们等于改这一局的节奏。 */
+  var ENEMY_MAX = 4;             // 场上造物**封顶**（难度公式的上限）
+  var ENEMY_HOME_R = 2;          // 造物起始领地：2×2 一小块
+  /* 速度**分档**（毫秒 / 格）—— 下标就是「速度档」（0 最慢）。⚠ 越低越快。 */
+  var ENEMY_STEP_MS = [200, 150, 105, 70];
+  /* 难度：**分档 + 封顶**。占 0.2 加一个（封顶 4）；占 0.15 升一档（封顶 3）。 */
+  var DIFF_NUM_STEP = 0.2, DIFF_NUM_CAP = 4;
+  var DIFF_SPD_STEP = 0.15, DIFF_SPD_CAP = 3;
+  /* 圈不到地时的「巡边」探测长度 + 一次计划失败后的停顿（别原地抖动）。 */
+  var ENEMY_PROBE_LEN = 6;
+  var ENEMY_COOLDOWN_MS = 500;
+
+  /* 造物登场的位置（2×2 的左上角）—— 四角**向里收一点**，别贴着画布边：
+     对称的「矩形环」一圈圈往外扩，贴着边的话几圈就撞墙、领地只有巴掌大。
+     收进来之后每只可长到约 12×12 才被墙挡住（再被挡就走「巡边」，见 `planProbe`）。 */
+  var ENEMY_SPAWN = [
+    [6, 5], [COLS - 8, 5], [6, ROWS - 7], [COLS - 8, ROWS - 7]
+  ];
+
+  /* 「朋友色」—— 呼应 spec §3.3 她调色盘上的那几抹颜色（天青留给了玩家自己）：
+     紫罗兰 / 暖橙 / 墨绿 / 青。每个造物还有一版更浅的**笔触色**（未干的颜料）。 */
+  var ENEMY_COLORS = ['#c9a0ff', '#ff9b5e', '#4fa870', '#5eead4'];
+  var ENEMY_STROKE_COLORS = ['#e3d2ff', '#ffd0b0', '#a6dcbb', '#b0f2e6'];
 
   /* 配色 —— 从她这一页的五罐颜料里取（硬编码，与 sakura/mobius 同一个做法）。 */
   var COL_LINE = '#33203a';      // 底色（露在格子缝里 = 网格线）
@@ -81,6 +127,8 @@
   var MSG_STROKE = '……笔尖正跟着你的手。';
   var MSG_FILL = '围住啦 —— 这一片都染成了你的颜色。';
   var MSG_FADE = '笔尖没绕回自己的颜色，这一笔散掉了。';
+  var MSG_HIT = '灵感中断 —— 撞上了造物的笔触，这一笔全断了。';
+  var MSG_EAT = '这一块也归你了 —— 造物被你整个吃掉了。';
   var CLOSE_GUARD_MS = 400;      // 刚打开的那一小段里拒收「收笔」的点击（照 sakura）
   var STYLE_ID = 'griseoGameStyles';
 
@@ -126,6 +174,13 @@
   var animRaf = null;            // 动画驱动的 rAF
   var animOnSettle = null;       // 动画结束时的收尾（淡去要把格子落成 0）
 
+  /* 造物状态（Task 4）——
+     `enemies[]` 每个元素见 `spawnEnemy()` 的注释；`speedTier` 是**全局**速度档。 */
+  var enemies = [];
+  var speedTier = 0;
+  var tickRaf = null;            // 造物 AI 的主循环 rAF（遮罩开着时一直转）
+  var lastTick = 0;
+
   /* ══════════════════════════════════════════════════════════════════
    *  一、渲染 —— 离屏缓存 + 只画脏格
    * ══════════════════════════════════════════════════════════════════ */
@@ -160,7 +215,14 @@
     var v = grid ? grid[i] : EMPTY;
     if (v === HOME) return COL_HOME;
     if (v === STROKE) return COL_STROKE;
-    if (v >= 3) return '#6ea86b';                // 造物（Task 4）—— 本任务用不到
+    if (v >= ENEMY_BASE) {
+      /* 造物：偶数档 = 领地（朋友色）；奇数档 = 笔触（更浅的未干颜料）。 */
+      var slot = (v - ENEMY_BASE) >> 1;
+      if (((v - ENEMY_BASE) & 1) === 1) {
+        return ENEMY_STROKE_COLORS[slot] || ENEMY_STROKE_COLORS[0];
+      }
+      return ENEMY_COLORS[slot] || ENEMY_COLORS[0];
+    }
     return COL_EMPTY;
   }
 
@@ -376,7 +438,7 @@
    *  二、玩法 —— 拖动，把经过的格标成笔触
    * ══════════════════════════════════════════════════════════════════ */
 
-  /** 开局：清空网格，把中央 3×3 变成她的领地（画布原点）。 */
+  /** 开局：清空网格，把中央 3×3 变成她的领地（画布原点），并按难度摆上造物。 */
   function resetGame() {
     settleAnim();                                // 收掉可能挂着的动画（换 grid 之前必须先结算）
     grid = new Int8Array(COLS * ROWS);
@@ -384,6 +446,8 @@
     dirtyList.length = 0;
     dragging = false;
     lastCell = null;
+    enemies = [];                                // 造物全部撤下，下面按难度重新登场
+    speedTier = 0;
 
     var cx = COLS >> 1, cy = ROWS >> 1;         // 48>>1 = 24 / 32>>1 = 16
     var half = HOME_R >> 1;                      // 3×3 → 半径 1
@@ -393,6 +457,8 @@
         grid[y * COLS + x] = HOME;
       }
     }
+    /* 开局占比 ≈ 9/1536 ≈ 0.006 ⇒ 公式给 **1 个造物 / 速度档 0**。 */
+    recomputeDifficulty();
     if (el.msg) el.msg.textContent = MSG_OPEN;
     fullRender();
   }
@@ -414,7 +480,8 @@
     return { cx: cx, cy: cy, px: px, py: py };
   }
 
-  /** 在自己领地**外**的空白格上落笔触（领地 / 造物 / 已有笔触一律不动）。 */
+  /** 在自己领地**外**的空白格上落笔触（领地 / 造物 / 已有笔触一律不动）。
+      ⚠ 落完立刻查一次**对称碰撞**：若这一格的四邻有造物笔触，玩家这一笔就**全断**。 */
   function markStroke(cx, cy) {
     if (!grid) return;
     var i = cy * COLS + cx;
@@ -422,6 +489,8 @@
       grid[i] = STROKE;
       markDirty(i);
     }
+    var hit = adjacentEnemyStroke(cx, cy);
+    if (hit) handleCollision(hit);
   }
 
   /**
@@ -430,6 +499,8 @@
    *   这一点很要紧：`fillEnclosed` 切轨迹连通分量、以及泛洪判定**都按 4 连通** ——
    *   若这里走出对角步，一笔会被切成好几个分量，围地就判不出来了。
    *   同时也顺手解决了「手一快就跳格漏标」：跳多远都补得出中间那些格。
+   * ⚠ 走到一半若被造物撞上（`handleCollision` 把 `dragging` 置回 false），
+   *   这里立刻**收手** —— 否则这一笔会继续在断笔之后接着画，把「全断」毁了。
    */
   function strokeWalk(x0, y0, x1, y1) {
     var x = x0, y = y0;
@@ -440,6 +511,7 @@
       if (adx >= ady) x += (x1 > x) ? 1 : -1;
       else y += (y1 > y) ? 1 : -1;
       markStroke(x, y);
+      if (!dragging) return;                     // 撞上了 ⇒ 笔已断，别再往下走
     }
   }
 
@@ -450,8 +522,8 @@
     dragging = true;
     lastCell = { x: cell.cx, y: cell.cy };
     brushX = cell.px; brushY = cell.py;          // 浮点位置：笔尖圈跟手，不跳格
-    markStroke(cell.cx, cell.cy);
-    if (el.msg) el.msg.textContent = MSG_STROKE;
+    markStroke(cell.cx, cell.cy);                // ⚠ 可能当场撞上造物 ⇒ 下面要再确认还「按着」
+    if (dragging && el.msg) el.msg.textContent = MSG_STROKE;
     scheduleRender();
   }
 
@@ -494,7 +566,14 @@
       /* ① 快照「上色前」，好算出这一笔**新染**了哪些格（晕染动画要用）。 */
       var before = new Int8Array(grid);
       fillEnclosed(grid, COLS, ROWS, HOME);        // ⚠ 原地改 grid（不是纯函数）
-      /* ② 新格 = 现在 `1`、而之前不是 `1` 的格（含被无条件收编的笔触 `2`→`1`）。 */
+      /* ② 难度重算：玩家的地变了 ⇒ 造物数量 / 速度档跟着变（分档 + 封顶）。
+            ⚠ 放在「结算击杀」**之前** —— 否则刚吃掉的造物会被公式当场补一个回来，
+              击杀就白杀了。补位只在这一步发生（地长大了），击杀留下的空位不补。 */
+      recomputeDifficulty();
+      /* ③ 造物结算：这一笔若把某个造物的领地**整块围死**了，它就被吃掉（全染成你的色）。 */
+      var eaten = resolveCaptures();
+      /* ④ 新格 = 现在 `1`、而之前不是 `1` 的格（含被无条件收编的笔触 `2`→`1`、
+            以及被吃掉的造物领地）。 */
       var newCells = [];
       for (var i = 0; i < grid.length; i++) {
         if (grid[i] === HOME && before[i] !== HOME) newCells.push(i);
@@ -502,7 +581,7 @@
       if (newCells.length > 0) {
         var dd = computeDepths(newCells, before);
         startFillAnim(newCells, dd.depth, dd.max); // 带晕染动画
-        if (el.msg) el.msg.textContent = MSG_FILL;
+        if (el.msg) el.msg.textContent = eaten > 0 ? MSG_EAT : MSG_FILL;
       } else {
         fullRender();                              // 空笔（没改动）—— 直接把现状画平
       }
@@ -562,6 +641,419 @@
        老内核里 `touch-action:none` 未必生效，这一层是「拖动不滚页」的最后一道闸。
        画布是**游戏台**，落在上面的滑动本来就该是画画，不是滚页面。 */
     addActive(cv, 'touchmove', function (e) { e.preventDefault(); });
+  }
+
+  /* ══════════════════════════════════════════════════════════════════
+   *  二·B、造物（Task 4）—— 会自己圈地的「褪色造物」
+   *
+   *  ── 它们在算法里是什么 ──────────────────────────────────────────────
+   *    编码见文件头的「格子的编码」一节：造物 k 的领地 = `3+2k`、笔触 = `4+2k`，
+   *    **全部 `>= 3`、在算法里可通行**。所以：
+   *      · 玩家绕一圈把某造物**整块围死**时，它的领地本身**不是墙**，不干扰围合判定；
+   *        泡沫内部照样被填成玩家色，随后由 `resolveCaptures()` 把它**整块吃掉**。
+   *      · 反过来，造物自己圈地时调的是**参数化后**的 `fillEnclosed`
+   *        （`trailCode` = 它的笔触、`homeCode` = 它的领地），互不串味。
+   *
+   *  ── AI 策略：**一圈一圈往外扩** ─────────────────────────────────────
+   *    每个造物记着自己领地的**外接矩形** `box`。一次行动 = 沿 `box` 外扩 1 格的那圈
+   *    **矩形周长**走一遍（走的同时落自己的笔触），走完就回填 —— 这一圈围出的环带
+   *    就变成它的领地，`box` 随之长大一圈。行为**匀速、成圈、有方向**，
+   *    看起来是有意图的扩张，不是随机抖动。
+   *    ⚠ 圈是**闭合回路**（首尾相接，0 个自由端）⇒ `fillEnclosed` 走「自己成环」那一支，
+   *      **不依赖封口线** ⇒ 不会踩到「领地裂成两岛、封口线走不通」那个坑（约束 (i)）。
+   *    ⚠ 圈上任何一格不是空白（边界 / 玩家的地 / 别的造物）⇒ 这一圈**作废**（撤销笔触），
+   *      改用**巡边**：朝一个空方向直走几格、撤销、停顿一下再试 —— 保证「不卡死」。
+   *
+   *  ── 对称碰撞 ────────────────────────────────────────────────────────
+   *    「碰」= 两个笔触格**四邻相邻**（与全篇的 4 连通口径一致，(j)）。
+   *      · 造物笔触挨上玩家笔触 → **玩家笔触全断**（整条清成空白），笔尖重新出发；
+   *      · 玩家笔触挨上造物笔触 → **那一个造物这一笔断**（它的笔触清成空白）。
+   *    两条是同一个事件的两面，所以**同时**发生。
+   *    ⚠⚠ 断玩家笔触时**必须整条清光**（约束 (i)）：只要有一截「与家断开」的笔触留在
+   *      grid 里，下一次 `fillEnclosed` 的 ⑤ 会把它无条件收成领地 ⇒ **玩家领地裂成孤岛**
+   *      ⇒ 之后围合判定成批静默被拒（上游实测 51.7%）。清光就没有孤岛。
+   *    ⚠ 碰撞判据纯几何（四邻），**不碰** `fillEnclosed` 的闸门 —— 所以不存在
+   *      「闸门放行 / 算法要两端」那种语义错位（约束 2）。
+   * ══════════════════════════════════════════════════════════════════ */
+
+  /** 这个格值是不是「某个造物的笔触」（`>=3` 里的奇数档）。 */
+  function isEnemyStroke(v) {
+    return v >= ENEMY_BASE && ((v - ENEMY_BASE) & 1) === 1;
+  }
+
+  /** 按笔触码找回那个造物（最多 4 个，线性扫足够）。 */
+  function enemyByStrokeCode(code) {
+    for (var k = 0; k < enemies.length; k++) {
+      if (enemies[k].strokeCode === code) return enemies[k];
+    }
+    return null;
+  }
+
+  /** (x,y) 的四邻里有没有造物笔触？有就把那个造物返回（碰撞用）。 */
+  function adjacentEnemyStroke(x, y) {
+    if (!grid) return null;
+    for (var d = 0; d < DIRS.length; d++) {
+      var nx = x + DIRS[d][0], ny = y + DIRS[d][1];
+      if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+      var v = grid[ny * COLS + nx];
+      if (isEnemyStroke(v)) return enemyByStrokeCode(v);
+    }
+    return null;
+  }
+
+  /** (x,y) 的四邻里有没有玩家笔触？ */
+  function touchesPlayerStroke(x, y) {
+    if (!grid) return false;
+    for (var d = 0; d < DIRS.length; d++) {
+      var nx = x + DIRS[d][0], ny = y + DIRS[d][1];
+      if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+      if (grid[ny * COLS + nx] === STROKE) return true;
+    }
+    return false;
+  }
+
+  /**
+   * 对称碰撞的**唯一**收口。
+   * ⚠ 玩家笔触**整条清光**（不是只清碰到的那一截）—— 理由见本节小标题下的约束 (i)。
+   */
+  function handleCollision(enemy) {
+    if (!grid) return;
+    var changed = false;
+    for (var i = 0; i < grid.length; i++) {
+      if (grid[i] === STROKE) { grid[i] = EMPTY; markDirty(i); changed = true; }
+    }
+    if (enemy) breakEnemyStroke(enemy);          // 造物那一笔也断
+    dragging = false;                            // 「笔尖从自己的颜色重新出发」
+    lastCell = null;
+    if (el.msg) el.msg.textContent = MSG_HIT;
+    if (changed) scheduleRender();
+  }
+
+  /** 把某个造物当前的笔触全部撤掉（清成空白），并让它这一轮计划作废。 */
+  function breakEnemyStroke(e) {
+    if (!grid || !e) return;
+    retractEnemyStroke(e);
+    e.plan = null; e.planIdx = 0; e.probe = false; e.planRect = null;
+    e.cooldown = ENEMY_COOLDOWN_MS;
+  }
+
+  /** 只撤销笔触格（清成空白），不动计划字段。 */
+  function retractEnemyStroke(e) {
+    if (!grid || !e) return;
+    for (var i = 0; i < grid.length; i++) {
+      if (grid[i] === e.strokeCode) { grid[i] = EMPTY; markDirty(i); }
+    }
+  }
+
+  /* ── 难度：**分档 + 封顶**（占比重算，绝不线性）────────────────────── */
+
+  /** 玩家领地占全画布的比例。 */
+  function playerRatio() {
+    if (!grid) return 0;
+    var c = 0;
+    for (var i = 0; i < grid.length; i++) if (grid[i] === HOME) c++;
+    return c / (COLS * ROWS);
+  }
+
+  /** 造物数量 = `1 + floor(占比 / 0.2)`，**封顶 4**。 */
+  function enemyCountForRatio(r) {
+    var n = 1 + Math.floor(r / DIFF_NUM_STEP);
+    return n > DIFF_NUM_CAP ? DIFF_NUM_CAP : n;
+  }
+
+  /** 速度档 = `floor(占比 / 0.15)`，**封顶 3**。 */
+  function speedTierForRatio(r) {
+    var t = Math.floor(r / DIFF_SPD_STEP);
+    return t > DIFF_SPD_CAP ? DIFF_SPD_CAP : t;
+  }
+
+  /** 找第一个没被占用的「槽位」（决定颜色 / 出生角落 / 编码）。 */
+  function freeSlot() {
+    for (var s = 0; s < ENEMY_MAX; s++) {
+      var used = false;
+      for (var k = 0; k < enemies.length; k++) if (enemies[k].slot === s) { used = true; break; }
+      if (!used) return s;
+    }
+    return enemies.length;
+  }
+
+  /** 把某个造物的所有格子（领地 + 笔触）清成空白。 */
+  function clearEnemyCells(e) {
+    if (!grid || !e) return;
+    for (var i = 0; i < grid.length; i++) {
+      if (grid[i] === e.homeCode || grid[i] === e.strokeCode) { grid[i] = EMPTY; markDirty(i); }
+    }
+  }
+
+  /**
+   * 重算难度：数量按占比给（封顶 4），速度档按占比给（封顶 3），
+   * 不足就补造物、超出就撤造物（正常玩法里占比只涨，所以基本只走「补」那一边）。
+   */
+  function recomputeDifficulty() {
+    if (!grid) return;
+    var r = playerRatio();
+    var want = enemyCountForRatio(r);
+    speedTier = speedTierForRatio(r);
+    while (enemies.length < want) {
+      if (!spawnEnemy(freeSlot())) break;        // 找不到空地就别硬塞
+    }
+    while (enemies.length > want) {
+      clearEnemyCells(enemies.pop());
+    }
+    for (var k = 0; k < enemies.length; k++) {
+      enemies[k].tier = speedTier;
+      enemies[k].stepMs = ENEMY_STEP_MS[speedTier];
+    }
+  }
+
+  function free2x2(x, y) {
+    if (x < 0 || y < 0 || x + ENEMY_HOME_R > COLS || y + ENEMY_HOME_R > ROWS) return false;
+    for (var yy = y; yy < y + ENEMY_HOME_R; yy++) {
+      for (var xx = x; xx < x + ENEMY_HOME_R; xx++) {
+        if (grid[yy * COLS + xx] !== EMPTY) return false;
+      }
+    }
+    return true;
+  }
+
+  /** 先试这个槽位的角落，被占了就两格一步地扫一圈，找第一块空地。 */
+  function findSpawn(slot) {
+    var pref = ENEMY_SPAWN[slot % ENEMY_SPAWN.length];
+    if (free2x2(pref[0], pref[1])) return { x: pref[0], y: pref[1] };
+    for (var y = 1; y + ENEMY_HOME_R <= ROWS - 1; y += 2) {
+      for (var x = 1; x + ENEMY_HOME_R <= COLS - 1; x += 2) {
+        if (free2x2(x, y)) return { x: x, y: y };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * 造物登场：一小块 `ENEMY_HOME_R × ENEMY_HOME_R` 的领地 + 一个「朋友色」。
+   * 元素字段：
+   *   slot        槽位（0..3）—— 决定编码 / 颜色 / 出生角落
+   *   homeCode    领地格值（`3+2k`）        strokeCode  笔触格值（`4+2k`）
+   *   x, y        笔尖当前所在格（画「它在动」靠它；采样方差也读它）
+   *   dir         巡边时的朝向
+   *   stepMs      这一档「几毫秒走一格」   tier        当前速度档
+   *   box         自己领地的**外接矩形**（下一圈就沿它外扩 1 格）
+   *   plan/planIdx 当前这一圈的路径与走到哪了；probe 标记这一轮是「巡边」不是「圈地」
+   *   planRect    当前这一圈的外接矩形（填完把自己升级成新 box）
+   */
+  function spawnEnemy(slot) {
+    if (!grid) return null;
+    var pos = findSpawn(slot);
+    if (!pos) return null;
+    var e = {
+      slot: slot,
+      homeCode: ENEMY_BASE + slot * 2,
+      strokeCode: ENEMY_BASE + slot * 2 + 1,
+      color: ENEMY_COLORS[slot % ENEMY_COLORS.length],
+      strokeColor: ENEMY_STROKE_COLORS[slot % ENEMY_STROKE_COLORS.length],
+      x: pos.x, y: pos.y, dir: slot & 3,
+      acc: 0, stepMs: ENEMY_STEP_MS[speedTier], tier: speedTier,
+      box: { x0: pos.x, y0: pos.y, x1: pos.x + ENEMY_HOME_R - 1, y1: pos.y + ENEMY_HOME_R - 1 },
+      plan: null, planIdx: 0, probe: false, planRect: null, cooldown: 0, dead: false,
+    };
+    for (var yy = pos.y; yy < pos.y + ENEMY_HOME_R; yy++) {
+      for (var xx = pos.x; xx < pos.x + ENEMY_HOME_R; xx++) {
+        grid[yy * COLS + xx] = e.homeCode;
+        markDirty(yy * COLS + xx);
+      }
+    }
+    enemies.push(e);
+    return e;
+  }
+
+  /* ── 计划：圈地（矩形环）/ 巡边（直走一小段）────────────────────────── */
+
+  /**
+   * 圈地计划：`box` 外扩 1 格的**矩形周长**，从左上角起顺时针走一圈（闭合回路）。
+   * 只要有一格不是空白，或已贴到画布外沿 ⇒ 返回 null（这一轮圈不成）。
+   * ⚠ 闭合回路 ⇒ 算法走「自己成环」分支，不需要封口线，也就不受领地连通性影响。
+   */
+  function planRing(e) {
+    if (!grid) return null;
+    var b = e.box;
+    var r = { x0: b.x0 - 1, y0: b.y0 - 1, x1: b.x1 + 1, y1: b.y1 + 1 };
+    if (r.x0 < 0 || r.y0 < 0 || r.x1 >= COLS || r.y1 >= ROWS) return null;
+    var path = [], x, y, k;
+    for (x = r.x0; x <= r.x1; x++) path.push([x, r.y0]);       // 上边 →
+    for (y = r.y0 + 1; y <= r.y1; y++) path.push([r.x1, y]);   // 右边 ↓
+    for (x = r.x1 - 1; x >= r.x0; x--) path.push([x, r.y1]);   // 下边 ←
+    for (y = r.y1 - 1; y > r.y0; y--) path.push([r.x0, y]);    // 左边 ↑（回到起点上一格）
+    for (k = 0; k < path.length; k++) {
+      if (grid[path[k][1] * COLS + path[k][0]] !== EMPTY) return null;
+    }
+    e.planRect = r;
+    return path;
+  }
+
+  /**
+   * 巡边计划：圈地不成时的退路 —— 朝一个空方向直走一小段（沿途落笔触），
+   * 走完就撤销。**保证造物在这种局面下仍在动**（不卡死、不原地抖）。
+   */
+  function planProbe(e) {
+    if (!grid) return null;
+    for (var t = 0; t < 4; t++) {
+      var d = (e.dir + t) & 3;
+      var dx = DIRS[d][0], dy = DIRS[d][1];
+      var path = [], x = e.x, y = e.y;
+      for (var s = 0; s < ENEMY_PROBE_LEN; s++) {
+        x += dx; y += dy;
+        if (x < 0 || x >= COLS || y < 0 || y >= ROWS) break;
+        if (grid[y * COLS + x] !== EMPTY) break;
+        path.push([x, y]);
+      }
+      if (path.length > 0) { e.dir = d; e.planRect = null; return path; }
+    }
+    return null;
+  }
+
+  /** 走一个计划步：落一格造物笔触，并查一次对称碰撞。 */
+  function stepEnemy(e) {
+    if (!grid || e.dead) return;
+    if (!e.plan) {
+      var path = planRing(e);
+      e.probe = false;
+      if (!path) { path = planProbe(e); e.probe = true; }
+      if (!path) { e.cooldown = ENEMY_COOLDOWN_MS; return; }   // 四面都堵死了
+      e.plan = path;
+      e.planIdx = 0;
+    }
+    var c = e.plan[e.planIdx];
+    if (!c) { finishPlan(e); return; }
+    var idx = c[1] * COLS + c[0];
+    if (grid[idx] !== EMPTY) { abortPlan(e); return; }         // 半路被占了 ⇒ 作废
+    e.x = c[0]; e.y = c[1];
+    grid[idx] = e.strokeCode;
+    markDirty(idx);
+    e.planIdx++;
+    if (touchesPlayerStroke(c[0], c[1])) { handleCollision(e); return; }
+    if (e.planIdx >= e.plan.length) finishPlan(e);
+  }
+
+  /** 计划走完：圈地 → 回填成自己的领地；巡边 → 撤销。都附一点停顿。 */
+  function finishPlan(e) {
+    if (e.probe || !e.planRect) {
+      retractEnemyStroke(e);
+      e.cooldown = ENEMY_COOLDOWN_MS;
+    } else {
+      /* ⚠ 参数化调用：轨迹 = 自己的笔触码，家 = 自己的领地码，输出 = 自己的领地码。
+         （玩家那条路径走的是默认值 `trail=2 / home=1`，行为一字未变。） */
+      fillEnclosed(grid, COLS, ROWS, e.homeCode, e.strokeCode, e.homeCode);
+      e.box = e.planRect;
+      fullRender();
+      e.cooldown = ENEMY_COOLDOWN_MS >> 1;
+    }
+    e.plan = null; e.planIdx = 0; e.probe = false; e.planRect = null;
+  }
+
+  /** 计划作废（半路被占）：撤销笔触、停顿、下一轮重来。 */
+  function abortPlan(e) {
+    retractEnemyStroke(e);
+    e.plan = null; e.planIdx = 0; e.probe = false; e.planRect = null;
+    e.cooldown = ENEMY_COOLDOWN_MS;
+  }
+
+  /* ── 击杀：玩家把造物**整块领地**围死 → 全染成玩家色、造物消失 ─────────
+     ⚠ 本任务只建「领地变成玩家的」这条机制（含从 `enemies[]` 摘除）；
+       闪朋友色 / 计数 / 画布扩张等**结算**留给 Task 5。 */
+
+  /**
+   * 结算「被吃掉的造物」：把玩家领地当墙，从画布四条外边泛洪；
+   * 某个造物**每一格领地**都灌不到 ⇒ 它被整块围死 ⇒ 吃掉。
+   * 返回被吃掉的个数。
+   */
+  function resolveCaptures() {
+    if (!grid || enemies.length === 0) return 0;
+    var n = COLS * ROWS;
+    var reach = new Uint8Array(n);               // 1 = 能从外沿灌到这里
+    var stack = [];
+    var i, j, x, y, d, k;
+    function seed(sx, sy) {
+      var si = sy * COLS + sx;
+      if (grid[si] !== HOME && reach[si] === 0) { reach[si] = 1; stack.push(si); }
+    }
+    for (x = 0; x < COLS; x++) { seed(x, 0); seed(x, ROWS - 1); }
+    for (y = 0; y < ROWS; y++) { seed(0, y); seed(COLS - 1, y); }
+    while (stack.length > 0) {
+      i = stack.pop();
+      x = i % COLS; y = (i - x) / COLS;
+      for (d = 0; d < DIRS.length; d++) {
+        var nx = x + DIRS[d][0], ny = y + DIRS[d][1];
+        if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+        j = ny * COLS + nx;
+        if (grid[j] !== HOME && reach[j] === 0) { reach[j] = 1; stack.push(j); }
+      }
+    }
+    var captured = [];
+    for (k = 0; k < enemies.length; k++) {
+      var e = enemies[k], total = 0, unreach = 0;
+      for (i = 0; i < n; i++) {
+        if (grid[i] === e.homeCode) { total++; if (reach[i] === 0) unreach++; }
+      }
+      if (total > 0 && unreach === total) captured.push(e);
+    }
+    for (k = 0; k < captured.length; k++) captureEnemy(captured[k]);
+    if (captured.length > 0) {
+      var alive = [];
+      for (k = 0; k < enemies.length; k++) if (!enemies[k].dead) alive.push(enemies[k]);
+      enemies = alive;
+    }
+    return captured.length;
+  }
+
+  /** 把一个造物的领地整块染成玩家色、笔触撤掉、标记死亡（由调用方摘除）。 */
+  function captureEnemy(e) {
+    if (!grid || !e) return;
+    e.dead = true;
+    e.plan = null;
+    for (var i = 0; i < grid.length; i++) {
+      if (grid[i] === e.homeCode) { grid[i] = HOME; markDirty(i); }
+      else if (grid[i] === e.strokeCode) { grid[i] = EMPTY; markDirty(i); }
+    }
+  }
+
+  /* ── 主循环：遮罩开着时一直转，按各自的 `stepMs` 推造物 ─────────────── */
+
+  function tickEnemies(dt) {
+    if (!grid) return;
+    for (var k = 0; k < enemies.length; k++) {
+      var e = enemies[k];
+      if (e.dead) continue;
+      if (e.cooldown > 0) { e.cooldown -= dt; if (e.cooldown < 0) e.cooldown = 0; continue; }
+      e.acc += dt;
+      var guard = 0;
+      while (e.acc >= e.stepMs && guard++ < 2) {   // 一帧最多走两格，掉帧时别瞬移
+        e.acc -= e.stepMs;
+        stepEnemy(e);
+        if (e.cooldown > 0 || !e.plan) break;
+      }
+    }
+  }
+
+  function tickLoop() {
+    tickRaf = null;
+    if (!running) return;
+    var now = Date.now();
+    var dt = now - lastTick;
+    lastTick = now;
+    if (dt > 250) dt = 250;                       // 掉帧 / 切后台回来，别让造物瞬移一大段
+    if (dt < 0) dt = 0;
+    try { tickEnemies(dt); }
+    catch (err) { console.warn('[ElysiaGames.griseo] 造物循环出错：', err); }
+    tickRaf = global.requestAnimationFrame(tickLoop);
+  }
+
+  function startLoop() {
+    if (tickRaf) return;
+    lastTick = Date.now();
+    tickRaf = global.requestAnimationFrame(tickLoop);
+  }
+
+  function stopLoop() {
+    if (tickRaf) { global.cancelAnimationFrame(tickRaf); tickRaf = null; }
   }
 
   /* ══════════════════════════════════════════════════════════════════
@@ -697,11 +1189,13 @@
     resetGame();
     el.overlay.classList.add('on');
     el.overlay.setAttribute('aria-hidden', 'false');
+    startLoop();                                      // 造物开始动（「开局画面在动」靠它）
   }
 
   function close() {
     if (!el.overlay) return;
     settleAnim();                                    // 收笔 ⇒ 动画立刻结算（画布停在终值，静止）
+    stopLoop();                                      // 造物停手（关掉之后画布要静止）
     el.overlay.classList.remove('on');
     el.overlay.setAttribute('aria-hidden', 'true');
     running = false;
@@ -777,10 +1271,130 @@
     }
   }
 
+  /* ── 验收用的「诊断口」（Task 4 报告取证靠它）──────────────────────────
+     ⚠⚠ **仅供本地验收脚本读取**（临时脚本，不进仓库）：它**不参与玩法**，
+       正常路径一行都不会碰它。存在它的唯一理由：`mount` 之后玩法状态是 IIFE 私有的，
+       占比 / 造物数 / 速度档 / 造物位置从外面**看不见** —— 没有这个口，
+       brief 点名要证的「人为把占比设到 0.5，看造物变没变」就**没法证伪**。 */
+  function testState() {
+    var list = [];
+    for (var k = 0; k < enemies.length; k++) {
+      var e = enemies[k];
+      list.push({
+        slot: e.slot, x: e.x, y: e.y, tier: e.tier, stepMs: e.stepMs,
+        box: { x0: e.box.x0, y0: e.box.y0, x1: e.box.x1, y1: e.box.y1 },
+      });
+    }
+    return { ratio: playerRatio(), enemyCount: enemies.length, speedTier: speedTier, enemies: list };
+  }
+
+  /** 造物 k 的领地格数（验「会自己圈地」/「被吃掉」用）。 */
+  function testEnemyTerritory(k) {
+    if (!grid || !enemies[k]) return 0;
+    var code = enemies[k].homeCode, c = 0;
+    for (var i = 0; i < grid.length; i++) if (grid[i] === code) c++;
+    return c;
+  }
+
+  /** 把整张 grid 打成字符图（`. 空白 / H 玩家领地 / S 玩家笔触 / E 造物领地 / s 造物笔触`）。
+      ⚠ 只**导出状态**，判据（连通性 / 计数）由验收脚本在外部分析 —— 免得「自己证自己」。 */
+  function testDumpGrid() {
+    if (!grid) return '';
+    var rows = [], y, x, v;
+    for (y = 0; y < ROWS; y++) {
+      var row = '';
+      for (x = 0; x < COLS; x++) {
+        v = grid[y * COLS + x];
+        if (v === EMPTY) row += '.';
+        else if (v === HOME) row += 'H';
+        else if (v === STROKE) row += 'S';
+        else if (isEnemyStroke(v)) row += 's';
+        else row += 'E';
+      }
+      rows.push(row);
+    }
+    return rows.join('\n');
+  }
+
+  /** 直接推进造物 `seconds` 秒（**不依赖真实时间**，给确定性断言用）。 */
+  function testTick(seconds) {
+    var left = Math.round((seconds || 0) * 1000);
+    var guard = 0;
+    while (left > 0 && guard++ < 20000) { tickEnemies(100); left -= 100; }
+    return testState();
+  }
+
+  /** 把玩家领地铺成占比 ≈ r 的**一整块矩形**（连通），并重排造物 —— 难度断言用。 */
+  function testSetPlayerRatio(r) {
+    if (!grid) return null;
+    settleAnim();
+    var n = COLS * ROWS;
+    var target = Math.round((r || 0) * n);
+    if (target < 0) target = 0; else if (target > n) target = n;
+    grid = new Int8Array(n);
+    if (dirtyFlags) dirtyFlags = new Uint8Array(n);
+    dirtyList.length = 0;
+    enemies = [];
+    dragging = false; lastCell = null;
+    var k = 0, x, y;
+    for (y = 0; y < ROWS && k < target; y++) {
+      for (x = 0; x < COLS && k < target; x++) { grid[y * COLS + x] = HOME; k++; }
+    }
+    recomputeDifficulty();
+    fullRender();
+    return testState();
+  }
+
+  /** 给造物 `k` 的领地**套一圈玩家色的墙**（造物结算的正面用例）。 */
+  function testEncloseEnemy(k) {
+    if (!grid || !enemies[k]) return null;
+    var b = enemies[k].box;
+    var x, y;
+    for (x = b.x0 - 1; x <= b.x1 + 1; x++) { putHome(x, b.y0 - 1); putHome(x, b.y1 + 1); }
+    for (y = b.y0 - 1; y <= b.y1 + 1; y++) { putHome(b.x0 - 1, y); putHome(b.x1 + 1, y); }
+    function putHome(px, py) {
+      if (px < 0 || px >= COLS || py < 0 || py >= ROWS) return;
+      var i = py * COLS + px;
+      if (grid[i] !== HOME) { grid[i] = HOME; markDirty(i); }
+    }
+    scheduleRender();
+    return testState();
+  }
+
+  /** 让造物 `k` 的笔尖**走到 (x,y)**、落一格笔触、查一次碰撞（碰撞断言用）。 */
+  function testEnemyStepTo(k, x, y) {
+    var e = enemies[k];
+    if (!grid || !e) return null;
+    if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return null;
+    var idx = y * COLS + x;
+    if (grid[idx] !== EMPTY) return null;
+    e.x = x; e.y = y;
+    grid[idx] = e.strokeCode;
+    markDirty(idx);
+    if (touchesPlayerStroke(x, y)) handleCollision(e);
+    else scheduleRender();
+    return testState();
+  }
+
   var API = {
     title: '上色',
     hint: '把这张画，涂成你的颜色。',
     mount: mount,
+    /* ⚠ 见上面「诊断口」那段注释 —— 仅供本地验收脚本，不参与玩法。 */
+    _test: {
+      state: testState,
+      tick: testTick,
+      setPlayerRatio: testSetPlayerRatio,
+      encloseEnemy: testEncloseEnemy,
+      enemyStepTo: testEnemyStepTo,
+      enemyTerritory: testEnemyTerritory,
+      dump: testDumpGrid,
+      resolveCaptures: function () {
+        var n = resolveCaptures();
+        fullRender();
+        return { captured: n, state: testState() };
+      },
+    },
   };
 
   /* ══════════════════════════════════════════════════════════════════
@@ -826,8 +1440,11 @@
   /* 封口线：从 from 到 to 的**最短 4 连通路径**（不含两端）。
      · ⚠ **中间格只许走玩家领地(1)** —— 不许横穿空白（否则会画出一道「幻影墙」）。
      · 只走四邻 ⇒ **绝不会有对角步**。
-     · 走不通 ⇒ 返回 null ⇒ 调用方判这一笔不入选（不围合，也不假装封口）。 */
-  function buildLid(grid, w, h, from, to, out) {
+     · 走不通 ⇒ 返回 null ⇒ 调用方判这一笔不入选（不围合，也不假装封口）。
+
+     ⚠ Task 4 参数化：`homeCode` 是「谁算家」（默认 `HOME=1`，玩家）。
+       造物复用这套算法时传自己的领地码。**默认值一填，玩家那条路径逐字不变。** */
+  function buildLid(grid, w, h, from, to, out, homeCode) {
     var n = w * h;
     var INF = 1 << 28;
     var bestD = new Int32Array(n);
@@ -851,8 +1468,8 @@
         if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
         j = ny * w + nx;
         if (done[j] === 1) continue;
-        if (j !== to && grid[j] !== 1) continue;      /* ⚠ 中间格只许走领地 */
-        var step = (grid[j] === 1) ? 2 : 3;
+        if (j !== to && grid[j] !== homeCode) continue;   /* ⚠ 中间格只许走领地 */
+        var step = (grid[j] === homeCode) ? 2 : 3;
         if (bestD[u] + step < bestD[j]) { bestD[j] = bestD[u] + step; prev[j] = u; }
       }
     }
@@ -866,27 +1483,35 @@
     return out;
   }
 
-  /* 某个格子的四邻里有没有玩家领地(1) */
-  function touchesHome(grid, w, h, i) {
+  /* 某个格子的四邻里有没有「家」（默认玩家领地 `1`；造物传自己的领地码）。 */
+  function touchesHome(grid, w, h, i, homeCode) {
+    if (homeCode === undefined) homeCode = HOME;
     var x = i % w;
     var y = (i - x) / w;
     for (var d = 0; d < DIRS.length; d++) {
       var nx = x + DIRS[d][0];
       var ny = y + DIRS[d][1];
       if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
-      if (grid[ny * w + nx] === 1) return true;
+      if (grid[ny * w + nx] === homeCode) return true;
     }
     return false;
   }
 
-  function fillEnclosed(grid, w, h, owner) {
+  /**
+   * ⚠ Task 4 参数化：`trailCode` / `homeCode`（默认 `STROKE=2` / `HOME=1`）。
+   *   玩家调用走默认值 ⇒ **行为与移植时的 R33 一字不差**（已用 C:\tmp 的 31 条断言复跑验证）。
+   *   造物调用时传自己的笔触 / 领地码 —— 见 `finishPlan()`。
+   */
+  function fillEnclosed(grid, w, h, owner, trailCode, homeCode) {
+    if (trailCode === undefined) trailCode = STROKE;
+    if (homeCode === undefined) homeCode = HOME;
     if (!w || !h) return { filled: 0 };
     var n = w * h;
     var i, t, d, x, y, nx, ny, j;
 
     /* ① 收集轨迹 + 按 4 连通切成【连通分量】 */
     var trail = [];
-    for (i = 0; i < n; i++) if (grid[i] === 2) trail.push(i);
+    for (i = 0; i < n; i++) if (grid[i] === trailCode) trail.push(i);
     if (trail.length === 0) return { filled: 0 };
 
     var seen = new Uint8Array(n);
@@ -909,7 +1534,7 @@
           ny = y + DIRS[d][1];
           if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
           j = ny * w + nx;
-          if (grid[j] === 2) {
+          if (grid[j] === trailCode) {
             deg++;
             if (seen[j] === 0) { seen[j] = 1; q.push(j); }
           }
@@ -929,15 +1554,15 @@
       /* "两端各自四邻都贴着某一格玩家领地(1)" —— **不要求领地连成一片**
          ⚠ 这半句**不能省**（§11.7：2 格「插头」时它是唯一那道闸）。 */
       var anchored = (c.ends.length === 2 &&
-                      touchesHome(grid, w, h, c.ends[0]) &&
-                      touchesHome(grid, w, h, c.ends[1]));
+                      touchesHome(grid, w, h, c.ends[0], homeCode) &&
+                      touchesHome(grid, w, h, c.ends[1], homeCode));
       if (c.ends.length === 0) {
         ok = true;                                     /* 自己成环 */
       } else if (anchored) {
         ok = true;
         e0 = c.ends[0];
         e1 = c.ends[1];
-        if (buildLid(grid, w, h, e0, e1, lid) === null) { ok = false; }   /* 走不通 ⇒ 不入选 */
+        if (buildLid(grid, w, h, e0, e1, lid, homeCode) === null) { ok = false; }   /* 走不通 ⇒ 不入选 */
       }
       if (!ok) continue;
       var k;
@@ -973,10 +1598,10 @@
       }
     }
 
-    /* ⑤ 上色：内部空白 → owner；**所有 2 格 → owner**；领地(1)/造物(>=3) 一律不动。 */
+    /* ⑤ 上色：内部空白 → owner；**所有 trail 格 → owner**；领地(1)/造物(>=3) 一律不动。 */
     var filled = 0;
     for (i = 0; i < n; i++) {
-      if (grid[i] === 2) { grid[i] = owner; filled++; continue; }
+      if (grid[i] === trailCode) { grid[i] = owner; filled++; continue; }
       if (grid[i] !== 0) continue;
       if (outside[i] === 0) { grid[i] = owner; filled++; }
     }
