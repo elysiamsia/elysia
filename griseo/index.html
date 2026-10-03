@@ -405,6 +405,7 @@ body{
   border-top:1px solid rgba(255,255,255,.07);transition:color .5s ease,border-color .5s ease;
 }
 @media(max-width:480px){.palette-stage{border-radius:26px}}
+/* JS 在加载时就按 reducedMotion 决定生成不生成 .palette-dye；但用户中途改系统偏好时这条会真生效 —— 别删 */
 @media(prefers-reduced-motion:reduce){.palette-dye{animation:none;opacity:0}}
 
 /* SECTION: paintings (她的两幅画 —— 彩蛋 1 / 2)
@@ -455,6 +456,7 @@ body{
   display:block;margin-top:.45rem;min-height:3.2em;font-size:.8rem;line-height:1.8;font-weight:300;
   color:var(--text-dim);transition:color .5s ease;
 }
+/* 同上：JS 只在加载时读一次 reducedMotion，用户中途改成减动时这条兜住 .pulse 的呼吸 —— 别删 */
 @media(prefers-reduced-motion:reduce){.painting-frame.pulse .painting-mist{animation:none;opacity:.5}}
 
 /* SECTION: footprint (彩蛋 3 —— 你踩到画布了)
@@ -472,6 +474,10 @@ body{
 .ink-step svg{display:block;width:100%;height:100%;filter:drop-shadow(0 0 8px var(--step-glow,rgba(255,217,122,.5)))}
 @media(prefers-reduced-motion:reduce){
   .ink-step{animation:none;opacity:.8;transform:translate(-50%,-50%) rotate(var(--step-rot,0deg))}
+  /* ⚠ 总闸（site.css）只把时长压到 0.01ms，**没关掉动画名** —— `.ink-step.fade` 照旧跑
+     `ink-step-out`。这里用 0,2,0 的 `.ink-step.fade` 明写 `animation:none` 把它稳赢按住：
+     减动下那一枚脚印不该「淡出」，退场即隐。 */
+  .ink-step.fade{animation:none;opacity:0}
 }
 
 /* SECTION: responsive */
@@ -604,8 +610,8 @@ body{
       </button>
     </div>
     <div class="palette-say" id="paletteSay">
-      <p class="palette-line" id="paletteLine">点一抹色，她就会染上那个朋友的颜色。</p>
-      <p class="palette-attr" id="paletteAttr">她的调色盘 · 色彩浸染</p>
+      <p class="palette-line" id="paletteLine" aria-live="polite">点一抹色，她就会染上那个朋友的颜色。</p>
+      <p class="palette-attr" id="paletteAttr" aria-live="polite">她的调色盘 · 色彩浸染</p>
     </div>
   </div>
 </section>
@@ -975,8 +981,7 @@ body{
     ctx.closePath();
     ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.globalAlpha = alpha;                        // 星心那一点暖金，照应刻印上那颗
-    ctx.fillStyle = '#ffd97a';
+    ctx.fillStyle = '#ffd97a';                      // 星心那一点暖金，照应刻印上那颗
     ctx.beginPath();
     ctx.arc(0, 0, Math.max(0.8, r * 0.11), 0, Math.PI * 2);
     ctx.fill();
@@ -1209,10 +1214,11 @@ body{
     for (var i = 0; i < paletteDabs.length; i++){
       paletteDabs[i].classList.toggle('active', paletteDabs[i].getAttribute('data-color') === key);
     }
-    if (!paletteSeen[key]){ paletteSeen[key] = true; paletteSeenCount++; }
-    if (paletteSeenCount === 5){
-      showToast('五种颜色都染过了······现在，她身上有五位朋友的颜色。', true);
-    }
+    /* ⚠ 完成提示必须**边长沿触发**：五抹色是「每一次都点得到」的招牌动作，
+       若把判定留在分支外，`=== 5` 到 5 之后**恒真** —— 此后每点任意一抹都重弹金色完成语，
+       把「完成那一瞬」的仪式感自己抹掉。（照 reviewer 真机复现：第 6 次点帕朵又弹了一次。） */
+    if (!paletteSeen[key]){ paletteSeen[key] = true; paletteSeenCount++;
+      if (paletteSeenCount === paletteDabs.length) showToast('五种颜色都染过了······现在，她身上有五位朋友的颜色。', true); }
   }
 
   /* 点一抹色：先染色，再让那抹色从色点处晕开（减动偏好下只染色、不晕开）。 */
@@ -1322,7 +1328,7 @@ body{
     });
   }
 
-  /* 回访复原：画满了的那幅，一进来就是画满的样子（只复原**画面**，不复原台词） */
+  /* 回访复原：科斯魔那幅连台词一起复原；空白那幅只复原「已看过」态（台词留到下次点击） */
   if (eggDone('kosma') && paintingKosma){
     kosmaStage = 3;
     paintingKosma.classList.add('show1', 'show2', 'show3');
@@ -1402,8 +1408,9 @@ body{
   }
 
   function finishSteps(){
+    /* ⚠ **不**写 localStorage：全页没有 `eggDone('steps')` 来读它（彩蛋 1 / 2 才有回访复原），
+       写了就是个只写不读的死键。留着不写，彩蛋 3 每次访问都能重玩。 */
     stepDone = true;
-    eggMarkDone('steps');
     showToast(STEP_LINE, true);
     /* 她数落完，就把你踩下的痕迹擦掉了 —— 脚印慢慢淡去 */
     setTimeout(function(){

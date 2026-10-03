@@ -3574,6 +3574,168 @@ def check_sakura_judgment(b, page, expected):
     return (fails, u'远处不中、斩线上的中（判定有牙齿）' if not fails else u'判定不对')
 
 
+# ══ 格蕾修：调色盘 + 两幅画 ══════════════════════════════════════════
+#   ⚠ 这一页最核心的三件行为，此前只用一批**一次性临时脚本**验过一次 ——
+#     其中「第 6 次还该不该弹完成提示」那一问，那批探针根本没问过，
+#     于是那个 bug（完成提示不是边沿触发、每点必弹）就漏过去了。
+#     这几条把它钉进正式断言。
+GRISEO = 'griseo/index.html'
+
+
+def griseo_only(fn):
+    """收窄成「只对 /griseo/ 成立」—— 查的是她那一页的招牌机制（别的页没有）。"""
+    fn.pages = (GRISEO,)
+    return fn
+
+
+# 调色盘 + 完成提示的当前状态。#grToast 只在 `.show` 时才有意义，收起时算空。
+_GR_STATE = """(() => {
+    var l = document.getElementById('paletteLine');
+    var a = document.getElementById('paletteAttr');
+    var t = document.getElementById('grToast');
+    return JSON.stringify({
+        line: l ? l.textContent : null,
+        attr: a ? a.textContent : null,
+        toast: (t && t.classList.contains('show')) ? t.textContent : '',
+    });
+})()"""
+
+
+def _gr_click(b, sel):
+    """滚进视口 → 用真实指针点它中心。视口外就**返回 False**（别静默点空）。
+
+    ⚠ 照 HANDOVER §6.4：CDP 派发的是视口坐标，元素在视口外时事件会落到别处、
+      **而且不报错**。所以这里先 `scrollIntoView`，再核一次坐标真的在视口内。
+    """
+    c = b.jso("""(() => {
+        var n = document.querySelector('%s');
+        if (!n) return null;
+        n.scrollIntoView({ block: 'center', behavior: 'instant' });
+        var r = n.getBoundingClientRect();
+        var vh = window.innerHeight || 0;
+        return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height / 2,
+                                inView: r.height > 0 && r.top >= 0 && r.bottom <= vh });
+    })()""" % sel)
+    if not c or not c.get('inView'):
+        return False
+    b.press(c['x'], c['y'])
+    time.sleep(0.06)
+    b.release(c['x'], c['y'])
+    return True
+
+
+@check
+@griseo_only
+def check_griseo_palette_and_paintings(b, page, expected):
+    """① 五抹色 → 5 句两两不同的台词、每条都有「事件-格蕾修」的合法出处；
+    ② 第 6 次不许再弹完成提示；
+    ③ 两幅画各点 3 次（科斯魔那幅递进显形 / 空白那幅始终空白）。
+
+    ⚠ ② 是那个 bug 的回归断言：完成判定原写在「是新的」分支**之外**，
+      `paletteSeenCount === 5` 到 5 之后**恒真** —— 此后每点任意一抹都重弹
+      4.2 秒金色完成语，把「完成那一瞬」的仪式感自己抹掉。
+    """
+    # 清掉彩蛋进度并重载 —— 让两幅画从「未看过」出发（回访复原会让它一进来就是满的）
+    b.js("""(() => { try {
+        ['kosma','elsia','steps'].forEach(function (k) {
+            localStorage.removeItem('griseoEgg:' + k); });
+    } catch (e) {} return 1; })()""")
+    _reload(b)
+
+    fails = []
+    order = ['tail', 'kosma', 'aponia', 'mobius', 'self']
+
+    # ── ① 五抹色各点一次 ──
+    lines, attrs = [], []
+    for key in order:
+        if not _gr_click(b, '.palette-dab[data-color="%s"]' % key):
+            return ([u'点不到调色盘上的 %r 色块（视口外 / 选择器错）—— 前提就不成立' % key], u'—')
+        time.sleep(0.18)
+        d = b.jso(_GR_STATE)
+        if not d:
+            return ([u'点 %r 之后取不到调色盘状态' % key], u'—')
+        lines.append(d['line'])
+        attrs.append(d['attr'])
+
+    if len(set(lines)) != 5:
+        fails.append(u'五抹色点完，台词重复了：%s（该 5 句两两不同）' % lines)
+    # ⚠ **出处不要求两两不同**：五句里有两条（`aponia` 的 G39、`self` 的 G44）
+    #   逐字都取自档案馆「画家的追忆 · 其一」—— 核准表里 `griseo-02/03/07/12`
+    #   也同引「其一」。硬要求 5 个不同会**编出一个假不变式**，逼着去改一处
+    #   **本来正确**的出处。真正要守的是：每条都有出处、且出处来历一致（前缀对）。
+    attrs_clean = [a or u'' for a in attrs]
+    if any(not a for a in attrs_clean):
+        fails.append(u'有出处是空的：%s' % attrs)
+    wrong = [a for a in attrs_clean if not a.startswith(u'官方档案馆 · 事件-格蕾修')]
+    if wrong:
+        fails.append(u'这些出处不以「官方档案馆 · 事件-格蕾修」开头：%s' % wrong)
+
+    # ── ② 等第 5 抹的完成提示自己收起，再**第 6 次点同一抹** → 不许再弹 ──
+    #    ⚠ 必须先等它消失：否则分不清「第 5 次的提示还在」和「第 6 次又弹了」。
+    d = {}
+    for _ in range(22):                       # 最多 ~6.6 秒（金色提示 4.2s）
+        time.sleep(0.3)
+        d = b.jso(_GR_STATE) or {}
+        if not d.get('toast'):
+            break
+    if d.get('toast'):
+        fails.append(u'第 5 抹的完成提示等了 6.6 秒还没收起 —— 时序不对，② 判不了')
+    elif not _gr_click(b, '.palette-dab[data-color="tail"]'):
+        fails.append(u'点不到第 6 次要点的色块')
+    else:
+        time.sleep(0.4)
+        d6 = b.jso(_GR_STATE) or {}
+        if d6.get('toast'):
+            fails.append(u'**第 6 次点同一抹色又弹了提示**（%r）—— 完成判定不是边沿触发。'
+                         u'这正是那个 bug：`=== 5` 到 5 后恒真，此后每点任意一抹都重弹'
+                         % (d6.get('toast') or u''))
+
+    # ── ③ 科斯魔那幅：点 3 次，一层比一层多显形 ──
+    kstages = []
+    for _ in range(3):
+        if not _gr_click(b, '#paintingKosma'):
+            fails.append(u'点不到 #paintingKosma'); break
+        time.sleep(0.25)
+        kstages.append(b.jso("""(() => { var n = document.getElementById('paintingKosma');
+            var s = document.getElementById('paintingKosmaSay');
+            return JSON.stringify({ s1: n.classList.contains('show1'),
+                                    s2: n.classList.contains('show2'),
+                                    s3: n.classList.contains('show3'),
+                                    say: s ? s.textContent : '' }); })()""") or {})
+    if len(kstages) == 3:
+        want = [(True, False, False), (True, True, False), (True, True, True)]
+        for i, (s, w) in enumerate(zip(kstages, want)):
+            got = (s.get('s1'), s.get('s2'), s.get('s3'))
+            if got != w:
+                fails.append(u'科斯魔那幅第 %d 次点：.show 是 %s，该是 %s —— 递进显形不对'
+                             % (i + 1, got, w))
+        if not (kstages[2].get('say') or '').strip():
+            fails.append(u'科斯魔那幅第 3 次点完，台词还是空的 —— 画满了却没说那句话')
+
+    # ── ③ 空白那幅：第 1 次沉默、第 2 次才有字，且**始终没有 svg** ──
+    estages = []
+    for _ in range(3):
+        if not _gr_click(b, '#paintingElsia'):
+            fails.append(u'点不到 #paintingElsia'); break
+        time.sleep(0.25)
+        estages.append(b.jso("""(() => { var n = document.getElementById('paintingElsia');
+            var s = document.getElementById('paintingElsiaSay');
+            return JSON.stringify({ say: s ? s.textContent : '',
+                                    svg: n.querySelectorAll('svg').length }); })()""") or {})
+    if len(estages) == 3:
+        if (estages[0].get('say') or '').strip():
+            fails.append(u'空白那幅第 1 次点就有字了（该**沉默**）：%r' % estages[0].get('say'))
+        if not (estages[1].get('say') or '').strip():
+            fails.append(u'空白那幅第 2 次点还是空的 —— 该有字了')
+        svgs = [e.get('svg') for e in estages]
+        if any(v != 0 for v in svgs):
+            fails.append(u'空白那幅里出现了 svg（%s）—— 它**必须始终空白**，什么都不许画上去'
+                         % svgs)
+
+    return (fails, u'五抹色 5 句台词各异、出处合法、完成提示只弹一次、两幅画递进/空白都对'
+            if not fails else u'调色盘或两幅画的行为不对')
+
+
 # ── 真·触摸（不是鼠标）────────────────────────────────────────────────
 def _vv_offset(b):
     """派发输入坐标前要减掉的那个偏移（**只在 mobile 模拟下不为 0**）。
