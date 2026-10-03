@@ -579,13 +579,18 @@ body{
     ariaLabel: '繁星之画，点击切换',
   });
 
-  /* SECTION: canvas particles (颜料点 + 光尘 + 星)
-     ⚠ 这一块在后续任务里会被换成「颜料晕开成星」的专属粒子系统；
-        现在先按这一页的五色重上色 —— 菩提叶不属于她。 */
+  /* SECTION: canvas particles —— 「颜料晕开成星」
+     呀，这是全站唯一会**留下痕迹**、还会**变色**的粒子♥
+     别人都是「点 / 片」：花瓣、余烬、命运丝、菩提叶，飘过去就没了。
+     她这里给的是「面」—— 一滴颜料从上面慢慢落下来，落到哪儿，就在哪儿
+     摊开成一圈晕；那圈晕的颜色，从她的五罐颜料里随机舀。
+     偶发地，几颗晕开的光点再凝成一枚四角星 —— 那是刻印「繁星」，然后淡去。
+     （spec §3.2） */
   var canvas = document.getElementById('paintCanvas');
   var ctx = canvas.getContext('2d');
   var W, H;
-  var leafColors = ['#7dd3fc','#c9a0ff','#ff7aa8','#ffe066','#5eead4'];
+  // §3.1 五罐颜料 —— 晕开 / 凝星的颜色都从这里取（全站唯一会变色的那一个）
+  var paintColors = ['#7dd3fc','#c9a0ff','#ff7aa8','#ffe066','#5eead4'];
   var dustColors = ['#ffd97a','#f2e9f8','#7dd3fc'];
 
   // ⚠ 只抽「把 canvas 和视口尺寸对上」这三行。下面那个「把越界粒子拉回画布」的
@@ -596,25 +601,51 @@ body{
   });
   resize();
   window.addEventListener('resize', resize);
-  var leaves = [];
-  var leafCount = Math.min(26, Math.floor(window.innerWidth / 48));
-  function createLeaf(fromTop){
+
+  /* #rrggbb → rgba(...)。晕开要一圈圈把 alpha 收掉，得能带透明度上色。 */
+  function hexA(hex, a){
+    var n = parseInt(hex.slice(1), 16);
+    a = Math.max(0, Math.min(1, a));
+    return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a.toFixed(3) + ')';
+  }
+
+  /* 颜料滴：从上方慢慢飘落（比花瓣慢、比余烬轻）。
+     它从落点上方一小段处开始下坠，落到自己的 landY 就在那儿摊开成一圈晕，
+     然后换一个落点、从上头再来一颗 —— 所以画面里总有滴在落、也总有晕在开。 */
+  var drips = [];
+  var dripCount = Math.min(30, Math.floor(window.innerWidth / 44));
+  function createDrip(){
+    var landY = H * 0.08 + Math.random() * H * 0.86;   // 落点散布在整屏
+    var drop = 30 + Math.random() * 90;                // 只落这一小段就摊开
     return {
       x: Math.random() * W,
-      y: fromTop ? -20 - Math.random() * 100 : Math.random() * H,
-      size: 4 + Math.random() * 8,
-      speedY: 0.2 + Math.random() * 0.45,
-      drift: (Math.random() - 0.5) * 0.3,
-      rotation: Math.random() * Math.PI * 2,
-      rotSpeed: (Math.random() - 0.5) * 0.012,
-      swayAmp: 16 + Math.random() * 30,
-      swaySpd: 0.004 + Math.random() * 0.008,
+      y: landY - drop,
+      r: 1.6 + Math.random() * 2.6,
+      speedY: 0.09 + Math.random() * 0.17,             // 花瓣是 0.25~0.90，这里慢得多
+      drift: (Math.random() - 0.5) * 0.16,
+      swayAmp: 8 + Math.random() * 16,
+      swaySpd: 0.003 + Math.random() * 0.006,
       swayOff: Math.random() * Math.PI * 2,
-      opacity: 0.16 + Math.random() * 0.34,
-      color: leafColors[Math.floor(Math.random() * leafColors.length)]
+      opacity: 0.4 + Math.random() * 0.4,
+      landY: landY,
+      color: paintColors[Math.floor(Math.random() * paintColors.length)]
     };
   }
-  for (var i = 0; i < leafCount; i++) leaves.push(createLeaf(false));
+  for (var i = 0; i < dripCount; i++) drips.push(createDrip());
+
+  /* 晕开：全站没有的形态 —— 半径渐大、透明度渐低，一片摊开的「面」。
+     ring 决定它外缘有没有那一道更容易被眼睛抓住的「晕圈」。 */
+  var blooms = [];
+  function createBloom(x, y, color){
+    return {
+      x: x, y: y,
+      rMax: 20 + Math.random() * 34,
+      life: 1,
+      decay: 0.006 + Math.random() * 0.007,           // 晕开得慢、留得久 —— 会「留下痕迹」
+      ring: Math.random() < 0.65,
+      color: color
+    };
+  }
 
   var dusts = [];
   var dustCount = Math.min(34, Math.floor(window.innerWidth / 34));
@@ -632,6 +663,58 @@ body{
   }
   for (i = 0; i < dustCount; i++) dusts.push(createDust());
 
+  /* 四角星 —— 照开场那枚刻印「繁星」的形状语言来画（凹边、四尖）。
+     控制点直接从 index 里那支 SVG 的 path 归一化：R=42 时 4/42≈.0952、14/42≈.3333。 */
+  function drawFourPointStar(cx, cy, r, rot, color, alpha){
+    if (r <= 0 || alpha <= 0) return;
+    var k1 = 0.0952, k2 = 0.3333;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(rot);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = r * 0.9;
+    ctx.beginPath();
+    ctx.moveTo(0, -r);
+    ctx.bezierCurveTo(r * k1, -r * k2, r * k2, -r * k1, r, 0);
+    ctx.bezierCurveTo(r * k2, r * k1, r * k1, r * k2, 0, r);
+    ctx.bezierCurveTo(-r * k1, r * k2, -r * k2, r * k1, -r, 0);
+    ctx.bezierCurveTo(-r * k2, -r * k1, -r * k1, -r * k2, 0, -r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = alpha;                        // 星心那一点暖金，照应刻印上那颗
+    ctx.fillStyle = '#ffd97a';
+    ctx.beginPath();
+    ctx.arc(0, 0, Math.max(0.8, r * 0.11), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /* 凝星：偶发地把几颗光点收拢成一枚四角星，再淡去。 */
+  var stars = [];
+  var starTimer = 0;
+  function createStar(){
+    var motes = [];
+    var mn = 4 + Math.floor(Math.random() * 3);     // 4~6 颗光点
+    for (var k = 0; k < mn; k++){
+      var ang = (k / mn) * Math.PI * 2 + Math.random() * 0.5;
+      var dist = 22 + Math.random() * 20;
+      motes.push({ ox: Math.cos(ang) * dist, oy: Math.sin(ang) * dist });
+    }
+    stars.push({
+      x: W * (0.12 + Math.random() * 0.76),
+      y: H * (0.12 + Math.random() * 0.72),
+      r: 7 + Math.random() * 9,
+      rot: Math.random() * Math.PI * 2,
+      life: 1,
+      decay: 0.009 + Math.random() * 0.005,
+      color: paintColors[Math.floor(Math.random() * paintColors.length)],
+      motes: motes
+    });
+  }
+
   var scrollRatio = 0;
   window.addEventListener('scroll', function(){
     var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
@@ -646,7 +729,7 @@ body{
     time++;
     ctx.clearRect(0, 0, W, H);
     var fadeFactor = 1 - scrollRatio * 0.55;
-    var i, l, d, tw;
+    var i, l, d, b, tw, m, mo, s, p, ease, r, a, grd;
 
     for (i = 0; i < dusts.length; i++){
       d = dusts[i];
@@ -662,47 +745,99 @@ body{
       ctx.restore();
     }
 
-    for (i = 0; i < leaves.length; i++){
-      l = leaves[i];
+    /* 颜料滴 —— 落下的那一段 */
+    for (i = 0; i < drips.length; i++){
+      l = drips[i];
       l.y += l.speedY;
-      l.x += l.drift + Math.sin(time * l.swaySpd + l.swayOff) * 0.4;
-      l.rotation += l.rotSpeed;
-      if (l.y > H + 25){ leaves[i] = createLeaf(true); l = leaves[i]; }
+      l.x += l.drift + Math.sin(time * l.swaySpd + l.swayOff) * (l.swayAmp * 0.012);
+      if (l.y >= l.landY || l.y > H + 20){
+        blooms.push(createBloom(l.x, Math.min(l.y, H - 4), l.color));   // 落地 → 摊开
+        drips[i] = createDrip(); l = drips[i];
+      }
       ctx.save();
-      ctx.translate(l.x, l.y);
-      ctx.rotate(l.rotation);
       ctx.globalAlpha = l.opacity * fadeFactor;
       ctx.fillStyle = l.color;
       ctx.beginPath();
-      ctx.ellipse(0, 0, Math.max(0.6, l.size * 0.3), Math.max(0.8, l.size * 0.62), 0, 0, Math.PI * 2);
+      // 小水滴：略竖长的椭圆，落姿才像颜料而不是花瓣
+      ctx.ellipse(l.x, l.y, Math.max(0.5, l.r * 0.72), Math.max(0.7, l.r), 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
 
+    /* 晕开 —— 留下的那一圈「面」（半径渐大、透明度渐低） */
+    for (i = blooms.length - 1; i >= 0; i--){
+      b = blooms[i];
+      b.life -= b.decay;
+      if (b.life <= 0){ blooms.splice(i, 1); continue; }
+      p = 1 - b.life;
+      ease = 1 - (1 - p) * (1 - p);                 // 先快后慢，像颜料摊开
+      r = Math.max(0.6, b.rMax * ease);
+      a = b.life * b.life * 0.62 * fadeFactor;      // 越铺越淡
+      ctx.save();
+      grd = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, r);
+      grd.addColorStop(0, hexA(b.color, a));
+      grd.addColorStop(0.55, hexA(b.color, a * 0.45));
+      grd.addColorStop(1, hexA(b.color, 0));
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, r, 0, Math.PI * 2);
+      ctx.fill();
+      if (b.ring){                                   // 外缘那一道「晕圈」
+        ctx.globalAlpha = b.life * 0.68 * fadeFactor;
+        ctx.strokeStyle = b.color;
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, r, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    /* 偶发：几颗光点凝成一枚四角星，再淡去 */
+    starTimer++;
+    if (starTimer > 200 + Math.random() * 280){ starTimer = 0; createStar(); }
+    for (i = stars.length - 1; i >= 0; i--){
+      s = stars[i];
+      s.life -= s.decay;
+      if (s.life <= 0){ stars.splice(i, 1); continue; }
+      p = 1 - s.life;
+      ease = Math.min(1, p / 0.45);                  // 前 45%：光点向心收拢
+      var glow = p < 0.45 ? ease : Math.max(0, 1 - (p - 0.45) / 0.55);  // 之后：凝成、淡去
+      for (m = 0; m < s.motes.length; m++){
+        mo = s.motes[m];
+        var k = 1 - ease;
+        ctx.save();
+        ctx.globalAlpha = (1 - ease) * 0.9 * fadeFactor;
+        ctx.fillStyle = s.color;
+        ctx.beginPath();
+        ctx.arc(s.x + mo.ox * k, s.y + mo.oy * k, 1.4 + 1.2 * (1 - ease), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      drawFourPointStar(s.x, s.y, s.r * (0.4 + 0.6 * ease), s.rot, s.color, glow * 0.95 * fadeFactor);
+    }
+
     for (i = bursts.length - 1; i >= 0; i--){
-      var b = bursts[i];
+      b = bursts[i];
       b.x += b.vx;
       b.y += b.vy;
       b.vy += 0.03;
       b.vx *= 0.99;
-      b.rotation += b.rotSpeed;
       b.life -= 0.015;
       if (b.life <= 0){ bursts.splice(i, 1); continue; }
       ctx.save();
       ctx.globalAlpha = Math.max(0, b.life * 0.9);
       ctx.fillStyle = b.color;
-      ctx.translate(b.x, b.y);
-      ctx.rotate(b.rotation);
       ctx.beginPath();
-      ctx.ellipse(0, 0, b.w * 0.4, b.w, 0, 0, Math.PI * 2);
+      ctx.arc(b.x, b.y, Math.max(0.6, b.w * 0.5), 0, Math.PI * 2);   // 飞溅的小滴
       ctx.fill();
       ctx.restore();
     }
     requestAnimationFrame(animate);
   }
   var bursts = [];
-  function leafBurst(cx, cy, count, colors){
-    var palette = colors || leafColors;
+  function paintBurst(cx, cy, count, colors){
+    var palette = colors || paintColors;
     for (var k = 0; k < count; k++){
       var angle = (k / count) * Math.PI * 2 + Math.random() * 0.6;
       var speed = 1 + Math.random() * 3;
@@ -711,13 +846,21 @@ body{
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed - 1,
         w: 3 + Math.random() * 5,
-        rotation: Math.random() * Math.PI * 2,
-        rotSpeed: (Math.random() - 0.5) * 0.12,
         life: 1,
         color: palette[Math.floor(Math.random() * palette.length)]
       });
     }
   }
+  /* 启动时先铺几片已经晕开的颜料、再凝一颗星 —— 一进页面就看得见「面」和「星」。 */
+  for (var n = 0; n < 10; n++){
+    var seedBloom = createBloom(Math.random() * W, Math.random() * H,
+      paintColors[Math.floor(Math.random() * paintColors.length)]);
+    seedBloom.life = 0.25 + Math.random() * 0.7;      // 让它们处在晕开的不同阶段
+    blooms.push(seedBloom);
+  }
+  createStar();
+  stars[0].life = 0.7;
+
   animate();
 
   /* SECTION: toast */
@@ -796,7 +939,7 @@ body{
     heartIdx++;
     if (!reducedMotion){
       var r = endingQuote.getBoundingClientRect();
-      leafBurst(r.left + r.width / 2, r.top + r.height / 2, 10, ['#e8c98a','#2dd4bf','#fdf6e3']);
+      paintBurst(r.left + r.width / 2, r.top + r.height / 2, 10, ['#e8c98a','#2dd4bf','#fdf6e3']);
     }
   });
   endingQuote.addEventListener('keydown', function(e){
@@ -886,8 +1029,14 @@ body{
     for (var j = 0; j < dusts.length; j++){
       if (dusts[j].x > W) dusts[j].x = Math.random() * W;
     }
-    for (j = 0; j < leaves.length; j++){
-      if (leaves[j].x > W) leaves[j].x = Math.random() * W;
+    for (j = 0; j < drips.length; j++){
+      if (drips[j].x > W) drips[j].x = Math.random() * W;
+    }
+    for (j = 0; j < blooms.length; j++){
+      if (blooms[j].x > W) blooms[j].x = Math.random() * W;
+    }
+    for (j = 0; j < stars.length; j++){
+      if (stars[j].x > W) stars[j].x = Math.random() * W;
     }
   });
 })();
