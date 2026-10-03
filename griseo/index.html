@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<!-- 呀！标签页上也要有一枚小花呀，不然浏览器给的是个空白方块呢♥ -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<!-- 呀！分享出去的时候，要带着她的样子，而不是一行光秃秃的链接♥ -->
+<meta name="description" content="逐火十三英桀 · 位次 Ⅺ · 刻印「繁星」。">
+<link rel="canonical" href="https://elysiad.top/griseo/">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "elysiad.top/griseo — 致格蕾修",
+  "url": "https://elysiad.top/griseo/",
+  "description": "逐火十三英桀 · 位次 Ⅺ · 刻印「繁星」。",
+  "inLanguage": "zh-CN",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "elysiad.top — 致爱莉希雅",
+    "url": "https://elysiad.top/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "首页",
+      "item": "https://elysiad.top/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "格蕾修",
+      "item": "https://elysiad.top/griseo/"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="elysiad.top">
+<meta property="og:title" content="致格蕾修 — elysiad.top">
+<meta property="og:description" content="逐火十三英桀 · 位次 Ⅺ · 刻印「繁星」。">
+<meta property="og:url" content="https://elysiad.top/griseo/">
+<meta property="og:image" content="https://elysiad.top/images/og-1.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#100b13">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
+<link rel="stylesheet" href="/assets/site.css">
+<meta name="referrer" content="same-origin">
+<title>elysiad.top/griseo — 致格蕾修</title>
+<!-- SECTION: styles -->
+<style>
+:root{
+  /* 呀！这一页的底是「未干的画」——暖紫黑。全站只有她是画画的，
+     所以主色不去跟紫系抢位，改成**多色**：五罐颜料一起当主角；
+     强调色统一交给金(#ffd97a) —— 那是她发饰与星星的颜色，别让整页花掉♥ */
+  --bg-abyss:#100b13;--bg-deep:#150e18;--bg-paper:#241726;--bg-mid:#3a2440;
+  /* 多色颜料（她独有的辨识度） */
+  --sky:#7dd3fc;--violet:#c9a0ff;--rose:#ff7aa8;--lemon:#ffe066;--jade:#5eead4;
+  --gold:#ffd97a;--gold-deep:#e0a94f;
+  --text:#f2e9f8;--text-dim:#b8a8c8;--text-muted:#7d6e8c;
+  --glass-bg:rgba(201,160,255,.05);--glass-border:rgba(255,217,122,.14);
+  --glass-bg2:rgba(125,211,252,.05);--glass-border2:rgba(255,217,122,.12);
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg-abyss);color:var(--text);overflow-x:hidden;line-height:1.7;
+}
+::-webkit-scrollbar-thumb{background:var(--gold-deep);border-radius:3px}
+
+#paintCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+
+/* SECTION: opening */
+.section-opening{
+  position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:2rem;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(ellipse 55% 38% at 50% 12%,rgba(255,217,122,.10),transparent 70%),
+    radial-gradient(ellipse 62% 40% at 50% 100%,rgba(201,160,255,.09),transparent 70%),
+    linear-gradient(180deg,var(--bg-abyss) 0%,var(--bg-deep) 32%,var(--bg-paper) 62%,var(--bg-deep) 100%);
+}
+/* 呀，开场这颗是刻印「繁星」——一枚四角星，五罐颜料从头淋到尾。
+   她是全站唯一会画画的那位，所以这里不给单色，给一整道彩虹♥
+   ⚠ .opening-content 没有宽度规则，块级装饰会贴左 —— 必须自己 margin:0 auto。 */
+.opening-star{
+  width:96px;height:96px;margin:0 auto 1.4rem;opacity:0;transition:opacity 2s ease;
+  filter:drop-shadow(0 0 26px rgba(255,217,122,.34));
+}
+.opening-star.visible{opacity:.95}
+.opening-title{
+  font-size:clamp(1.35rem,4.2vw,2.5rem);font-weight:300;letter-spacing:.12em;
+  min-height:2.6em;max-width:860px;
+  background:linear-gradient(90deg,var(--sky),var(--violet),var(--rose),var(--lemon),var(--jade));
+  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 22px rgba(201,160,255,.26));
+}
+.typing-cursor{display:inline-block;font-weight:100;color:var(--gold);animation:blink-cursor .8s step-end infinite}
+.opening-subtitle{
+  font-size:clamp(.9rem,2.5vw,1.25rem);color:var(--text-dim);letter-spacing:.4em;
+  margin-top:1.5rem;opacity:0;transition:opacity 1.5s ease;
+}
+.opening-hint{
+  font-size:.72rem;color:var(--text-muted);letter-spacing:.14em;margin-top:1rem;
+  opacity:0;transition:opacity 1.5s ease 1s;
+}
+.scroll-hint{
+  position:absolute;bottom:calc(2.5rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  opacity:0;transition:opacity 1s ease .5s;
+}
+.scroll-hint.visible{opacity:.6}
+.scroll-hint span{font-size:.75rem;color:var(--text-muted);letter-spacing:.2em}
+.scroll-chevron{
+  width:20px;height:20px;border-right:2px solid var(--gold);border-bottom:2px solid var(--gold);
+  transform:rotate(45deg);animation:chevron-bounce 2.4s ease-in-out infinite;
+}
+
+/* SECTION: common section */
+.content-section{
+  position:relative;z-index:2;padding:6rem 1.5rem;
+  background:linear-gradient(180deg,transparent 0%,rgba(16,11,19,.3) 20%,rgba(16,11,19,.3) 80%,transparent 100%);
+}
+.section-title{
+  font-size:clamp(1.5rem,4vw,2.2rem);font-weight:300;letter-spacing:.24em;
+  color:var(--gold);text-shadow:0 0 20px rgba(255,217,122,.25);
+}
+.section-title-line{display:block;width:60px;height:1px;margin:1rem auto 0;background:linear-gradient(90deg,transparent,var(--gold-deep),transparent)}
+.section-title-mark{display:inline-block;font-size:.8em;color:var(--violet);margin:0 .8rem;opacity:.85}
+.section-sub{text-align:center;font-size:.78rem;color:var(--text-muted);letter-spacing:.12em;margin:-2.4rem auto 3rem}
+
+/* SECTION: profile */
+.profile-card{
+  max-width:720px;margin:0 auto;padding:clamp(2rem,5vw,3rem);
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--glass-border);border-radius:24px;
+  box-shadow:0 0 50px rgba(201,160,255,.07),0 0 100px rgba(255,217,122,.05),inset 0 1px 0 rgba(255,255,255,.05);
+  position:relative;overflow:hidden;animation:glow-pulse 8s ease-in-out infinite;
+}
+.profile-card::before{
+  content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+  background:conic-gradient(from 0deg,transparent,rgba(125,211,252,.05),transparent,rgba(255,122,168,.05),transparent,rgba(255,217,122,.05),transparent);
+  animation:card-rotate 30s linear infinite;
+}
+@keyframes glow-pulse{
+  0%,100%{box-shadow:0 0 50px rgba(201,160,255,.07),0 0 100px rgba(255,217,122,.05)}
+  50%{box-shadow:0 0 65px rgba(201,160,255,.12),0 0 120px rgba(255,217,122,.08)}
+}
+/* 她的名字也走五色 —— 一眼就知道这页是「画画的」那一位 */
+.profile-name{
+  font-size:clamp(2rem,5.5vw,3rem);font-weight:200;letter-spacing:.3em;text-indent:.3em;cursor:pointer;user-select:none;
+  text-align:center;margin-bottom:.2em;
+  background:linear-gradient(90deg,var(--sky),var(--violet),var(--rose),var(--lemon),var(--jade));
+  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+  transition:filter .3s ease;
+}
+.profile-name:hover{filter:drop-shadow(0 0 16px rgba(255,217,122,.55)) brightness(1.12)}
+.profile-name-en{
+  font-size:clamp(.85rem,1.9vw,1.05rem);font-weight:300;letter-spacing:.5em;text-indent:.5em;
+  color:var(--gold);text-align:center;margin-bottom:2rem;
+}
+.profile-grid{display:grid;grid-template-columns:auto 1fr;gap:.6rem 1.5rem;font-size:.92rem}
+.profile-value .highlight{color:var(--gold);font-weight:400}
+.profile-value .lamp{color:var(--sky);font-weight:400}
+.profile-desc{
+  margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--glass-border);
+  font-size:.9rem;color:var(--text-dim);line-height:1.9;font-weight:300;
+}
+
+/* （原 su 的「功德箱 · 木鱼」一节已整段移除：敲木鱼积功德不属于她。
+     她的专属互动模块「她的调色盘 · 色彩浸染」会在后续任务里加到 #palette。） */
+
+/* SECTION: timeline */
+.timeline{position:relative;max-width:800px;margin:0 auto;padding:2rem 0}
+/* 时间轴这条线走五色 —— 她的旅途本来就是一整道彩虹 */
+.timeline-line{
+  position:absolute;left:50%;top:0;bottom:0;width:2px;
+  background:linear-gradient(180deg,transparent,var(--sky) 8%,var(--violet) 30%,var(--rose) 52%,var(--lemon) 74%,var(--jade) 90%,transparent);
+  transform:translateX(-50%);opacity:.7;
+}
+.timeline-node{
+  position:relative;display:flex;align-items:flex-start;margin-bottom:3rem;
+  opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;
+}
+.timeline-dot{
+  position:absolute;left:50%;top:.5rem;width:12px;height:12px;border-radius:50%;
+  border:2px solid var(--gold);background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
+  box-shadow:0 0 12px rgba(255,217,122,.4);transition:background .3s;
+}
+.timeline-node.visible .timeline-dot{background:var(--gold)}
+.timeline-card{
+  width:calc(50% - 2.5rem);padding:1.2rem 1.5rem;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 0 20px rgba(201,160,255,.05);
+}
+.timeline-card h3{font-size:1.05rem;font-weight:400;color:var(--gold);margin-bottom:.5rem;letter-spacing:.12em}
+.timeline-card p{font-size:.85rem;color:var(--text-dim);line-height:1.8;font-weight:300}
+
+/* 成长形态（spec §3.5）：接在时间轴末尾 —— 少年 → 成长的一段过渡，篇幅克制。
+   配色仍是少年那一套，只在切换的瞬间亮一档。 */
+.timeline-growth{
+  position:relative;z-index:2;max-width:560px;margin:0.5rem auto 0;padding:1.6rem 1.4rem;
+  text-align:center;border-radius:18px;
+  background:linear-gradient(135deg,rgba(36,23,38,.94),rgba(58,36,64,.86));
+  border:1px solid var(--glass-border);box-shadow:0 0 30px rgba(201,160,255,.06);
+  opacity:0;transform:translateY(24px);transition:opacity .8s ease,transform .8s ease;
+}
+.timeline-growth.visible{opacity:1;transform:translateY(0)}
+.growth-frame{
+  width:132px;height:168px;margin:0 auto 1rem;position:relative;cursor:pointer;user-select:none;
+  border-radius:14px;overflow:hidden;border:1px solid var(--glass-border2);
+  background:linear-gradient(165deg,rgba(125,211,252,.08),rgba(255,122,168,.08));
+  transition:box-shadow .3s ease;
+}
+.growth-frame:hover{box-shadow:0 0 26px rgba(255,217,122,.22)}
+.growth-frame:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.growth-frame svg{position:absolute;inset:0;width:100%;height:100%;display:block;transition:opacity .5s ease}
+.growth-frame .gf-grown{opacity:0}
+.timeline-growth.grown .gf-young{opacity:0}
+.timeline-growth.grown .gf-grown{opacity:1}
+.growth-quote{font-size:.9rem;color:var(--text-dim);line-height:1.9;font-weight:300;min-height:3.8em}
+.growth-caption{margin-top:.6rem;font-size:.72rem;color:var(--text-muted);letter-spacing:.14em}
+
+/* SECTION: quotes */
+.quote-card{
+  padding:1.5rem;min-height:140px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
+  box-shadow:0 0 20px rgba(201,160,255,.04);
+  transition:transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
+}
+.quote-card:hover{transform:translateY(-3px);box-shadow:0 0 30px rgba(255,217,122,.14),0 8px 30px rgba(0,0,0,.2)}
+.quote-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(circle at 30% 30%,rgba(255,122,168,.05),transparent 60%);pointer-events:none;
+}
+.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition:opacity .4s ease}
+.quote-hint{position:absolute;bottom:.6rem;right:.8rem;font-size:.65rem;color:var(--text-muted);opacity:.4}
+
+/* SECTION: ending */
+.ending-quote{
+  font-size:clamp(1.1rem,3vw,1.6rem);font-weight:300;letter-spacing:.14em;cursor:pointer;user-select:none;
+  color:var(--text);line-height:2;text-shadow:0 0 25px rgba(255,217,122,.25);
+  max-width:640px;opacity:0;transform:translateY(20px);transition:opacity 1.5s ease,transform 1.5s ease;
+}
+.ending-attr{
+  margin-top:2.2rem;font-size:.85rem;color:var(--text-muted);letter-spacing:.25em;
+  opacity:0;transition:opacity 1.5s ease .8s;
+}
+.back-link{
+  display:inline-flex;align-items:center;gap:.5rem;margin-top:3rem;
+  min-height:44px;padding:.6rem 1.6rem;border-radius:999px;text-decoration:none;
+  color:var(--gold);font-size:.85rem;letter-spacing:.15em;
+  border:1px solid var(--glass-border2);background:rgba(255,217,122,.05);
+  transition:background .3s ease,box-shadow .3s ease,transform .3s ease;opacity:0;
+}
+.back-link:hover{background:rgba(255,217,122,.12);box-shadow:0 0 24px rgba(255,217,122,.2);transform:translateY(-2px)}
+
+/* SECTION: toast */
+#grToast{
+  position:fixed;left:50%;bottom:15%;transform:translateX(-50%) translateY(10px);z-index:9995;
+  max-width:88vw;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;letter-spacing:.06em;
+  color:var(--text);background:linear-gradient(135deg,rgba(21,14,24,.94),rgba(58,36,64,.94));
+  border:1px solid var(--glass-border2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 24px rgba(255,217,122,.18);
+  opacity:0;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:opacity .35s ease,transform .35s ease;text-align:center;
+}
+#grToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#grToast.golden{color:#fff3cf;border-color:rgba(255,217,122,.6);box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 36px rgba(255,217,122,.4)}
+@media(max-width:600px){#grToast{white-space:normal;line-height:1.6}}
+
+/* SECTION: ripple (颜料圆环) */
+.water-ring{
+  position:fixed;pointer-events:none;z-index:9993;border-radius:50%;
+  border:1.5px solid rgba(255,217,122,.7);
+  transform:translate(-50%,-50%) scale(0);opacity:.9;
+  animation:ring-spread .9s cubic-bezier(.22,.61,.36,1) forwards;
+}
+@keyframes ring-spread{
+  to{transform:translate(-50%,-50%) scale(1);opacity:0}
+}
+/* 色彩浸染 —— 长按她的名字时，整张画布被颜色浸透
+   （她术后得来的那双眼：世界本就是一整片翻腾的颜色） */
+#paintVeil{
+  position:fixed;inset:0;z-index:9992;pointer-events:none;opacity:0;transition:opacity .6s ease;
+  background:
+    radial-gradient(ellipse 60% 55% at 28% 30%,rgba(255,122,168,.30),transparent 62%),
+    radial-gradient(ellipse 60% 55% at 72% 68%,rgba(125,211,252,.28),transparent 62%),
+    radial-gradient(ellipse at center,transparent 34%,rgba(201,160,255,.34) 100%);
+}
+#paintVeil.lit{opacity:1}
+
+/* SECTION: responsive */
+@media(max-width:768px){
+  .timeline-line{left:1.5rem}
+  .timeline-node,.timeline-node:nth-child(odd),.timeline-node:nth-child(even){flex-direction:row}
+  .timeline-dot{left:1.5rem}
+  .timeline-card,.timeline-node:nth-child(odd) .timeline-card,.timeline-node:nth-child(even) .timeline-card{
+    width:calc(100% - 3.5rem);margin-left:3.5rem;margin-right:0;
+  }
+  .quotes-grid{grid-template-columns:1fr}
+  .profile-grid{grid-template-columns:auto 1fr;gap:.5rem 1rem;font-size:.85rem}
+}
+@media(max-width:480px){
+  .content-section{padding:4rem 1rem}
+  .profile-card{padding:1.5rem}
+  .quote-card{min-height:120px;padding:1.2rem}
+}
+</style>
+</head>
+<body>
+
+<canvas id="paintCanvas"></canvas>
+<div id="paintVeil"></div>
+
+<!-- SECTION: opening -->
+<section class="section-opening" id="opening">
+  <div class="opening-content">
+    <div class="opening-star" id="openingStar" aria-hidden="true">
+      <!-- 刻印「繁星」：一枚四角星，五色从左上流到右下 -->
+      <svg viewBox="0 0 96 96" width="96" height="96">
+        <defs>
+          <linearGradient id="starGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#7dd3fc"/>
+            <stop offset="28%" stop-color="#c9a0ff"/>
+            <stop offset="54%" stop-color="#ff7aa8"/>
+            <stop offset="78%" stop-color="#ffe066"/>
+            <stop offset="100%" stop-color="#5eead4"/>
+          </linearGradient>
+        </defs>
+        <path d="M48 6 C52 34 62 44 90 48 C62 52 52 62 48 90 C44 62 34 52 6 48 C34 44 44 34 48 6 Z" fill="url(#starGrad)" opacity=".95"/>
+        <path d="M48 6 C52 34 62 44 90 48 C62 52 52 62 48 90 C44 62 34 52 6 48 C34 44 44 34 48 6 Z" fill="none" stroke="#ffd97a" stroke-width="1.1" opacity=".7"/>
+        <circle cx="48" cy="48" r="4" fill="#ffd97a"/>
+      </svg>
+    </div>
+    <h1 class="opening-title" id="typewriterText"></h1><span class="typing-cursor" id="typingCursor">|</span>
+    <p class="opening-subtitle" id="openingSub">繁星绘世</p>
+    <p class="opening-hint" id="openingHint">……颜料还没有干呢，慢慢看。</p>
+  </div>
+  <div class="scroll-hint" id="scrollHint">
+    <span>向下 · 画还没有画完</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</section>
+
+<!-- SECTION: about -->
+<section class="content-section" id="about">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">✦</span>关于她<span class="section-title-mark">✦</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="profile-card">
+    <div class="profile-card-inner">
+      <div class="profile-name" id="profileName" role="button" tabindex="0">格蕾修</div>
+      <div class="profile-name-en">G R I S E O</div>
+      <div class="profile-divider"></div>
+      <div class="profile-grid">
+        <span class="profile-label">别名</span>
+        <span class="profile-value">『<span class="highlight">画家</span>』 · 爱称「小格蕾修」</span>
+        <span class="profile-label">出处</span>
+        <span class="profile-value">《崩坏3》第一文明纪元（逐火之蛾）</span>
+        <span class="profile-label">身份</span>
+        <span class="profile-value">在逐火之蛾基地长大的孩子 → 融合战士 → 逐火十三英桀 · 方舟计划执行者</span>
+        <span class="profile-label">位次</span>
+        <span class="profile-value"><span class="highlight">Ⅺ</span>（第十一位）</span>
+        <span class="profile-label">刻印</span>
+        <span class="profile-value"><span class="highlight">「繁星」</span></span>
+        <span class="profile-label">属性</span>
+        <span class="profile-value"><span class="lamp">异能</span>（繁星·绘世之卷）/ <span class="lamp">星尘</span>（天行·绘星之卷）</span>
+        <span class="profile-label">武器</span>
+        <span class="profile-value">十字架；超限「往世的星空·心之彩」</span>
+        <span class="profile-label">特殊能力</span>
+        <span class="profile-value"><span class="lamp">「色彩浸染」</span>——从别人身上沾染颜色、模仿其语气；画作能具现为实体</span>
+        <span class="profile-label">身高</span>
+        <span class="profile-value">145cm（少年期）/ 166cm（成长期）</span>
+        <span class="profile-label">出生地</span>
+        <span class="profile-value">穆（Mu）</span>
+        <span class="profile-label">生日</span>
+        <span class="profile-value"><span class="highlight">12月21日</span></span>
+        <span class="profile-label">配音</span>
+        <span class="profile-value">紫苏九月（汉语）/ 木野日菜（日语）</span>
+        <span class="profile-label">外貌</span>
+        <span class="profile-value">天蓝色长发双马尾、紫色瞳孔；黑色贝雷帽缀金色蝴蝶发饰，白色连衣裙，光脚</span>
+        <span class="profile-label">喜好</span>
+        <span class="profile-value"><span class="lamp">画画</span>；她的朋友们，月亮先生，还有小船</span>
+      </div>
+      <div class="profile-desc">
+        她生在崩坏爆发之前的穆大陆，父母都在逐火之蛾工作——妈妈布兰卡是梅比乌斯的助手。小时候她常被带去基地的「办公室」玩，梅比乌斯阿姨给她很多糖，她也在那里认识了科斯魔和黛丝多比娅。第八次崩坏带走了母亲，也带走了她的平常：梅比乌斯为她做了一场只求「活下去」的手术，术后她的眼里多了一层别人看不见的颜色。此后是阿波尼亚妈妈照顾她、科斯魔保护她，而她一直在画画——画里有好多朋友。后来，她替科斯魔登上了那艘只能坐一个人的小船，带着画笔和颜料，去往星星住的地方。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- （原 su 的「功德箱 · 木鱼」一整节已移除 —— 那不属于她。
+     她的专属互动模块「她的调色盘 · 色彩浸染」会在后续任务里加在这里。） -->
+
+<!-- SECTION: journey -->
+<section class="content-section" id="journey">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">✦</span>她的繁星<span class="section-title-mark">✦</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="timeline">
+    <div class="timeline-line"></div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>穆大陆 · 家</h3>
+        <p>她生在崩坏爆发之前的穆大陆。父亲痕、母亲布兰卡都在逐火之蛾工作，父母告诉她——基地是世界上最安全的地方。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>基地里的糖果</h3>
+        <p>父母忙的时候，会把她带去「办公室」。最开始是去妈妈那儿：梅比乌斯阿姨经常给她糖吃——那是她记事后最甜的一段日子。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>两个玩伴</h3>
+        <p>后来她又去了爸爸那儿，认识了黛丝多比娅和科斯魔。科斯魔那时话很多，整天念叨「凯文队长」，她和黛丝多比娅都觉得他有点吵。但三个人一起玩、一起画画，很开心。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>第八次崩坏</h3>
+        <p>第八次崩坏里，母亲布兰卡没能回来。她也受了不可逆的致命伤——那一年，她第一次知道，有些人说了「再见」，就真的没有下一次了。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>活下去的方法</h3>
+        <p>梅比乌斯为她做超变手术，只为让她「活下去」。手术连同力量一起注进了她的画笔——从此她的眼中翻腾着别人看不见的颜色。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>守着她的两个人</h3>
+        <p>阿波尼亚妈妈代为照顾她，科斯魔负责保护她。她重新拿起画笔，一直在画画——因为阿波尼亚妈妈说，这样能帮到大家；画里也有很多朋友。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>第十一位「繁星」</h3>
+        <p>约束惨剧之后，爱莉希雅提议她加入逐火十三英桀。于是她成为第十一位英桀，刻印「繁星」，并在往世乐土里留下了一段记忆体。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>方舟计划</h3>
+        <p>方舟的驾驶员原本定的是科斯魔。她看得出他不愿意——他更想像芽衣姐姐说的那样去「战斗」，而且小船只能坐一个人，他会寂寞。于是她替他去：带上画笔和颜料，让科斯魔不要担心。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>沉睡 1537 年</h3>
+        <p>小船载着她飞往天上。她在方舟里睡了约 561,397 天——差不多 1537 年，独自执行星际探索。直到现文明把她唤醒，她已经在旅途中长大了。</p>
+      </div>
+    </div>
+
+    <!-- 成长形态（spec §3.5）：接在时间轴末尾，一段独立的叙事过渡。
+         一句「给予刻印·其十三」的独白 + 立绘切换（少年 → 成长），篇幅克制。 -->
+    <div class="timeline-growth" id="growth">
+      <div class="growth-frame" id="growthFrame" role="button" tabindex="0" aria-label="立绘，点击切换少年与成长">
+        <svg class="gf-young" viewBox="0 0 132 168" aria-hidden="true">
+          <defs>
+            <linearGradient id="gYoung" x1="0" y1="0" x2="0.4" y2="1">
+              <stop offset="0%" stop-color="#7dd3fc"/><stop offset="100%" stop-color="#c9a0ff"/>
+            </linearGradient>
+            <linearGradient id="gGrown" x1="0" y1="0" x2="0.4" y2="1">
+              <stop offset="0%" stop-color="#ff7aa8"/><stop offset="100%" stop-color="#5eead4"/>
+            </linearGradient>
+          </defs>
+          <!-- 少年格蕾修：贝雷帽 + 金星、双马尾、白裙、光脚 -->
+          <ellipse cx="66" cy="42" rx="23" ry="10" fill="url(#gYoung)" opacity=".92"/>
+          <path d="M47 54 C35 72 33 94 37 108 C45 105 49 97 51 89 Z" fill="url(#gYoung)" opacity=".8"/>
+          <path d="M85 54 C97 72 99 94 95 108 C87 105 83 97 81 89 Z" fill="url(#gYoung)" opacity=".8"/>
+          <circle cx="66" cy="58" r="19" fill="url(#gYoung)" opacity=".95"/>
+          <path d="M66 76 C58 76 52 82 50 92 L44 132 L88 132 L82 92 C80 82 74 76 66 76 Z" fill="url(#gYoung)" opacity=".9"/>
+          <path d="M51 94 L35 114 M81 94 L97 114" stroke="url(#gYoung)" stroke-width="4.5" stroke-linecap="round" opacity=".85"/>
+          <path d="M57 132 L57 152 M75 132 L75 152" stroke="url(#gYoung)" stroke-width="5" stroke-linecap="round" opacity=".85"/>
+          <path d="M66 30 l3.1 6.2 6.8 1 -4.9 4.7 1.2 6.7 -6.1-3.2 -6.1 3.2 1.2-6.7 -4.9-4.7 6.8-1 Z" fill="#ffd97a"/>
+        </svg>
+        <svg class="gf-grown" viewBox="0 0 132 168" aria-hidden="true">
+          <!-- 成长格蕾修：长发、长大衣、中靴，手里握着那支会发光的笔 -->
+          <circle cx="66" cy="40" r="16" fill="url(#gGrown)" opacity=".95"/>
+          <path d="M50 42 C40 68 42 98 46 118 L58 118 C52 96 52 66 58 46 Z" fill="url(#gGrown)" opacity=".8"/>
+          <path d="M82 42 C92 68 90 98 86 118 L74 118 C80 96 80 66 74 46 Z" fill="url(#gGrown)" opacity=".8"/>
+          <path d="M66 56 C58 56 52 62 50 72 L44 140 L88 140 L82 72 C80 62 74 56 66 56 Z" fill="url(#gGrown)" opacity=".9"/>
+          <path d="M50 76 L36 108 M82 76 L100 64" stroke="url(#gGrown)" stroke-width="4.5" stroke-linecap="round" opacity=".85"/>
+          <path d="M100 64 L119 42" stroke="#ffd97a" stroke-width="2.4" stroke-linecap="round"/>
+          <circle cx="121" cy="39" r="4.6" fill="#ffe066" opacity=".92"/>
+          <path d="M58 140 L58 157 M74 140 L74 157" stroke="url(#gGrown)" stroke-width="5" stroke-linecap="round" opacity=".85"/>
+        </svg>
+      </div>
+      <p class="growth-quote" id="growthQuote">「星星们住的地方······一定很美吧？你也想和我一起住到那里去吗？」</p>
+      <p class="growth-caption" id="growthCaption">给予刻印 · 其十三 —— 点击立绘，看她长大</p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: quotes -->
+<section class="content-section" id="quotes">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">✦</span>繁星之画<span class="section-title-mark">✦</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="quotes-grid" id="quotesGrid" data-primary-action></div>
+</section>
+
+<!-- SECTION: ending -->
+<section class="section-ending" id="ending">
+  <div class="ending-stars" id="endingStars"></div>
+  <p class="ending-quote" id="endingQuote" role="button" tabindex="0">碰撞与改变，有时候会诞生新的色彩······我们也一样。</p>
+  <p class="ending-sub" id="endingSub"></p>
+  <p class="ending-attr" id="endingAttr">致格蕾修 · elysiad.top/griseo</p>
+  <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
+  <div class="ending-fade"></div>
+</section>
+
+<div id="grToast" role="status"></div>
+
+<!-- SECTION: scripts -->
+<script src="/assets/site.js"></script>
+<script>
+(function(){
+  /* SECTION: quotes data */
+  // 全部逐字摘自官方「圣芙蕾雅档案馆」事件-格蕾修 原文页（M8/M10/M3/G4/G62/G69/G71/G99/G100/G107）。
+  // ⚠ 省略号是原著里的六个中点 ······（U+00B7），不许规范化成 ……。
+  var quotes = [
+    '「草地加上阳光······是柠檬的味道。太阳加上大海······是夜晚的天空。银杏加湖水是森林，蝴蝶加葡萄是冰川······还缺什么呢······」',
+    '「云朵捧起海浪······螃蟹们剪断银河······珊瑚闭上眼睛······星星洒在草地上······鼹鼠抱着月亮在睡觉······」',
+    '「外面很吵，大家都在说话。一个人的时候，朋友们不会说话，很安静，喜欢。」',
+    '「每个见过我的后继者都有一幅，不能偏袒任何人。」',
+    '「窍门？我不太懂，我只是在画自己看到的东西。」',
+    '「没有这些的话，就不是螃蟹了。」',
+    '「螃蟹是没有心的哦。」',
+    '「没有那样的时候，我一直都可以画画。」',
+    '「最后，应该也只是换了一个地方而已。」',
+    '「现在的我，一定在云朵里做游戏呢，那里有暖和的天鹅、勤劳的刺猬、或许还有糖果做的螃蟹，对吗？」'
+  ];
+
+  /* SECTION: quotes build —— 交给共享层
+     ★ 闭包 O(1) 索引：不再每次点击都重扫一遍 DOM，只为问「我是第几张卡片」。
+     ⚠ ariaLabel 必填，且必须传本页原文案：它是 Lore，不是通用 UI 标签。
+       而快照工具只采计算样式，抹掉了也测不出「✅ 无差异」。见 docs/theme-schema.md §四。 */
+  ElysiaShared.buildQuoteCards({
+    grid: document.getElementById('quotesGrid'),
+    quotes: quotes,
+    ariaLabel: '繁星之画，点击切换',
+  });
+
+  /* SECTION: canvas particles (颜料点 + 光尘 + 星)
+     ⚠ 这一块在后续任务里会被换成「颜料晕开成星」的专属粒子系统；
+        现在先按这一页的五色重上色 —— 菩提叶不属于她。 */
+  var canvas = document.getElementById('paintCanvas');
+  var ctx = canvas.getContext('2d');
+  var W, H;
+  var leafColors = ['#7dd3fc','#c9a0ff','#ff7aa8','#ffe066','#5eead4'];
+  var dustColors = ['#ffd97a','#f2e9f8','#7dd3fc'];
+
+  // ⚠ 只抽「把 canvas 和视口尺寸对上」这三行。下面那个「把越界粒子拉回画布」的
+  //   匿名监听器**故意留着不动**——它碰的数组每页不一样，抽走会改行为。
+  const resize = ElysiaShared.makeResize(canvas, {
+    get W() { return W; }, set W(v) { W = v; },
+    get H() { return H; }, set H(v) { H = v; },
+  });
+  resize();
+  window.addEventListener('resize', resize);
+  var leaves = [];
+  var leafCount = Math.min(26, Math.floor(window.innerWidth / 48));
+  function createLeaf(fromTop){
+    return {
+      x: Math.random() * W,
+      y: fromTop ? -20 - Math.random() * 100 : Math.random() * H,
+      size: 4 + Math.random() * 8,
+      speedY: 0.2 + Math.random() * 0.45,
+      drift: (Math.random() - 0.5) * 0.3,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.012,
+      swayAmp: 16 + Math.random() * 30,
+      swaySpd: 0.004 + Math.random() * 0.008,
+      swayOff: Math.random() * Math.PI * 2,
+      opacity: 0.16 + Math.random() * 0.34,
+      color: leafColors[Math.floor(Math.random() * leafColors.length)]
+    };
+  }
+  for (var i = 0; i < leafCount; i++) leaves.push(createLeaf(false));
+
+  var dusts = [];
+  var dustCount = Math.min(34, Math.floor(window.innerWidth / 34));
+  function createDust(){
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      size: 0.4 + Math.random() * 1.8,
+      speedY: -(0.05 + Math.random() * 0.18),
+      baseOpacity: 0.1 + Math.random() * 0.35,
+      twinkleSpd: 0.006 + Math.random() * 0.02,
+      twinkleOff: Math.random() * Math.PI * 2,
+      color: dustColors[Math.floor(Math.random() * dustColors.length)]
+    };
+  }
+  for (i = 0; i < dustCount; i++) dusts.push(createDust());
+
+  var scrollRatio = 0;
+  window.addEventListener('scroll', function(){
+    var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    scrollRatio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+  });
+
+  var time = 0;
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function animate(){
+    if (reducedMotion) return;
+    time++;
+    ctx.clearRect(0, 0, W, H);
+    var fadeFactor = 1 - scrollRatio * 0.55;
+    var i, l, d, tw;
+
+    for (i = 0; i < dusts.length; i++){
+      d = dusts[i];
+      d.y += d.speedY;
+      if (d.y < -10){ d.y = H + 10; d.x = Math.random() * W; }
+      tw = 0.5 + 0.5 * Math.sin(time * d.twinkleSpd + d.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = d.baseOpacity * tw * fadeFactor;
+      ctx.fillStyle = d.color;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, Math.max(0.25, d.size), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (i = 0; i < leaves.length; i++){
+      l = leaves[i];
+      l.y += l.speedY;
+      l.x += l.drift + Math.sin(time * l.swaySpd + l.swayOff) * 0.4;
+      l.rotation += l.rotSpeed;
+      if (l.y > H + 25){ leaves[i] = createLeaf(true); l = leaves[i]; }
+      ctx.save();
+      ctx.translate(l.x, l.y);
+      ctx.rotate(l.rotation);
+      ctx.globalAlpha = l.opacity * fadeFactor;
+      ctx.fillStyle = l.color;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, Math.max(0.6, l.size * 0.3), Math.max(0.8, l.size * 0.62), 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (i = bursts.length - 1; i >= 0; i--){
+      var b = bursts[i];
+      b.x += b.vx;
+      b.y += b.vy;
+      b.vy += 0.03;
+      b.vx *= 0.99;
+      b.rotation += b.rotSpeed;
+      b.life -= 0.015;
+      if (b.life <= 0){ bursts.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, b.life * 0.9);
+      ctx.fillStyle = b.color;
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.rotation);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, b.w * 0.4, b.w, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    requestAnimationFrame(animate);
+  }
+  var bursts = [];
+  function leafBurst(cx, cy, count, colors){
+    var palette = colors || leafColors;
+    for (var k = 0; k < count; k++){
+      var angle = (k / count) * Math.PI * 2 + Math.random() * 0.6;
+      var speed = 1 + Math.random() * 3;
+      bursts.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1,
+        w: 3 + Math.random() * 5,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.12,
+        life: 1,
+        color: palette[Math.floor(Math.random() * palette.length)]
+      });
+    }
+  }
+  animate();
+
+  /* SECTION: toast */
+  var toastEl = document.getElementById('grToast');
+  var toastTimer = null;
+  function showToast(text, golden){
+    clearTimeout(toastTimer);
+    toastEl.textContent = text;
+    toastEl.classList.toggle('golden', !!golden);
+    toastEl.classList.remove('show');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, golden ? 4200 : 3000);
+  }
+
+  /* （原 su 的「木鱼积功德」一整块已移除 —— 连同它的存档键一起。
+        她的专属互动模块「色彩浸染」会在后续任务里加到这里。） */
+
+  /* SECTION: easter egg - 点名字，她念一条「规矩」
+     （禅语不属于她。她这里换成科斯魔叮嘱过的那几条小规矩，全部有出处。） */
+  var nameEl = document.getElementById('profileName');
+  var ruleLines = [
+    '「画画的时候不要把笔放到嘴巴里尝颜料的味道。」',
+    '「用完后要记得用清水清洗。」',
+    '「好，我记住了。」',
+    '「嗯。」'
+  ];
+  var ruleIdx = 0;
+  var pressTimer = null;
+  var longPressed = false;
+  var paintVeil = document.getElementById('paintVeil');
+
+  function nameTap(){
+    showToast(ruleLines[ruleIdx % ruleLines.length], false);
+    ruleIdx++;
+  }
+  nameEl.addEventListener('click', function(){
+    if (longPressed){ longPressed = false; return; }
+    nameTap();
+  });
+  nameEl.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nameTap(); }
+  });
+  /* 长按她的名字 1.6 秒 —— 色彩浸染 */
+  function startPress(){
+    longPressed = false;
+    pressTimer = setTimeout(function(){
+      longPressed = true;
+      paintVeil.classList.add('lit');
+      showToast('……视线里的一切忽然都染上了颜色。这大概，就是她眼中的世界。', true);
+      setTimeout(function(){ paintVeil.classList.remove('lit'); }, 2600);
+    }, 1600);
+  }
+  function cancelPress(){ clearTimeout(pressTimer); }
+  nameEl.addEventListener('mousedown', startPress);
+  nameEl.addEventListener('touchstart', startPress, { passive: true });
+  nameEl.addEventListener('mouseup', cancelPress);
+  nameEl.addEventListener('mouseleave', cancelPress);
+  nameEl.addEventListener('touchend', cancelPress);
+
+  /* SECTION: easter egg - 结尾心声 */
+  var endingQuote = document.getElementById('endingQuote');
+  var endingSub = document.getElementById('endingSub');
+  /* 呀，这四句**全是她自己的话，一句都没编**：
+       ① 给予刻印·其二  ② 画家的追忆·九  ③ 给予刻印·其十四  ④ 给予刻印·其六 */
+  var heartLines = [
+    '「我画了很多东西，它们就在这里，你看到了吗？」',
+    '「一艘小船，坐着它，可以飞往天上。」',
+    '「你的眼睛里······有我从来没见过的颜色。」',
+    '「我一直在那深深的地方······阿波尼亚妈妈和我说，不能乱跑。」'
+  ];
+  var heartIdx = 0;
+  endingQuote.addEventListener('click', function(){
+    endingSub.textContent = heartLines[heartIdx % heartLines.length];
+    endingSub.classList.add('visible');
+    heartIdx++;
+    if (!reducedMotion){
+      var r = endingQuote.getBoundingClientRect();
+      leafBurst(r.left + r.width / 2, r.top + r.height / 2, 10, ['#e8c98a','#2dd4bf','#fdf6e3']);
+    }
+  });
+  endingQuote.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); endingQuote.click(); }
+  });
+
+  /* SECTION: click ripple (水面圆环) */
+  document.addEventListener('click', function(e){
+    if (reducedMotion) return;
+    if (e.target.closest && (e.target.closest('#profileName') || e.target.closest('#endingQuote'))) return;
+    for (var n = 0; n < 2; n++){
+      var ring = document.createElement('div');
+      ring.className = 'water-ring';
+      var size = 60 + n * 46 + Math.random() * 20;
+      ring.style.width = size + 'px';
+      ring.style.height = size + 'px';
+      ring.style.left = e.clientX + 'px';
+      ring.style.top = e.clientY + 'px';
+      ring.style.animationDelay = (n * 0.14) + 's';
+      ring.style.borderColor = n === 0 ? 'rgba(255,217,122,.7)' : 'rgba(201,160,255,.5)';
+      document.body.appendChild(ring);
+      setTimeout(function(el){ el.remove(); }.bind(null, ring), 1300);
+    }
+  });
+
+  /* SECTION: typewriter */
+  /* SECTION: opening typewriter —— 交给共享层
+     ⚠ 五个时间数值**逐页不同**，全部照本页原值传入，不要依赖默认值。
+       漏传就会悄悄改变这一页的节奏。对照表见 docs/theme-schema.md §5.1。 */
+  ElysiaShared.makeTypewriter({
+    // 出处：官方档案馆 · 往世乐土 · 事件-格蕾修 · 给予刻印·其十六。
+    // 数值按她的性格锚点定（计划 Task 2：「细碎、跳跃」——小孩子蘸颜料，
+    // 一笔一笔又短又碎，jitter 拉高到全站之最，落点没有一次一样）。
+    text: '你······最喜欢什么颜色呢？',
+    delay: 120, jitter: 145, startDelay: 780, tailDelay: 560, hintDelay: 1000,
+    hintEl: true,
+    preReveal: 'openingStar',
+  });
+
+  /* SECTION: scroll animations */
+  /* SECTION: scroll animations —— 交给共享层
+     ⚠ 结尾目标改用带判空的写法（Inventory R11）：元素齐全时表现与原先完全一致，
+       缺元素时不再抛异常。属**行为改善**，非纯重构。 */
+  ElysiaShared.observeReveal('.timeline-node');
+  ElysiaShared.observeReveal('.timeline-growth');
+
+  /* SECTION: growth —— 立绘切换（少年 → 成长）
+     spec §3.5：一句「给予刻印·其十三」的独白 + 一次立绘切换，篇幅克制。
+     点一下她就长大，再点一下又变回少年 —— 怎么点都不影响别处。 */
+  var growthEl = document.getElementById('growth');
+  var growthFrame = document.getElementById('growthFrame');
+  var growthCaption = document.getElementById('growthCaption');
+  var GROWN_CAP = '给予刻印 · 其十三 —— 再点一下，变回少年';
+  var YOUNG_CAP = '给予刻印 · 其十三 —— 点击立绘，看她长大';
+  function toggleGrowth(){
+    var grown = growthEl.classList.toggle('grown');
+    if (growthCaption) growthCaption.textContent = grown ? GROWN_CAP : YOUNG_CAP;
+  }
+  if (growthFrame){
+    growthFrame.addEventListener('click', toggleGrowth);
+    growthFrame.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleGrowth(); }
+    });
+  }
+  ElysiaShared.observeReveal('#ending', {
+    threshold: 0.3,
+    reveal: ['endingQuote', 'endingAttr', 'backLink'],
+  });
+
+  /* SECTION: ending stars */
+  var starsContainer = document.getElementById('endingStars');
+  // 呀！星星的区间就是这一页的脾气，交给共享层的时候一个数都不敢动呢♥
+  // ⚠ 区间写法是 [起点, 跨度]，与原来的 `0.1 + Math.random() * 0.3` 一一对应。
+  var THEME = {
+    endingStars: {
+      count: [80, 12],
+      size: [0.5, 2],
+      minO: [0.08, 0.3], maxO: [0.45, 0.5],
+      dur: [2.4, 4], delay: [0, 5],
+      // 呀，结尾的星也是五色的 —— 她那一整罐颜料，最后都洒成了星星♥
+      colors: { pool: ['#fff', '#7dd3fc', '#c9a0ff', '#ff7aa8', '#ffe066', '#5eead4'] },
+    },
+  };
+  ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+  /* SECTION: resize guard */
+  window.addEventListener('resize', function(){
+    for (var j = 0; j < dusts.length; j++){
+      if (dusts[j].x > W) dusts[j].x = Math.random() * W;
+    }
+    for (j = 0; j < leaves.length; j++){
+      if (leaves[j].x > W) leaves[j].x = Math.random() * W;
+    }
+  });
+})();
+</script>
+</body>
+</html>
