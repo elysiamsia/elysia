@@ -26,11 +26,12 @@
  *   · ⚠ 减动偏好（`prefers-reduced-motion`）**不该关掉这个游戏** ——
  *     它由「开始」按钮**显式触发**，不属「自动播放的装饰动效」。
  *
- * ── 本任务（Task 2）到哪儿为止 ──────────────────────────────────────
- *   骨架 + 遮罩 + 网格 + 离屏渲染 + **玩家可拖动**（笔触落成 `2`）。
- *   **围地回填（松手 → fillEnclosed）是 Task 3**；造物是 Task 4。
- *   但按照 R24，**算法在本任务已经移植进来**（见文件下半 `fillEnclosed` 那一节），
- *   本任务只**不调用**它 —— 等 Task 3 把「松手」接上去。
+ * ── 任务进度 ────────────────────────────────────────────────────────
+ *   Task 2：骨架 + 遮罩 + 网格 + 离屏渲染 + **玩家可拖动**（笔触落成 `2`）。
+ *   Task 3（本任务）：**松手回填** —— 松手时若**笔尖挨着自己的颜色**（四邻有 `1`）
+ *     就调 `fillEnclosed` 把围住的区域染成领地（带**晕染动画**）；否则整条笔触
+ *     **淡去**回空白（「白画一场」）。
+ *   Task 4：造物（`>=3`）；Task 5：击杀 / 结算 / 接入页面。
  *
  * ── ⚠ 拖动时**绝不能让页面跟着滚**（本任务最容易踩的坑）──────────────
  *   三层一起上，缺一不可：
@@ -51,7 +52,15 @@
   var CW = COLS * CELL;          // 576
   var CH = ROWS * CELL;          // 384（3:2，照 ROWS/COLS）
   var HOME_R = 3;                // 玩家起始占**中央 3×3**（「画布原点」）
-  var BRUSH_UP = 44;             // 笔尖在手指**上方** 44px（防手指挡视线）
+  /* ⚠ BRUSH_UP 的单位是**屏幕（CSS）像素**，不是画布像素 —— 见 `eventToCell`：
+     它在 `clientY - r.top` 之后、乘 `CH/r.height` **之前**减掉，所以是在**屏幕坐标系**里
+     把笔尖整体上抬 44 个 CSS px（「防手指挡视线」，跟手指大小同量级）。
+     ⇒ 换算到画布坐标会随画布显示尺寸而变：
+        · 桌面（画布≈1:1，576 显示宽）：44 画布 px ≈ **3.7 格**
+        · 手机 375 宽（画布显示≈312×209，CH/height≈1.84）：≈ **81 画布 px ≈ 6.75 格**
+     两处数字看着差很多，但**屏幕上是同一个 44px** —— 这正是想要的：
+     偏移要跟着**手指**（屏幕）走，不该跟着画布缩放走。 */
+  var BRUSH_UP = 44;             // 笔尖在手指**上方** 44 个屏幕 px（防手指挡视线）
   var BASE_PAD = 1;              // 每格四周留 1px 当网格线
 
   /* 格子的编码（**哨兵，写死，别改成通用 owner**）——
@@ -69,8 +78,18 @@
   var COL_BRUSH = 'rgba(255,217,122,.9)';   // 笔尖圈：金（她的发饰色）
 
   var MSG_OPEN = '按住画布拖动 —— 笔尖跟着你的手，画过的地方就是你的颜色。';
+  var MSG_STROKE = '……笔尖正跟着你的手。';
+  var MSG_FILL = '围住啦 —— 这一片都染成了你的颜色。';
+  var MSG_FADE = '笔尖没绕回自己的颜色，这一笔散掉了。';
   var CLOSE_GUARD_MS = 400;      // 刚打开的那一小段里拒收「收笔」的点击（照 sakura）
   var STYLE_ID = 'griseoGameStyles';
+
+  /* ── 动画参数（Task 3 的「晕染」/「淡去」）─────────────────────────
+     全部以**屏幕/墙钟毫秒**计，用 `Date.now()`（不依赖 performance 计时精度）。 */
+  var FILL_MS = 260;             // 上色：每个新格从「湿笔触色」渐到「领地色」的时长
+  var FILL_STEP_MS = 22;         // 上色：按「离笔触的格距」错峰，做出**由外向内晕开**的感觉
+  var FILL_MAX_STEP = 14;        // 错峰档数封顶（大区域别让总时长失控）
+  var FADE_MS = 260;             // 淡去：笔触整体从湿色渐回空白
 
   /* ── DOM 引用 & 单实例状态 ───────────────────────────────────────────
      `el` 里是 DOM；下面这些是**模块级**的单实例状态，不放在 mount 里。 */
@@ -93,6 +112,20 @@
   var lastCell = null;           // 上一次标到的格（用来补中间漏掉的格）
   var brushX = 0, brushY = 0;    // 笔尖的**浮点**画布坐标（画那枚金圈用）
 
+  /* 动画状态（Task 3 的晕染 / 淡去）——
+     同一时刻只跑一段动画；`animIdx[i]>=0` 表示「第 i 格此刻正被动画接管」。 */
+  var animActive = false;
+  var animCells = null;          // 参与动画的格索引
+  var animDelay = null;          // 每格的起步延迟（ms）
+  var animIdx = null;            // Int32Array(n)：格 → 在 animCells 里的下标（-1 = 不参与）
+  var animFrom = null;           // 起始颜色（hex）
+  var animTo = null;             // 目标颜色（hex）
+  var animDur = 0;               // 单格渐变时长（ms）
+  var animTotal = 0;             // 整段动画总时长（ms）
+  var animStart = 0;             // 动画起点（Date.now）
+  var animRaf = null;            // 动画驱动的 rAF
+  var animOnSettle = null;       // 动画结束时的收尾（淡去要把格子落成 0）
+
   /* ══════════════════════════════════════════════════════════════════
    *  一、渲染 —— 离屏缓存 + 只画脏格
    * ══════════════════════════════════════════════════════════════════ */
@@ -104,17 +137,47 @@
     cctx.fillRect(0, 0, CW, CH);
   }
 
+  /* ── 颜色工具（晕染/淡去要把两个 hex 混起来）────────────────────────
+     ES5：只用 charAt / parseInt / Math.round，不碰模板串与 8 进制字面量。 */
+  function hexToRgb(h) {
+    h = h.charAt(0) === '#' ? h.slice(1) : h;
+    if (h.length === 3) h = h.charAt(0) + h.charAt(0) + h.charAt(1) + h.charAt(1) + h.charAt(2) + h.charAt(2);
+    var v = parseInt(h, 16);
+    return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+  }
+
+  /** 把两个 hex 按 t（0..1）线性混出一个 `rgb(...)` 串。 */
+  function lerpHex(a, b, t) {
+    var ca = hexToRgb(a), cb = hexToRgb(b);
+    var r = Math.round(ca[0] + (cb[0] - ca[0]) * t);
+    var g = Math.round(ca[1] + (cb[1] - ca[1]) * t);
+    var bl = Math.round(ca[2] + (cb[2] - ca[2]) * t);
+    return 'rgb(' + r + ',' + g + ',' + bl + ')';
+  }
+
+  /** 这一格在 `grid` 里「该是什么颜色」（不管动画）。 */
+  function cellColor(i) {
+    var v = grid ? grid[i] : EMPTY;
+    if (v === HOME) return COL_HOME;
+    if (v === STROKE) return COL_STROKE;
+    if (v >= 3) return '#6ea86b';                // 造物（Task 4）—— 本任务用不到
+    return COL_EMPTY;
+  }
+
   /** 把一个格子画进离屏缓存（四周留 BASE_PAD 像素 = 网格线）。 */
   function paintCell(i) {
+    var c = cellColor(i);
+    /* ⚠ 动画接管中：格子此刻的颜色由动画算，不看 grid（grid 已经是终值，
+       只是**视觉**上还没干透）。 */
+    if (animActive && animIdx && animIdx[i] >= 0) c = animColorAt(animIdx[i]);
+    paintCellColor(i, c);
+  }
+
+  /** 用**指定颜色**铺一格（动画每帧直接调它，绕过 grid 查表）。 */
+  function paintCellColor(i, color) {
     if (!cctx) return;
     var x = i % COLS;
     var y = (i - x) / COLS;
-    var v = grid ? grid[i] : EMPTY;
-    var color;
-    if (v === HOME) color = COL_HOME;
-    else if (v === STROKE) color = COL_STROKE;
-    else if (v >= 3) color = '#6ea86b';       // 造物（Task 4）—— 本任务用不到
-    else color = COL_EMPTY;
     cctx.fillStyle = color;
     cctx.fillRect(x * CELL + BASE_PAD, y * CELL + BASE_PAD, CELL - BASE_PAD * 2, CELL - BASE_PAD * 2);
   }
@@ -173,11 +236,149 @@
   }
 
   /* ══════════════════════════════════════════════════════════════════
+   *  一·B、动画 —— 晕染（上色）/ 淡去（白画一场）
+   *
+   *  ⚠ 设计要点：**grid 在动画一开始就已经是终值** —— 动画只改「视觉上这格
+   *     此刻是什么颜色」，绝不改玩法状态。所以：
+   *     · 中途被任何东西打断（收笔 / 重新落笔 / 关闭）都能**立刻结算到终值**，
+   *       不会让玩法状态卡在中间态。
+   *     · 断言读 `grid`（或画布像素）时，等动画跑完就一定是干净读数。
+   * ══════════════════════════════════════════════════════════════════ */
+
+  /** 动画进行到第 k 个格子的当前颜色（起步延迟 + 缓出）。 */
+  function animColorAt(k) {
+    var t = (Date.now() - animStart - animDelay[k]) / animDur;
+    if (t < 0) t = 0; else if (t > 1) t = 1;
+    t = 1 - (1 - t) * (1 - t);                   // ease-out：起笔快、落定慢
+    return lerpHex(animFrom, animTo, t);
+  }
+
+  function ensureAnimLoop() {
+    if (animRaf) return;
+    animRaf = global.requestAnimationFrame(function step() {
+      animRaf = null;
+      if (!animActive) return;
+      if (Date.now() - animStart >= animTotal) { settleAnim(); return; }
+      for (var k = 0; k < animCells.length; k++) paintCellColor(animCells[k], animColorAt(k));
+      blit();
+      ensureAnimLoop();
+    });
+  }
+
+  /** 立刻把动画结算到终值（可被任何打断调用）。 */
+  function settleAnim() {
+    if (!animActive) return;
+    animActive = false;
+    if (animRaf) { global.cancelAnimationFrame(animRaf); animRaf = null; }
+    var cells = animCells;
+    if (animOnSettle) { var f = animOnSettle; animOnSettle = null; f(); }
+    for (var k = 0; k < cells.length; k++) paintCell(cells[k]);
+    animCells = null; animDelay = null; animIdx = null; animFrom = null; animTo = null;
+    blit();
+  }
+
+  /**
+   * 起一段动画。
+   * @param cells  参与动画的格索引
+   * @param delays 每格起步延迟（ms，与 cells 等长）
+   * @param dur    单格渐变时长（ms）
+   * @param from   起始色（hex）
+   * @param to     目标色（hex）
+   * @param settle 结算回调（在终值落定前调；淡去靠它把格子写成 0）
+   */
+  function startAnim(cells, delays, dur, from, to, settle) {
+    if (!cells || cells.length === 0) { if (settle) settle(); return; }
+    /* 先把挂着的脏渲染冲掉 —— 动画接管后每帧自己重画这几格。 */
+    if (raf) { global.cancelAnimationFrame(raf); raf = null; }
+    if (dirtyList.length) render();
+
+    var n = COLS * ROWS;
+    animCells = cells;
+    animDelay = delays;
+    animIdx = new Int32Array(n);
+    var i, k;
+    for (i = 0; i < n; i++) animIdx[i] = -1;
+    var maxDelay = 0;
+    for (k = 0; k < cells.length; k++) {
+      animIdx[cells[k]] = k;
+      if (delays[k] > maxDelay) maxDelay = delays[k];
+    }
+    animFrom = from;
+    animTo = to;
+    animDur = dur;
+    animTotal = maxDelay + dur;
+    animStart = Date.now();
+    animOnSettle = settle || null;
+    animActive = true;
+    for (k = 0; k < cells.length; k++) paintCellColor(cells[k], animColorAt(k));
+    blit();
+    ensureAnimLoop();
+  }
+
+  /** 上色晕染：新格从「湿笔触色」由外向内晕到「领地色」。 */
+  function startFillAnim(newCells, depths, maxDepth) {
+    var capped = maxDepth > FILL_MAX_STEP ? FILL_MAX_STEP : maxDepth;
+    var delays = [];
+    var k;
+    for (k = 0; k < newCells.length; k++) {
+      var d = depths[k] > capped ? capped : depths[k];
+      delays.push(d * FILL_STEP_MS);
+    }
+    startAnim(newCells, delays, FILL_MS, COL_STROKE, COL_HOME, null);
+  }
+
+  /** 白画一场：整条笔触从湿色淡回空白，落定时写成 `0`。 */
+  function startFadeAnim(cells) {
+    var delays = [];
+    for (var k = 0; k < cells.length; k++) delays.push(0);
+    startAnim(cells, delays, FADE_MS, COL_STROKE, COL_EMPTY, function () {
+      for (var j = 0; j < cells.length; j++) grid[cells[j]] = EMPTY;
+    });
+  }
+
+  /** 多米诺 BFS：算每个新格离「笔触格」的格距（0 = 本身就是笔触）。
+      上色时按这个距离错峰 ⇒ 视觉上从笔触那道边**向内晕开**。 */
+  function computeDepths(newCells, before) {
+    var n = COLS * ROWS;
+    var lookup = new Int32Array(n);
+    var i, k;
+    for (i = 0; i < n; i++) lookup[i] = -1;
+    for (k = 0; k < newCells.length; k++) lookup[newCells[k]] = k;
+    var depth = new Int32Array(newCells.length);
+    for (k = 0; k < newCells.length; k++) depth[k] = -1;
+    var queue = [];
+    for (k = 0; k < newCells.length; k++) {
+      if (before[newCells[k]] === STROKE) { depth[k] = 0; queue.push(k); }
+    }
+    var head = 0;
+    while (head < queue.length) {
+      var cur = queue[head++];
+      var ci = newCells[cur];
+      var cx = ci % COLS;
+      var cy = (ci - cx) / COLS;
+      for (var d = 0; d < 4; d++) {
+        var nx = cx + DIRS[d][0];
+        var ny = cy + DIRS[d][1];
+        if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+        var nk = lookup[ny * COLS + nx];
+        if (nk >= 0 && depth[nk] === -1) { depth[nk] = depth[cur] + 1; queue.push(nk); }
+      }
+    }
+    var maxDepth = 0;
+    for (k = 0; k < depth.length; k++) {
+      if (depth[k] < 0) depth[k] = maxDepth;       // 兜底（理论上不会有）
+      if (depth[k] > maxDepth) maxDepth = depth[k];
+    }
+    return { depth: depth, max: maxDepth };
+  }
+
+  /* ══════════════════════════════════════════════════════════════════
    *  二、玩法 —— 拖动，把经过的格标成笔触
    * ══════════════════════════════════════════════════════════════════ */
 
   /** 开局：清空网格，把中央 3×3 变成她的领地（画布原点）。 */
   function resetGame() {
+    settleAnim();                                // 收掉可能挂着的动画（换 grid 之前必须先结算）
     grid = new Int8Array(COLS * ROWS);
     if (dirtyFlags) dirtyFlags = new Uint8Array(COLS * ROWS);
     dirtyList.length = 0;
@@ -245,11 +446,12 @@
   function beginStroke(clientX, clientY) {
     var cell = eventToCell(clientX, clientY);
     if (!cell) return;
+    settleAnim();                                // 新的一笔开始 ⇒ 上一段动画立即结算到终值
     dragging = true;
     lastCell = { x: cell.cx, y: cell.cy };
     brushX = cell.px; brushY = cell.py;          // 浮点位置：笔尖圈跟手，不跳格
     markStroke(cell.cx, cell.cy);
-    if (el.msg) el.msg.textContent = '……笔尖正跟着你的手。';
+    if (el.msg) el.msg.textContent = MSG_STROKE;
     scheduleRender();
   }
 
@@ -263,13 +465,53 @@
     scheduleRender();
   }
 
+  /**
+   * 松手 —— Task 3 的「回填 vs 白画一场」都在这里。
+   *
+   * ⚠ 「笔尖落在自己的颜色上」的口径 **与算法里的 `touchesHome` 完全一致**：
+   *   取笔尖那一格的**四邻**，只要有一格是 HOME(`1`) 就算「挨着自己的颜色」。
+   *   · 不是「格子本身 == 1」—— 笔触永远落不到 `1` 上（`markStroke` 只在 `0` 上落笔）。
+   *   · 不是 8 邻域 —— `touchesHome` 就是四邻，口径必须对齐，否则会出现
+   *     「网关过了、算法却没认（或反之）」的错位。
+   */
   function endStroke() {
     if (!dragging) return;
     dragging = false;
+    var cell = lastCell;
     lastCell = null;
-    /* ⚠ Task 3 在这里接「松手回填」：若笔尖落在自己的颜色上 → 调 fillEnclosed。
-       本任务先只收笔，不判定。 */
-    scheduleRender();
+    if (!grid) { scheduleRender(); return; }
+
+    var tip = cell ? (cell.y * COLS + cell.x) : -1;
+    var anchored = tip >= 0 && touchesHome(grid, COLS, ROWS, tip);
+
+    if (anchored) {
+      /* ① 快照「上色前」，好算出这一笔**新染**了哪些格（晕染动画要用）。 */
+      var before = new Int8Array(grid);
+      fillEnclosed(grid, COLS, ROWS, HOME);        // ⚠ 原地改 grid（不是纯函数）
+      /* ② 新格 = 现在 `1`、而之前不是 `1` 的格（含被无条件收编的笔触 `2`→`1`）。 */
+      var newCells = [];
+      for (var i = 0; i < grid.length; i++) {
+        if (grid[i] === HOME && before[i] !== HOME) newCells.push(i);
+      }
+      if (newCells.length > 0) {
+        var dd = computeDepths(newCells, before);
+        startFillAnim(newCells, dd.depth, dd.max); // 带晕染动画
+        if (el.msg) el.msg.textContent = MSG_FILL;
+      } else {
+        fullRender();                              // 空笔（没改动）—— 直接把现状画平
+      }
+      return;
+    }
+
+    /* 笔尖没回到自己的颜色 ⇒ **白画一场**：整条笔触淡回空白（落定后写成 `0`）。 */
+    var strokeCells = [];
+    for (var j = 0; j < grid.length; j++) if (grid[j] === STROKE) strokeCells.push(j);
+    if (strokeCells.length > 0) {
+      startFadeAnim(strokeCells);
+      if (el.msg) el.msg.textContent = MSG_FADE;
+    } else {
+      scheduleRender();
+    }
   }
 
   /* ── 指针 / 触摸接线（三层防滚页，见文件头）────────────────────────── */
@@ -362,7 +604,12 @@
       'max-height:calc(100vh - 15rem);border-radius:10px;',
       'border:1px solid var(--glass-border,rgba(255,217,122,.14));',
       'touch-action:none;user-select:none;-webkit-user-select:none;cursor:crosshair}',
-      '.gr-msg{margin:0;font-size:.76rem;line-height:1.8;color:var(--text-dim,#b8a8c8);min-height:2.6em}',
+      /* ⚠ 固定预留**两行**高度（`min-height:3.6em` = 2 × line-height 1.8）——
+         面板是垂直居中的，`.gr-msg` 一变行数，**整块画布会跟着上下跳**。
+         Task 3 给消息换了文案（开场 2 行 → 松手后 1 行），实测画布因此**位移约 6px**、
+         换算到格子足足差半格多 —— 手指按着画布时它自己动，是实打实的**手感事故**。
+         钉成常数高度后：无论哪条文案，画布都待在原地。 */
+      '.gr-msg{margin:0;font-size:.76rem;line-height:1.8;color:var(--text-dim,#b8a8c8);min-height:3.6em}',
       /* 「收笔」挂在**屏幕角落**（整个遮罩的右上角），不在面板里 ——
          理由同 sakura `.sk-close`：离游戏区够远，手指落低一点不会误触退出。 */
       '.gr-close{position:absolute;top:1rem;right:1rem;z-index:1;',
@@ -448,6 +695,7 @@
 
   function close() {
     if (!el.overlay) return;
+    settleAnim();                                    // 收笔 ⇒ 动画立刻结算（画布停在终值，静止）
     el.overlay.classList.remove('on');
     el.overlay.setAttribute('aria-hidden', 'true');
     running = false;
@@ -730,9 +978,9 @@
   }
 
   /* ⚠ 原型文件尾那段 `module.exports` **已按移植清单 (f) 去掉**（游戏文件是 IIFE）。
-     ⚠ Task 3 才会在 `endStroke()` 里调用 `fillEnclosed(grid, COLS, ROWS, HOME)` ——
-        本任务只把它搬进来、不接上（这正是 Task 2 / Task 3 的分界）。 */
-  void fillEnclosed;
+     ⚠ `fillEnclosed` 现在**真的被调用了** —— 由 `endStroke()` 在「松手且笔尖挨着
+        自己的颜色」时调用（`fillEnclosed(grid, COLS, ROWS, HOME)`，原地改 grid）。
+        Task 2 尾部那行「只搬不接」的占位 `void fillEnclosed;` 到此删掉。 */
 
   global.ElysiaGames = global.ElysiaGames || {};
   global.ElysiaGames.griseo = API;
