@@ -302,6 +302,85 @@ body{
 }
 #paintVeil.lit{opacity:1}
 
+/* SECTION: palette (她的调色盘 · 色彩浸染)
+   呀——这是全站独一份的机制呢♥ 别的页点一下只是「点一下」，
+   而她这里，点一抹色，她会**沾上那个朋友的颜色**，连说话的口气都跟着变。
+   「色彩浸染」是她的官方能力：像一张白纸，很容易染上周围的颜色。
+   盘上这五抹色，是她的朋友们留在她身上的颜色（每一抹的来历见下方 data-color 规则）。 */
+.palette-wrap{max-width:660px;margin:0 auto;text-align:center}
+.palette-sub{font-size:.82rem;color:var(--text-muted);letter-spacing:.1em;line-height:1.9;margin-bottom:2rem}
+.palette-stage{
+  position:relative;display:flex;justify-content:center;align-items:flex-end;flex-wrap:wrap;
+  gap:clamp(.7rem,2.6vw,1.5rem);
+  padding:clamp(1.2rem,4vw,1.9rem) clamp(.9rem,4vw,2rem);border-radius:130px;
+  background:
+    radial-gradient(ellipse 72% 96% at 50% 0%,rgba(255,217,122,.06),transparent 72%),
+    linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  border:1px solid var(--glass-border);
+  box-shadow:0 0 40px rgba(201,160,255,.06),inset 0 1px 0 rgba(255,255,255,.05);
+  -webkit-tap-highlight-color:transparent;
+}
+.palette-dab{
+  position:relative;display:flex;flex-direction:column;align-items:center;gap:.55rem;
+  background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.palette-dab .dab-dot{
+  width:clamp(44px,9.4vw,62px);height:clamp(44px,9.4vw,62px);border-radius:50%;
+  border:2px solid rgba(255,255,255,.2);
+  background:radial-gradient(circle at 34% 28%,var(--dab-hi),var(--dab) 58%,var(--dab-lo));
+  box-shadow:0 5px 16px rgba(0,0,0,.38),0 0 18px var(--dab-soft);
+  filter:saturate(.8) brightness(.92);transform:scale(1);
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1),filter .3s ease,box-shadow .3s ease;
+}
+.palette-dab:hover .dab-dot{transform:scale(1.09);filter:saturate(1) brightness(1.05)}
+.palette-dab:focus-visible{outline:none}
+.palette-dab:focus-visible .dab-dot{outline:2px solid var(--gold);outline-offset:4px}
+.palette-dab.active .dab-dot{
+  transform:scale(1.16);filter:saturate(1.12) brightness(1.1);
+  box-shadow:0 6px 20px rgba(0,0,0,.42),0 0 24px var(--dab-soft),0 0 0 4px var(--dab-soft);
+}
+.palette-dab .dab-name{font-size:.68rem;color:var(--text-muted);letter-spacing:.14em;transition:color .3s ease}
+.palette-dab.active .dab-name,.palette-dab:hover .dab-name{color:var(--dab)}
+/* 五抹色的来历 —— 各自取自那一位朋友的调性 */
+/* 帕朵菲莉丝 · 暖橙：帕朵那一页还没建，取全站已有的暖橙（与科斯魔页 --dawn:#f9a152 那抹旭光橙同源）。 */
+.palette-dab[data-color="tail"]{--dab:#f9a152;--dab-hi:#ffce9c;--dab-lo:#c9742c;--dab-soft:rgba(249,161,82,.45)}
+/* 科斯魔 · 墨绿：提亮自他那一页的 --bg-moss:#16241c「黎明前的林地」——深底上要看得见才算数。 */
+.palette-dab[data-color="kosma"]{--dab:#6ea86b;--dab-hi:#a6d3a3;--dab-lo:#3f6b3f;--dab-soft:rgba(110,168,107,.45)}
+/* 阿波尼亚 · 紫罗兰：直接取她那一页的 --violet:#9d8fd0。 */
+.palette-dab[data-color="aponia"]{--dab:#9d8fd0;--dab-hi:#c9bdec;--dab-lo:#6b5ca8;--dab-soft:rgba(157,143,208,.45)}
+/* 梅比乌斯 · 青：取全站已有的青（villv 页 --teal:#4ecdc4，与蛇身的青光同调）。 */
+.palette-dab[data-color="mobius"]{--dab:#4ecdc4;--dab-hi:#9bf0ea;--dab-lo:#2b8f8a;--dab-soft:rgba(78,205,196,.45)}
+/* 她自己 · 天青：本页的 --sky:#7dd3fc——她头发与刻印「繁星」的那个颜色。 */
+.palette-dab[data-color="self"]{--dab:#7dd3fc;--dab-hi:#c2ecff;--dab-lo:#3f97c4;--dab-soft:rgba(125,211,252,.45)}
+/* 点下去那一抹色，从色点处晕开 —— 就是她眼里「颜色铺开」的样子 */
+.palette-dye{
+  position:absolute;width:26px;height:26px;border-radius:50%;pointer-events:none;
+  transform:translate(-50%,-50%) scale(0);opacity:.85;
+  background:radial-gradient(circle,var(--dye),transparent 70%);
+  border:1.5px solid var(--dye);
+  animation:dye-spread .95s cubic-bezier(.22,.61,.36,1) forwards;
+}
+@keyframes dye-spread{to{transform:translate(-50%,-50%) scale(7);opacity:0}}
+/* 她说话的那一块 —— 文字色 / 光晕 / 边框，随那一抹色一起染 */
+.palette-say{
+  position:relative;max-width:600px;margin:2.3rem auto 0;padding:1.5rem 1.6rem 1.1rem;border-radius:20px;
+  border:1px solid var(--glass-border);
+  background:linear-gradient(135deg,rgba(21,14,24,.55),rgba(58,36,64,.42));
+  box-shadow:0 0 26px rgba(201,160,255,.05);
+  transition:border-color .5s ease,box-shadow .5s ease;
+}
+.palette-line{
+  font-size:clamp(.95rem,2.4vw,1.14rem);line-height:2;font-weight:300;letter-spacing:.02em;
+  min-height:3.4em;display:flex;align-items:center;justify-content:center;
+  color:var(--text);transition:color .5s ease,text-shadow .5s ease;
+}
+.palette-attr{
+  margin-top:1rem;padding-top:.75rem;font-size:.72rem;color:var(--text-muted);letter-spacing:.14em;
+  border-top:1px solid rgba(255,255,255,.07);transition:color .5s ease,border-color .5s ease;
+}
+@media(max-width:480px){.palette-stage{border-radius:26px}}
+@media(prefers-reduced-motion:reduce){.palette-dye{animation:none;opacity:0}}
+
 /* SECTION: responsive */
 @media(max-width:768px){
   .timeline-line{left:1.5rem}
@@ -403,8 +482,40 @@ body{
   </div>
 </section>
 
-<!-- （原 su 的「功德箱 · 木鱼」一整节已移除 —— 那不属于她。
-     她的专属互动模块「她的调色盘 · 色彩浸染」会在后续任务里加在这里。） -->
+<!-- SECTION: palette (她的调色盘 · 色彩浸染)
+     呀！盘上这五抹色，是她朋友们留在她身上的颜色。
+     点一抹 —— 那抹色在盘上晕开，她说话的那块染上那个颜色，她就会用那个人的口气说话♥
+     五个 data-color 与 #paletteLine / #paletteAttr 的 id 是 Task 5/6 的锚点，别改名字。 -->
+<section class="content-section" id="palette">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">✦</span>她的调色盘<span class="section-title-mark">✦</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="palette-wrap">
+    <p class="palette-sub">盘上是她的朋友们留下的颜色。点一抹 —— 她会沾上那个人的颜色，说出那个人的那句话。</p>
+    <div class="palette-stage" id="paletteStage" role="group" aria-label="她的调色盘，点一抹色" data-primary-action>
+      <button class="palette-dab" type="button" data-color="tail" aria-label="帕朵菲莉丝留下的暖橙">
+        <span class="dab-dot" aria-hidden="true"></span><span class="dab-name" aria-hidden="true">帕朵</span>
+      </button>
+      <button class="palette-dab" type="button" data-color="kosma" aria-label="科斯魔留下的墨绿">
+        <span class="dab-dot" aria-hidden="true"></span><span class="dab-name" aria-hidden="true">科斯魔</span>
+      </button>
+      <button class="palette-dab" type="button" data-color="aponia" aria-label="阿波尼亚留下的紫罗兰">
+        <span class="dab-dot" aria-hidden="true"></span><span class="dab-name" aria-hidden="true">阿波尼亚</span>
+      </button>
+      <button class="palette-dab" type="button" data-color="mobius" aria-label="梅比乌斯留下的青">
+        <span class="dab-dot" aria-hidden="true"></span><span class="dab-name" aria-hidden="true">梅比乌斯</span>
+      </button>
+      <button class="palette-dab" type="button" data-color="self" aria-label="她自己的天青">
+        <span class="dab-dot" aria-hidden="true"></span><span class="dab-name" aria-hidden="true">她自己</span>
+      </button>
+    </div>
+    <div class="palette-say" id="paletteSay">
+      <p class="palette-line" id="paletteLine">点一抹色，她就会染上那个朋友的颜色。</p>
+      <p class="palette-attr" id="paletteAttr">她的调色盘 · 色彩浸染</p>
+    </div>
+  </div>
+</section>
 
 <!-- SECTION: journey -->
 <section class="content-section" id="journey">
@@ -876,8 +987,78 @@ body{
     toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, golden ? 4200 : 3000);
   }
 
-  /* （原 su 的「木鱼积功德」一整块已移除 —— 连同它的存档键一起。
-        她的专属互动模块「色彩浸染」会在后续任务里加到这里。） */
+  /* SECTION: palette (她的调色盘 · 色彩浸染)
+     ★ 全站独一份的机制：点一抹色 → 那抹色在盘上晕开 →「她说话的那块」
+       文字色 / 光晕 / 边框一起染上 → 她说出被染上那个颜色时说的那句话。
+     五句**逐字**摘自官方档案馆「画家的追忆」（编号为 Task 1 核准表里的 G 号）。
+     ⚠ 中点串一律六个 U+00B7（······），**不许**写成 ……
+     ⚠ 色值来历见样式里各条 data-color 规则的注释。 */
+  var paletteDyes = {
+    tail:   { dye:'#f9a152', line:'「一起去『搞票大的』······！」', src:'官方档案馆 · 事件-格蕾修 · 画家的追忆·其六' },   // G79 · 帕朵菲莉丝
+    kosma:  { dye:'#6ea86b', line:'「唔······因为科斯魔说，更喜欢这样······」', src:'官方档案馆 · 事件-格蕾修 · 画家的追忆·其二' },   // G47 · 科斯魔
+    aponia: { dye:'#9d8fd0', line:'「嗯，阿波尼亚对我很好，就像妈妈一样。」', src:'官方档案馆 · 事件-格蕾修 · 画家的追忆·其一' },   // G39 · 阿波尼亚
+    mobius: { dye:'#4ecdc4', line:'「是梅比乌斯阿姨。」', src:'官方档案馆 · 事件-格蕾修 · 画家的追忆·其五' },   // G73 · 梅比乌斯
+    self:   { dye:'#7dd3fc', line:'「那之后，我就一直在画画。因为阿波尼亚妈妈说这样能帮到大家，画里也有很多朋友。」', src:'官方档案馆 · 事件-格蕾修 · 画家的追忆·其一' }   // G44 · 她自己
+  };
+  var paletteStage = document.getElementById('paletteStage');
+  var paletteLine = document.getElementById('paletteLine');
+  var paletteAttr = document.getElementById('paletteAttr');
+  var paletteSay = document.getElementById('paletteSay');
+  var paletteDabs = paletteStage ? paletteStage.querySelectorAll('[data-color]') : [];
+  var paletteSeen = {};
+  var paletteSeenCount = 0;
+
+  /* #rrggbb → rgba(...)。染色要带透明度，光晕与边框才染得柔。 */
+  function paletteRgba(hex, a){
+    var n = parseInt(hex.slice(1), 16);
+    return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+  }
+
+  /* 染色：她说话的那一块（文字色 / 光晕 / 边框）一起换成那一抹色，并换台词与出处。 */
+  function dyePalette(key){
+    var d = paletteDyes[key];
+    if (!d) return;
+    paletteLine.textContent = d.line;
+    paletteAttr.textContent = d.src;
+    paletteLine.style.color = d.dye;
+    paletteLine.style.textShadow = '0 0 22px ' + paletteRgba(d.dye, .5);
+    paletteSay.style.borderColor = paletteRgba(d.dye, .42);
+    paletteSay.style.boxShadow = '0 0 32px ' + paletteRgba(d.dye, .2) + ', inset 0 0 26px ' + paletteRgba(d.dye, .06);
+    paletteAttr.style.color = paletteRgba(d.dye, .68);
+    paletteAttr.style.borderTopColor = paletteRgba(d.dye, .28);
+    for (var i = 0; i < paletteDabs.length; i++){
+      paletteDabs[i].classList.toggle('active', paletteDabs[i].getAttribute('data-color') === key);
+    }
+    if (!paletteSeen[key]){ paletteSeen[key] = true; paletteSeenCount++; }
+    if (paletteSeenCount === 5){
+      showToast('五种颜色都染过了······现在，她身上有五位朋友的颜色。', true);
+    }
+  }
+
+  /* 点一抹色：先染色，再让那抹色从色点处晕开（减动偏好下只染色、不晕开）。 */
+  function paletteDabClick(e){
+    var btn = e.target.closest ? e.target.closest('[data-color]') : null;
+    if (!btn || !paletteStage.contains(btn)) return;
+    var key = btn.getAttribute('data-color');
+    var d = paletteDyes[key];
+    if (!d) return;
+    dyePalette(key);
+    if (reducedMotion) return;
+    var r = btn.getBoundingClientRect();
+    var sr = paletteStage.getBoundingClientRect();
+    var ring = document.createElement('span');
+    ring.className = 'palette-dye';
+    ring.style.left = (r.left + r.width / 2 - sr.left) + 'px';
+    ring.style.top = (r.top + r.height / 2 - sr.top) + 'px';
+    ring.style.setProperty('--dye', d.dye);
+    paletteStage.appendChild(ring);
+    setTimeout(function(){ ring.remove(); }, 1000);
+    paintBurst(r.left + r.width / 2, r.top + r.height / 2, 8, [d.dye]);   // 盘上飞溅几滴同样的色
+  }
+
+  if (paletteStage){
+    paletteStage.addEventListener('click', paletteDabClick);
+  }
 
   /* SECTION: easter egg - 点名字，她念一条「规矩」
      （禅语不属于她。她这里换成科斯魔叮嘱过的那几条小规矩，全部有出处。） */
@@ -949,7 +1130,9 @@ body{
   /* SECTION: click ripple (水面圆环) */
   document.addEventListener('click', function(e){
     if (reducedMotion) return;
-    if (e.target.closest && (e.target.closest('#profileName') || e.target.closest('#endingQuote'))) return;
+    /* ⚠ #paletteStage 也要排除（照 su 排除 #muyuStage 的先例）：
+       点调色盘时它自带「那抹色晕开」，再叠一层金色水环就串味了。 */
+    if (e.target.closest && (e.target.closest('#paletteStage') || e.target.closest('#profileName') || e.target.closest('#endingQuote'))) return;
     for (var n = 0; n < 2; n++){
       var ring = document.createElement('div');
       ring.className = 'water-ring';
