@@ -2314,15 +2314,15 @@ GAMES = {
                            'close': '.sk-close', 'play': None, 'guard': True},
     'kosma/index.html':   {'overlay': 'kosmaGameOverlay', 'canvas': '.km-canvas',
                            'close': '.km-close', 'play': None, 'guard': True},
-    # ⚠ 格蕾修「上色」是**拖动型**、且**没有独立操作区**（玩家就在画布上拖）——
-    #   与 sakura/kosma 的「在画布上点/按」不同类。`play: None` 只管「有没有独立操作区」，
-    #   它**分不出**画布是「点触面」还是「拖动面」；所以这里显式加 `swipe: True`，
-    #   把画布按**滑动面**（`CLOSE_SWIPE_MIN=50`）量，而不是点触面（`CLOSE_FAR_MIN=100`）。
-    #   理由：本作手指落点是**有意的拖**、起点必在画布上，风险比连点低（照 §Review Focus 3）。
-    #   ⚠ 不写成 play 的某个值来「凑」：play 一旦为真，`check_game_fits_mobile` 会把
-    #     画布再当成一个「操作区」按 100 量（见下面那条 `checks`），反而更严。
+    # ⚠ 格蕾修「上色」（2026-10-04 重写后）：**摇杆驱动**，不是拖动型了。
+    #   玩家真正连点 / 长按的是**摇杆底盘 `#gr-pad`**，所以：
+    #     · `play` 指 `#gr-pad` ⇒ `check_close_far` 按**点触面**（`CLOSE_FAR_MIN=100`）量；
+    #     · **删掉原来的 `swipe: True`** —— 那是「画布即拖动面」那套旧范式的口径，
+    #       留着会让画布按 50px 量，而画布**已经不是玩家的落点了**。
+    #   ⚠ 摇杆在**桌面端（无触摸）会降成一行提示**，`#gr-pad` 因此量到 0×0 ——
+    #     下面那条 `if cfg['play'] and pl and pl['h'] > 1` 会自动跳过，正是想要的。
     'griseo/index.html':  {'overlay': 'griseoGameOverlay', 'canvas': '.gr-canvas',
-                           'close': '.gr-close', 'play': None, 'guard': True, 'swipe': True},
+                           'close': '.gr-close', 'play': '#gr-pad', 'guard': True},
 }
 GAME_PAGES = tuple(sorted(GAMES.keys()))
 
@@ -3782,18 +3782,35 @@ def check_griseo_palette_and_paintings(b, page, expected):
             if not fails else u'调色盘或两幅画的行为不对')
 
 
-# ══ 格蕾修：小游戏「上色」的**玩法专属**断言（Task 5）═══════════════════
-#   照 `check_sakura_judgment` / `check_kosma_judgment` 的模式。四条玩法 +
-#   一条结算，**每条都配变异**（见 task-5-report.md）。
+# ══ 格蕾修：小游戏「上色」的**玩法专属**断言（2026-10-04 重写后）═════════
+#   照 `check_sakura_judgment` / `check_kosma_judgment` 的模式，覆盖 spec §11.3 的 ⑤~⑪。
 #
 #   ⚠ 玩法状态是 IIFE 私有的，只能靠模块自带的「诊断口」`ElysiaGames.griseo._test`
-#     （R36 裁决保留）来驱动 / 读取；而**判据**（数格 / 找相邻格）一律在 **Python 侧**
+#     来驱动 / 读取；而**判据**（数格 / 连通 / 计数）一律在 **Python 侧**
 #     从 `_test.dump()` 的字符图里算 —— 免得「自己证自己」。
 #
-#   ⚠ `GR_BRUSH_UP` 与 griseo.js 里那个常量**同值同义**（笔尖在手指上方 44 个**屏幕** px）：
-#     把「想落笔的格」换算成「手指该按的屏幕点」时要把它加回去，否则笔尖会落到目标格**上方**。
-GR_BRUSH_UP = 44
-GR_CELL = 12          # 与 griseo.js 的 CELL 同值
+#   ⚠ 2026-10-04 操作范式**整个换掉了**：摇杆指挥笔行走（不再是「按住画布拖动」）。
+#     所以驱动输入的是：
+#       · 真触摸**推杆**（`_gr_pad_push` / `_gr_pad_hold_until`）—— 验摇杆
+#       · 真 keydown/keyup（`_gr_key_down` / `_gr_key_up`）—— 验键盘
+#       · `_test` 诊断口 —— 验那些「落点控不住」的（碰撞 / 难度 / 扩张 / 造物 AI）
+#     ⚠ 旧断言里的 `GR_BRUSH_UP`、「笔尖跟手指」那一整套**已删** ——
+#       笔现在按**格**走，不再有屏幕像素偏移。
+
+
+def _gr_touch_env(b, on=True):
+    """把浏览器切到 375×812 + 触摸模拟（**摇杆只在触摸设备上「可推」**）。
+
+    ⚠ 必须成对调用：跑完要关掉，否则后面的断言会在「触摸环境」里跑。
+    """
+    if on:
+        b._send('Emulation.setDeviceMetricsOverride',
+                {'width': 375, 'height': 812, 'deviceScaleFactor': 1, 'mobile': True})
+        b._send('Emulation.setTouchEmulationEnabled', {'enabled': True, 'maxTouchPoints': 5})
+    else:
+        b._send('Emulation.setTouchEmulationEnabled', {'enabled': False})
+        b._send('Emulation.clearDeviceMetricsOverride')
+    time.sleep(0.55)
 
 
 def _gr_state(b):
@@ -3825,15 +3842,10 @@ def _gr_count(dump, ch):
     return dump.count(ch) if dump else 0
 
 
-def _gr_canvas_geom(b):
-    """遮罩里画布的屏幕矩形 + 固有像素尺寸（换算「该按哪个屏幕点」用）。"""
-    return b.jso("""(() => {
-        var c = document.querySelector('#griseoGameOverlay .gr-canvas');
-        if (!c) return null;
-        var r = c.getBoundingClientRect();
-        return JSON.stringify({ l: r.left, t: r.top, w: r.width, h: r.height,
-                                iw: c.width, ih: c.height, vw: innerWidth, vh: innerHeight });
-    })()""")
+def _gr_msg(b):
+    """读遮罩里的提示行文字（`.gr-msg`）。"""
+    return b.js("(() => { var m = document.querySelector('#griseoGameOverlay .gr-msg');"
+                " return m ? m.textContent : null; })()")
 
 
 def _gr_open_overlay(b):
@@ -3845,39 +3857,84 @@ def _gr_open_overlay(b):
     return _gr_state(b) is not None and _g_open(b, GAMES[GRISEO])
 
 
-def _gr_cell_screen(g, cx, cy):
-    """格 (cx,cy) 的中心 → 手指该按的**屏幕点**（把 BRUSH_UP 加回去）。"""
-    px = (cx + 0.5) * GR_CELL
-    py = (cy + 0.5) * GR_CELL
-    x = g['l'] + px * g['w'] / g['iw']
-    y = g['t'] + GR_BRUSH_UP + py * g['h'] / g['ih']
-    return x, y
+def _gr_pad_rect(b):
+    """摇杆底盘的屏幕矩形（推杆要按它算圆心与半径）。"""
+    return b.jso("""(() => {
+        var p = document.querySelector('#griseoGameOverlay #gr-pad');
+        if (!p) return null;
+        var r = p.getBoundingClientRect();
+        return JSON.stringify({ l: r.left, t: r.top, r: r.right, b: r.bottom,
+                                w: r.width, h: r.height,
+                                cx: r.left + r.width / 2, cy: r.top + r.height / 2,
+                                vw: innerWidth, vh: innerHeight });
+    })()""")
 
 
-def _gr_in_view(g, x, y):
-    """视口外的点派发事件会**静默无操作**（HANDOVER §6.4）—— 先挡一道。"""
-    return (x > 0) and (x < g['vw']) and (y > 0) and (y < g['vh'])
+def _gr_pad_push(b, ux, uy, ms=1.0, k=0.78):
+    """**真触摸推杆**：从盘心推到 (ux,uy) 方向，按住 `ms` 秒后松开。
 
-
-def _gr_touch_drag(b, pts):
-    """**真触摸**拖动（touchStart → 一连串 touchMove → touchEnd）。
-
-    ⚠ 用真触摸而不是鼠标：spec §5.2 要验的正是「**拖动时页面没有滚动**」——
-      鼠标拖动本来就不会滚，验不出东西。触摸坐标要减 `_vv_offset`（移动端模拟下不为 0）。
+    ⚠ 摇杆是**持续输入** —— 笔要走多久就得按住多久，所以这里不是「点一下」。
+    ⚠ 坐标要减 `_vv_offset`（移动端模拟下不为 0，不换算会**静默点空**）。
     """
-    if not pts:
+    p = _gr_pad_rect(b)
+    if not p or p['w'] <= 1:
         return False
     o = _vv_offset(b)
-    def tp(x, y):
-        return {'x': x - o['x'], 'y': y - o['y']}
-    p0 = pts[0]
-    b._send('Input.dispatchTouchEvent', {'type': 'touchStart', 'touchPoints': [tp(p0[0], p0[1])]})
-    time.sleep(0.05)
-    for p in pts[1:]:
-        b._send('Input.dispatchTouchEvent', {'type': 'touchMove', 'touchPoints': [tp(p[0], p[1])]})
-        time.sleep(0.03)
+    rr = p['w'] / 2.0
+    tx, ty = p['cx'] + ux * rr * k, p['cy'] + uy * rr * k
+    b._send('Input.dispatchTouchEvent',
+            {'type': 'touchStart',
+             'touchPoints': [{'x': p['cx'] - o['x'], 'y': p['cy'] - o['y']}]})
+    time.sleep(0.04)
+    b._send('Input.dispatchTouchEvent',
+            {'type': 'touchMove',
+             'touchPoints': [{'x': tx - o['x'], 'y': ty - o['y']}]})
+    time.sleep(ms)
     b._send('Input.dispatchTouchEvent', {'type': 'touchEnd', 'touchPoints': []})
+    time.sleep(0.1)
     return True
+
+
+def _gr_pad_hold_until(b, ux, uy, cond, timeout=6.0, step=0.05):
+    """按住某方向，**一直轮询** `cond()` 直到为真（或超时）。返回是否命中。
+
+    ⚠ 用来抓「结算发生的那**一瞬**」—— 松手晚了笔会继续走，把提示文案顶掉。
+    """
+    p = _gr_pad_rect(b)
+    if not p or p['w'] <= 1:
+        return False
+    o = _vv_offset(b)
+    rr = p['w'] / 2.0
+    tx, ty = p['cx'] + ux * rr * 0.78, p['cy'] + uy * rr * 0.78
+    b._send('Input.dispatchTouchEvent',
+            {'type': 'touchStart',
+             'touchPoints': [{'x': p['cx'] - o['x'], 'y': p['cy'] - o['y']}]})
+    time.sleep(0.04)
+    b._send('Input.dispatchTouchEvent',
+            {'type': 'touchMove',
+             'touchPoints': [{'x': tx - o['x'], 'y': ty - o['y']}]})
+    t0 = time.time()
+    hit = False
+    while time.time() - t0 < timeout:
+        time.sleep(step)
+        if cond():
+            hit = True
+            break
+    b._send('Input.dispatchTouchEvent', {'type': 'touchEnd', 'touchPoints': []})
+    return hit
+
+
+def _gr_key_down(b, key, code, vk):
+    """派发一次真实 keydown（**不松手** —— 键盘玩法靠「按住」）。"""
+    b._send('Input.dispatchKeyEvent', {
+        'type': 'keyDown', 'key': key, 'code': code,
+        'windowsVirtualKeyCode': vk, 'nativeVirtualKeyCode': vk})
+
+
+def _gr_key_up(b, key, code, vk):
+    b._send('Input.dispatchKeyEvent', {
+        'type': 'keyUp', 'key': key, 'code': code,
+        'windowsVirtualKeyCode': vk, 'nativeVirtualKeyCode': vk})
 
 
 def _gr_empty_next_to_stroke(dump):
@@ -3898,108 +3955,189 @@ def _gr_empty_next_to_stroke(dump):
     return None
 
 
+def _gr_steer_home(b, tries=22):
+    """把笔**开回自己的领地**（笔尖踩到自己的颜色就结算）。返回是否已结算。
+
+    ⚠ 摇杆是持续输入 —— 「回领地」不是一步能到的。按「离中央 3×3 还有多远」
+      逐步逼近；`strokeCells()` 归零 = 已经结算了。
+    ⚠ 这一步**不能省**：不停回领地的话，这一笔永远不结算、领地永远不长。
+    """
+    for _ in range(tries):
+        if (_gr_test(b, "g._test.strokeCells()") or 0) == 0:
+            return True
+        p = _gr_test(b, "g._test.penCell()") or {}
+        x, y = p.get('x', 0), p.get('y', 0)
+        if y < 15:
+            _gr_pad_push(b, 0, 1, 0.45)
+        elif y > 17:
+            _gr_pad_push(b, 0, -1, 0.45)
+        elif x < 23:
+            _gr_pad_push(b, 1, 0, 0.45)
+        elif x > 25:
+            _gr_pad_push(b, -1, 0, 0.45)
+        else:
+            return True
+    return (_gr_test(b, "g._test.strokeCells()") or 0) == 0
+
+
 @check
 @griseo_only
-def check_griseo_drag_colors(b, page, expected):
-    """① 真触摸在画布上拖一个「**棒棒糖**」（出门 → 绕一圈 → **顺原路回来**）→
-    **圈里真的被填**（C1 的靶子），**且拖动时页面没有滚动**（spec §5.2）。
+def check_griseo_joystick_drives_pen(b, page, expected):
+    """⑤ **摇杆真的能驱动笔**：真触摸推杆 → 笔尖换格；**松手 → 笔停下**（spec §4.1）。
 
-    ⚠ 这个形状整条笔触是**一个分量、自由端只有笔尖那格**（ends==1）。
-      旧实现把这种分量整个丢掉 ⇒ **只把笔触染成色、圈里还是纸白**，
-      而它见 newCells>0 照样报「围住啦」—— **谎报成功**（C1）。
-    ⚠ 判据必须盯**圈内部**，不能只看「领地涨了 ≥30」（那只染笔触时也照样成立 —— 假绿，
-      旧断言正是栽在这里）。这里数的是「圈内芯 x22..26 × y7..9 里的 H」。
+    ⚠ 判据读的是 `_test.penCell()`（格坐标），不是「画布上有没有变」——
+      后者在「笔没动、只有造物在动」时照样绿。
     """
-    if not _gr_open_overlay(b):
-        return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
-    fails = []
-    g = _gr_canvas_geom(b)
-    if not g:
-        return ([u'取不到遮罩里画布的几何 —— 前提不成立'], u'—')
-    # 滚到页面中间（保证有滚动余地），记住 scrollY —— 验「拖动不滚页」用
-    # ⚠ 站点有 `scroll-behavior:smooth`，必须用 `behavior:'instant'`，否则读出的是动画中途值
-    b.js("try { window.scrollTo({ top: 2000, behavior: 'instant' }); } catch (e) {}")
-    time.sleep(0.3)
-    sy0 = b.js("window.scrollY")
+    try:
+        _gr_touch_env(b, True)
+        if not _gr_open_overlay(b):
+            return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
+        fails = []
+        p0 = _gr_test(b, "g._test.penCell()") or {}
+        if 'x' not in p0:
+            return ([u'读不到 _test.penCell()'], u'—')
+        if not _gr_pad_push(b, 1, 0, 1.0):
+            return ([u'取不到摇杆几何（#gr-pad 量到 0×0？）—— 前提不成立'], u'—')
+        time.sleep(0.25)
+        p1 = _gr_test(b, "g._test.penCell()") or {}
+        if p1.get('x', -1) <= p0.get('x', 0):
+            fails.append(u'向右推杆 1 秒，笔尖 x 却 %s → %s —— 摇杆没在驱动笔'
+                         % (p0.get('x'), p1.get('x')))
+        # 松手 → 笔必须停下（不然摇杆「归中即停」那条没生效）
+        time.sleep(0.15)
+        p2 = _gr_test(b, "g._test.penCell()") or {}
+        time.sleep(0.9)
+        p3 = _gr_test(b, "g._test.penCell()") or {}
+        if (p2.get('x'), p2.get('y')) != (p3.get('x'), p3.get('y')):
+            fails.append(u'松手之后笔还在走（%s,%s → %s,%s）—— 归中没停下'
+                         % (p2.get('x'), p2.get('y'), p3.get('x'), p3.get('y')))
+        return (fails, u'推杆笔真的走了（x %s → %s），松手就停' % (p0.get('x'), p1.get('x'))
+                if not fails else u'摇杆没驱动笔 / 松手没停')
+    finally:
+        _gr_touch_env(b, False)
 
-    way = [(24, 14), (24, 10), (28, 10), (28, 6), (20, 6), (20, 10), (24, 10), (24, 14)]
-    pts = [_gr_cell_screen(g, cx, cy) for (cx, cy) in way]
-    if not _gr_in_view(g, pts[0][0], pts[0][1]):
-        return ([u'起点 (%.0f,%.0f) 不在视口内（vw=%d vh=%d）—— 派发会静默点空'
-                 % (pts[0][0], pts[0][1], g['vw'], g['vh'])], u'—')
-    _gr_touch_drag(b, pts)
-    sy1 = b.js("window.scrollY")
-    if sy0 != sy1:
-        fails.append(u'在画布上拖动后页面滚了（scrollY %s → %s）—— 手势冲突（spec §5.2）'
-                     % (sy0, sy1))
-    time.sleep(1.2)                          # 等回填 + 晕染动画落定
 
-    dump = _gr_dump(b)
-    rows = (dump or u'').split('\n')
-    inner = 0
-    for y in range(7, 10):                   # 环 x20..28 × y6..10 的内芯（保守：抗 ±1 格落点误差）
-        for x in range(22, 27):
-            if y < len(rows) and x < len(rows[y]) and rows[y][x] == 'H':
-                inner += 1
-    total_h = _gr_count(dump, 'H')
-    if inner < 6:
-        fails.append(u'「棒棒糖」拖完，圈里只填了 %d 格（该 ~15）—— '
-                     u'原路返回的圈**没被填内部**（C1：分量被丢 ⇒ 只染笔触）' % inner)
-    if total_h < 20:
-        fails.append(u'拖完整块领地只有 %d 格（该显著 > 9）—— 这一笔根本没上色' % total_h)
-    return (fails, u'棒棒糖拖完圈里填了 %d 格（领地共 %d）、且没滚页' % (inner, total_h)
-            if not fails else u'原路返回的圈没填内部 / 或拖动滚了页')
+@check
+@griseo_only
+def check_griseo_steering_paints(b, page, expected):
+    """⑥ **走出去真的会上色**：推杆开一笔、再开回自己的颜色 → **领地格数变多**（spec §3.3）。
+
+    ⚠ 判据是 `playerTerritory()` 的**格数**，不是「画布上有没有线条」——
+      「画了一笔但没回填」照样有线条（HANDOVER §10.10 五）。
+    """
+    try:
+        _gr_touch_env(b, True)
+        if not _gr_open_overlay(b):
+            return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
+        fails = []
+        t0 = _gr_test(b, "g._test.playerTerritory()") or 0
+        if t0 <= 0:
+            return ([u'开局就没有玩家领地（playerTerritory=%s）—— 前提不成立' % t0], u'—')
+        # 开一小圈：向右 → 向下 → 向左 → 向上（大致回到起始行）
+        _gr_pad_push(b, 1, 0, 0.9)
+        _gr_pad_push(b, 0, 1, 0.9)
+        _gr_pad_push(b, -1, 0, 1.8)
+        _gr_pad_push(b, 0, -1, 0.9)
+        s_mid = _gr_test(b, "g._test.strokeCells()") or 0
+        if s_mid <= 0:
+            return ([u'推杆开了一小圈，画布上却没有玩家笔触（S=%s）—— '
+                     u'笔根本没在留痕，前提不成立' % s_mid], u'—')
+        if not _gr_steer_home(b):
+            fails.append(u'把笔开回自己的颜色之后，笔触仍没结算（S=%s）—— '
+                         u'「踩回自己的颜色就自动回填」没生效'
+                         % (_gr_test(b, "g._test.strokeCells()") or 0))
+        time.sleep(1.2)                      # 等晕染动画落定
+        t1 = _gr_test(b, "g._test.playerTerritory()") or 0
+        if t1 <= t0:
+            fails.append(u'开了一圈并回填，领地却还是 %s 格（该显著变多）—— '
+                         u'这一笔根本没上色' % t1)
+        return (fails, u'推杆开一笔再回填 ⇒ 领地 %s → %s 格' % (t0, t1)
+                if not fails else u'走出去没上色')
+    finally:
+        _gr_touch_env(b, False)
+
+
+@check
+@griseo_only
+def check_griseo_no_enclosure_message(b, page, expected):
+    """⑦ **没围住不许说谎**：出门再**顺原路**回来（一条线，圈不出任何内部）
+    → 文案必须是「这一笔没有围住什么」，**不许说「围住啦」**（spec §3.4 / §6.5）。
+
+    ⚠ 抓的是**结算发生的那一瞬**：松手晚了笔会继续走，把提示顶成「笔尖正沿着…」。
+    """
+    try:
+        _gr_touch_env(b, True)
+        if not _gr_open_overlay(b):
+            return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
+        fails = []
+        # 沿起始行（y=16 就是领地那一行）向右出去 —— 之后往左回来**必定穿过自己的颜色**
+        _gr_pad_push(b, 1, 0, 1.0)
+        s0 = _gr_test(b, "g._test.strokeCells()") or 0
+        if s0 <= 0:
+            return ([u'向右推杆 1 秒却没画出笔触（S=%s）—— 前提不成立' % s0], u'—')
+        got = _gr_pad_hold_until(
+            b, -1, 0,
+            lambda: (_gr_test(b, "g._test.strokeCells()") or 0) == 0,
+            timeout=6.0)
+        if not got:
+            return ([u'把笔往左开回领地，笔触却一直不结算 —— '
+                     u'「踩回自己的颜色就自动回填」没生效'], u'—')
+        msg = _gr_msg(b) or u''
+        if u'围住啦' in msg:
+            fails.append(u'这一笔只是一条直线、圈不出任何内部，却报了「围住啦」'
+                         u'（实际文案：%r）—— 谎报成功' % msg)
+        if u'没有围住' not in msg:
+            fails.append(u'没围住时该说「这一笔没有围住什么……」（实际：%r）' % msg)
+        return (fails, u'没围住时文案诚实（%r）' % msg if not fails else u'文案在谎报')
+    finally:
+        _gr_touch_env(b, False)
 
 
 @check
 @griseo_only
 def check_griseo_collision_breaks_stroke(b, page, expected):
-    """② 造物笔触挨上玩家笔触 → **玩家笔触整条断**（可证伪：相交的那一步）。
+    """⑧ **撞上造物笔触真的断**：玩家笔触归零 + 笔转入**抬起**态（spec §3.5 / §5.1）。
 
-    判据：拖动中笔触格 `S` > 0；让造物在**紧挨某个 S 的空格**落一格 → `S` 归零。
-    ⚠ 拖在远离造物（左上角）的空地上，避免造物 AI 自己先撞上来污染读数。
+    ⚠ 用 `_test.enemyStrokeTo` 造碰撞局面 —— 真实路径要玩家把笔开到某只造物旁边、
+      再等它长过来，落点根本控不住。它触发的是**同一个** `handleCollision`，行为一字不差。
+    ⚠ 「笔转入抬起」也要验：**再推杆不该画出新笔触** —— 这一条正是
+      spec §5.1 第 3 条那道防线（少了它 ⇒ 领地孤岛 ⇒ 51.7% 静默拒收）。
     """
-    if not _gr_open_overlay(b):
-        return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
-    fails = []
-    g = _gr_canvas_geom(b)
-    if not g:
-        return ([u'取不到画布几何'], u'—')
-    line = [(30, 26), (36, 26)]
-    sx, sy = _gr_cell_screen(g, line[0][0], line[0][1])
-    if not _gr_in_view(g, sx, sy):
-        return ([u'起点不在视口内 —— 会静默点空'], u'—')
-    b.press(sx, sy)                          # 按住不放：要的就是「拖到一半被撞」
-    time.sleep(0.05)
-    for (cx, cy) in line[1:]:
-        mx, my = _gr_cell_screen(g, cx, cy)
-        b.move(mx, my)
-        time.sleep(0.03)
-    time.sleep(0.15)
-    dump0 = _gr_dump(b)
-    s0 = _gr_count(dump0, 'S')
-    if s0 <= 0:
-        b.release(sx, sy)
-        return ([u'拖了却没画出玩家笔触（S=0）—— 前提不成立'], u'—')
-    target = _gr_empty_next_to_stroke(dump0)
-    if target is None:
-        b.release(sx, sy)
-        return ([u'找不到与玩家笔触相邻的空格 —— 造不出碰撞局面'], u'—')
-    _gr_test(b, "g._test.enemyStepTo(0, %d, %d)" % (target[0], target[1]))
-    time.sleep(0.2)
-    s1 = _gr_count(_gr_dump(b), 'S')
-    b.release(sx, sy)
-    if s1 != 0:
-        fails.append(u'造物笔触挨上玩家笔触，玩家笔触却还剩 %d 格（S %d → %d）—— '
-                     u'「被撞 → 笔触断」没生效' % (s1, s0, s1))
-    return (fails, u'被撞后玩家笔触全断（S %d → 0）' % s0
-            if not fails else u'碰撞没断笔触')
+    try:
+        _gr_touch_env(b, True)
+        if not _gr_open_overlay(b):
+            return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
+        fails = []
+        _gr_pad_push(b, 1, 0, 0.9)
+        dump0 = _gr_dump(b)
+        s0 = _gr_count(dump0, 'S')
+        if s0 <= 0:
+            return ([u'推杆开了一段，却没有玩家笔触（S=0）—— 前提不成立'], u'—')
+        target = _gr_empty_next_to_stroke(dump0)
+        if target is None:
+            return ([u'找不到与玩家笔触相邻的空格 —— 造不出碰撞局面'], u'—')
+        _gr_test(b, "g._test.enemyStrokeTo(0, %d, %d)" % (target[0], target[1]))
+        time.sleep(0.25)
+        s1 = _gr_count(_gr_dump(b), 'S')
+        if s1 != 0:
+            fails.append(u'造物笔触挨上玩家笔触，玩家笔触却还剩 %d 格（S %d → %d）—— '
+                         u'「被撞 → 笔触断」没生效' % (s1, s0, s1))
+        # 抬起态：再推杆也不该落新的笔触
+        _gr_pad_push(b, 0, 1, 0.9)
+        s2 = _gr_count(_gr_dump(b), 'S')
+        if s2 != 0:
+            fails.append(u'被撞之后笔还在落笔触（S=%d）—— **没转入抬起态**；'
+                         u'这正是「领地孤岛 ⇒ 围合判定成批静默被拒」的入口' % s2)
+        return (fails, u'被撞后笔触全断（S %d → 0）且笔抬起（再推杆 S 仍为 0）' % s0
+                if not fails else u'碰撞断笔 / 抬笔没生效')
+    finally:
+        _gr_touch_env(b, False)
 
 
 @check
 @griseo_only
 def check_griseo_difficulty_scales(b, page, expected):
-    """③ 玩家领地变大 → 造物**数量 / 速度档真的变了**（分档 + 封顶）。"""
+    """⑨ 玩家领地变大 → 造物**数量 / 速度档真的变了**（分档 + 封顶）。"""
     _reset(b)
     st0 = _gr_state(b) or {}
     if 'enemyCount' not in st0:
@@ -4023,7 +4161,7 @@ def check_griseo_difficulty_scales(b, page, expected):
 @check
 @griseo_only
 def check_griseo_kill_expands_canvas(b, page, expected):
-    """④ 累计杀掉 2 个 → **画布真的扩张**（cols/rows 变大），内容跟着搬。"""
+    """⑩ 累计杀掉 2 个 → **画布真的扩张**（cols/rows 变大），内容跟着搬。"""
     _reset(b)
     st0 = _gr_state(b) or {}
     if 'cols' not in st0:
@@ -4052,10 +4190,59 @@ def check_griseo_kill_expands_canvas(b, page, expected):
 
 @check
 @griseo_only
-def check_griseo_settlement(b, page, expected):
-    """⑤ 到点 → 结算面板显示（完成度 / 击杀 / 最高纪录），且**这一次真的把纪录写进去了**。
+def check_griseo_enemy_never_stalls(b, page, expected):
+    """⑪ 造物**不卡死也不踱步**，而且领地**单调增长**（spec §7.1 的 A1~A3）。
 
-    ⚠ M2 修：老写法只验「localStorage 里有值」，而 `_reset()` **不清** `griseoColorBest`，
+    ⚠ 造物是「颜料触须」式扩张（见 griseo.js 文件头：A1 要求贴边之后也能长，
+      所以没用那套「外扩矩形环」）。这里量的是**行为**，不绑实现：
+        A1 领地格数只增不减
+        A2 在 20 秒里**动过很多次**（不是僵着）
+        A3 **不踱步**：位置序列里「A→B→A」的回头次数 ≤ 2
+    """
+    _reset(b)
+    if not _gr_open_overlay(b):
+        return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
+    fails = []
+    _gr_test(b, "g._test.setPlayerRatio(0.5)")       # 弄出 3 只，给它们活动空间
+    time.sleep(0.1)
+    st = _gr_state(b) or {}
+    n = len(st.get('enemies', []))
+    if n < 2:
+        return ([u'占比 0.5 时场上只有 %d 只造物 —— 前提不成立' % n], u'—')
+    t0 = _gr_test(b, "g._test.enemyTerritory(0)") or 0
+    seq = []
+    for _ in range(40):                              # 40 × 0.5 秒 = 20 秒
+        _gr_test(b, "g._test.tick(0.5)")
+        s = _gr_state(b) or {}
+        seq.append([(e.get('x'), e.get('y')) for e in s.get('enemies', [])])
+    t1 = _gr_test(b, "g._test.enemyTerritory(0)") or 0
+    if t1 <= t0:
+        fails.append(u'造物 0 的领地 20 秒里没长（%s → %s 格）—— A1「单调增长」不成立'
+                     % (t0, t1))
+    k = min(n, min(len(s) for s in seq)) if seq else 0
+    if k == 0:
+        return ([u'采样不到造物位置'], u'—')
+    for i in range(k):
+        path = [s[i] for s in seq]
+        moved = sum(1 for a, b2 in zip(path, path[1:]) if a != b2)
+        bounce = sum(1 for a, b2, c in zip(path, path[1:], path[2:])
+                     if a == c and a != b2)
+        if moved < 3:
+            fails.append(u'造物 %d 在 20 秒里只动过 %d 次 —— A2「不卡死」不成立'
+                         % (i, moved))
+        if bounce > 2:
+            fails.append(u'造物 %d 在相邻两格之间来回 %d 次 —— A3「不踱步」不成立'
+                         % (i, bounce))
+    return (fails, u'造物 %d 只：领地 %s→%s 格、20 秒里都在动、无来回踱步'
+            % (n, t0, t1) if not fails else u'造物卡死 / 踱步 / 不长')
+
+
+@check
+@griseo_only
+def check_griseo_settlement(b, page, expected):
+    """⑫ 到点 → 结算面板显示（完成度 / 击杀 / 最高纪录），且**这一次真的把纪录写进去了**。
+
+    ⚠ 老写法只验「localStorage 里有值」，而 `_reset()` **不清** `griseoColorBest`，
       ⇒ 上一次跑留下的值也能让断言变绿（**本项目最怕的假绿**）。
       现在：**开跑前先 removeItem** 该键（页面重载后 in-memory `best` 也随之归 0），
       结算后再**把读回来的值与面板上的完成度逐位比** —— 才算「这一次写进去的」。
@@ -4114,85 +4301,70 @@ def check_griseo_settlement(b, page, expected):
             if not fails else u'结算不对')
 
 
-def _gr_msg(b):
-    """读遮罩里的提示行文字（`.gr-msg`）。"""
-    return b.js("(() => { var m = document.querySelector('#griseoGameOverlay .gr-msg');"
-                " return m ? m.textContent : null; })()")
-
-
 @check
 @griseo_only
-def check_griseo_no_enclosure_message(b, page, expected):
-    """⑥ C1 的「诚实文案」那一半：**没围住任何内部时，不许说「围住啦」**。
+def check_griseo_keyboard_steers(b, page, expected):
+    """⑬ 键盘（桌面端唯一的玩法入口）：**按住 = 持续走**，**按一下几乎不动**（spec §4.2）。
 
-    靶子：出门再**顺原路回来**画一条线（没有环 ⇒ 圈不出任何内部空白）。
-    旧逻辑见 `newCells>0` 就报「围住啦」——**谎报成功**；新逻辑按
-    `fillEnclosed` 的 `interior` 选文案 ⇒ 该说「这一笔没有围住什么」。
-    """
-    if not _gr_open_overlay(b):
-        return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
-    g = _gr_canvas_geom(b)
-    if not g:
-        return ([u'取不到画布几何'], u'—')
-    # 出 (24,14) → 到 (24,10) → **顺原路**回到 (24,14)：一条「去而复返」的线，无环
-    way = [(24, 14), (24, 10), (24, 14)]
-    pts = [_gr_cell_screen(g, cx, cy) for (cx, cy) in way]
-    if not _gr_in_view(g, pts[0][0], pts[0][1]):
-        return ([u'起点不在视口内 —— 会静默点空'], u'—')
-    _gr_touch_drag(b, pts)
-    time.sleep(0.6)
-    msg = _gr_msg(b) or u''
-    fails = []
-    if u'围住啦' in msg:
-        fails.append(u'这一笔没围出任何内部，却报了「围住啦」（实际文案：%r）—— '
-                     u'谎报成功（C1 的文案那一半没修）' % msg)
-    if u'没有围住' not in msg:
-        fails.append(u'没围住时该说「这一笔没有围住什么……」（实际：%r）' % msg)
-    return (fails, u'没围住时文案诚实（%r）' % msg if not fails else u'文案在谎报')
-
-
-def _gr_key(b, key, code, vk):
-    """派发一次真实 keydown（spec §5.2 的键盘备选）。"""
-    b._send('Input.dispatchKeyEvent', {
-        'type': 'keyDown', 'key': key, 'code': code,
-        'windowsVirtualKeyCode': vk, 'nativeVirtualKeyCode': vk})
-
-
-@check
-@griseo_only
-def check_griseo_keyboard_draws(b, page, expected):
-    """⑦ 键盘备选（spec §5.2）：**方向键挪笔尖（真的落笔触）**、**空格当松手**。
-
-    ⚠ 这是 spec 明文要求的备选操作，此前**一根方向键都没有**（复审 I1）。
+    ⚠⚠ 这条守的是**旧实现那个真毛病**：直接吃 `keydown` 的重复事件
+      （操作系统的自动重复是首延迟 ~500ms、之后 ~30 次/秒）⇒ 笔忽快忽慢、
+      按一下冲出去好几格。正确做法是「`keydown` 只记方向，步进由主循环按 `stepMs` 驱动」。
+      所以判据是**两条相反方向**的：
+        · 按住 1 秒 → 笔必须走 **≥3 格**（证明它真的在持续走）
+        · 快速点一下 → 笔最多走 **1 格**（证明它没有「按一下跳一格」）
+    ⚠ 另外：**空格不再等于「松手」**（本作踩回自己的颜色就自动回填），
+      按它不该把笔触清掉。
     """
     if not _gr_open_overlay(b):
         return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
     fails = []
-    b.js("if (document.activeElement) document.activeElement.blur();")   # 焦点别停在（遮罩外的）「开始」上
-    for _ in range(3):
-        _gr_key(b, 'ArrowLeft', 'ArrowLeft', 37)
-        time.sleep(0.06)
+    b.js("if (document.activeElement) document.activeElement.blur();")
+
+    p0 = _gr_test(b, "g._test.penCell()") or {}
+    _gr_key_down(b, 'ArrowLeft', 'ArrowLeft', 37)
+    time.sleep(1.0)
+    _gr_key_up(b, 'ArrowLeft', 'ArrowLeft', 37)
     time.sleep(0.2)
-    s = _gr_count(_gr_dump(b), 'S')
-    if s < 3:
-        fails.append(u'连按 3 次方向键，画布上只有 %d 格玩家笔触（该 ≥3）—— '
-                     u'方向键没在挪笔尖 / 没落笔' % s)
-    _gr_key(b, ' ', 'Space', 32)          # 空格 = 松手
-    time.sleep(0.6)
-    s2 = _gr_count(_gr_dump(b), 'S')
-    if s2 != 0:
-        fails.append(u'按了空格（松手）后还剩 %d 格笔触（该归零）—— 空格没当松手' % s2)
-    return (fails, u'方向键画了 %d 格笔触、空格松手归零' % s
-            if not fails else u'键盘备选没生效')
+    p1 = _gr_test(b, "g._test.penCell()") or {}
+    moved = p0.get('x', 0) - p1.get('x', 0)
+    if moved < 3:
+        fails.append(u'按住方向键 1 秒，笔只走了 %d 格（该 ≥3）—— '
+                     u'键盘没在「持续走」（spec §4.2）' % moved)
+    s1 = _gr_count(_gr_dump(b), 'S')
+    if s1 <= 0:
+        fails.append(u'按住方向键走了一段，画布上却没有玩家笔触（S=0）—— 键盘没落笔')
+    # 快速点一下：不该「跳」好几格
+    q0 = _gr_test(b, "g._test.penCell()") or {}
+    _gr_key_down(b, 'ArrowLeft', 'ArrowLeft', 37)
+    time.sleep(0.05)
+    _gr_key_up(b, 'ArrowLeft', 'ArrowLeft', 37)
+    time.sleep(0.35)
+    q1 = _gr_test(b, "g._test.penCell()") or {}
+    tap = abs(q0.get('x', 0) - q1.get('x', 0))
+    if tap > 1:
+        fails.append(u'快速点一下方向键，笔却跳了 %d 格 —— 可能在直接吃 keydown 的'
+                     u'重复事件（会忽快忽慢）' % tap)
+    # 空格：本作**没有**「松手」这个动作，按它不该清掉笔触
+    s_before = _gr_count(_gr_dump(b), 'S')
+    _gr_key_down(b, ' ', 'Space', 32)
+    time.sleep(0.15)
+    _gr_key_up(b, ' ', 'Space', 32)
+    time.sleep(0.4)
+    s_after = _gr_count(_gr_dump(b), 'S')
+    if s_before > 0 and s_after == 0:
+        fails.append(u'按空格把笔触清掉了（S %d → 0）—— 空格不该是「松手」'
+                     u'（本作踩回自己的颜色就自动回填，spec §4.2）' % s_before)
+    return (fails, u'按住走 %d 格、点一下 ≤1 格、空格不清笔（S %d→%d）'
+            % (moved, s_before, s_after) if not fails else u'键盘手感不对')
 
 
 @check
 @griseo_only
 def check_griseo_keyboard_button_and_play(b, page, expected):
-    """⑧ N1 回归：遮罩开着时，落在**按钮**上的 Enter/Space **不许被吞**
+    """⑭ N1 回归：遮罩开着时，落在**按钮**上的 Enter/Space **不许被吞**
     （Tab 聚焦「收笔」+ Enter/Space 要能激活它），且**方向键玩法仍在**。
 
-    ⚠ 复核 A/B 实测：旧码聚焦「收笔」按 Enter 关不掉（`defaultPrevented=true`）——
+    ⚠ 复核 A/B 实测（旧实现）：聚焦「收笔」按 Enter 关不掉（`defaultPrevented=true`）——
       键盘备选把按钮的基本操作吃掉了。`check_aria_labels` 不覆盖键盘激活 ⇒ 这条专门守它。
     """
     if not _gr_open_overlay(b):
@@ -4213,7 +4385,8 @@ def check_griseo_keyboard_button_and_play(b, page, expected):
                 btn.removeEventListener('keydown', h); }, false);
             return 1; })()""")
         b.js("var b=document.querySelector('#griseoGameOverlay .gr-close'); if (b) b.focus();")
-        _gr_key(b, key, code, vk)
+        _gr_key_down(b, key, code, vk)
+        _gr_key_up(b, key, code, vk)
         time.sleep(0.3)
         return b.js("window.__pd")
 
@@ -4225,20 +4398,21 @@ def check_griseo_keyboard_button_and_play(b, page, expected):
     if pv_space is not False:
         fails.append(u'聚焦「收笔」后按 Space 被吞了（defaultPrevented=%r）' % pv_space)
 
-    # 键盘**玩法**不能被这次修复顺手关掉：焦点移开控件，方向键该画得出笔触
+    # 键盘**玩法**不能被这次修复顺手关掉：焦点移开控件，按住方向键该画得出笔触
     if not _g_open(b, GAMES[GRISEO]):
         _click_sel(b, '.bottom-game .game-card-start'); time.sleep(0.45)
     b.js("if (document.activeElement) document.activeElement.blur();")
-    _gr_key(b, 'ArrowLeft', 'ArrowLeft', 37); time.sleep(0.05)
-    _gr_key(b, 'ArrowLeft', 'ArrowLeft', 37); time.sleep(0.25)
+    _gr_key_down(b, 'ArrowLeft', 'ArrowLeft', 37)
+    time.sleep(1.0)
+    _gr_key_up(b, 'ArrowLeft', 'ArrowLeft', 37)
+    time.sleep(0.2)
     s = _gr_count(_gr_dump(b), 'S')
     if s <= 0:
-        fails.append(u'方向键画不出笔触（S=%d）—— 键盘备选被关掉了' % s)
+        fails.append(u'按住方向键画不出笔触（S=%d）—— 键盘备选被关掉了' % s)
     return (fails, u'按钮上的 Enter/Space 不被吞（%r/%r）+ 方向键仍能画（S=%d）'
             % (pv_enter, pv_space, s) if not fails else u'键盘处理不对')
 
 
-# ── 真·触摸（不是鼠标）────────────────────────────────────────────────
 def _vv_offset(b):
     """派发输入坐标前要减掉的那个偏移（**只在 mobile 模拟下不为 0**）。
 
