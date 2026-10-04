@@ -4060,78 +4060,98 @@ def check_griseo_steering_paints(b, page, expected):
 @check
 @griseo_only
 def check_griseo_no_enclosure_message(b, page, expected):
-    """⑦ **没围住不许说谎**：出门再**顺原路**回来（一条线，圈不出任何内部）
-    → 文案必须是「这一笔没有围住什么」，**不许说「围住啦」**（spec §3.4 / §6.5）。
+    """⑦ **没围住就白画一场**（第 3 条，2026-10-04）：一条直线出去再回来
+    → 笔触**淡去归零**、领地**没涨**、文案**不许说「围住啦」**。
 
-    ⚠ 抓的是**结算发生的那一瞬**：松手晚了笔会继续走，把提示顶成「笔尖正沿着…」。
+    ⚠ 这条规则 2026-10-04 被需求方第 3 条改过：原来是「踩回自己的颜色 ⇒
+      **笔触本身留下颜色**」，现在改成 **没围住就不上色**。
+      它同时是第 5 条的闸 —— **不能靠一路扫过去白拿地**。
+    ⚠ 判据**三样一起**读：`strokeCells() == 0`（笔触没了）+ 领地没涨 + 文案不谎报。
+      只读文案的话，「扫过去白拿了地、文案还挺诚实」那种实现照样绿。
+    ⚠ 走位用 `setPen` + `step`（**确定性**），不用摇杆 ——
+      摇杆按时间步进，走几格不可控；回程还可能冲过自家领地又起一笔。
     """
-    try:
-        _gr_touch_env(b, True)
-        if not _gr_open_overlay(b):
-            return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
-        fails = []
-        # 沿起始行（y=16 就是领地那一行）向右出去 —— 之后往左回来**必定穿过自己的颜色**
-        _gr_pad_push(b, 1, 0, 1.0)
-        s0 = _gr_test(b, "g._test.strokeCells()") or 0
-        if s0 <= 0:
-            return ([u'向右推杆 1 秒却没画出笔触（S=%s）—— 前提不成立' % s0], u'—')
-        got = _gr_pad_hold_until(
-            b, -1, 0,
-            lambda: (_gr_test(b, "g._test.strokeCells()") or 0) == 0,
-            timeout=6.0)
-        if not got:
-            return ([u'把笔往左开回领地，笔触却一直不结算 —— '
-                     u'「踩回自己的颜色就自动回填」没生效'], u'—')
-        msg = _gr_msg(b) or u''
-        if u'围住啦' in msg:
-            fails.append(u'这一笔只是一条直线、圈不出任何内部，却报了「围住啦」'
-                         u'（实际文案：%r）—— 谎报成功' % msg)
-        if u'没有围住' not in msg:
-            fails.append(u'没围住时该说「这一笔没有围住什么……」（实际：%r）' % msg)
-        return (fails, u'没围住时文案诚实（%r）' % msg if not fails else u'文案在谎报')
-    finally:
-        _gr_touch_env(b, False)
+    if not _gr_open_overlay(b):
+        return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
+    fails = []
+    st = _gr_state(b) or {}
+    hx, hy = st.get('penX', 24), st.get('penY', 16)          # 开局笔在自家 3×3 正中
+    _gr_test(b, "g._test.setPen(%d, %d, true)" % (hx + 2, hy))
+    for _ in range(3):
+        _gr_test(b, "g._test.step(1, 0)")                    # 向右出去，一路留痕
+    s_mid = _gr_test(b, "g._test.strokeCells()") or 0
+    if s_mid <= 0:
+        return ([u'向右走出三格却没留下笔触（S=%s）—— 前提不成立' % s_mid], u'—')
+    t0 = _gr_test(b, "g._test.playerTerritory()") or 0
+    for _ in range(4):
+        _gr_test(b, "g._test.step(-1, 0)")                   # 顺原路回来 ⇒ 踩到自家 ⇒ 结算
+    msg = _gr_msg(b) or u''
+    if u'围住啦' in msg:
+        fails.append(u'这一笔只是一条直线、圈不出任何东西，却报了「围住啦」'
+                     u'（实际文案：%r）—— 谎报成功' % msg)
+    time.sleep(0.7)                                          # 等淡去动画落定
+    s_end = _gr_test(b, "g._test.strokeCells()") or 0
+    t1 = _gr_test(b, "g._test.playerTerritory()") or 0
+    if s_end != 0:
+        fails.append(u'没围住的这一笔，笔触还留着 %d 格（该淡去归零）—— '
+                     u'「没围住就不上色」没生效' % s_end)
+    if t1 > t0:
+        fails.append(u'没围住的这一笔居然让领地涨了（%s → %s）—— 白拿了地' % (t0, t1))
+    return (fails, u'没围住 ⇒ 笔触淡去（S %d→0）、领地不变（%s）、文案 %r' % (s_mid, t1, msg)
+            if not fails else u'没围住却上了色 / 文案在谎报')
 
 
 @check
 @griseo_only
-def check_griseo_collision_breaks_stroke(b, page, expected):
-    """⑧ **撞上造物笔触真的断**：玩家笔触归零 + 笔转入**抬起**态（spec §3.5 / §5.1）。
+def check_griseo_collision_kills_both(b, page, expected):
+    """⑧ **被截断 = 双方都死**（第 2 条，2026-10-04）：
+       画笔**扣一条命** + 在**自己的地上随机复活**；造物**当场散掉、不复活**。
 
-    ⚠ 用 `_test.enemyStrokeTo` 造碰撞局面 —— 真实路径要玩家把笔开到某只造物旁边、
-      再等它长过来，落点根本控不住。它触发的是**同一个** `handleCollision`，行为一字不差。
-    ⚠ 「笔转入抬起」也要验：**再推杆不该画出新笔触** —— 这一条正是
-      spec §5.1 第 3 条那道防线（少了它 ⇒ 领地孤岛 ⇒ 51.7% 静默拒收）。
+    ⚠ 判据**四样一起**：命 3→2、玩家笔触归零、笔尖**落在自家地上**、场上造物数 0。
+      「笔抬起」那条**已删** —— 新规则下笔是**复活**（站在自家地上待命），
+      不是「抬着站在野地里」。
+    ⚠ 用 `_test.enemyStrokeTo` 造碰撞局面：真实路径要玩家把笔开到某只造物旁边、
+      再等它长过来，落点根本控不住。它触发的是**同一个** `handleCollision`。
     """
-    try:
-        _gr_touch_env(b, True)
-        if not _gr_open_overlay(b):
-            return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
-        fails = []
-        _gr_pad_push(b, 1, 0, 0.9)
-        dump0 = _gr_dump(b)
-        s0 = _gr_count(dump0, 'S')
-        if s0 <= 0:
-            return ([u'推杆开了一段，却没有玩家笔触（S=0）—— 前提不成立'], u'—')
-        target = _gr_empty_next_to_stroke(dump0)
-        if target is None:
-            return ([u'找不到与玩家笔触相邻的空格 —— 造不出碰撞局面'], u'—')
-        _gr_test(b, "g._test.enemyStrokeTo(0, %d, %d)" % (target[0], target[1]))
-        time.sleep(0.25)
-        s1 = _gr_count(_gr_dump(b), 'S')
-        if s1 != 0:
-            fails.append(u'造物笔触挨上玩家笔触，玩家笔触却还剩 %d 格（S %d → %d）—— '
-                         u'「被撞 → 笔触断」没生效' % (s1, s0, s1))
-        # 抬起态：再推杆也不该落新的笔触
-        _gr_pad_push(b, 0, 1, 0.9)
-        s2 = _gr_count(_gr_dump(b), 'S')
-        if s2 != 0:
-            fails.append(u'被撞之后笔还在落笔触（S=%d）—— **没转入抬起态**；'
-                         u'这正是「领地孤岛 ⇒ 围合判定成批静默被拒」的入口' % s2)
-        return (fails, u'被撞后笔触全断（S %d → 0）且笔抬起（再推杆 S 仍为 0）' % s0
-                if not fails else u'碰撞断笔 / 抬笔没生效')
-    finally:
-        _gr_touch_env(b, False)
+    if not _gr_open_overlay(b):
+        return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
+    fails = []
+    st0 = _gr_state(b) or {}
+    if st0.get('lives') != 3:
+        return ([u'开局命不是 3（是 %s）—— 前提不成立' % st0.get('lives')], u'—')
+    if st0.get('enemyCount', 0) < 1:
+        return ([u'开局场上没有造物 —— 前提不成立'], u'—')
+    # 确定性走位画一笔（别用摇杆：按时间步进，走几格不可控）
+    _gr_test(b, "g._test.setPen(26, 16, true)")
+    _gr_test(b, "g._test.step(1, 0)")
+    _gr_test(b, "g._test.step(1, 0)")
+    dump0 = _gr_dump(b)
+    s0 = _gr_count(dump0, 'S')
+    if s0 <= 0:
+        return ([u'走位之后没有玩家笔触（S=0）—— 前提不成立'], u'—')
+    target = _gr_empty_next_to_stroke(dump0)
+    if target is None:
+        return ([u'找不到与玩家笔触相邻的空格 —— 造不出碰撞局面'], u'—')
+    _gr_test(b, "g._test.enemyStrokeTo(0, %d, %d)" % (target[0], target[1]))
+    time.sleep(0.3)
+    st1 = _gr_state(b) or {}
+    dump1 = _gr_dump(b)
+    s1 = _gr_count(dump1, 'S')
+    if s1 != 0:
+        fails.append(u'被截断后玩家笔触还剩 %d 格（S %d → %d）' % (s1, s0, s1))
+    if st1.get('lives') != 2:
+        fails.append(u'被截断后命是 %s（该 3 → 2）—— 没扣命' % st1.get('lives'))
+    if st1.get('enemyCount', 0) != 0:
+        fails.append(u'造物被截断后场上还剩 %s 只（该 0 —— **不复活**）'
+                     % st1.get('enemyCount'))
+    p = _gr_test(b, "g._test.penCell()") or {}
+    px, py = p.get('x', -1), p.get('y', -1)
+    rows1 = (dump1 or u'').split('\n')
+    ch = rows1[py][px] if 0 <= py < len(rows1) and 0 <= px < len(rows1[py]) else u'?'
+    if ch != 'H':
+        fails.append(u'复活之后笔尖落在 %r 上（(%s,%s)）—— 该落在**自己的地**上' % (ch, px, py))
+    return (fails, u'被截断 ⇒ 命 3→2、笔触归零、造物散掉、笔在自家地上复活'
+            if not fails else u'截断后的死亡 / 复活不对')
 
 
 @check
@@ -4235,6 +4255,141 @@ def check_griseo_enemy_never_stalls(b, page, expected):
                          % (i, bounce))
     return (fails, u'造物 %d 只：领地 %s→%s 格、20 秒里都在动、无来回踱步'
             % (n, t0, t1) if not fails else u'造物卡死 / 踱步 / 不长')
+
+
+@check
+@griseo_only
+def check_griseo_brush_overwrites_enemy(b, page, expected):
+    """⑮ **画笔轨迹可以盖在造物的地上**（第 5 条，玩家侧；第 3 条定它的闸）。
+
+    做法（`setPen` + `step` **确定性**走位）：`setPlayerRatio(0)` 让场上只有一只造物
+      （出生在 (6,5) 的 2×2），然后**绕着它的一格画一个 3×3 的环** ——
+      环经过造物其余三格时**直接盖掉**它们（这正是第 5 条要的「轨迹可以填充对方的区域」）。
+    判据：被盖的那格 `E → S`；回填之后，圈心那格（原本也是造物的地）`E → H`。
+
+    ⚠ 判据**分两步读**：先证「笔触能盖在对方的地上」（`S`），
+      再证「回填之后归玩家」（`H`）。只读后一步的话，把「覆盖」实现成
+      「走过去什么也不留、最后靠整块击杀顺手转色」也照样绿。
+    ⚠ 这条同时钉住第 3 条：环**圈出了东西**（圈心那一格），所以它**该**上色；
+      换个不闭合的走位就该白画一场 —— 那是 ⑧ 管的事。
+    """
+    if not _gr_open_overlay(b):
+        return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
+    fails = []
+    _gr_test(b, "g._test.setPlayerRatio(0)")     # 玩家地 0、场上 1 只造物（(6,5) 的 2×2）
+    time.sleep(0.15)
+    rows = (_gr_dump(b) or u'').split('\n')
+    tgt = None
+    for y in range(len(rows)):
+        for x in range(len(rows[y])):
+            if rows[y][x] == 'E':
+                tgt = (x, y)
+                break
+        if tgt:
+            break
+    if not tgt:
+        return ([u'`setPlayerRatio(0)` 之后 dump 里找不到造物的地（E）—— 前提不成立'], u'—')
+    tx, ty = tgt
+    if tx < 2 or ty < 2 or tx + 1 >= len(rows[0]) or ty + 1 >= len(rows):
+        return ([u'造物的地 (%d,%d) 太贴边，画不出环 —— 前提不成立' % (tx, ty)], u'—')
+    # 绕 (tx,ty) 画一圈 3×3 的环：起点在它左上方的外面一格
+    _gr_test(b, "g._test.setPen(%d, %d, true)" % (tx - 1, ty - 2))
+    for (dx, dy) in ((0, 1), (1, 0), (1, 0), (0, 1), (0, 1), (-1, 0), (-1, 0), (0, -1), (0, -1)):
+        _gr_test(b, "g._test.step(%d, %d)" % (dx, dy))
+    time.sleep(0.2)
+    r1 = (_gr_dump(b) or u'').split('\n')
+    covered = r1[ty][tx + 1] if ty < len(r1) and tx + 1 < len(r1[ty]) else u'?'
+    if covered != 'S':
+        fails.append(u'笔走过造物的地（%d,%d）之后，那一格是 %r 而**不是** S'
+                     u'（玩家的笔触）—— 画笔轨迹盖不到对方的区域'
+                     % (tx + 1, ty, covered))
+    _gr_test(b, "g._test.settle()")
+    time.sleep(0.5)
+    r2 = (_gr_dump(b) or u'').split('\n')
+    ch2 = r2[ty][tx] if ty < len(r2) and tx < len(r2[ty]) else u'?'
+    if ch2 != 'H':
+        fails.append(u'回填之后圈心 (%d,%d) 是 %r 而**不是** H（玩家的地）—— '
+                     u'圈里的对方的地没归玩家' % (tx, ty, ch2))
+    return (fails, u'绕造物画环：环上它的地 E→S、圈心 E→H'
+            if not fails else u'画笔轨迹盖不到对方的区域')
+
+
+@check
+@griseo_only
+def check_griseo_enemy_ring_eats_player_land(b, page, expected):
+    """⑯ **造物围地时，圈里玩家的地也一起被吃掉**（第 5 条的对称那一半）。
+
+    做法：`setPlayerRatio(0.16)` —— 玩家的地只占**最上面 5 行多一点**，
+      于是造物仍然出生在 (6,5)（外接矩形 (6,5)–(7,6)），而它外扩 2 格的环
+      (4,3)–(9,8) 的**上边正好压在玩家的地上**，圈内 (5,4)–(8,7) 也含着一整行玩家的地。
+      然后 `forceRing(0)` 让它走一次**真实的围地环**。
+    判据：玩家领地格数**下降**。
+
+    ⚠ 环必须允许**压过玩家的地**（`planRing` 的判据是「空白或 HOME」）——
+      不放宽的话造物永远围不到玩家的地：环要围住一块地，它自己就不能被那块地挡住。
+    ⚠ 走的是**同一个** `finishPlan`（真实收口），只绕开了「环什么时候轮得到」的时机问题。
+    """
+    if not _gr_open_overlay(b):
+        return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
+    fails = []
+    _gr_test(b, "g._test.setPlayerRatio(0.16)")
+    time.sleep(0.15)
+    t0 = _gr_test(b, "g._test.playerTerritory()") or 0
+    if t0 <= 0:
+        return ([u'`setPlayerRatio(0.16)` 之后玩家地是 %s —— 前提不成立' % t0], u'—')
+    r = _gr_test(b, "g._test.forceRing(0)") or {}
+    time.sleep(0.35)
+    t1 = _gr_test(b, "g._test.playerTerritory()") or 0
+    if not r.get('ok'):
+        return ([u'造物的围地环没走成（reason=%s）—— 前提不成立（环被挡 / 出界）'
+                 % r.get('reason')], u'—')
+    if t1 >= t0:
+        fails.append(u'造物围着圈走完，圈里那些玩家的地**没被吃掉**（%s → %s 格）—— '
+                     u'「围地填充连对方一起填」在造物那一侧没生效' % (t0, t1))
+    return (fails, u'造物围地 ⇒ 圈里玩家的地 %s → %s 格' % (t0, t1)
+            if not fails else u'造物围地吃不到玩家的地')
+
+
+@check
+@griseo_only
+def check_griseo_enemy_attacks_player(b, page, expected):
+    """⑯ **造物会主动扑玩家的地**（第 4 条「攻击欲望」）。
+
+    做法：`setPlayerRatio(0)` → 造物出生在 (6,5)；再用 `setPen` + `step` 在它**右边**
+      画一个 3×3 的环（玩家的地在 x 9–11、y 5–7，离它 3 格）。
+      然后只推 **1.2 秒**，看玩家的地有没有掉。
+    判据：玩家的地**在 1.2 秒内就少了**。
+
+    ⚠ **为什么非要把地放在右边**：造物的候选出笔点是**按格索引从小到大**收集的，
+      (6,5) 的第一个朝外方向是**上**（(6,4)）。所以「不主动扑」的实现在这 1.2 秒里
+      会往上长 —— **碰不到右边那块地**；只有「朝着玩家的地排」的实现才会折过来。
+      → 这就是这条断言**区别于 ⑮**（围地环）的地方：⑮ 的判据靠环也能过，
+      对「攻击欲望」本身**没有牙**（实测：把攻击排序拿掉，⑮ 照样绿）。
+    ⚠ 1.2 秒 ≈ 一条触须（4 格 × 200ms）+ 一点余量。窗口再开大就挡不住
+      「碰巧往右长」的实现了。
+    """
+    if not _gr_open_overlay(b):
+        return ([u'点不到 / 打不开「开始」—— 前提不成立'], u'—')
+    fails = []
+    _gr_test(b, "g._test.setPlayerRatio(0)")      # 玩家地 0、造物在 (6,5)
+    time.sleep(0.1)
+    # 在造物右边 (10,6) 处画一个 3×3 的环 ⇒ 那里出现一块玩家的地
+    _gr_test(b, "g._test.setPen(9, 4, true)")
+    for (dx, dy) in ((0, 1), (1, 0), (1, 0), (0, 1), (0, 1), (-1, 0), (-1, 0), (0, -1), (0, -1)):
+        _gr_test(b, "g._test.step(%d, %d)" % (dx, dy))
+    _gr_test(b, "g._test.settle()")
+    t0 = _gr_test(b, "g._test.playerTerritory()") or 0
+    if t0 <= 0:
+        return ([u'没能在造物右边铺出玩家的地（playerTerritory=%s）—— 前提不成立'
+                 % t0], u'—')
+    for _ in range(12):
+        _gr_test(b, "g._test.tick(0.1)")          # 合计 1.2 秒
+    t1 = _gr_test(b, "g._test.playerTerritory()") or 0
+    if t1 >= t0:
+        fails.append(u'1.2 秒过去，玩家的地一格没少（%s → %s）—— '
+                     u'造物没有扑过来（第 4 条「攻击欲望」没生效）' % (t0, t1))
+    return (fails, u'1.2 秒内造物扑过来，玩家的地 %s → %s 格' % (t0, t1)
+            if not fails else u'造物不主动攻击')
 
 
 @check
