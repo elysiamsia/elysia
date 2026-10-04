@@ -95,6 +95,17 @@
   var DIFF_NUM_STEP = 0.2;
   var DIFF_SPD_STEP = 0.15, DIFF_SPD_CAP = 3;
   var TENDRIL_MAX = 4;           // 一条「颜料触须」最多长几格
+  /* 围地环：绕**领地外接矩形外扩 `RING_PAD` 格**的周长走一圈。
+     ⚠ **为什么是外扩 2 而不是 1**：环内部 = box 外扩 1 的区域。
+       外扩 1 时环内部正好是「自己已有的地」⇒ 围了等于没围（只把环本身收编成地）；
+       外扩 2 才围得住**新东西** —— 那一圈空白，以及**恰好落在里面的玩家的地**。
+       这正是需求方 2026-10-04 要的「完全对称」：玩家围地吃造物的地，造物围地吃玩家的地。
+     ⚠ 环是**闭合回路**（`ends.length === 0`）⇒ 算法走「自己成环」那一支，
+       **不需要封口线、也不依赖「家 4 连通」** ⇒ 造物这条路**没有**玩家侧那个孤岛风险。
+     ⚠ `RING_MAX` 是周长上限：box 长大之后环越来越长（一圈要走几十秒），
+       超过就交回触须 —— 自然收敛，不会卡在描边。 */
+  var RING_PAD = 2;
+  var RING_MAX = 44;             // 环的格数上限（约对应 box 9×9）
   var ENEMY_COOLDOWN_MS = 260;   // 两笔之间的停顿（它的「呼吸」）
   var ENEMY_STUCK_MS = 1500;     // 彻底没地方长时的冷却（到期重试 —— 玩家的地会变）
 
@@ -120,6 +131,19 @@
   var FILL_MS = 260;             // 每个新格从「湿笔触色」渐到「领地色」的时长
   var FILL_STEP_MS = 22;         // 按「离笔触的格距」错峰 ⇒ 由外向内晕开
   var FILL_MAX_STEP = 14;        // 错峰档数封顶（大区域别让总时长失控）
+  var FADE_MS = 300;             // **白画一场**：笔触整体淡回空白（第 3 条）
+
+  /* ── 命（第 2 条，2026-10-04 需求方）────────────────────────────────
+     画笔被造物**截断** = 倒下一次（扣一条命），在**自己的区域里随机位置**复活；
+     命用完 ⇒ 本局结束。
+     造物被截断 ⇒ **当场散掉，不复活**（`slayEnemy`）。 */
+  var START_LIVES = 3;
+
+  /* ── 攻击欲望（第 4 条）────────────────────────────────────────────
+     造物原本只在自己周围慢慢扩，玩家在它旁边它也不理。
+     现在：玩家领地离它 ≤ `ATTACK_RANGE` 格时，它**优先扑过去**（把「长触须」提到
+     「扩圈」前面），而且出笔方向**朝着玩家的地**排。 */
+  var ATTACK_RANGE = 16;
 
   var CLOSE_GUARD_MS = 400;      // 刚打开那一小段里拒收「收笔」（照 sakura / kosma）
   var STYLE_ID = 'griseoGameStyles';
@@ -142,20 +166,30 @@
   var COL_EMPTY = '#150e18';     // 空白格：未上色的画布（= --bg-deep）
   var COL_HOME = '#7dd3fc';      // 领地：她的天青（--sky）
   var COL_STROKE = '#c2ecff';    // 笔触：未干的、更浅的天青
-  var COL_BRUSH = 'rgba(255,217,122,.9)';       // 笔尖圈：金（--gold）—— 落着
-  var COL_BRUSH_IDLE = 'rgba(255,217,122,.35)'; // 抬起：更暗更细（一眼看出能不能画）
+  /* 笔尖（第 1 条）：**深色描边 + 亮金环** 两层叠 —— 单靠一个亮圈，
+     笔走进自家天青或造物那些鲜色底上就看不见了。 */
+  var COL_BRUSH = '#ffd97a';                     // 环：金（--gold）
+  var COL_BRUSH_IDLE = 'rgba(255,217,122,.75)';  // 抬起：环细一点、淡一点（仍看得清）
+  var COL_BRUSH_HALO = 'rgba(16,11,19,.9)';      // 描边：--bg-abyss，深底浅底都压得住
 
   /* ── 站点 UI 文案（⚠ 不是角色台词 —— 契约硬规定）──────────────────── */
   var MSG_OPEN = '推摇杆，让笔走出去，再绕回你自己的颜色。';
   var MSG_STROKE = '……笔尖正沿着你的方向走。';
   var MSG_FILL = '围住啦 —— 这一片都染成了你的颜色。';
-  var MSG_NO_ENCLOSE = '这一笔没有围住什么 —— 只有笔触本身留下了颜色。';
-  var MSG_HIT = '灵感中断 —— 撞上了造物的笔触，这一笔全断了。';
+  /* ⚠ 第 3 条（2026-10-04）：**没围住就不留颜色** —— 笔触淡去回空白。
+     （原来是「笔触本身留下颜色」，那会让「一路扫过去」也能白拿地。） */
+  var MSG_FADE = '这一笔没有围住任何东西 —— 颜色散掉了。';
+  var MSG_HIT = '被造物截断了 —— 笔断了，你也倒下一次。';
   var MSG_EAT = '这一块也归你了 —— 造物被你整个吃掉了。';
+  var MSG_SLAY = '造物被截断，当场散了。';
   var MSG_GROW = '画布亮起了一片新天地 —— 更大的画布、更多的造物上场了。';
   var MSG_BACK = '笔尖抬着 —— 先回自己的颜色，再走出去。';
+  /* ⚠ 这条是给「地被对方啃断」准备的 —— 见 `settleStroke` 的文案判据。
+     没有它的话，那种失败是**完全静默**的（笔触变了色、圈里却没填，一个字都不说）。 */
+  var MSG_BLOCKED = '围地没连上 —— 你的领地断开成几块了，先去把它接回来。';
+  var MSG_DEAD = '三条命都用完了 —— 画笔落下了。';
 
-  var UI_HUD = '剩余 %s · 击杀 %d · 完成度 %s';
+  var UI_HUD = '剩余 %s · 命 %s · 击杀 %d · 完成度 %s';
   var UI_RESULT_TITLE = '本局结束';
   var UI_RESULT_BODY = '完成度 %s（上色 %d / 总格 %d）· 击杀 %d 个 · 最高纪录 %s';
   var UI_RESULT_NEW = ' · 新纪录';
@@ -175,6 +209,7 @@
 
   /* 阶段 / 击杀 / 计时 —— `kills` 是本局累计击杀。 */
   var kills = 0;
+  var lives = START_LIVES;       // 画笔的命（第 2 条）：被截断一次扣一条，用完就结束
   var stageIdx = 0;
   var enemyCap = STAGES[0].cap;
   var enemyFloor = STAGES[0].floor;
@@ -209,6 +244,7 @@
   var animIdx = null;
   var animFrom = null, animTo = null;
   var animDur = 0, animTotal = 0, animStart = 0;
+  var animOnSettle = null;       // 落定时要做的事（「白画一场」靠它把格子写成 0）
 
   /* 造物状态 */
   var enemies = [];
@@ -296,13 +332,28 @@
     el.ctx.drawImage(cache, 0, 0);
     drawFlash();
     drawTimerBar();
+    /* ── 笔尖（第 1 条，2026-10-04）────────────────────────────────────
+       ⚠ 原来只在**亮金细圈**与「半透明 0.35、1.2px 的暗圈」之间切 ——
+         笔一旦走进**自家天青**那片亮色（或者造物那些同样鲜的颜色）上，那一圈就
+         **看不见了**，玩家当场丢失「笔在哪、往哪走」。
+       现在两层叠：**深色描边 + 亮金环**，落着再点一个实心中心点 ——
+         深底靠金环跳出来、浅底靠深描边压得住，任何底色上都认得出。 */
     var bx = (penX + 0.5) * CELL, by = (penY + 0.5) * CELL;
+    var pr = CELL * 0.72;
     el.ctx.save();
-    el.ctx.strokeStyle = drawing ? COL_BRUSH : COL_BRUSH_IDLE;
-    el.ctx.lineWidth = drawing ? 2 : 1.2;
-    el.ctx.beginPath();
-    el.ctx.arc(bx, by, CELL * 0.72, 0, Math.PI * 2);
+    el.ctx.beginPath(); el.ctx.arc(bx, by, pr, 0, Math.PI * 2);
+    el.ctx.strokeStyle = COL_BRUSH_HALO;
+    el.ctx.lineWidth = drawing ? 5 : 4;
     el.ctx.stroke();
+    el.ctx.beginPath(); el.ctx.arc(bx, by, pr, 0, Math.PI * 2);
+    el.ctx.strokeStyle = drawing ? COL_BRUSH : COL_BRUSH_IDLE;
+    el.ctx.lineWidth = drawing ? 2.4 : 1.8;
+    el.ctx.stroke();
+    if (drawing) {
+      el.ctx.beginPath(); el.ctx.arc(bx, by, CELL * 0.3, 0, Math.PI * 2);
+      el.ctx.fillStyle = COL_BRUSH;
+      el.ctx.fill();
+    }
     el.ctx.restore();
   }
 
@@ -381,44 +432,62 @@
     if (!animActive) return;
     animActive = false;
     var cells = animCells;
+    var fin = animOnSettle;
+    animOnSettle = null;
+    if (fin) fin();                       // ⚠ 先结算回调（淡去要把 grid 写成 0），再重画
     for (var k = 0; k < cells.length; k++) paintCell(cells[k]);
     animCells = null; animDelay = null; animIdx = null;
     animFrom = null; animTo = null;
     if (el.ctx) blit();
   }
 
-  function startFillAnim(newCells, depths, maxDepth) {
-    if (!newCells || newCells.length === 0) return;
+  /** 动画的通用起手：`cells` 逐格从 `from` 渐变到 `to`，每格按 `delays` 错峰。 */
+  function startAnim(cells, delays, dur, from, to, settle) {
+    if (!cells || cells.length === 0) { if (settle) settle(); return; }
     settleAnim();
     /* 先把挂着的脏渲染冲掉 —— 动画接管后每帧自己重画这几格。 */
     if (raf) { global.cancelAnimationFrame(raf); raf = null; }
     if (dirtyList.length) render();
 
-    var capped = maxDepth > FILL_MAX_STEP ? FILL_MAX_STEP : maxDepth;
-    var delays = [];
-    var maxDelay = 0;
-    for (var k = 0; k < newCells.length; k++) {
-      var d = depths[k] > capped ? capped : depths[k];
-      delays.push(d * FILL_STEP_MS);
-      if (delays[k] > maxDelay) maxDelay = delays[k];
-    }
+    var maxDelay = 0, k;
+    for (k = 0; k < cells.length; k++) if (delays[k] > maxDelay) maxDelay = delays[k];
 
     var n = COLS * ROWS;
-    animCells = newCells;
+    animCells = cells;
     animDelay = delays;
     animIdx = new Int32Array(n);
     for (var i = 0; i < n; i++) animIdx[i] = -1;
-    for (k = 0; k < newCells.length; k++) animIdx[newCells[k]] = k;
+    for (k = 0; k < cells.length; k++) animIdx[cells[k]] = k;
 
-    animFrom = COL_STROKE;
-    animTo = COL_HOME;
-    animDur = FILL_MS;
-    animTotal = maxDelay + FILL_MS;
+    animFrom = from;
+    animTo = to;
+    animDur = dur;
+    animTotal = maxDelay + dur;
     animStart = Date.now();
+    animOnSettle = settle || null;
     animActive = true;
 
-    for (k = 0; k < newCells.length; k++) paintCellColor(newCells[k], animColorAt(k));
+    for (k = 0; k < cells.length; k++) paintCellColor(cells[k], animColorAt(k));
     blit();
+  }
+
+  /** 上色晕染：新格从「湿笔触色」由外向内晕到「领地色」。 */
+  function startFillAnim(newCells, depths, maxDepth) {
+    var capped = maxDepth > FILL_MAX_STEP ? FILL_MAX_STEP : maxDepth;
+    var delays = [];
+    for (var k = 0; k < newCells.length; k++) {
+      delays.push((depths[k] > capped ? capped : depths[k]) * FILL_STEP_MS);
+    }
+    startAnim(newCells, delays, FILL_MS, COL_STROKE, COL_HOME, null);
+  }
+
+  /** **白画一场**（第 3 条）：整条笔触从湿色淡回空白，落定时把格子写成 `0`。 */
+  function startFadeAnim(cells) {
+    var delays = [];
+    for (var k = 0; k < cells.length; k++) delays.push(0);
+    startAnim(cells, delays, FADE_MS, COL_STROKE, COL_EMPTY, function () {
+      for (var j = 0; j < cells.length; j++) grid[cells[j]] = EMPTY;
+    });
   }
 
   /** 每帧推一次动画（由主循环调用 —— 不另开 rAF，免得「关掉之后还在动」）。 */
@@ -540,7 +609,21 @@
       el.msg.textContent = MSG_BACK;
     }
     if (drawing) {
-      if (toV === EMPTY) { grid[toIdx] = STROKE; markDirty(toIdx); }
+      if (toV === EMPTY) {
+        grid[toIdx] = STROKE; markDirty(toIdx);
+      } else if (isEnemyStroke(toV)) {
+        /* 落在**造物笔触**上 = 撞上（对称碰撞的另一面）。 */
+        handleCollision(enemyByStrokeCode(toV));
+        return;
+      } else if (toV >= ENEMY_BASE) {
+        /* 落在**造物的已定型领地**上 ⇒ **盖掉它**（需求方 2026-10-04 第 5 条：
+           「画笔轨迹可以填充其他 AI 的区域，其他 AI 也一样」）。
+           ⚠ 这一条是**对称的前提**：不放开它，玩家就画不出「穿过造物领地的圈」，
+             也就永远围不到「圈里含造物地」的局面 —— 那样第 5 条在观感上等于没做
+             （一笔闭环的墙里既然没有对方的格子，按几何可证**永远**只能整块围住或
+              一根毫毛都碰不到，见下方 `fillEnclosed` ⑤ 的注释）。 */
+        grid[toIdx] = STROKE; markDirty(toIdx);
+      }
       var hit = adjacentEnemyStroke(nx, ny);
       if (hit) { handleCollision(hit); return; }
     }
@@ -568,17 +651,42 @@
     for (var i = 0; i < grid.length; i++) {
       if (grid[i] === HOME && before[i] !== HOME) newCells.push(i);
     }
+    /* ⚠ **第 3 条的安全闸**：`filled > 0` **不等于**「真的围住了什么」——
+       一个**单格分量**（出门一步就回头）也会被算法判成「入选」而把自己那一格收编。
+       需求方要的是「**只有圈到才上色**」，所以这里再加一道：
+       **既没围出空白（`interior`）也没吃到对方的地（`ate`）⇒ 整笔复原**（`grid` 回滚到
+       这一笔之前），随后走下面的「白画一场」。 */
+    var real = (res.interior > 0 || res.ate > 0);
+    if (!real && rk.captured === 0 && newCells.length > 0) {
+      for (i = 0; i < grid.length; i++) grid[i] = before[i];
+      newCells = [];
+    }
     if (newCells.length > 0) {
       var dd = computeDepths(newCells, before);
       startFillAnim(newCells, dd.depth, dd.max);
       if (el.msg) {
-        /* ⚠ **诚实文案**：`interior > 0` 才代表「真的围出了内部空白」；
-           否则这一笔只是把自己的笔触收编成了领地 —— **不许再说「围住啦」**。 */
+        /* ⚠ **诚实文案**（判据三样）：
+             · 整块吃掉了造物（击杀）→ MSG_EAT
+             · 两端都贴家、但那两块家被啃断了 ⇒ 封不上口 → MSG_BLOCKED
+             · 其余（围出了空白 / 吃掉了圈里对方的地）→ MSG_FILL
+           到这一支就**一定**是「真的围住了什么」—— 没围住的那一支在下面。 */
         el.msg.textContent = rk.captured > 0 ? MSG_EAT
-                           : (res.interior > 0 ? MSG_FILL : MSG_NO_ENCLOSE);
+                           : (res.blocked > 0 ? MSG_BLOCKED : MSG_FILL);
       }
     } else {
-      fullRender();
+      /* ⚠ **第 3 条：没围住就白画一场。**
+         没有分量入选（或入选了却没围出东西）⇒ `fillEnclosed` 没留下任何颜色，
+         笔触还留在 grid 里当 `STROKE`。让它们**淡回空白** ——
+         既不留颜色，也不留下一条挡着下一笔的墙。
+         ⚠ 「白画」不等于「静默」：如果是**地断开了**（`blocked`）得说清楚。 */
+      var left = [];
+      for (var j = 0; j < grid.length; j++) if (grid[j] === STROKE) left.push(j);
+      if (left.length > 0) {
+        startFadeAnim(left);
+        if (el.msg) el.msg.textContent = res.blocked > 0 ? MSG_BLOCKED : MSG_FADE;
+      } else {
+        fullRender();
+      }
     }
     syncHud();
   }
@@ -630,19 +738,61 @@
     for (var i = 0; i < grid.length; i++) {
       if (grid[i] === STROKE) { grid[i] = EMPTY; markDirty(i); changed = true; }
     }
-    if (enemy) breakEnemyStroke(enemy);          // 造物那一笔也断
-    drawing = false;                             // 抬起：必须回领地才能重新落笔
+    /* ── 第 2 条（2026-10-04 需求方）：**双方都死**，而且是不对称的死法 ──
+         · 画笔被截断 ⇒ **倒下一次**（扣一条命）⇒ 在**自己的区域里随机位置**复活；
+           三条命用完 ⇒ 本局结束。
+         · 造物被截断 ⇒ **当场散掉，不复活**。
+       ⚠ 截断是**对称发生**的（谁碰到谁，两条笔触一起断），所以每次碰撞
+         一定是「玩家掉一条命 + 那只造物没了」——这是这位需求方要的规则。 */
+    if (enemy) slayEnemy(enemy);
+    drawing = false;
+    penAcc = 0;
+    lives--;
+    if (lives <= 0) {
+      lives = 0;
+      if (changed) scheduleRender();
+      syncHud();
+      finish(MSG_DEAD);
+      return;
+    }
+    respawnPen();
     if (el.msg) el.msg.textContent = MSG_HIT;
     if (changed) scheduleRender();
     syncHud();
   }
 
-  function breakEnemyStroke(e) {
-    if (!grid || !e) return;
-    retractEnemyStroke(e);
-    e.plan = null; e.planIdx = 0;
-    e.cooldown = ENEMY_COOLDOWN_MS;
+  /**
+   * 画笔「复活」：**在自己的领地里随机挑一格**落脚（第 2 条）。
+   * ⚠ 一定得落在**自己的地上**：落在空地 ⇒ 笔处在「抬起」态、还得先摸回领地；
+   *   落在别人地上 ⇒ 等于凭空占了对方一格。只有落在家上说得通。
+   */
+  function respawnPen() {
+    if (!grid) return;
+    var home = [];
+    for (var i = 0; i < grid.length; i++) if (grid[i] === HOME) home.push(i);
+    if (home.length === 0) return;
+    var pick = home[Math.floor(Math.random() * home.length)];
+    var x = pick % COLS;
+    penX = x;
+    penY = (pick - x) / COLS;
+    drawing = false;      // 站在自家地上；下一格踏出去就重新落笔
+    penAcc = 0;
+    scheduleRender();
   }
+
+  /** 造物被**截断** ⇒ 当场散掉：地清空、笔触清空、下场，**不复活**（第 2 条）。 */
+  function slayEnemy(e) {
+    if (!grid || !e || e.dead) return;
+    clearEnemyCells(e);
+    e.dead = true;
+    e.plan = null; e.planIdx = 0; e.planRect = null;
+    var alive = [];
+    for (var k = 0; k < enemies.length; k++) if (!enemies[k].dead) alive.push(enemies[k]);
+    enemies = alive;
+    kills++;              // 下场就算一次击杀（难度 / 阶段跟着它走）
+    scheduleRender();
+  }
+
   function retractEnemyStroke(e) {
     if (!grid || !e) return;
     for (var i = 0; i < grid.length; i++) {
@@ -734,7 +884,11 @@
       color: ENEMY_COLORS[slot % ENEMY_COLORS.length],
       x: pos.x, y: pos.y,
       acc: 0, stepMs: ENEMY_STEP_MS[speedTier], tier: speedTier,
-      plan: null, planIdx: 0, cursor: slot, cooldown: 0, dead: false
+      /* `box` = 自己领地的**外接矩形**（围地环就绕它外扩 `RING_PAD` 格画）。
+         ⚠ 触须长大之后它会落后 —— 每轮收笔都 `refreshBox()` 重算。 */
+      box: { x0: pos.x, y0: pos.y,
+             x1: pos.x + ENEMY_HOME_R - 1, y1: pos.y + ENEMY_HOME_R - 1 },
+      plan: null, planIdx: 0, planRect: null, cursor: slot, cooldown: 0, dead: false
     };
     for (var yy = pos.y; yy < pos.y + ENEMY_HOME_R; yy++) {
       for (var xx = pos.x; xx < pos.x + ENEMY_HOME_R; xx++) {
@@ -746,12 +900,66 @@
     return e;
   }
 
+  /** 重算「领地外接矩形」。
+      ⚠ **触须长大之后 box 会落后于真实领地** —— 不重算的话，下一圈的环会**压在自己
+        刚长出来的地上** ⇒ `planRing` 永远返回 null ⇒ 造物从此只会长触须、
+        再也围不了地（静默退化）。每次收笔都重算一遍，简单可靠（O(格数)，一秒才几次）。 */
+  function refreshBox(e) {
+    if (!grid || !e) return;
+    var minX = COLS, minY = ROWS, maxX = -1, maxY = -1, i, x, y;
+    for (i = 0; i < grid.length; i++) {
+      if (grid[i] !== e.homeCode) continue;
+      x = i % COLS; y = (i - x) / COLS;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+    if (maxX >= 0) e.box = { x0: minX, y0: minY, x1: maxX, y1: maxY };
+  }
+
+  /**
+   * 围地计划：绕 `box` 外扩 `RING_PAD` 格的**周长**走一圈（顺时针，闭合回路）。
+   * 圈上每一格必须是**空白且不出界**，且整圈不超过 `RING_MAX` 格。
+   * 成功时记下 `planRect`（走完由 `finishPlan` 决定「这一轮是围地不是触须」）。
+   */
+  function planRing(e) {
+    if (!grid || !e.box) return null;
+    var b = e.box;
+    var r = { x0: b.x0 - RING_PAD, y0: b.y0 - RING_PAD,
+              x1: b.x1 + RING_PAD, y1: b.y1 + RING_PAD };
+    if (r.x0 < 0 || r.y0 < 0 || r.x1 >= COLS || r.y1 >= ROWS) return null;
+    /* ⚠⚠ 路径元素是**格索引**（`y*COLS+x`），不是 `[x,y]` 数对 ——
+       `stepEnemy` 拿它直接当 `grid` 的下标用（`planTendril` 给的也是索引）。
+       2026-10-04 真踩过：这里原先推的是数对，于是 `grid[[4,3]]` 得到 `undefined`
+       ⇒ 每一圈都**当场 abort** ⇒ **只要环一成功，那只造物就卡住不动**。
+       症状是「造物偶尔发呆」而不是报错，靠 ⑯ 那条断言才逮到。 */
+    var path = [], x, y, k;
+    for (x = r.x0; x <= r.x1; x++) path.push(r.y0 * COLS + x);       // 上边 →
+    for (y = r.y0 + 1; y <= r.y1; y++) path.push(y * COLS + r.x1);   // 右边 ↓
+    for (x = r.x1 - 1; x >= r.x0; x--) path.push(r.y1 * COLS + x);   // 下边 ←
+    for (y = r.y1 - 1; y > r.y0; y--) path.push(y * COLS + r.x0);    // 左边 ↑
+    if (path.length > RING_MAX) return null;                         // 太大 ⇒ 交回触须
+    for (k = 0; k < path.length; k++) {
+      var rv = grid[path[k]];
+      /* ⚠ 空白 **或玩家已定型的地**（`HOME`）—— 后者照盖（第 5 条 + 第 4 条）。
+         ⚠ 不放宽这一条的话，造物**永远围不到玩家的地**：环要围住一块玩家的地，
+           它自己就不能被那块地挡住。放宽之后它才真的会「切过来」把地圈走。 */
+      if (rv !== EMPTY && rv !== HOME) return null;
+    }
+    e.planRect = r;
+    return path;
+  }
+
   /**
    * 计划一条「触须」：从领地边界（**只从有 ≥2 个自家邻居的格子出发** ——
    * 防细长的刺，让它长成胖乎乎的色块）朝一个空方向直走最多 `TENDRIL_MAX` 格。
    * ⚠ `cursor` 轮转保证出笔点不呆板、也**从不回头**（A3 不踱步）。
+   *
+   * @param {object} [target] 攻击目标（`{x,y}` = 玩家最近的地）。传了它 ⇒
+   *   **朝目标出笔**（第 4 条「攻击欲望」）；不传 ⇒ 退化成原来的轮转。
    */
-  function planTendril(e) {
+  function planTendril(e, target) {
     if (!grid) return null;
     var cands = [];
     var n = COLS * ROWS;
@@ -769,40 +977,102 @@
       for (d = 0; d < 4; d++) {
         var nx = x + DIRS[d][0], ny = y + DIRS[d][1];
         if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
-        if (grid[ny * COLS + nx] !== EMPTY) continue;
+        var cv = grid[ny * COLS + nx];
+        /* ⚠ 空白 **或玩家已定型的地**（`HOME`）—— 后者照盖，对称那一半。
+           玩家的**笔触**(`STROKE`)不在候选里：那是碰撞的事了，见 `stepEnemy`。 */
+        if (cv !== EMPTY && cv !== HOME) continue;
         cands.push({ x: nx, y: ny, dx: DIRS[d][0], dy: DIRS[d][1] });
       }
     }
     if (cands.length === 0) return null;
-    var start = e.cursor % cands.length;
-    for (var t = 0; t < cands.length; t++) {
-      var c = cands[(start + t) % cands.length];
+
+    /* ── 第 4 条：**攻击欲望**（2026-10-04 需求方）────────────────────
+       出笔点不再纯轮转 —— 有目标时，**离目标近的排前面**；
+       同样近就**优先踩玩家的地**（那才是真的在抢）；最后才按 `cursor` 破平。
+       ⚠ 没有目标（场上没有玩家的地）⇒ 完全退化成原来的轮转，行为与从前一致。 */
+    var k, c;
+    if (target) {
+      var t0 = e.cursor % cands.length;
+      for (k = 0; k < cands.length; k++) {
+        c = cands[k];
+        c.d = Math.abs(c.x - target.x) + Math.abs(c.y - target.y);
+        c.hm = (grid[c.y * COLS + c.x] === HOME) ? 0 : 1;
+        c.tn = (k - t0 + cands.length) % cands.length;
+      }
+      cands.sort(function (a, b) {
+        if (a.d !== b.d) return a.d - b.d;
+        if (a.hm !== b.hm) return a.hm - b.hm;
+        return a.tn - b.tn;
+      });
+    } else {
+      var st = e.cursor % cands.length;
+      cands = cands.slice(st).concat(cands.slice(0, st));
+    }
+
+    for (k = 0; k < cands.length; k++) {
+      c = cands[k];
       var path = [], px = c.x, py = c.y;
       for (var s = 0; s < TENDRIL_MAX; s++) {
         if (px < 0 || px >= COLS || py < 0 || py >= ROWS) break;
-        if (grid[py * COLS + px] !== EMPTY) break;
+        var sv = grid[py * COLS + px];
+        if (sv !== EMPTY && sv !== HOME) break;   // 同上：空白或玩家的地
         path.push(py * COLS + px);
         px += c.dx; py += c.dy;
       }
-      if (path.length > 0) { e.cursor = start + t + 1; return path; }
+      if (path.length > 0) { e.cursor++; return path; }
     }
     return null;
+  }
+
+  /** 找离 (x,y) 最近的**玩家领地**格；场上没有玩家的地就返回 null（第 4 条用）。
+      返回 `{x, y, d}`，`d` 是曼哈顿距离。 */
+  function nearestHome(x, y) {
+    if (!grid) return null;
+    var bx = -1, by = -1, bd = 1e9;
+    for (var i = 0; i < grid.length; i++) {
+      if (grid[i] !== HOME) continue;
+      var cx = i % COLS, cy = (i - cx) / COLS;
+      var d = Math.abs(cx - x) + Math.abs(cy - y);
+      if (d < bd) { bd = d; bx = cx; by = cy; if (d === 0) break; }
+    }
+    return bx < 0 ? null : { x: bx, y: by, d: bd };
   }
 
   /** 走一个计划步：落一格造物笔触，并查一次对称碰撞。 */
   function stepEnemy(e) {
     if (!grid || e.dead) return;
     if (!e.plan) {
-      var path = planTendril(e);
-      if (!path) { e.cooldown = ENEMY_STUCK_MS; return; }   // 暂时没地方长
+      /* ⚠ 顺序：**玩家近就先扑过去**（第 4 条「攻击欲望」），否则才先围自己的圈。
+         · 玩家领地离它 ≤ `ATTACK_RANGE` ⇒ 直接出触须、**朝着玩家的地**排 ——
+           触须能盖在玩家的地上（第 5 条），所以这一步是真的在抢地。
+         · 玩家远 ⇒ 老规矩：先试围地环，不行再退回触须。
+         · 都不行 = 真被堵死了 ⇒ 冷却后重试（场上的地会变）。 */
+      e.planRect = null;
+      var th = nearestHome(e.x, e.y);
+      var path = null;
+      if (th && th.d <= ATTACK_RANGE) path = planTendril(e, th);
+      if (!path) path = planRing(e);
+      if (!path) path = planTendril(e, th);
+      if (!path) { e.cooldown = ENEMY_STUCK_MS; return; }
       e.plan = path;
       e.planIdx = 0;
     }
     var idx = e.plan[e.planIdx];
     if (idx === undefined) { finishPlan(e); return; }
-    if (grid[idx] !== EMPTY) { abortPlan(e); return; }      // 半路被占了 ⇒ 作废
+    var v = grid[idx];
+    if (v === STROKE) {
+      /* 落在**玩家笔触**上 = 撞上（`handleCollision` 会把玩家整条清光 + 断自己这一笔）。
+         ⚠ 一律走碰撞、**不走"覆盖"**：覆盖只会打掉玩家笔触的**一格** ⇒ 把一条笔触
+           切成两截 ⇒ 破坏「笔触恒为单一 4 连通分量」这条不变量（`fillEnclosed` 会
+           把两截当两个分量处理）。碰撞则是整条清光，干净。 */
+      handleCollision(e);
+      return;
+    }
+    if (v !== EMPTY && v !== HOME) { abortPlan(e); return; }   // 被别的造物 / 自己占了 ⇒ 作废
     var x = idx % COLS, y = (idx - x) / COLS;
     e.x = x; e.y = y;
+    /* ⚠ `HOME`（玩家的地）也照盖 —— 这是第 5 条的对称那一半：
+       玩家能盖造物的地，造物也能盖玩家的地。 */
     grid[idx] = e.strokeCode;
     markDirty(idx);
     e.planIdx++;
@@ -810,20 +1080,39 @@
     if (e.planIdx >= e.plan.length) finishPlan(e);
   }
 
-  /** 计划走完：这一条触须**收编成自己的领地**（颜料干了）。 */
+  /**
+   * 计划走完。两条路：
+   *   · **围地环** → 调 `fillEnclosed`（自己的码）⇒ 环内**空白 + 玩家的地**一起收编
+   *   · **触须**   → 只把这一条收编（颜料干了）
+   * ⚠ 围地那条走的是**参数化**的 `fillEnclosed` —— 与玩家侧**同一个函数**，
+   *   所以「围地填充连对方一起填」这条规则对双方**字面上就是同一条**。
+   * ⚠ `fillEnclosed` **不 markDirty**（它只改 grid）⇒ 围地之后必须**整屏重画**，
+   *   否则这一圈在画面上根本不出现（「改了却没画出来」的那类假绿）。
+   */
   function finishPlan(e) {
-    for (var k = 0; k < e.plan.length; k++) {
-      var i = e.plan[k];
-      if (grid[i] === e.strokeCode) { grid[i] = e.homeCode; markDirty(i); }
+    var k, i;
+    if (e.planRect) {
+      fillEnclosed(grid, COLS, ROWS, e.homeCode, e.strokeCode, e.homeCode);
+      e.box = e.planRect;
+      e.cooldown = ENEMY_COOLDOWN_MS >> 1;
+      refreshBox(e);
+      fullRender();
+    } else {
+      for (k = 0; k < e.plan.length; k++) {
+        i = e.plan[k];
+        if (grid[i] === e.strokeCode) { grid[i] = e.homeCode; markDirty(i); }
+      }
+      e.cooldown = ENEMY_COOLDOWN_MS;
+      refreshBox(e);   // ⚠ 不刷新的话 box 落后 ⇒ 下一圈的环会压到自己刚长出来的地
+      scheduleRender();
     }
-    e.plan = null; e.planIdx = 0;
-    e.cooldown = ENEMY_COOLDOWN_MS;
-    scheduleRender();
+    e.plan = null; e.planIdx = 0; e.planRect = null;
   }
 
+  /** 计划作废（半路被占）：撤销笔触、停顿、下一轮重来。 */
   function abortPlan(e) {
     retractEnemyStroke(e);
-    e.plan = null; e.planIdx = 0;
+    e.plan = null; e.planIdx = 0; e.planRect = null;
     e.cooldown = ENEMY_COOLDOWN_MS;
   }
 
@@ -862,7 +1151,12 @@
       for (i = 0; i < n; i++) {
         if (grid[i] === e.homeCode) { total++; if (reach[i] === 0) unreach++; }
       }
-      if (total > 0 && unreach === total) captured.push(e);
+      /* ⚠ 2026-10-04：**`unreach === total` 就够了，`total > 0` 那个前提已去掉**。
+         因为「围地填充连对方一起填」会把圈里的造物地**直接填成玩家色** ——
+         那只造物的地**先没了**（`total` 变 0），随后 `resolveCaptures` 才跑。
+         不去掉的话，它地被填光了却**不算被吃掉**：画面上已经没它的颜色了，
+         而 `kills` 不动、它也不下场 —— 一个看不见的幽灵造物。 */
+      if (unreach === total) captured.push(e);
     }
     for (k = 0; k < captured.length; k++) captureEnemy(captured[k]);
     if (captured.length > 0) {
@@ -1022,7 +1316,14 @@
     for (var k = 0; k < enemies.length; k++) {
       var e = enemies[k];
       e.x += dx; e.y += dy;
-      e.plan = null; e.planIdx = 0; e.cooldown = ENEMY_COOLDOWN_MS;
+      /* ⚠ 领地外接矩形也要搬 —— 不搬的话下一圈的环会画到**旧坐标**上去，
+         而且不会报错（它只是围到一片空白上）。 */
+      if (e.box) {
+        e.box = { x0: e.box.x0 + dx, y0: e.box.y0 + dy,
+                  x1: e.box.x1 + dx, y1: e.box.y1 + dy };
+      }
+      e.plan = null; e.planIdx = 0; e.planRect = null;
+      e.cooldown = ENEMY_COOLDOWN_MS;
     }
     /* 朋友色一闪：格索引要按新宽度重新映射（否则会闪到错位）。 */
     for (var g = 0; g < flashGroups.length; g++) {
@@ -1059,13 +1360,17 @@
     if (!el.hud) return;
     var d = completionStat();
     var txt = UI_HUD.replace('%s', fmtClock(leftMs))
+                    .replace('%s', String(lives))
                     .replace('%d', String(kills))
                     .replace('%s', d.pct.toFixed(1) + '%');
     if (el.hud.textContent !== txt) el.hud.textContent = txt;
   }
 
-  /** 到点 —— 结算：完成度 / 击杀 / 最高纪录（存 localStorage）。 */
-  function finish() {
+  /**
+   * 一局结束 —— 结算：完成度 / 击杀 / 命 / 最高纪录（存 localStorage）。
+   * @param {string} [why] 提前结束的原因（例如三条命用完）；到点结束不传。
+   */
+  function finish(why) {
     if (finished) return;
     finished = true;
     settleAnim();
@@ -1080,13 +1385,13 @@
       /* ⚠ 隐私模式 / 配额满时 setItem 会抛 —— 包住，别让结算整段崩掉。 */
       try { global.localStorage.setItem(BEST_KEY, String(best)); } catch (err) { /* 隐私模式 */ }
     }
-    showResult(d.pct, d.colored, d.total, isNew);
+    showResult(d.pct, d.colored, d.total, isNew, why || '');
     fullRender();
   }
 
-  function showResult(pct, colored, total, isNew) {
+  function showResult(pct, colored, total, isNew, why) {
     if (!el.result) return;
-    var body = UI_RESULT_BODY
+    var body = (why ? why + ' · ' : '') + UI_RESULT_BODY
       .replace('%s', pct.toFixed(1) + '%')
       .replace('%d', String(colored))
       .replace('%d', String(total))
@@ -1112,6 +1417,7 @@
     settleAnim();
     stageIdx = 0;
     kills = 0;
+    lives = START_LIVES;         // 三条命（第 2 条）
     finished = false;
     leftMs = ROUND_MS;
     flashGroups = [];
@@ -1599,7 +1905,7 @@
     }
     return {
       ratio: playerRatio(), enemyCount: enemies.length, speedTier: speedTier,
-      kills: kills, stage: stageIdx, cols: COLS, rows: ROWS,
+      kills: kills, lives: lives, stage: stageIdx, cols: COLS, rows: ROWS,
       cap: enemyCap, floor: enemyFloor, leftMs: leftMs, best: best, finished: finished,
       drawing: drawing, penX: penX, penY: penY, enemies: list
     };
@@ -1747,6 +2053,47 @@
     return testState();
   }
 
+  /**
+   * **精确走一步**（调真实的 `stepTo`）。
+   * ⚠ 摇杆与键盘都是**按时间步进**的，走几格不可控；要画一个**确定的形状**
+   *   （比如「精确把造物的某一格围起来」）只能用这个口。
+   */
+  function testStep(dx, dy) {
+    if (!grid) return null;
+    stepTo(penX + (dx | 0), penY + (dy | 0));
+    return testState();
+  }
+
+  /**
+   * 立刻走一次**真实的收口**（`settleStroke`）—— 不必等笔踩回自己的领地。
+   * 给「用 `setPen` + `step` 摆好一笔、马上结算」的确定性断言用。
+   */
+  function testSettle() {
+    settleStroke();
+    return testState();
+  }
+
+  /**
+   * 强制造物 `k` 现在就走一次**围地环**：`planRing` → 逐步走完 → `finishPlan` 收口。
+   * 返回 `{ ok, reason }`；`ok=false` 时 reason 说明环为什么没成。
+   * ⚠ 真实路径里「环成不成」取决于它 box 周围的局面，**落点根本控不住** ——
+   *   所以「造物围地会吃掉圈里玩家的地」那条断言需要一个**强制入口**。
+   *   它走的是**同一个** `finishPlan`，收口行为一字不差。
+   */
+  function testForceRing(k) {
+    var e = enemies[k];
+    if (!grid || !e) return { ok: false, reason: 'no-enemy' };
+    refreshBox(e);
+    e.planRect = null;
+    var path = planRing(e);
+    if (!path) return { ok: false, reason: 'no-ring' };
+    e.plan = path;
+    e.planIdx = 0;
+    var guard = 0;
+    while (e.plan && guard++ < 5000) stepEnemy(e);
+    return { ok: true, reason: 'ok', state: testState() };
+  }
+
   var API = {
     title: '上色',
     hint: '把这张画，涂成你的颜色。',
@@ -1769,6 +2116,9 @@
       },
       penCell: function () { return { x: penX, y: penY }; },
       setPen: testSetPen,
+      step: testStep,
+      settle: testSettle,
+      forceRing: testForceRing,
       playerTerritory: testPlayerTerritory,
       strokeCells: testStrokeCells
     }
@@ -1912,6 +2262,7 @@
 
     /* ② / ③ 只留一份「墙」= 所有入选分量的格 + 它们的封口线 */
     var wall = new Uint8Array(n);
+    var blocked = 0;                  // 有多少分量「两端都贴家、但家不连通」⇒ 封不上口
     for (t = 0; t < comps.length; t++) {
       var c = comps[t];
       var ok = false;
@@ -1929,7 +2280,13 @@
         ok = true;
       } else if (anchored) {
         ok = true;
-        if (buildLid(grid, w, h, c.ends[0], c.ends[1], lid, homeCode) === null) ok = false;
+        if (buildLid(grid, w, h, c.ends[0], c.ends[1], lid, homeCode) === null) {
+          ok = false;
+          /* ⚠ **这不是普通的不入选**：两端各自都贴着家，只是那两块家**不 4 连通**
+             （玩家的地被啃断成几块时会这样）⇒ 封口线走不通 ⇒ 整笔静默被拒。
+             单列出来给调用方**说一声**，别让它悄悄失败（spec §6.3(i) / §12.1）。 */
+          blocked++;
+        }
       }
       if (!ok) continue;
       var k;
@@ -1964,17 +2321,35 @@
       }
     }
 
-    /* ⑤ 上色：内部空白 → owner；**所有 trail 格 → owner（无条件）**；
-       领地(1)/造物(>=3) 一律不动。
-       `interior` 单列出来：**只数「被围出来的空白」**（不含被收编的笔触本身）——
-       文案靠它选：interior==0 说明「这一笔没围住什么」，就不许再说「围住啦」。 */
-    var filled = 0, interior = 0;
+    /* ⑤ 上色：内部空白 → owner；**内部「对方的地」也 → owner**；
+       **所有 trail 格 → owner（无条件）**；owner 自己的领地(`homeCode`) 不动。
+
+       ⚠ **「围地填充时连对方一起填」是 2026-10-04 需求方点名要的改进（第 5 条）**：
+         谁围住一片，那片里**对方的地也一并归自己** —— 不必等把对方**整块**围死
+         （「整块围死」是 `resolveCaptures` 的事，那是**击杀**；这里是**抢地**）。
+         ⚠ 双方**共用这一条** ⇒ 玩家围地会吃掉圈里的造物地，
+           造物围地也会吃掉圈里玩家的地 —— 这就是需求方要的「完全对称」。
+         ⚠ 顺带：被围住的**对方笔触**（不是自家 trailCode 的那一档）也归 owner。
+
+       `interior` = **只数「被围出来的空白」**；`ate` = 被吃掉的**对方格子**数。
+       文案靠这两个选：**两个都是 0** 才说明「这一笔没围住什么」，那时才不许说「围住啦」。 */
+    var filled = 0, interior = 0, ate = 0;
     for (i = 0; i < n; i++) {
-      if (grid[i] === trailCode) { grid[i] = owner; filled++; continue; }
-      if (grid[i] !== 0) continue;
-      if (outside[i] === 0) { grid[i] = owner; filled++; interior++; }
+      if (grid[i] === trailCode) {
+        /* ⚠ **第 3 条（2026-10-04 需求方）**：只收编**入选分量**里的笔触。
+           原来这里是**无条件全收** —— 于是「什么都没围住的一笔」也会把自己的线
+           染成领地色（文案还写着「只有笔触本身留下了颜色」）。
+           需求方要的是 **没围住就不上色**（白画一场），所以闸门挪到这里：
+           分量没入选 ⇒ 这一格**留在 `trailCode`**，交给 `settleStroke` 淡去。
+           ⚠ 顺带把 §6.5「无条件收编」那条老规则**改掉了** —— 见规范附录 C.6。 */
+        if (wall[i] === 1) { grid[i] = owner; filled++; }
+        continue;
+      }
+      if (outside[i] !== 0) continue;                       // 外面的，一律不动
+      if (grid[i] === 0) { grid[i] = owner; filled++; interior++; continue; }
+      if (grid[i] !== homeCode) { grid[i] = owner; filled++; ate++; }   // 圈里对方的地 → 归我
     }
-    return { filled: filled, interior: interior };
+    return { filled: filled, interior: interior, ate: ate, blocked: blocked };
   }
 
   global.ElysiaGames = global.ElysiaGames || {};
