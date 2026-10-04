@@ -14,10 +14,11 @@ QUALITY = 82
 METHOD = 6          # 0~6，越大越慢压得越好
 MAX_EDGE = 1024     # 原始最大边就不超过它，这里只做保护性缩放
 
-# 站点真正引用的 8 张（images/raw/ 是素材，不转）
+# 站点真正引用的 10 张（images/raw/ 是素材，不转）
 TARGETS = [
     'armor-pink', 'armor-ego', 'armor-elf',
     'skin-1', 'skin-2', 'skin-3', 'skin-4', 'skin-5',
+    'griseo-young', 'griseo-grown',   # 格蕾修页「成长形态」两张真立绘（transparent PNG → webp）
 ]
 
 

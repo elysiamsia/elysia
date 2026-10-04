@@ -45,7 +45,7 @@
 | Ⅷ | 刹那 | 樱 | `sakura/` | ✅ **按位铺开的第一位，整页做完了**（2026-10-02 · **§2.3 的「上一轮」小节** / §10.10） |
 | **Ⅸ** | **旭光** | **科斯魔** | **`kosma/`** | ✅ **按位铺开的第二位，整页做完了**（2026-10-02 · **§2.3 的「上一轮」小节** / §10.10） |
 | **Ⅹ** | **无限** | **梅比乌斯** | **`mobius/`** | ✅ **已上线**（2026-10-01，见 **§2.3 的「上一轮」小节** / §10.9） |
-| **Ⅺ** | **繁星** | **格蕾修** | **`griseo/`** | ✅ **从零建成，整页做完了**（2026-10-03 · **§2.3 的「最近一轮」小节** / §10.12）。⚠ 小游戏「上色」另开一份计划（`plans/2026-10-03-griseo-game.md`），**尚未开始** |
+| **Ⅺ** | **繁星** | **格蕾修** | **`griseo/`** | ✅ **整页 + 小游戏「上色」都做完了**（页面 2026-10-03 · 小游戏 计划 B 2026-10-04 · **§2.3 的「最近一轮」小节** / §10.12）。小游戏计划：`plans/2026-10-03-griseo-game.md`（Task 1–5 全部完成，`assets/games/griseo.js`） |
 | Ⅻ | 浮生 | 华 | `hua/` | ⬜ **待建** |
 | ⅩⅢ | 空梦 | 帕朵菲莉丝 | `pardofelis/` | ⬜ **待建** |
 
@@ -272,7 +272,7 @@
 **公共层重构（2026-10-01）、明信片重做（2026-10-02）与格蕾修建页（2026-10-03）都已经做完。**
 下一步回到「铺开」与「建页」—— **下一次开工可以做第 3 条（按位铺开 · 其余 6 页）
 或第 5 条（建剩下 2 页）**。⚠ **格蕾修 2026-10-03 已从零建成**（第 5 条那 3 页里的第 1 页），
-她现在**只剩小游戏「上色」（计划 B，尚未开始）**。
+她现在**连小游戏「上色」也做完了**（计划 B · `plans/2026-10-03-griseo-game.md`，Task 1–5 全部完成）。
 
 1. ~~公共层重构 + `/mobius/` 上线~~ ← ✅ **2026-10-01 完成**（见 §2.3 与 §10.9）
    - 设计 spec：`docs/superpowers/specs/2026-10-01-elysiad-explore-refactor-design.md`
@@ -354,13 +354,11 @@
    > ⚠ 注意她**不属于上面第 3 条那 6 页** —— 那 6 页是「给已有页按位铺开」，
    > 而格蕾修是**从零新建**的那几页之一（同华 / 帕朵菲莉丝）。
 
-   > ⚠ **格蕾修的小游戏「上色」是独立的一份计划**（`docs/superpowers/plans/2026-10-03-griseo-game.md`），
-   > **尚未开始**。页面里**已经预留好接线**：`THEME.game` 已定义（`{ module:'griseo' }`）、
-   > `ElysiaBottom.mount` **故意不传 `game`**（传了但模块不存在 → `check_explore.py` 那条
-   > 「游戏卡文案 == 模块声明」**必红**，见 §6.4）、
-   > 加 `<script src="/assets/games/griseo.js">` 的那一行**上方有注释说明它留到计划 B 再加**。
-   > ⚠ 那两处（脚本行 + `mount({ game: THEME.game })`）**要一起打开** —— 单开脚本行会 404，
-   > 而 404 在 `check_explore.py` 里**算失败**（它收了 CDP 的 `Log` 域）。
+   > ✅ **格蕾修的小游戏「上色」也已做完**（独立计划 `docs/superpowers/plans/2026-10-03-griseo-game.md`，
+   > Task 1–5 全部完成，2026-10-04）。页面两处接线**都已打开**：`THEME.game` 已定义（`{ module:'griseo' }`）、
+   > `ElysiaBottom.mount({ game: THEME.game })` 已传、`<script src="/assets/games/griseo.js">` 已加载。
+   > ⚠ 那两处（脚本行 + `mount({ game })`）**当初要一起打开** —— 单开脚本行会 404，
+   > 而 404 在 `check_explore.py` 里**算失败**（它收了 CDP 的 `Log` 域）。**这一页已按正道接完。**
 
 6. 最后才是 P1 的 **Task 10（index 专项）/ 11（armor 专项）/ 12（收尾）**
    > 排在后面是有理由的：**别让新页面从一个「半迁移」的仓库起步**。
@@ -938,7 +936,7 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py "https://elysiad.top/sakura/" size 12
 | **⚠⚠ CDP 的输入坐标 ≠ 页面量出来的坐标** | 在 **mobile 模拟**下（`setDeviceMetricsOverride(mobile:true)`）**布局视口 ≠ 视觉视口**，而 CDP 的 `Input.dispatchMouseEvent` / `dispatchTouchEvent` 坐标走的是**视觉视口**，页面里 `getBoundingClientRect()` 给的却是**布局视口** —— 于是「照着 rect 派发」会**统一偏低 `visualViewport.offsetTop` 像素**。<br>2026-10-02 实测：320×568 那一档 `innerHeight` 631、`visualViewport.height` 568 → **offsetTop = 63**。照着按钮中心 `(160,504)` 派发，事件自报 `clientY=566` —— 落到了 `sakura-12` 上，遮罩**不开**；减掉 63 之后 `clientY=503`，命中的才是那个按钮。<br>⚠ **默认视口（不设 mobile）下 offsetTop 恒为 0**，所以老断言全都没受影响。**但任何要在手机视口上点/摸东西的断言，必须先减这个偏移** —— 否则它会「点到了别的东西」，而且**不报错**（点空、点偏都是静默的）。`check_explore.py` 已加 `_vv_offset()` 并用在触摸路径上；`Browser.press` / `release` / `center_of` **还没改**（它们只在默认视口下验证过） |
 | **⚠ 快照的 `SELECTORS` 没覆盖探索系统那批元素** | 那 39 个选择器里**没有** `.explore-find` / `.bottom-*` / `.game-card` / `#bdayEgg` / `#bdayPanel` / `#blade*` —— 所以这三块在差分里**只看得到高度（`body`/`html`），看不到内容**。<br>2026-10-02 实测的代价：本文档原先那条「改 `lab-06` 坐标会让 mobius 在差分里多出几处」的预告**是错的** —— 改 find 的坐标，快照**根本看不见**（那一条已就地更正）。<br>⚠ **推论：别拿「快照零差异」去证明这三块没坏。** 它们的正确性靠 `check_explore` / `check_aria_labels` 守。<br>（想让快照也看得见它们，得先把选择器加进 `SELECTORS`、**再重建基线** —— 加完那一次差分会在每一页都报「选择器新增」。） |
 | **⚠ 快照只采「每个选择器的首个实例」** | `snapshot.py` 的 `DUMP_JS` 用的是 **`document.querySelector(sel)`**（**不是 `querySelectorAll`**）—— 每个选择器**只采第一个匹配元素**。对**多实例**的类（`.hero-card` / `.quote-card` / `.timeline-node` / `.ending-star` …），**第 2 个之后的实例改了什么，快照一律看不见**。<br>2026-10-03 实测的代价：给 `data/timeline-data.js` 的 `her-11` 补 `url`（首页**第 11 张**名片 —— 格蕾修）→ 那张名片亮起可点的小星，而快照采的是**第 1 张**（凯文，位次 Ⅰ），于是**报「零差异」**。功能**确实生效**，但是靠**临时探针**（读第 11 张名片的 `class` / `href`）才证到的。<br>⚠ **推论**：`.hero-card` / `.quote-card` / `.timeline-node` / `.ending-star` 这类多实例选择器上，「快照零差异」**不等于**「没改」。要验第 N 个实例，**得另写探针**（`cdp.py … eval` 读它的属性 / 尺寸）。 |
-| **⚠ `check_explore.py` 有一条「游戏卡文案 == 模块声明」的断言** | 它比页面下方区块里游戏卡的标题 / 文案与 `window.ElysiaGames.<id>.title` / `.hint` 是否一致（守「`THEME.game` 与模块两边各写一份会 drift」，见 §10.5 合并 `BUILT`）。⚠ **它只在「没有游戏槽」时跳过** —— 判据是**页面有没有传 `game`**。所以：新页在**游戏模块还没建好之前，别传 `game`**（`ElysiaBottom.mount()` **不传参数**即可，断言会**正确地跳过**）；一旦传了 `game` 而 `assets/games/<角色>.js` 不存在，`bottom.js` 会建出**空的** `.bottom-game`，这条**必红**（`.bottom-game 是空的 —— 模块的 mount(host) 没往里渲染东西`）。<br>2026-10-03 实测：格蕾修的游戏是**独立的一份计划**（`plans/2026-10-03-griseo-game.md`，尚未开始），页面因此**故意不传 `game`**（`THEME.game` 已定义；加脚本那一行**上方有注释说明它留到计划 B 再加**，但两处接线先不开）—— **正道，不是造一个 stub 骗过断言**。 |
+| **⚠ `check_explore.py` 有一条「游戏卡文案 == 模块声明」的断言** | 它比页面下方区块里游戏卡的标题 / 文案与 `window.ElysiaGames.<id>.title` / `.hint` 是否一致（守「`THEME.game` 与模块两边各写一份会 drift」，见 §10.5 合并 `BUILT`）。⚠ **它只在「没有游戏槽」时跳过** —— 判据是**页面有没有传 `game`**。所以：新页在**游戏模块还没建好之前，别传 `game`**（`ElysiaBottom.mount()` **不传参数**即可，断言会**正确地跳过**）；一旦传了 `game` 而 `assets/games/<角色>.js` 不存在，`bottom.js` 会建出**空的** `.bottom-game`，这条**必红**（`.bottom-game 是空的 —— 模块的 mount(host) 没往里渲染东西`）。<br>2026-10-04 更新：格蕾修的游戏**已经建好并接上**（计划 B Task 1–5 全部完成），页面现在**已传 `game`**（`ElysiaBottom.mount({ game: THEME.game })` + `<script src="/assets/games/griseo.js">`）—— 当初「模块没建好前先不传」的做法**已被取代**，这条断言现在**真的在守她的游戏卡**（`check_explore` 里 ㉖「卡片文案与模块一致」）。 |
 | **连续跑多个页面时，偶尔 `ERR_CONNECTION_REFUSED … 127.0.0.1:8501`** | 2026-10-02 实测：连着跑 mobius → sakura 时，樱那次报了一条 `Failed to load resource: ERR_CONNECTION_REFUSED ← http://127.0.0.1:8501/assets/games/sakura.js`。<br>⚠ **那是工具自己起的那个 HTTP 服务器**没接住（前一个进程刚退出），**不是页面问题** —— 重跑一次即可（实测两遍全绿）。**别当成页面缺文件去查。**<br>（顺带：这条正是 `check_page_quiet` 收了 CDP 的 `Log` 域之后才看得见的 —— 资源加载失败**不走 `Runtime`**。）|
 | **⚠ 快照没跑完就跑差分 → 会「少报差异」** | `snapshot.py` 是 11 页 × 3 视口的慢循环，**跑完才落盘**。它还在跑的时候跑 `snapshot_diff.py`，读到的是**半份目录** —— 实测（2026-09-18）：提前跑报「1 处差异」，等它真跑完再跑是「**3 处**」。<br>⚠ 更坑的是它**不会报「快照缺失」** —— 目录里还没有的页，对它来说就是「不存在」，连提示都没有。<br>**判据**：`ls screenshots/snap/<label>/*.json \| wc -l` 必须等于 **`len(snapshot.PAGES) × 3`**（现在是 11 × 3 = **33**，总文件数 66）**且后台任务输出末尾出现 `快照存入 ……`、进程真的退出了**。<br>⚠️ **重跑同一个 label 时，文件数那条判据会骗你**（2026-10-01 实测）：旧文件还在目录里，**没覆盖到的页看起来也是「齐的」**。那次跑到第 5 页时数出来就是 66 —— 差一步就把半新半旧的目录比了。<br>→ **同一个 label 重跑时，只认「快照存入」那一行 + 进程退出**；文件数只对**全新的目录**有意义。 |
 
@@ -1054,7 +1052,7 @@ docs/superpowers/
     │                                             ★ **「从零建一整页」的实施样板**
     ├── 2026-10-03-griseo-finds-table.md         格蕾修 12 条**逐字核准表**
     │                                             ★ 改她的台词前先读这份；§三 记着四处裁决修正（R9/R13/R18/R19）
-    └── 2026-10-03-griseo-game.md                ⬜ **尚未开始（计划 B：小游戏「上色」）**
+    └── 2026-10-03-griseo-game.md                ✅ **已执行完（计划 B：小游戏「上色」，5 个任务）**
                                                   ⚠ 「上色」是独立的一份计划，不属于上面那个计划 A
 
 tools/README.md                                   本地工具说明
@@ -1089,7 +1087,7 @@ D:\claude-code\materials\<角色名>\                建站材料包（台词/�
 > ⚠ **格蕾修（2026-10-03）还没合并** —— 她在 `dev` 上，**等需求方合并**（不替他合）。
 > · **格蕾修那一轮的 spec/plan 是「从零建一整页」的样板**
 >   （`specs/2026-10-03-griseo-explore-design.md` /
->   `plans/2026-10-03-griseo-explore.md`；小游戏「上色」另见 `plans/2026-10-03-griseo-game.md`，**未开始**）。
+>   `plans/2026-10-03-griseo-explore.md`；小游戏「上色」另见 `plans/2026-10-03-griseo-game.md`，**已执行完**）。
 > · **明信片那一轮的 spec/plan 是「canvas 类改动」的样板**
 >   （`specs/2026-10-02-postcard-redesign-design.md` /
 >   `plans/2026-10-02-postcard-redesign.md`）—— 整张画在 `<canvas>` 上、**现有工具一个都测不到**，
@@ -1816,7 +1814,9 @@ Task 5 的实现脚本因为一处锚点写错（而那是**一步空操作**）
 > 开场 / 结尾 / 专属特效 / 专属模块 / 3 个彩蛋），再叠上探索系统与下方区块。
 > **一轮里做了两轮的活。**
 > ⚠ 她的**小游戏「上色」是独立的一份计划**（`plans/2026-10-03-griseo-game.md`），
-> **这一轮没做**；页面只**预留了接线**（`THEME.game` 已定义、`mount` 故意不传 `game`，见五）。
+> **本轮（建页那轮）没做**，当时页面只**预留了接线**。
+> ✅ **后续 2026-10-04 计划 B 已把「上色」做完并接上**（`assets/games/griseo.js`，
+> `mount({ game: THEME.game })` + `<script>` 两处都已打开）—— 上面那句「预留接线」是**当时**的状态。
 
 #### 一、⚠ 快照只采「每个选择器的首个实例」
 
@@ -1920,6 +1920,10 @@ spec §4.2 白纸黑字：**「`给予刻印` 那 17 条是本页的独白池…
 > ⚠ **要一起打开的地方有两处**：**脚本行** ＋ `mount({ game: THEME.game })`。
 > 单开脚本行 → **404**；而 `check_explore.py` 收了 CDP 的 `Log` 域，**404 算失败**。
 > 详见 §6.4 新增的那条。
+>
+> ✅ **后续（2026-10-04 计划 B）这两处都已打开**：`assets/games/griseo.js` 建好之后，
+> Task 2 就把脚本行 + `mount({ game: THEME.game })` 一起接上了（R35），Task 5 补了
+> `check_explore.py` 的 `GAMES` 登记 —— 上面那段「先不开」是**建页那轮**的状态。
 
 #### 六、材料包不是权威（`tail` 那句的根因）
 
