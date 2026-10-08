@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="same-origin">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="description" content="逐火十三英桀 · 位次 Ⅻ · 刻印「浮生」。">
+<link rel="canonical" href="https://elysiad.top/hua/">
+<title>elysiad.top/hua — 致华</title>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "elysiad.top/hua — 致华",
+  "url": "https://elysiad.top/hua/",
+  "description": "逐火十三英桀 · 位次 Ⅻ · 刻印「浮生」。",
+  "inLanguage": "zh-CN",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "elysiad.top — 致爱莉希雅",
+    "url": "https://elysiad.top/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "首页", "item": "https://elysiad.top/" },
+    { "@type": "ListItem", "position": 2, "name": "华", "item": "https://elysiad.top/hua/" }
+  ]
+}
+</script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="elysiad.top">
+<meta property="og:title" content="致华 — elysiad.top">
+<meta property="og:description" content="逐火十三英桀 · 位次 Ⅻ · 刻印「浮生」。五万年，她始终在路上。">
+<meta property="og:url" content="https://elysiad.top/hua/">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/explore.css">
+<!-- SECTION: page styles -->
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-abyss:#080c0f;--bg-deep:#0d1418;--bg-ink:#12211f;--bg-mid:#1a2f2b;
+  --acc:#8fb8ad;--acc-deep:#5c8a7e;--acc2:#cfd8d3;
+  --cinnabar:#c8402f;--moon:#f2ede2;--gold:#c9a86a;
+  --text:#e9efec;--text-dim:#a9bab3;--text-muted:#71847d;
+  --glass-bg:rgba(143,184,173,.05);--glass-border:rgba(143,184,173,.16);
+  --glass-bg2:rgba(201,168,106,.04);--glass-border2:rgba(201,168,106,.12);
+
+  /* 生日倒计时的配色覆盖（assets/explore.css 里那组 --bday-*）。
+     ⚠ 一个字都不新发明：全部从上面这套「太虚山的墨」里取 ——
+       她这一页是灰青绿（--acc）、丹砂（--cinnabar）加一抹金（--gold）。
+       不覆盖的话它会吃共享层的默认值，那是**首页爱莉希雅的粉紫**，串页。
+     ⚠ 三世切换（body.life-*）只换 --acc / --bg-* 那几支，**不换这一组** ——
+       胶囊跟着「她这一页」走，不跟着某一世走。 */
+  --bday-ink:#e9efec;                                  /* = --text */
+  --bday-accent:#8fb8ad;                               /* = --acc，圆点与强调 */
+  --bday-title:#a9bab3;                                /* = --text-dim */
+  --bday-date:#cfd8d3;                                 /* = --acc2 */
+  --bday-num:#c9a86a;                                  /* = --gold，倒计时那四位数 */
+  --bday-unit:#71847d;                                 /* = --text-muted */
+  --bday-egg-bg:linear-gradient(135deg,rgba(143,184,173,.16),rgba(201,168,106,.10));
+  --bday-egg-border:rgba(143,184,173,.25);
+  --bday-egg-glow:rgba(143,184,173,.18);
+  --bday-egg-glow-hover:rgba(143,184,173,.3);
+  --bday-panel-bg:linear-gradient(150deg,rgba(8,12,15,.92),rgba(26,47,43,.92));
+  --bday-panel-border:rgba(143,184,173,.22);
+  --bday-panel-glow:rgba(143,184,173,.12);
+  --bday-cell-bg:rgba(143,184,173,.07);
+  --bday-cell-border:rgba(143,184,173,.14);
+  --bday-src:rgba(169,186,179,.55);
+}
+body.life-chiyuan{
+  --bg-abyss:#100806;--bg-deep:#1a0e0a;--bg-ink:#26140e;--bg-mid:#331b12;
+  --acc:#d05a42;--acc-deep:#9c3a28;--acc2:#e8d9c0;
+  --glass-bg:rgba(208,90,66,.06);--glass-border:rgba(232,217,192,.16);
+  --glass-bg2:rgba(232,217,192,.05);--glass-border2:rgba(232,217,192,.14);
+}
+body.life-fuhua{
+  --bg-abyss:#080a12;--bg-deep:#0d1120;--bg-ink:#131a2e;--bg-mid:#1c2740;
+  --acc:#c9a86a;--acc-deep:#9a7c45;--acc2:#7fa8c9;
+  --glass-bg:rgba(201,168,106,.05);--glass-border:rgba(127,168,201,.16);
+  --glass-bg2:rgba(127,168,201,.05);--glass-border2:rgba(201,168,106,.12);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg-abyss);color:var(--text);overflow-x:hidden;line-height:1.7;
+  transition:background 1.1s ease,color 1.1s ease;
+}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg-abyss)}
+::-webkit-scrollbar-thumb{background:var(--acc-deep);border-radius:3px}
+
+#inkCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+
+/* SECTION: opening */
+.section-opening{
+  position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:2rem;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 6%,rgba(143,184,173,.08),transparent 70%),
+    linear-gradient(180deg,var(--bg-abyss) 0%,var(--bg-deep) 32%,var(--bg-ink) 62%,var(--bg-deep) 100%);
+  transition:background 1.1s ease;
+}
+.opening-ornament{font-size:1rem;color:var(--acc);letter-spacing:.7em;opacity:0;transition:opacity 1.2s ease;margin-bottom:1.3rem}
+.opening-title{
+  font-size:clamp(1.45rem,4.4vw,2.7rem);font-weight:300;letter-spacing:.14em;
+  color:var(--moon);text-shadow:0 0 30px rgba(143,184,173,.3);
+  min-height:1.8em;max-width:860px;
+}
+.typing-cursor{display:inline-block;font-weight:100;color:var(--acc);animation:blink-cursor .8s step-end infinite}
+.typing-cursor.hidden{display:none}
+@keyframes blink-cursor{0%,100%{opacity:1}50%{opacity:0}}
+.opening-subtitle{
+  font-size:clamp(.9rem,2.5vw,1.2rem);color:var(--text-dim);letter-spacing:.4em;
+  margin-top:1.5rem;opacity:0;transition:opacity 1.5s ease;
+}
+.opening-subtitle.visible{opacity:1}
+.opening-hint{font-size:.72rem;color:var(--text-muted);letter-spacing:.12em;margin-top:1rem;opacity:0;transition:opacity 1.5s ease 1s}
+.opening-hint.visible{opacity:.7}
+.scroll-hint{
+  position:absolute;bottom:calc(2.5rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  opacity:0;transition:opacity 1s ease .5s;
+}
+.scroll-hint.visible{opacity:.6}
+.scroll-hint span{font-size:.75rem;color:var(--text-muted);letter-spacing:.2em}
+.scroll-chevron{
+  width:20px;height:20px;border-right:2px solid var(--acc);border-bottom:2px solid var(--acc);
+  transform:rotate(45deg);animation:chevron-bounce 2.2s ease-in-out infinite;
+}
+@keyframes chevron-bounce{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(6px)}}
+
+/* SECTION: common section */
+.content-section{
+  position:relative;z-index:2;padding:6rem 1.5rem;
+  background:linear-gradient(180deg,transparent 0%,rgba(8,12,15,.28) 20%,rgba(8,12,15,.28) 80%,transparent 100%);
+}
+.section-title{
+  font-size:clamp(1.5rem,4vw,2.2rem);font-weight:300;letter-spacing:.26em;cursor:pointer;user-select:none;
+  color:var(--acc2);text-shadow:0 0 20px rgba(143,184,173,.22);transition:text-shadow .3s ease,color 1.1s ease;
+}
+.section-title:hover{text-shadow:0 0 30px rgba(143,184,173,.45)}
+.section-title-line{display:block;width:60px;height:1px;margin:1rem auto 0;background:linear-gradient(90deg,transparent,var(--acc),transparent)}
+.section-title-mark{display:inline-block;font-size:.72em;color:var(--acc);margin:0 .9rem;opacity:.9}
+
+/* SECTION: profile */
+.profile-card{
+  max-width:720px;margin:0 auto;padding:clamp(2rem,5vw,3rem);
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--glass-border);border-radius:24px;
+  box-shadow:0 0 50px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.05);
+  position:relative;overflow:hidden;transition:background 1.1s ease,border-color 1.1s ease;
+}
+.profile-card-inner{position:relative;z-index:1}
+.profile-name{
+  font-size:clamp(2rem,5.5vw,3rem);font-weight:300;letter-spacing:.3em;text-indent:.3em;cursor:pointer;user-select:none;
+  color:var(--moon);text-align:center;margin-bottom:.2em;text-shadow:0 0 26px rgba(143,184,173,.3);
+}
+.profile-name-en{
+  font-size:clamp(.85rem,1.9vw,1.05rem);font-weight:300;letter-spacing:.5em;text-indent:.5em;
+  color:var(--acc);text-align:center;margin-bottom:2rem;filter:brightness(1.15);
+}
+.profile-divider{width:100%;height:1px;margin:1.5rem 0;background:linear-gradient(90deg,transparent,var(--glass-border),var(--glass-border2),transparent)}
+.profile-grid{display:grid;grid-template-columns:auto 1fr;gap:.6rem 1.5rem;font-size:.92rem}
+.profile-label{color:var(--text-muted);white-space:nowrap;font-weight:400}
+.profile-value{color:var(--text);font-weight:300}
+.profile-value .highlight{color:var(--acc);font-weight:400}
+.profile-value .cinnabar{color:#e0705a;font-weight:400}
+.profile-value .goldc{color:var(--gold);font-weight:400}
+.profile-desc{
+  margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--glass-border);
+  font-size:.9rem;color:var(--text-dim);line-height:1.9;font-weight:300;
+}
+
+/* SECTION: lives (三世) */
+.lives-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.3rem;max-width:1020px;margin:0 auto}
+.life-card{
+  padding:1.6rem 1.5rem;cursor:pointer;user-select:none;position:relative;overflow:hidden;
+  background:linear-gradient(160deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:20px;
+  transition:transform .35s ease,box-shadow .35s ease,border-color .5s ease;
+  opacity:0;transform:translateY(26px);
+}
+.life-card.visible{opacity:1;transform:translateY(0)}
+.life-card:hover{transform:translateY(-4px)}
+.life-card.active{border-color:var(--lc);box-shadow:0 0 30px var(--lcg)}
+.life-era{font-size:.68rem;letter-spacing:.3em;color:var(--text-muted);margin-bottom:.5rem}
+.life-title{font-size:1.35rem;font-weight:400;letter-spacing:.14em;color:var(--lc,var(--acc));margin-bottom:.2rem}
+.life-sub{font-size:.78rem;color:var(--text-dim);letter-spacing:.08em;margin-bottom:.8rem}
+.life-detail{
+  max-height:0;overflow:hidden;opacity:0;font-size:.82rem;color:var(--text-dim);line-height:1.9;font-weight:300;
+  transition:max-height .5s ease,opacity .5s ease;
+}
+.life-card.active .life-detail{max-height:320px;opacity:1}
+.life-swatch{
+  position:absolute;top:1.1rem;right:1.1rem;width:14px;height:14px;border-radius:50%;
+  background:var(--lc);box-shadow:0 0 10px var(--lcg);
+}
+.lives-note{text-align:center;font-size:.75rem;color:var(--text-muted);letter-spacing:.12em;margin-top:1.6rem;opacity:.8}
+
+/* SECTION: timeline */
+.timeline{position:relative;max-width:800px;margin:0 auto;padding:2rem 0}
+.timeline-line{
+  position:absolute;left:50%;top:0;bottom:0;width:1px;
+  background:linear-gradient(180deg,transparent,var(--acc-deep) 10%,var(--acc) 50%,var(--acc-deep) 90%,transparent);
+  transform:translateX(-50%);transition:background 1.1s ease;
+}
+.timeline-node{
+  position:relative;display:flex;align-items:flex-start;margin-bottom:3rem;
+  opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;
+}
+.timeline-node.visible{opacity:1;transform:translateY(0)}
+.timeline-node:nth-child(odd){flex-direction:row}
+.timeline-node:nth-child(even){flex-direction:row-reverse}
+.timeline-dot{
+  position:absolute;left:50%;top:.5rem;width:12px;height:12px;border-radius:50%;
+  border:2px solid var(--acc);background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
+  box-shadow:0 0 12px rgba(143,184,173,.4);transition:background .3s;
+}
+.timeline-node.visible .timeline-dot{background:var(--acc)}
+.timeline-card{
+  width:calc(50% - 2.5rem);padding:1.2rem 1.5rem;cursor:pointer;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;transition:box-shadow .3s ease;
+}
+.timeline-card:hover{box-shadow:0 0 26px rgba(143,184,173,.12)}
+.timeline-node:nth-child(odd) .timeline-card{margin-right:auto}
+.timeline-node:nth-child(even) .timeline-card{margin-left:auto}
+.timeline-card h3{font-size:1.05rem;font-weight:400;color:var(--acc2);margin-bottom:.5rem;letter-spacing:.12em}
+.timeline-card p{font-size:.85rem;color:var(--text-dim);line-height:1.8;font-weight:300}
+.timeline-card .sword-flash{
+  position:absolute;top:0;bottom:0;width:38%;pointer-events:none;opacity:0;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.16),transparent);
+}
+.timeline-card .sword-flash.go{animation:sword-sweep .55s ease}
+@keyframes sword-sweep{0%{left:-45%;opacity:1}100%{left:110%;opacity:0}}
+
+/* SECTION: quotes */
+.quote-card{
+  padding:1.5rem;min-height:140px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
+  transition:transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
+}
+.quote-card:hover{transform:translateY(-3px);box-shadow:0 0 28px rgba(143,184,173,.13)}
+.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition:opacity .4s ease}
+.quote-text.fading{opacity:0}
+.quote-hint{position:absolute;bottom:.6rem;right:.8rem;font-size:.65rem;color:var(--text-muted);opacity:.4}
+
+/* SECTION: ending */
+.ending-quote{
+  font-size:clamp(1.05rem,3vw,1.5rem);font-weight:300;letter-spacing:.1em;cursor:pointer;user-select:none;
+  color:var(--moon);line-height:2.1;text-shadow:0 0 25px rgba(143,184,173,.25);
+  max-width:660px;
+}
+.ending-sub{
+  margin-top:1.6rem;font-size:.84rem;color:var(--text-dim);letter-spacing:.06em;line-height:2;
+  max-width:580px;opacity:0;transition:opacity 1s ease;min-height:1.4em;
+}
+.ending-sub.visible{opacity:.9}
+.ending-sub .src{display:block;font-size:.68rem;color:var(--text-muted);margin-top:.4rem;letter-spacing:.08em}
+.back-link{
+  color:var(--acc);border:1px solid var(--glass-border);background:rgba(143,184,173,.05);
+}
+.back-link:hover{background:rgba(143,184,173,.12);box-shadow:0 0 22px rgba(143,184,173,.2)}
+
+/* SECTION: feather fab (羽渡尘彩蛋) */
+#featherFab{
+  position:fixed;left:1.2rem;bottom:1.2rem;z-index:9990;
+  width:52px;height:52px;border-radius:50%;cursor:pointer;font-size:1.4rem;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(150deg,rgba(13,20,24,.92),rgba(26,47,43,.92));
+  border:1px solid var(--glass-border);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  box-shadow:0 0 18px rgba(143,184,173,.18);
+  transition:transform .25s ease,box-shadow .25s ease;
+  animation:fab-breathe 3.4s ease-in-out infinite;
+}
+#featherFab:hover{transform:scale(1.1) rotate(8deg);box-shadow:0 0 28px rgba(143,184,173,.35)}
+@keyframes fab-breathe{0%,100%{box-shadow:0 0 14px rgba(143,184,173,.14)}50%{box-shadow:0 0 24px rgba(143,184,173,.3)}}
+
+/* SECTION: burning memory effect */
+body.burning .timeline-card p,
+body.burning .quote-text,
+body.burning .profile-value,
+body.burning .life-detail,
+body.burning .profile-desc{
+  filter:blur(2.4px);opacity:.35;transition:filter .9s ease,opacity .9s ease;
+}
+body.burning .section-title{opacity:.45;transition:opacity .6s ease}
+
+/* SECTION: ink ripple */
+.ink-ring{
+  position:fixed;pointer-events:none;z-index:9993;border-radius:50%;
+  border:1.5px solid rgba(143,184,173,.55);
+  transform:translate(-50%,-50%) scale(0);opacity:.85;
+  animation:ink-spread .85s cubic-bezier(.22,.61,.36,1) forwards;
+}
+@keyframes ink-spread{to{transform:translate(-50%,-50%) scale(1);opacity:0}}
+
+/* SECTION: toast */
+#huaToast{
+  position:fixed;left:50%;bottom:15%;transform:translateX(-50%) translateY(10px);z-index:9996;
+  max-width:88vw;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;letter-spacing:.06em;
+  color:var(--text);background:linear-gradient(135deg,rgba(13,20,24,.95),rgba(26,47,43,.95));
+  border:1px solid var(--glass-border);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 6px 30px rgba(0,0,0,.5),0 0 22px rgba(143,184,173,.16);
+  opacity:0;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:opacity .35s ease,transform .35s ease;text-align:center;
+}
+#huaToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#huaToast.golden{color:#f5e6c8;border-color:rgba(201,168,106,.55);box-shadow:0 6px 30px rgba(0,0,0,.5),0 0 30px rgba(201,168,106,.3)}
+@media(max-width:600px){#huaToast{white-space:normal;line-height:1.6}}
+
+/* SECTION: game overlay (木人桩) */
+#huaGameOverlay{
+  position:fixed;inset:0;z-index:9997;display:none;align-items:center;justify-content:center;flex-direction:column;gap:.9rem;
+  background:rgba(4,8,6,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:1rem;
+}
+#huaGameOverlay.on{display:flex}
+.hg-head{display:flex;gap:1.4rem;color:var(--text-dim);font-size:.85rem;letter-spacing:.08em;font-variant-numeric:tabular-nums}
+.hg-head b{color:var(--gold)}
+.hg-grid{
+  display:grid;grid-template-columns:repeat(3,minmax(72px,20vw));grid-auto-rows:minmax(72px,20vw);
+  gap:10px;max-width:340px;
+}
+.hg-hole{
+  border-radius:14px;border:1px solid rgba(143,184,173,.2);background:rgba(18,33,31,.6);
+  display:flex;align-items:center;justify-content:center;font-size:1.7rem;cursor:pointer;user-select:none;
+  transition:transform .08s ease;position:relative;
+}
+.hg-hole:active{transform:scale(.95)}
+.hg-hole .dummy{
+  opacity:0;transform:translateY(14px) scale(.7);transition:opacity .16s ease,transform .16s ease;
+  display:flex;align-items:center;justify-content:center;
+  width:72%;height:72%;border-radius:50%;font-size:1.2rem;font-weight:600;letter-spacing:0;
+}
+.hg-hole.up .dummy{opacity:1;transform:translateY(0) scale(1)}
+.hg-hole.up .dummy.wood{background:radial-gradient(circle at 34% 30%,#a3793f,#6e4d24);color:#3a2810;border:2px solid #4a3316;box-shadow:0 0 14px rgba(163,121,63,.4)}
+.hg-hole.up .dummy.gold{background:radial-gradient(circle at 34% 30%,#f0d494,#c9a86a);color:#5a4416;border:2px solid #9a7c45;box-shadow:0 0 18px rgba(240,212,148,.55)}
+.hg-msg{color:var(--acc2);font-size:.88rem;letter-spacing:.06em;min-height:1.6em;text-align:center}
+.hg-btns{display:flex;gap:.8rem}
+.hg-btn{
+  min-height:44px;padding:.55rem 1.5rem;border-radius:999px;cursor:pointer;font-family:inherit;
+  border:1px solid var(--glass-border);background:rgba(143,184,173,.1);color:var(--acc2);
+  font-size:.85rem;letter-spacing:.12em;transition:background .3s,box-shadow .3s;
+}
+.hg-btn:hover{background:rgba(143,184,173,.2);box-shadow:0 0 16px rgba(143,184,173,.22)}
+.hg-btn.ghost{color:var(--text-muted);background:transparent}
+.hg-pop{
+  position:absolute;left:50%;top:10%;transform:translateX(-50%);pointer-events:none;
+  font-size:.85rem;font-weight:600;color:var(--gold);text-shadow:0 0 8px rgba(201,168,106,.6);
+  animation:hg-rise .7s ease-out forwards;white-space:nowrap;
+}
+.hg-pop.bad{color:#e05a45;text-shadow:0 0 8px rgba(224,90,69,.6)}
+@keyframes hg-rise{0%{opacity:0;transform:translate(-50%,4px)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-30px)}}
+
+/* SECTION: responsive */
+@media(max-width:768px){
+  .timeline-line{left:1.5rem}
+  .timeline-node,.timeline-node:nth-child(odd),.timeline-node:nth-child(even){flex-direction:row}
+  .timeline-dot{left:1.5rem}
+  .timeline-card,.timeline-node:nth-child(odd) .timeline-card,.timeline-node:nth-child(even) .timeline-card{
+    width:calc(100% - 3.5rem);margin-left:3.5rem;margin-right:0;
+  }
+  .quotes-grid{grid-template-columns:1fr}
+  .lives-grid{grid-template-columns:1fr}
+  .profile-grid{grid-template-columns:auto 1fr;gap:.5rem 1rem;font-size:.85rem}
+}
+@media(max-width:480px){
+  .content-section{padding:4rem 1rem}
+  .profile-card{padding:1.5rem}
+  .quote-card{min-height:120px;padding:1.2rem}
+  #featherFab{width:46px;height:46px;font-size:1.2rem;left:.8rem;bottom:.8rem}
+}
+@media(prefers-reduced-motion:reduce){
+  .life-card,.timeline-node{transition:none;opacity:1;transform:none}
+}
+</style>
+</head>
+<body data-life="1">
+
+<canvas id="inkCanvas"></canvas>
+
+<!-- SECTION: opening -->
+<section class="section-opening" id="opening">
+  <div class="opening-content">
+    <div class="opening-ornament" id="openingOrn">❖ ── ❖ ── ❖</div>
+    <h1 class="opening-title" id="typewriterText"></h1><span class="typing-cursor" id="typingCursor">|</span>
+    <p class="opening-subtitle" id="openingSub">欢迎来到太虚山</p>
+    <p class="opening-hint" id="openingHint">这一页藏着她的三段人生、一段被烧掉的记忆，和一座木人桩。</p>
+  </div>
+  <div class="scroll-hint" id="scrollHint">
+    <span>拾级而上</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</section>
+
+<!-- SECTION: about -->
+<section class="content-section" id="about">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❖</span>关于她<span class="section-title-mark">❖</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="profile-card">
+    <div class="profile-card-inner">
+      <div class="profile-name" id="profileName" role="button" tabindex="0">华</div>
+      <div class="profile-name-en">H U A</div>
+      <div class="profile-divider"></div>
+      <div class="profile-grid">
+        <span class="profile-label">别名</span>
+        <span class="profile-value"><span class="cinnabar">赤鸢仙人</span> · 符华 · 编号 MSA-209 / CM-014</span>
+        <span class="profile-label">出处</span>
+        <span class="profile-value">《崩坏3》第一文明纪元 → 第二文明纪元</span>
+        <span class="profile-label">身份</span>
+        <span class="profile-value">逐火之蛾融合战士 → 神州守护者 → 天命 A 级女武神 · 圣芙蕾雅学园班长</span>
+        <span class="profile-label">位次</span>
+        <span class="profile-value"><span class="highlight">Ⅻ</span></span>
+        <span class="profile-label">刻印</span>
+        <span class="profile-value"><span class="highlight">「浮生」</span>——脚踏实地的工作态度</span>
+        <span class="profile-label">生日</span>
+        <span class="profile-value"><span class="goldc">2月9日</span></span>
+        <span class="profile-label">身体数据</span>
+        <span class="profile-value">165cm / 53kg（五万多年了，一直是十七岁的样子）</span>
+        <span class="profile-label">融合崩坏兽</span>
+        <span class="profile-value">「迦楼罗」——古印度神话的巨型神鸟</span>
+        <span class="profile-label">神之键</span>
+        <span class="profile-value">第八神之键 <span class="highlight">「羽渡尘」</span>（意识之键）· 第十神之键 <span class="highlight">「太虚之握」</span>（支配之键 · 拳套）</span>
+        <span class="profile-label">武学</span>
+        <span class="profile-value">寸心拳法 · 太虚剑气（心 / 形 / 意 / 魂 / 神 五蕴）</span>
+        <span class="profile-label">配音</span>
+        <span class="profile-value">Mace（汉语）/ 高山南（日语）</span>
+        <span class="profile-label">珍视之物</span>
+        <span class="profile-value">一张晕开的旧照片——除了她，相纸上的人都已模糊难辨</span>
+      </div>
+      <div class="profile-desc">
+        沉默少言的年轻战士。彼时的少女青涩、迷茫，尚未预见自己明日的命途。未来永劫，她如一羽雏鸟，失去了来时的道路，亦不知去路的方向——但她还是一步一步，走了五万年。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: lives -->
+<section class="content-section" id="lives">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❖</span>她的三世<span class="section-title-mark">❖</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="lives-grid" id="livesGrid">
+    <div class="life-card active" id="life1" data-life="1" style="--lc:#8fb8ad;--lcg:rgba(143,184,173,.35)" role="button" tabindex="0">
+      <div class="life-swatch"></div>
+      <div class="life-era">第一文明纪元</div>
+      <div class="life-title">华</div>
+      <div class="life-sub">逐火之蛾 · 第五小队 · 融合战士</div>
+      <div class="life-detail">沧海市武馆的女儿，独自到长空市念书。崩坏爆发时她因恐惧抛下好友，这份愧疚成了往后五万年的刺。危机中喊出「我什么也做不到」的她觉醒了超变因子，成为融合战士——爱莉希雅为她办了欢迎会，教她「这里不讲上下关系」。融合「迦楼罗」，手持羽渡尘，以燃烧记忆为代价挥出每一拳。</div>
+    </div>
+    <div class="life-card" id="life2" data-life="2" style="--lc:#d05a42;--lcg:rgba(208,90,66,.35)" role="button" tabindex="0">
+      <div class="life-swatch"></div>
+      <div class="life-era">第二文明纪元 · 神州</div>
+      <div class="life-title">赤鸢</div>
+      <div class="life-sub">神州守护者 · 太虚剑派祖师</div>
+      <div class="life-detail">终焉之战后，火种的使命落在她肩上。沉睡五万年醒来，故人皆逝，她改名「赤鸢」，白发赤瞳，守护神州。她创立太虚剑派，收徒七人，史称「太虚七剑」；数千年间唯她与弟子程凌霜悟出太虚剑神。世人称她「唯一真仙」——直到 1476 年，天穹峰上，弟子合谋弑师，太虚山付之一炬。</div>
+    </div>
+    <div class="life-card" id="life3" data-life="3" style="--lc:#c9a86a;--lcg:rgba(201,168,106,.35)" role="button" tabindex="0">
+      <div class="life-swatch"></div>
+      <div class="life-era">现文明 · 至今</div>
+      <div class="life-title">符华</div>
+      <div class="life-sub">天命女武神 · 圣芙蕾雅学园班长</div>
+      <div class="life-detail">失去大半力量与剑心的仙人，与奥托达成交易，戴上红框眼镜，成为琪亚娜班上的班长。为压制空之律者，她发动羽渡尘第零额定功率，把意识搬进一根羽毛——空出来的身体里，诞生了识之律者。后来她们和解了。如今的她以「浮生·渡尘之羽」的姿态继续战斗，迦楼罗的火焰，还没有熄灭。</div>
+    </div>
+  </div>
+  <p class="lives-note">—— 点一段人生，这一页会陪她换一身颜色 ——</p>
+</section>
+
+<!-- SECTION: journey -->
+<section class="content-section" id="journey">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❖</span>她的浮生<span class="section-title-mark">❖</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="timeline">
+    <div class="timeline-line"></div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>沧海市</h3>
+        <p>武馆人家的女儿，独自离开故乡，到长空市的千羽学园读书，加入第五小队，编号 MSA-209。那是她第一次离开家，第一次拥有朋友——也是最后一次。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>心刺</h3>
+        <p>崩坏在长空市爆发。恐惧让她抛下了好友——这件事她记了五万年。后来她拼尽全力去「得到」，又总是立刻「失去」。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>觉醒</h3>
+        <p>战场上遭遇远超小队的崩坏兽，绝境中她喊出那句「我什么也做不到」——超变因子觉醒，成为融合战士。爱莉希雅接待了她，欢迎会上说：这里不讲上下关系。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>迦楼罗</h3>
+        <p>融合巨型神鸟「迦楼罗」的基因，成为对崩坏适应性最强的战士之一，也是「神音」实验唯一的存活者。羽渡尘认主——代价是，每一次全力出手，都要烧掉一段记忆。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>英桀</h3>
+        <p>「约束的惨剧」后，仅存的十三位融合战士被授予位次与刻印。她列第十二位，铭「浮生」。入队之初受爱莉希雅许多关照——那位粉色少女总以旁人想不到的方式解决问题。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>火种</h3>
+        <p>终焉之战，人类败了。伊甸把火种计划的使命交给她——比起留在过去的人，她这颗晨星更适合去开拓一个崭新的时代。她带着这句话，躺进了休眠舱。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>赤鸢</h3>
+        <p>五万年后醒来，世界已是第二文明。她改名赤鸢，行走神州，创立太虚剑派，收徒七人。数千年守护，世人称她仙人——只有她知道，自己只是想守住答应过的事。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>天穹峰</h3>
+        <p>1476 年，太虚七剑合谋弑师，火烧太虚山。她失去大半力量与不死之身，剑心碎裂，记忆残缺。有些东西，从此再也想不起来了。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>班长</h3>
+        <p>与奥托交易后，她以「符华」之名成为天命女武神，伪装成圣芙蕾雅学园的学生、琪亚娜班的班长。为压制空之律者，羽渡尘第零额定功率发动——意识移入羽毛，空出的身体里诞生了识之律者。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>渡尘之羽</h3>
+        <p>她与识之律者达成和解，取回身体。迦楼罗的超变因子再度激活——「浮生·渡尘之羽」，人为崩落，浴火而行。至于往世乐土里那个前文明的她，只留下一句告别，就把未来交给了来访者。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: quotes -->
+<section class="content-section" id="quotes">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❖</span>浮生之语<span class="section-title-mark">❖</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="quotes-grid" id="quotesGrid" data-primary-action></div>
+</section>
+
+<!-- SECTION: ending -->
+<section class="section-ending" id="ending">
+  <div class="ending-stars" id="endingStars"></div>
+  <p class="ending-quote" id="endingQuote" role="button" tabindex="0">谢谢你们帮助了未来的我。<br>至于「过去」……它早已是「未来」的一部分了，不是么？</p>
+  <p class="ending-sub" id="endingSub"></p>
+  <p class="ending-attr" id="endingAttr">致华 · elysiad.top/hua</p>
+  <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
+  <div class="ending-fade"></div>
+</section>
+
+<!-- SECTION: feather fab -->
+<button id="featherFab" aria-label="羽渡尘" title="羽渡尘">🪶</button>
+
+<!-- SECTION: game overlay -->
+<div id="huaGameOverlay" aria-hidden="true">
+  <div class="hg-head">
+    <span>得分 <b id="hgScore">0</b></span>
+    <span>连击 <b id="hgCombo">0</b></span>
+    <span>剩余 <b id="hgTime">45</b>s</span>
+    <span>最佳 <b id="hgBest">0</b></span>
+  </div>
+  <div class="hg-grid" id="hgGrid"></div>
+  <p class="hg-msg" id="hgMsg">敲木桩，练寸劲。金色的小师妹是自己人——千万别打。</p>
+  <div class="hg-btns">
+    <button class="hg-btn" id="hgStart">开始修行</button>
+    <button class="hg-btn ghost" id="hgClose">下山</button>
+  </div>
+</div>
+
+<div id="huaToast" role="status"></div>
+
+<!-- SECTION: shared layer -->
+<script src="/assets/site.js"></script>
+<script src="/assets/explore.js"></script>
+<script src="/assets/bottom.js"></script>
+<script src="/assets/bday.js"></script>
+<script src="/data/bdays.js"></script>
+
+<!-- SECTION: page script -->
+<script>
+(function(){
+  /* ============ 游戏模块：木人桩·寸劲修行 ============ */
+  window.ElysiaGames = window.ElysiaGames || {};
+  window.ElysiaGames.hua = (function(){
+    var overlay = document.getElementById('huaGameOverlay');
+    var gridEl = document.getElementById('hgGrid');
+    var scoreEl = document.getElementById('hgScore');
+    var comboEl = document.getElementById('hgCombo');
+    var timeEl = document.getElementById('hgTime');
+    var bestEl = document.getElementById('hgBest');
+    var msgEl = document.getElementById('hgMsg');
+    var startBtn = document.getElementById('hgStart');
+    var closeBtn = document.getElementById('hgClose');
+    var holes = [];
+    var score = 0, combo = 0, timeLeft = 45;
+    var running = false, spawnTimer = null, tickTimer = null;
+    var best = 0;
+    try { best = parseInt(localStorage.getItem('huaDummyBest') || '0', 10) || 0; } catch(err){ best = 0; }
+    bestEl.textContent = String(best);
+
+    for (var i = 0; i < 9; i++){
+      var hole = document.createElement('div');
+      hole.className = 'hg-hole';
+      var dummy = document.createElement('div');
+      dummy.className = 'dummy wood';
+      dummy.textContent = '桩';
+      hole.appendChild(dummy);
+      (function(h, idx){
+        h.addEventListener('click', function(){ onHit(h, idx); });
+      })(hole, i);
+      gridEl.appendChild(hole);
+      holes.push({ el: hole, dummy: dummy, up: false, gold: false, hideTimer: null });
+    }
+
+    function onHit(h, idx){
+      if (!running) return;
+      var slot = holes[idx];
+      if (!slot.up){
+        combo = 0;
+        comboEl.textContent = '0';
+        return;
+      }
+      slot.up = false;
+      clearTimeout(slot.hideTimer);
+      h.classList.remove('up');
+      if (slot.gold){
+        score = Math.max(0, score - 20);
+        combo = 0;
+        popText(h, '-20 自己人！', true);
+        msgEl.textContent = '「……那是小师妹。收着力点。」';
+        blip(160, 0.2, 'sawtooth', 0.2);
+      } else {
+        combo++;
+        var gain = 10 + Math.min(combo, 10) * 2;
+        score += gain;
+        popText(h, '+' + gain, false);
+        blip(520 + Math.min(combo, 12) * 30, 0.07, 'triangle', 0.22);
+        if (combo === 8) msgEl.textContent = '「寸劲——开天！」';
+        if (combo === 15) msgEl.textContent = '「不错的力道。继续。」';
+      }
+      scoreEl.textContent = String(score);
+      comboEl.textContent = String(combo);
+    }
+
+    function popText(h, text, bad){
+      var p = document.createElement('div');
+      p.className = 'hg-pop' + (bad ? ' bad' : '');
+      p.textContent = text;
+      h.appendChild(p);
+      setTimeout(function(){ p.remove(); }, 750);
+    }
+
+    function spawn(){
+      if (!running) return;
+      var free = holes.filter(function(s){ return !s.up; });
+      if (!free.length) return;
+      var slot = free[Math.floor(Math.random() * free.length)];
+      slot.up = true;
+      slot.gold = Math.random() < 0.16;
+      slot.dummy.className = 'dummy ' + (slot.gold ? 'gold' : 'wood');
+      slot.dummy.textContent = slot.gold ? '妹' : '桩';
+      slot.el.classList.add('up');
+      slot.hideTimer = setTimeout(function(){
+        slot.up = false;
+        slot.el.classList.remove('up');
+      }, 620 + Math.random() * 420);
+      var next = Math.max(280, 620 - (45 - timeLeft) * 7) + Math.random() * 220;
+      spawnTimer = setTimeout(spawn, next);
+    }
+
+    function start(){
+      score = 0; combo = 0; timeLeft = 45;
+      scoreEl.textContent = '0';
+      comboEl.textContent = '0';
+      timeEl.textContent = '45';
+      msgEl.textContent = '「站定，凝神。修行开始。」';
+      startBtn.textContent = '重新修行';
+      running = true;
+      clearTimeout(spawnTimer);
+      clearInterval(tickTimer);
+      spawnTimer = setTimeout(spawn, 500);
+      tickTimer = setInterval(function(){
+        timeLeft--;
+        timeEl.textContent = String(timeLeft);
+        if (timeLeft <= 0) finish();
+      }, 1000);
+    }
+
+    function finish(){
+      running = false;
+      clearTimeout(spawnTimer);
+      clearInterval(tickTimer);
+      holes.forEach(function(s){ s.up = false; clearTimeout(s.hideTimer); s.el.classList.remove('up'); });
+      var rank = score < 150 ? '初入门径' : (score < 320 ? '太虚外门' : (score < 520 ? '太虚七剑候补' : '赤鸢亲传'));
+      var newBest = score > best;
+      if (newBest){
+        best = score;
+        try { localStorage.setItem('huaDummyBest', String(best)); } catch(err){}
+        bestEl.textContent = String(best);
+      }
+      msgEl.textContent = '得分 ' + score + ' ·「' + rank + '」' + (newBest ? ' ——新纪录。她微微点头。' : ' ——「再来。」');
+    }
+
+    startBtn.addEventListener('click', start);
+    closeBtn.addEventListener('click', function(){
+      overlay.classList.remove('on');
+      overlay.setAttribute('aria-hidden','true');
+      finish();
+    });
+
+    function blip(freq, dur, type, vol){
+      try{
+        if (!window.__huaAC){
+          var AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return;
+          window.__huaAC = new AC();
+        }
+        var ac = window.__huaAC;
+        if (ac.state === 'suspended') ac.resume();
+        var t = ac.currentTime;
+        var osc = ac.createOscillator();
+        var gain = ac.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(50, freq * 0.5), t + dur);
+        gain.gain.setValueAtTime(vol, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        osc.connect(gain);
+        gain.connect(ac.destination);
+        osc.start(t);
+        osc.stop(t + dur + 0.05);
+      } catch(err){}
+    }
+
+    return {
+      title: '木人桩 · 寸劲修行',
+      hint: '木人桩会冒头——用寸劲敲回去。金色的小师妹是自己人，千万别打。',
+      mount: function(host){
+        var btn = document.createElement('button');
+        btn.className = 'hg-btn';
+        btn.style.marginTop = '.8rem';
+        btn.textContent = '入山修行';
+        btn.addEventListener('click', function(){
+          overlay.classList.add('on');
+          overlay.setAttribute('aria-hidden','false');
+        });
+        host.appendChild(btn);
+      },
+      open: function(){
+        overlay.classList.add('on');
+        overlay.setAttribute('aria-hidden','false');
+      }
+    };
+  })();
+
+  /* ============ THEME（按共享层 schema） ============ */
+  var THEME = {
+    endingStars: {
+      count: [80, 12],
+      size: [0.5, 2],
+      minO: [0.08, 0.3], maxO: [0.45, 0.5],
+      dur: [2.4, 4], delay: [0, 5],
+      colors: { pool: ['#ffffff', '#8fb8ad', '#c9a86a', '#d05a42'] },
+    },
+    quotes: {
+      list: [
+        '「我还是我，在成为未来的我之前，还有一条距离未知的路要走。命运只有一种，谁也无法绕开。」',
+        '「浮生碌碌，切莫无为。」',
+        '「我不认为自己有教导你的资格，我只会与你同行。」',
+        '「我不想让你走上和我们完全相同的道路，但你应该知晓我们曾在何处，为何而跌倒。」',
+        '「至少你要坚持到那一刻。这里远比你想象中的更加凶险，绝不能掉以轻心。」',
+        '「念死无常，生灭有时！」',
+        '「寸劲——开天！」',
+        '「今时往昔，凡障皆破！」',
+        '「在入队之初，我受过爱莉希雅许多关照。她似乎和每个人都亲近，也总能以旁人意想不到的方式解决问题。」',
+        '「初次见面，后继者。我的名字是华，「浮生」的刻印……我会帮助你熟悉它的。」'
+      ],
+      ariaLabel: '浮生之语，点击切换',
+    },
+    typewriter: {
+      text: '命运只有一种，谁也无法绕开。',
+      delay: 150, jitter: 80, startDelay: 800,
+      tailDelay: 600, hintDelay: 1200,
+      hintEl: true,
+      preReveal: 'openingOrn',
+    },
+    explore: {
+      pageId: 'hua',
+      finds: [
+        { id:'hua-01', at:'#opening', x:0.10, y:0.22, verb:'click',      art:'blade',
+          line:'初次见面，后继者。我的名字是华，「浮生」的刻印……我会帮助你熟悉它的。',
+          src:'官方档案馆 · 事件-华 · 给予刻印·其一' },
+        { id:'hua-02', at:'#about',   x:0.08, y:0.15, verb:'hold',       art:'glint',
+          line:'至少你要坚持到那一刻。这里远比你想象中的更加凶险，绝不能掉以轻心。',
+          src:'官方档案馆 · 事件-华 · 给予刻印·其一' },
+        { id:'hua-03', at:'#about',   x:0.92, y:0.88, verb:'triple_tap', art:'sheath',
+          line:'我不认为自己有教导你的资格，我只会与你同行。',
+          src:'官方档案馆 · 事件-华 · 给予刻印·其二' },
+        { id:'hua-04', at:'#lives',   x:0.07, y:0.30, verb:'slide',      art:'dawn',
+          line:'我不想让你走上和我们完全相同的道路，但你应该知晓我们曾在何处，为何而跌倒。',
+          src:'官方档案馆 · 事件-华 · 给予刻印·其四' },
+        { id:'hua-05', at:'#lives',   x:0.93, y:0.66, verb:'click',      art:'silhouette',
+          line:'那是华第一次离开故乡，第一次拥有友人，第一次真正地亲近世界。也是最后一次。',
+          src:'官方档案馆 · 追忆「故乡」' },
+        { id:'hua-06', at:'#journey', x:0.08, y:0.18, verb:'hold',       art:'petal',
+          line:'——哦？华……你是想要去什么地方吗？——……或许吧',
+          src:'官方档案馆 · 追忆「故乡」' },
+        { id:'hua-07', at:'#journey', x:0.92, y:0.40, verb:'drag',       art:'moon',
+          line:'——华，你连照相的时候都不肯笑一笑吗？',
+          src:'官方档案馆 · 追忆「纪念」' },
+        { id:'hua-08', at:'#journey', x:0.08, y:0.64, verb:'click',      art:'blade',
+          line:'——真神奇。为什么是变成了拳套呢？要我说，明明是挥剑更帅气点嘛。',
+          src:'官方档案馆 · 追忆「决意」' },
+        { id:'hua-09', at:'#quotes',  x:0.94, y:0.30, verb:'triple_tap', art:'glint',
+          line:'寸劲——开天！',
+          src:'游戏内 · 女武神·迅羽 战斗语音' },
+        { id:'hua-10', at:'#quotes',  x:0.06, y:0.72, verb:'slide',      art:'sheath',
+          line:'念死无常，生灭有时！',
+          src:'游戏内 · 浮生·渡尘之羽 战斗语音' },
+        { id:'hua-11', at:'#ending',  x:0.12, y:0.40, verb:'hold',       art:'moon',
+          line:'在入队之初，我受过爱莉希雅许多关照。',
+          src:'官方档案馆 · 英桀档案 · 华评爱莉希雅' },
+        { id:'hua-12', at:'#bottom',  x:0.50, y:0.12, verb:'click',      art:'petal',
+          line:'——诶？你刚才……说了谁的名字吗？',
+          src:'官方档案馆 · 追忆「纪念」' },
+      ],
+      unlock: {
+        title: '五万年，她始终在路上',
+        text: '「继续前进吧，你不应在此停下脚步。」',
+        src: '官方档案馆 · 事件-华 · 给予刻印·其三',
+      },
+      whisper: [
+        '「切莫无为。」',
+        '「我会与你同行。」',
+        '「继续前进吧。」',
+        '「生灭……有时。」',
+      ],
+      whisperCooldownMs: 12000,
+    },
+    game: { module: 'hua' },
+  };
+
+  /* ============ 共享层挂载 ============ */
+  ElysiaShared.buildQuoteCards({
+    grid: document.getElementById('quotesGrid'),
+    quotes: THEME.quotes.list,
+    ariaLabel: THEME.quotes.ariaLabel,
+  });
+  ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+  ElysiaShared.observeReveal('.timeline-node');
+  ElysiaShared.observeReveal('.life-card');
+  ElysiaShared.observeReveal('#ending', {
+    threshold: 0.3, reveal: ['endingQuote', 'endingAttr', 'backLink'],
+  });
+  ElysiaShared.makeTypewriter(THEME.typewriter);
+  ElysiaExplore.init(THEME.explore);
+  ElysiaBottom.mount({ game: THEME.game });
+  ElysiaBday.mount();   /* 生日 2/9 已在 data/bdays.js 登记，自动生效 */
+
+  /* ============ toast ============ */
+  var toastEl = document.getElementById('huaToast');
+  var toastTimer = null;
+  function showToast(text, golden){
+    clearTimeout(toastTimer);
+    toastEl.textContent = text;
+    toastEl.classList.toggle('golden', !!golden);
+    toastEl.classList.remove('show');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, golden ? 4200 : 3000);
+  }
+
+  /* ============ 三世切换（大彩蛋其一） ============ */
+  var lifeCards = document.querySelectorAll('.life-card');
+  var lifeToasts = {
+    '1': '第一世 ·「华」——那时她还相信，努力就一定能守住什么。',
+    '2': '第二世 ·「赤鸢」——白发赤瞳，神州称仙。山门焚毁之前，她守了几千年。',
+    '3': '第三世 ·「符华」——红框眼镜，全班最稳的班长。羽渡尘的羽毛，还剩几根呢。',
+  };
+  function setLife(n){
+    document.body.classList.remove('life-chiyuan','life-fuhua');
+    document.body.setAttribute('data-life', n);
+    if (n === '2') document.body.classList.add('life-chiyuan');
+    if (n === '3') document.body.classList.add('life-fuhua');
+    lifeCards.forEach(function(c){
+      c.classList.toggle('active', c.getAttribute('data-life') === n);
+    });
+    showToast(lifeToasts[n], n === '2');
+    if (!reducedMotion){
+      var r = document.getElementById('life' + n).getBoundingClientRect();
+      inkBurst(r.left + r.width / 2, r.top + 20, 10);
+    }
+  }
+  lifeCards.forEach(function(c){
+    c.addEventListener('click', function(){ setLife(c.getAttribute('data-life')); });
+    c.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setLife(c.getAttribute('data-life')); }
+    });
+  });
+
+  /* ============ 点名字（反馈彩蛋） ============ */
+  var nameEl = document.getElementById('profileName');
+  var nameLines = [
+    '「嗯。有何贵干？」',
+    '「浮生碌碌，切莫无为。」',
+    '「修行不辍，方得始终。」',
+    '「……你叫我班长？琪亚娜才这么叫。」',
+    '「我不认为自己有教导你的资格。不过——可以陪你练两招。」'
+  ];
+  var nameIdx = 0;
+  nameEl.addEventListener('click', function(){
+    showToast(nameLines[nameIdx % nameLines.length], false);
+    nameIdx++;
+  });
+  nameEl.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nameEl.click(); }
+  });
+
+  /* ============ 时间线卡：剑气掠过 ============ */
+  document.querySelectorAll('.timeline-card').forEach(function(card){
+    var flash = document.createElement('div');
+    flash.className = 'sword-flash';
+    card.appendChild(flash);
+    card.addEventListener('click', function(){
+      flash.classList.remove('go');
+      void flash.offsetWidth;
+      flash.classList.add('go');
+      blip(700, 0.06, 'sine', 0.08);
+    });
+  });
+
+  /* ============ 结尾心声 ============ */
+  var endingQuote = document.getElementById('endingQuote');
+  var endingSub = document.getElementById('endingSub');
+  var hearts = [
+    { t: '她总是拼尽全力「得到」一些，而后立刻「失去」。', s: '官方档案馆 · 追忆「故乡」' },
+    { t: '即便如此，她也依旧执拗地将那张照片带在身边。这成为了她为数不多的坚持。', s: '官方档案馆 · 追忆「纪念」' },
+    { t: '只是……故土遥远，此生难及。', s: '官方档案馆 · 追忆「故乡」' },
+    { t: '彼时的少女青涩、迷茫，尚未预见自己明日的命途。', s: '官方档案馆 · 英桀档案 · 简介' },
+  ];
+  var heartIdx = 0;
+  endingQuote.addEventListener('click', function(){
+    var h = hearts[heartIdx % hearts.length];
+    heartIdx++;
+    endingSub.textContent = '「' + h.t + '」';
+    var src = document.createElement('span');
+    src.className = 'src';
+    src.textContent = '—— ' + h.s;
+    endingSub.appendChild(src);
+    endingSub.classList.add('visible');
+    if (!reducedMotion){
+      var r = endingQuote.getBoundingClientRect();
+      inkBurst(r.left + r.width / 2, r.top + r.height / 2, 10);
+    }
+  });
+  endingQuote.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); endingQuote.click(); }
+  });
+
+  /* ============ 羽渡尘 · 记忆焚烧（大彩蛋其二） ============ */
+  var featherFab = document.getElementById('featherFab');
+  var burning = false;
+  var burnPool = '浮生碌碌切莫无为念死无常生灭有时命运只有一种谁也无法绕开'.split('');
+  featherFab.addEventListener('click', function(){
+    if (burning) return;
+    burning = true;
+    document.body.classList.add('burning');
+    showToast('羽渡尘 · 第零额定功率——有些记忆，先烧为敬。', true);
+    emberBurst();
+    /* 随机三段标题文字被「烧乱」 */
+    var titles = Array.prototype.slice.call(document.querySelectorAll('.section-title'));
+    var picked = [];
+    while (picked.length < 3 && titles.length){
+      var t = titles.splice(Math.floor(Math.random() * titles.length), 1)[0];
+      picked.push({ el: t, html: t.textContent });
+    }
+    var scramble = setInterval(function(){
+      picked.forEach(function(p){
+        var len = Math.min(p.html.length, 12);
+        var out = '';
+        for (var k = 0; k < len; k++){
+          out += burnPool[Math.floor(Math.random() * burnPool.length)];
+        }
+        p.el.textContent = out;
+      });
+    }, 110);
+    setTimeout(function(){
+      clearInterval(scramble);
+      picked.forEach(function(p){ p.el.textContent = p.html; });
+      document.body.classList.remove('burning');
+      burning = false;
+      showToast('……放心。重要的事，我都还记得。', false);
+    }, 3200);
+  });
+
+  /* ============ canvas：羽 · 墨尘 · 剑气 ============ */
+  var canvas = document.getElementById('inkCanvas');
+  var ctx = canvas.getContext('2d');
+  var W, H;
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var lifePalettes = {
+    '1': { feather: ['#8fb8ad','#cfd8d3','#5c8a7e'], dust: '#cfd8d3' },
+    '2': { feather: ['#d05a42','#e8d9c0','#9c3a28'], dust: '#e8d9c0' },
+    '3': { feather: ['#c9a86a','#7fa8c9','#9a7c45'], dust: '#c9a86a' },
+  };
+  function palette(){ return lifePalettes[document.body.getAttribute('data-life') || '1']; }
+
+  var P = { W: 0, H: 0 };
+  var resize = ElysiaShared.makeResize(canvas, P);
+  resize();
+  window.addEventListener('resize', function(){
+    resize();
+    for (var j = 0; j < feathers.length; j++){
+      if (feathers[j].x > P.W) feathers[j].x = Math.random() * P.W;
+    }
+  });
+
+  var feathers = [];
+  var featherCount = Math.min(24, Math.floor(window.innerWidth / 55));
+  function createFeather(fromTop){
+    return {
+      x: Math.random() * P.W,
+      y: fromTop ? -16 - Math.random() * 80 : Math.random() * P.H,
+      size: 5 + Math.random() * 8,
+      speedY: 0.18 + Math.random() * 0.38,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.012,
+      swayAmp: 14 + Math.random() * 26,
+      swaySpd: 0.004 + Math.random() * 0.007,
+      swayOff: Math.random() * Math.PI * 2,
+      opacity: 0.12 + Math.random() * 0.28,
+    };
+  }
+  for (var fi = 0; fi < featherCount; fi++) feathers.push(createFeather(false));
+
+  var dusts = [];
+  var dustCount = Math.min(34, Math.floor(window.innerWidth / 36));
+  function createDust(){
+    return {
+      x: Math.random() * P.W,
+      y: Math.random() * P.H,
+      size: 0.3 + Math.random() * 1.5,
+      speedY: -(0.04 + Math.random() * 0.14),
+      baseOpacity: 0.08 + Math.random() * 0.3,
+      twinkleSpd: 0.005 + Math.random() * 0.018,
+      twinkleOff: Math.random() * Math.PI * 2,
+    };
+  }
+  for (fi = 0; fi < dustCount; fi++) dusts.push(createDust());
+
+  var swordStreak = null;
+  var bursts = [];
+  var embers = [];
+  var time = 0;
+  var scrollRatio = 0;
+  window.addEventListener('scroll', function(){
+    var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    scrollRatio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+  });
+
+  function animate(){
+    if (reducedMotion) return;
+    time++;
+    ctx.clearRect(0, 0, P.W, P.H);
+    var fade = 1 - scrollRatio * 0.5;
+    var pal = palette();
+    var i, f, d, tw;
+
+    for (i = 0; i < dusts.length; i++){
+      d = dusts[i];
+      d.y += d.speedY;
+      if (d.y < -8){ d.y = P.H + 8; d.x = Math.random() * P.W; }
+      tw = 0.5 + 0.5 * Math.sin(time * d.twinkleSpd + d.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = d.baseOpacity * tw * fade;
+      ctx.fillStyle = pal.dust;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, Math.max(0.25, d.size), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (i = 0; i < feathers.length; i++){
+      f = feathers[i];
+      f.y += f.speedY;
+      f.x += Math.sin(time * f.swaySpd + f.swayOff) * 0.35;
+      f.rotation += f.rotSpeed;
+      if (f.y > P.H + 24){ feathers[i] = createFeather(true); f = feathers[i]; }
+      ctx.save();
+      ctx.translate(f.x, f.y);
+      ctx.rotate(f.rotation);
+      ctx.globalAlpha = f.opacity * fade;
+      ctx.fillStyle = pal.feather[i % pal.feather.length];
+      ctx.beginPath();
+      ctx.ellipse(0, 0, Math.max(0.7, f.size * 0.26), Math.max(1.4, f.size * 0.75), 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = f.opacity * fade * 0.5;
+      ctx.strokeStyle = pal.feather[0];
+      ctx.lineWidth = 0.7;
+      ctx.beginPath();
+      ctx.moveTo(0, -f.size * 0.7);
+      ctx.lineTo(0, f.size * 0.7);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /* 偶发剑气：一道细长白光掠过 */
+    if (!swordStreak && Math.random() < 0.004){
+      var fromLeft = Math.random() > 0.5;
+      swordStreak = {
+        x: fromLeft ? -120 : P.W + 120,
+        y: P.H * (0.12 + Math.random() * 0.7),
+        vx: (fromLeft ? 1 : -1) * (9 + Math.random() * 7),
+        len: 90 + Math.random() * 120,
+        life: 1,
+      };
+    }
+    if (swordStreak){
+      var st = swordStreak;
+      st.x += st.vx;
+      st.life -= 0.012;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, st.life) * 0.5 * fade;
+      var grad = ctx.createLinearGradient(st.x - st.len * Math.sign(st.vx), st.y, st.x, st.y);
+      grad.addColorStop(0, 'rgba(255,255,255,0)');
+      grad.addColorStop(1, 'rgba(255,255,255,0.85)');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(st.x - st.len * Math.sign(st.vx), st.y + 3);
+      ctx.lineTo(st.x, st.y);
+      ctx.stroke();
+      ctx.restore();
+      if (st.life <= 0 || st.x < -200 || st.x > P.W + 200) swordStreak = null;
+    }
+
+    /* 点击墨点迸溅 */
+    for (i = bursts.length - 1; i >= 0; i--){
+      var b = bursts[i];
+      b.x += b.vx; b.y += b.vy; b.vy += 0.05; b.vx *= 0.985;
+      b.life -= 0.02;
+      if (b.life <= 0){ bursts.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, b.life) * 0.8;
+      ctx.fillStyle = b.color;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    /* 焚烧的余烬羽 */
+    for (i = embers.length - 1; i >= 0; i--){
+      var e = embers[i];
+      e.y += e.vy; e.x += Math.sin(time * 0.05 + e.off) * 0.4;
+      e.life -= 0.008;
+      if (e.life <= 0){ embers.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, e.life) * 0.75;
+      ctx.fillStyle = e.color;
+      ctx.translate(e.x, e.y);
+      ctx.rotate(e.rot);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 1.6, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    requestAnimationFrame(animate);
+  }
+  function inkBurst(cx, cy, count){
+    var pal = palette();
+    for (var k = 0; k < count; k++){
+      var angle = (k / count) * Math.PI * 2 + Math.random() * 0.6;
+      var speed = 1 + Math.random() * 3;
+      bursts.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        r: 1.5 + Math.random() * 2.6,
+        life: 1,
+        color: Math.random() > 0.55 ? pal.dust : pal.feather[Math.floor(Math.random() * pal.feather.length)],
+      });
+    }
+  }
+  function emberBurst(){
+    for (var k = 0; k < 46; k++){
+      embers.push({
+        x: Math.random() * P.W,
+        y: P.H * (0.55 + Math.random() * 0.5),
+        vy: -(0.5 + Math.random() * 1.3),
+        rot: Math.random() * Math.PI,
+        off: Math.random() * Math.PI * 2,
+        life: 1,
+        color: Math.random() > 0.4 ? '#e08a4a' : '#c8402f',
+      });
+    }
+  }
+  animate();
+
+  function blip(freq, dur, type, vol){
+    try{
+      if (!window.__huaAC){
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        window.__huaAC = new AC();
+      }
+      var ac = window.__huaAC;
+      if (ac.state === 'suspended') ac.resume();
+      var t = ac.currentTime;
+      var osc = ac.createOscillator();
+      var gain = ac.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, t);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(60, freq * 0.55), t + dur);
+      gain.gain.setValueAtTime(vol, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      osc.connect(gain);
+      gain.connect(ac.destination);
+      osc.start(t);
+      osc.stop(t + dur + 0.05);
+    } catch(err){}
+  }
+
+  /* ============ 全局点击反馈：墨晕涟漪（点哪里都有） ============ */
+  document.addEventListener('click', function(e){
+    if (e.target.closest && (e.target.closest('#huaGameOverlay') || e.target.closest('#featherFab'))) return;
+    if (!reducedMotion){
+      for (var n = 0; n < 2; n++){
+        var ring = document.createElement('div');
+        ring.className = 'ink-ring';
+        var size = 54 + n * 40 + Math.random() * 18;
+        ring.style.width = size + 'px';
+        ring.style.height = size + 'px';
+        ring.style.left = e.clientX + 'px';
+        ring.style.top = e.clientY + 'px';
+        ring.style.animationDelay = (n * 0.13) + 's';
+        if (n === 1) ring.style.borderColor = 'rgba(201,168,106,.4)';
+        document.body.appendChild(ring);
+        setTimeout(function(el){ el.remove(); }.bind(null, ring), 1200);
+      }
+      inkBurst(e.clientX, e.clientY, 5);
+    }
+    blip(340 + Math.random() * 120, 0.05, 'sine', 0.05);
+  });
+})();
+</script>
+</body>
+</html>
