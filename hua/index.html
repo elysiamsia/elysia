@@ -50,6 +50,29 @@
   --text:#e9efec;--text-dim:#a9bab3;--text-muted:#71847d;
   --glass-bg:rgba(143,184,173,.05);--glass-border:rgba(143,184,173,.16);
   --glass-bg2:rgba(201,168,106,.04);--glass-border2:rgba(201,168,106,.12);
+
+  /* 生日倒计时的配色覆盖（assets/explore.css 里那组 --bday-*）。
+     ⚠ 一个字都不新发明：全部从上面这套「太虚山的墨」里取 ——
+       她这一页是灰青绿（--acc）、丹砂（--cinnabar）加一抹金（--gold）。
+       不覆盖的话它会吃共享层的默认值，那是**首页爱莉希雅的粉紫**，串页。
+     ⚠ 三世切换（body.life-*）只换 --acc / --bg-* 那几支，**不换这一组** ——
+       胶囊跟着「她这一页」走，不跟着某一世走。 */
+  --bday-ink:#e9efec;                                  /* = --text */
+  --bday-accent:#8fb8ad;                               /* = --acc，圆点与强调 */
+  --bday-title:#a9bab3;                                /* = --text-dim */
+  --bday-date:#cfd8d3;                                 /* = --acc2 */
+  --bday-num:#c9a86a;                                  /* = --gold，倒计时那四位数 */
+  --bday-unit:#71847d;                                 /* = --text-muted */
+  --bday-egg-bg:linear-gradient(135deg,rgba(143,184,173,.16),rgba(201,168,106,.10));
+  --bday-egg-border:rgba(143,184,173,.25);
+  --bday-egg-glow:rgba(143,184,173,.18);
+  --bday-egg-glow-hover:rgba(143,184,173,.3);
+  --bday-panel-bg:linear-gradient(150deg,rgba(8,12,15,.92),rgba(26,47,43,.92));
+  --bday-panel-border:rgba(143,184,173,.22);
+  --bday-panel-glow:rgba(143,184,173,.12);
+  --bday-cell-bg:rgba(143,184,173,.07);
+  --bday-cell-border:rgba(143,184,173,.14);
+  --bday-src:rgba(169,186,179,.55);
 }
 body.life-chiyuan{
   --bg-abyss:#100806;--bg-deep:#1a0e0a;--bg-ink:#26140e;--bg-mid:#331b12;

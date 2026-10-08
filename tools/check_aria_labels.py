@@ -41,7 +41,7 @@ EDGE = r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
 
 # 页面 → (该页登记文案, 来源)
 #   子页走共享层（ElysiaShared.buildQuoteCards），index 走自己的配音版实现。
-#   全部 7 页都登记 —— index 那份同样是 Lore，一起守住。
+#   每一页都登记 —— index 那份同样是 Lore，一起守住。
 EXPECTED = {
     'index.html':        ('语录卡片，点击切换与播放配音', 'inline'),
     'aponia/index.html': ('低语卡片，点击切换',           'shared'),
@@ -54,6 +54,7 @@ EXPECTED = {
     'kosma/index.html':  ('旭光之言，点击切换',           'shared'),
     'mobius/index.html': ('无限之言，点击切换',           'shared'),
     'griseo/index.html': ('繁星之画，点击切换',           'shared'),
+    'hua/index.html':    ('浮生之语，点击切换',           'shared'),
 }
 
 
