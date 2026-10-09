@@ -63,9 +63,11 @@ EXPECTED_FINDS = {
     #   Task 8 只做其余 7 个登记点。
     'griseo/index.html': 12,
     # ⚠ 2026-10-08 华页登记收口（页面是 GitHub 网页上传来的，登记点全缺）。
-    #   她那页的游戏**还没并进共享契约**（内联模块 + DOM 九宫格、没有画布），
-    #   所以**先不登记进下面的 `GAMES`** —— 通用那四条靠画布签名与固有比例，套不上。
-    #   等需求方拍板（见 HANDOVER §5.1）。
+    #   她那页的游戏是**全站唯一的 DOM 版**（九宫格木人桩、没有画布）⇒ `GAMES` 里
+    #   通用那四条靠画布签名与固有比例，**套不上**。需求方拍板「保留这套玩法」，
+    #   于是走**方案 B**：卡按共享契约补上，另写**她专属的四条**（见本文件下面的
+    #   `check_hua_game_*`，以及 HANDOVER §2.3 第 10 步 / §10.13 三）。
+    #   **故意不登记进 `GAMES`** —— 哪天她搬上画布，那四条删掉、改登记即可。
     'hua/index.html': 12,
 }
 
@@ -4640,6 +4642,207 @@ def _touch_tap_at(b, sel):
         return False
     _touch_pt(b, c['x'], c['y'])
     return True
+
+
+# ── 华（Ⅻ）的小游戏：全站唯一的 **DOM 版** ─────────────────────────────
+#   ⚠ 她的木人桩是**九宫格 DOM、没有画布** ⇒ `GAMES` 里那四条通用断言一条都套不上
+#     （它们靠 `canvas.toDataURL()` 的画面签名与画布固有长宽比判「在不在动」）。
+#     所以这里另写一套**同样盯那四件事**的断言，判据换成 DOM 状态：
+#       · 能玩（开局 → 遮罩开 + `aria-hidden` 同步 → 木桩真的在冒；收手后必须冻住）
+#       · 减动偏好下照常能玩
+#       · 手机上放得下（四个视口，含横屏 640×360）
+#       · 退出键「下山」离九宫格 ≥ 100px（九宫格就是玩家**连点的那一片**）
+#   ⚠ 观察点是页面里为断言留的钩子 `#hgGrid[data-spawns]`（每冒一个头 +1）——
+#     它就是这一页的「画面在动」，等价于别页的画布签名。
+#   ⚠ 2026-10-08 需求方拍板：**保留这套 DOM 玩法** ⇒ 走「方案 B」——
+#     通用那四条**不登记**（改它们要连带复核另外四页，而「只许泛化、不许削弱」），
+#     改由下面这四条专属断言把同样那四件事守住。
+#     哪天她搬上画布，这四条删掉、改登记 `GAMES` 即可。
+HUA = 'hua/index.html'
+
+
+def hua_only(fn):
+    """收窄成「只对 /hua/ 成立」—— 她那页的小游戏是全站唯一的 DOM 版。"""
+    fn.pages = (HUA,)
+    return fn
+
+
+HUA_GAME_STATE = """(() => {
+    var o = document.getElementById('huaGameOverlay');
+    var g = document.getElementById('hgGrid');
+    return JSON.stringify({
+        open: o ? o.classList.contains('on') : null,
+        aria: o ? o.getAttribute('aria-hidden') : null,
+        spawns: g ? parseInt(g.getAttribute('data-spawns') || '-1', 10) : -1,
+        up: g ? g.querySelectorAll('.hg-hole.up').length : -1,
+        miss: (document.getElementById('hgMiss') || {}).textContent || null,
+    });
+})()"""
+
+
+def _hua_state(b):
+    return b.jso(HUA_GAME_STATE) or {}
+
+
+def _hua_open(b):
+    """走**真用户路径**开局：点下方区块游戏卡上的那颗按钮。"""
+    return _click_sel(b, '.bottom-game .game-card-start')
+
+
+def _hua_probe(b):
+    """开局 → 遮罩开 + aria 同步 → 木桩在冒 → 收手 → 冻住。加减动那半段共用。"""
+    fails = []
+    st = _hua_state(b)
+    if st.get('open'):
+        fails.append(u'还没点，遮罩就是打开的')
+    if st.get('aria') != 'true':
+        fails.append(u'遮罩关着，`aria-hidden` 却是 %r —— 该是 "true"' % st.get('aria'))
+    if not _hua_open(b):
+        return ([u'找不到游戏卡上的「入山修行」—— 模块的 mount(host) 没画卡？'], u'—')
+
+    st = _hua_state(b)
+    if not st.get('open'):
+        fails.append(u'点了「入山修行」，遮罩却没打开')
+    if st.get('aria') != 'false':
+        fails.append(u'遮罩开了，`aria-hidden` 却是 %r —— 面板视觉上开着、'
+                     u'屏幕阅读器却以为它藏着' % st.get('aria'))
+
+    # ⚠ 采三次、要求**最后两次不同** —— 与通用那四条同一套口径：
+    #   两采样挡不住「只冒了一个头就再也不冒」的实现。
+    s1 = _hua_state(b).get('spawns')
+    time.sleep(0.9)
+    s2 = _hua_state(b).get('spawns')
+    time.sleep(0.9)
+    s3 = _hua_state(b).get('spawns')
+    if s3 is None or s3 < 0:
+        fails.append(u'取不到冒头计数（#hgGrid[data-spawns]）—— 判据那个钩子不见了？')
+    elif s2 == s3:
+        fails.append(u'开局之后**后两次采样一模一样**（%r → %r）—— 木桩没在冒；'
+                     u'只冒一个头的实现也会在这里露馅' % (s2, s3))
+    if not _hua_state(b).get('open'):
+        fails.append(u'没人碰它，遮罩自己关了 —— 无尽模式不该有「时间到」这条路径')
+
+    # ── 证伪那半段：收手之后必须静止（否则「在冒」那条判据就是恒真式）──
+    if not _click_sel(b, '#hgClose'):
+        fails.append(u'找不到退出键 #hgClose')
+        return (fails, u'（没能做反向验证）')
+    st = _hua_state(b)
+    if st.get('open'):
+        fails.append(u'点了「下山」，遮罩却没关')
+    if st.get('aria') != 'true':
+        fails.append(u'遮罩关了，`aria-hidden` 却是 %r' % st.get('aria'))
+    c1 = _hua_state(b).get('spawns')
+    time.sleep(1.2)
+    c2 = _hua_state(b).get('spawns')
+    if c1 is not None and c2 is not None and c1 != c2:
+        fails.append(u'收手之后木桩**还在冒**（%r → %r）—— 定时器没清干净' % (c1, c2))
+    return (fails, u'开局在冒、收手冻住（无尽；判据有牙齿）' if not fails else u'游戏没跑起来')
+
+
+@check
+@hua_only
+def check_hua_game_runs(b, page, expected):
+    """① 她的木人桩能玩：卡上开局 → 遮罩开 + aria 同步 → 木桩在冒 → 收手冻住。"""
+    _reset(b)
+    return _hua_probe(b)
+
+
+@check_reduced
+@hua_only
+def check_hua_game_runs_under_reduced(b, page, expected):
+    """② 减动偏好下**照常能玩**（她那一页用的是 setTimeout，不是 CSS 动画）。"""
+    _set_motion(b, 'reduce')
+    _reset(b)
+    fails, summary = _hua_probe(b)
+    _set_motion(b, 'reduce')
+    return (fails, summary)
+
+
+@check
+@hua_only
+def check_hua_game_fits_mobile(b, page, expected):
+    """③ 手机上放得下、摸得到：**320 宽**真触摸开局 + 四个视口里四样都在视口内。
+
+    ⚠ 含**横屏 640×360** —— 她那九宫格一格按 `20vw` 算，横屏会涨到 128px、
+      三行 404px 而视口只有 360px 高 ⇒ 上下都被切，而 `fixed` 遮罩没有滚动条。
+      这条正是为它写的（梅比乌斯那页踩过同一个坑）。"""
+    fails = []
+    b._send('Emulation.setDeviceMetricsOverride',
+            {'width': 320, 'height': 568, 'deviceScaleFactor': 1, 'mobile': True})
+    b._send('Emulation.setTouchEmulationEnabled', {'enabled': True, 'maxTouchPoints': 5})
+    time.sleep(0.6)
+    try:
+        _reset(b)
+        if not _touch_tap_sel(b, '.bottom-game .game-card-start'):
+            return ([u'用触摸点不到游戏卡上的「入山修行」'], u'—')
+        time.sleep(0.6)
+        if not _hua_state(b).get('open'):
+            return ([u'用触摸点了「入山修行」，遮罩却没打开 —— 手机上玩不了'], u'—')
+        for (w, h) in ((375, 812), (360, 640), (320, 568), (640, 360)):
+            b._send('Emulation.setDeviceMetricsOverride',
+                    {'width': w, 'height': h, 'deviceScaleFactor': 1, 'mobile': True})
+            time.sleep(0.55)
+            for label, sel in ((u'九宫格', '#hgGrid'), (u'状态行', '.hg-head'),
+                               (u'按钮行', '.hg-btns'), (u'退出键', '#hgClose'),
+                               (u'台词行', '.hg-msg')):
+                r = _g_rect(b, sel)
+                if not r:
+                    fails.append(u'[%d] 找不到%s（%s）' % (w, label, sel))
+                elif r['l'] < -0.5 or r['r'] > r['vw'] + 0.5 or r['t'] < -0.5 or r['b'] > r['vh'] + 0.5:
+                    fails.append(u'[%d] %s 超出视口：x %d~%d / y %d~%d，视口 %dx%d —— '
+                                 u'会被切掉，而 fixed 遮罩没有滚动条，切掉的够不着'
+                                 % (w, label, round(r['l']), round(r['r']), round(r['t']),
+                                    round(r['b']), r['vw'], r['vh']))
+            if not _hua_state(b).get('open'):
+                fails.append(u'[%d] 缩放之后遮罩被关掉了' % w)
+        return (fails, u'手机上放得下 + 摸得到（320 开局 / 四个视口）' if not fails
+                else u'手机上有问题')
+    finally:
+        b._send('Emulation.setTouchEmulationEnabled', {'enabled': False})
+        b._send('Emulation.clearDeviceMetricsOverride')
+        time.sleep(0.6)
+
+
+@check
+@hua_only
+def check_hua_game_close_far_from_play(b, page, expected):
+    """④ 退出键「下山」离九宫格 ≥ 100px —— 九宫格就是玩家**连点**的地方。
+
+    ⚠ 她原来把「下山」放在九宫格正下方约 50px 处，手指落低一点就误触退出
+      （樱 / 梅比乌斯两页踩过同一个坑，见 HANDOVER §5.2）。"""
+    fails = []
+    b._send('Emulation.setDeviceMetricsOverride',
+            {'width': 375, 'height': 812, 'deviceScaleFactor': 1, 'mobile': True})
+    b._send('Emulation.setTouchEmulationEnabled', {'enabled': True, 'maxTouchPoints': 5})
+    time.sleep(0.6)
+    try:
+        _reset(b)
+        if not _touch_tap_sel(b, '.bottom-game .game-card-start'):
+            return ([u'用触摸点不到游戏卡上的「入山修行」'], u'—')
+        time.sleep(0.6)
+        cl = _g_rect(b, '#hgClose')
+        cv = _g_rect(b, '#hgGrid')
+        if not cl or not cv:
+            return ([u'找不到退出键（#hgClose）或九宫格（#hgGrid）'], u'—')
+        gap = _g_gap(cl, cv)
+        if gap is None:
+            return ([u'量不出退出键与九宫格的间距'], u'—')
+        if gap < CLOSE_FAR_MIN:
+            fails.append(u'退出键离九宫格只有 %dpx（该 ≥ %dpx）—— 连点木桩时手指落低一点就退出去了'
+                         % (round(gap), CLOSE_FAR_MIN))
+        win = _g_rect(b, '#huaGameOverlay')
+        if not win:
+            fails.append(u'量不到遮罩（#huaGameOverlay）')
+        else:
+            # ⚠ 另外要「不压在九宫格上」：单纯挪出 100px 还不够，几何上也不能重叠。
+            if not (cl['r'] < cv['l'] or cl['l'] > cv['r'] or cl['b'] < cv['t'] or cl['t'] > cv['b']):
+                fails.append(u'退出键与九宫格**几何上叠着** —— 点木桩就会点到它')
+        return (fails, u'退出键离九宫格 %dpx（≥ %d）' % (round(gap), CLOSE_FAR_MIN)
+                if not fails else u'退出键离操作区太近')
+    finally:
+        b._send('Emulation.setTouchEmulationEnabled', {'enabled': False})
+        b._send('Emulation.clearDeviceMetricsOverride')
+        time.sleep(0.6)
 
 
 # ── 主流程 ────────────────────────────────────────────────────────────
