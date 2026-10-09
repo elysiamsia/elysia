@@ -269,10 +269,18 @@ body{
 }
 .ending-sub.visible{opacity:.9}
 .ending-sub .src{display:block;font-size:.68rem;color:var(--text-muted);margin-top:.4rem;letter-spacing:.08em}
+/* 返回按钮 —— ⚠ 2026-10-08 修：本页原来**只**写了颜色与边框，而共享层 `site.css`
+   只提供 `.back-link.visible` 的淡入；圆角 / 内距 / 44px 最小点击高度**各页自己写**
+   （其余 6 页都写了完整那一套）。漏了那套，它就渲染成「一条带描边的纯文本」，
+   看着不像能点。 */
 .back-link{
-  color:var(--acc);border:1px solid var(--glass-border);background:rgba(143,184,173,.05);
+  display:inline-flex;align-items:center;gap:.5rem;margin-top:3rem;
+  min-height:44px;padding:.6rem 1.6rem;border-radius:999px;text-decoration:none;
+  color:var(--acc);font-size:.85rem;letter-spacing:.15em;
+  border:1px solid var(--glass-border);background:rgba(143,184,173,.05);
+  transition:background .3s ease,box-shadow .3s ease,transform .3s ease;opacity:0;
 }
-.back-link:hover{background:rgba(143,184,173,.12);box-shadow:0 0 22px rgba(143,184,173,.2)}
+.back-link:hover{background:rgba(143,184,173,.12);box-shadow:0 0 24px rgba(143,184,173,.2);transform:translateY(-2px)}
 
 /* SECTION: feather fab (羽渡尘彩蛋) */
 #featherFab{
@@ -321,12 +329,39 @@ body.burning .section-title{opacity:.45;transition:opacity .6s ease}
 #huaToast.golden{color:#f5e6c8;border-color:rgba(201,168,106,.55);box-shadow:0 6px 30px rgba(0,0,0,.5),0 0 30px rgba(201,168,106,.3)}
 @media(max-width:600px){#huaToast{white-space:normal;line-height:1.6}}
 
+/* SECTION: game card（下方区块里那张卡）
+   ⚠ 这几条**留在本页**、不进共享层 —— spec §3.1：「游戏是最各写各的部分」。 */
+.game-card{
+  max-width:26rem;margin:0 auto;padding:1.6rem 1.5rem;border-radius:16px;
+  background:rgba(255,255,255,.03);border:1px solid var(--glass-border);
+}
+.game-card-title{margin:0 0 .6rem;font-size:1.05rem;letter-spacing:.1em;color:var(--acc)}
+.game-card-hint{margin:0 0 1.2rem;font-size:.8rem;line-height:1.9;color:var(--text-muted)}
+.game-card-start{
+  min-height:44px;padding:.6rem 1.8rem;border-radius:999px;cursor:pointer;font-family:inherit;
+  font-size:.85rem;letter-spacing:.14em;color:var(--text);
+  background:rgba(143,184,173,.12);border:1px solid var(--glass-border);
+  transition:background .25s ease,box-shadow .25s ease;
+}
+.game-card-start:hover{background:rgba(143,184,173,.22);box-shadow:0 0 20px rgba(143,184,173,.25)}
+
 /* SECTION: game overlay (木人桩) */
 #huaGameOverlay{
   position:fixed;inset:0;z-index:9997;display:none;align-items:center;justify-content:center;flex-direction:column;gap:.9rem;
   background:rgba(4,8,6,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:1rem;
 }
 #huaGameOverlay.on{display:flex}
+/* 退出键「下山」在**遮罩右上角**（2026-10-08 挪的）——
+   ⚠ 它原来待在九宫格正下方约 50px 处，而九宫格就是**玩家连点的那一片**：
+     手指落低一点就误触退出（樱 / 梅比乌斯两页踩过同一个坑，见 HANDOVER §5.2）。
+     判据是「退出键离操作区 ≥ 100px」。 */
+#hgClose{
+  position:absolute;top:calc(1rem + env(safe-area-inset-top));right:1rem;z-index:1;
+  min-height:44px;padding:.5rem 1.2rem;border-radius:999px;cursor:pointer;font-family:inherit;
+  font-size:.78rem;letter-spacing:.14em;color:var(--text);
+  background:rgba(143,184,173,.1);border:1px solid var(--glass-border);transition:background .25s ease;
+}
+#hgClose:hover{background:rgba(143,184,173,.2)}
 .hg-head{display:flex;gap:1.4rem;color:var(--text-dim);font-size:.85rem;letter-spacing:.08em;font-variant-numeric:tabular-nums}
 .hg-head b{color:var(--gold)}
 .hg-grid{
@@ -363,6 +398,25 @@ body.burning .section-title{opacity:.45;transition:opacity .6s ease}
 }
 .hg-pop.bad{color:#e05a45;text-shadow:0 0 8px rgba(224,90,69,.6)}
 @keyframes hg-rise{0%{opacity:0;transform:translate(-50%,4px)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-30px)}}
+
+/* 横屏（矮屏）—— 九宫格一格的边长是 `20vw`，横屏 640 宽时涨到 128px，
+   三行就是 404px，而横屏只有 360px 高 ⇒ **上下都被切**，而 `fixed` 遮罩没有
+   滚动条、切掉的够不着（梅比乌斯那页踩过一模一样的坑，见 HANDOVER §5.2）。
+   改成横排：状态 / 台词 / 按钮一列，九宫格一列，格子边长改按**视口高度**算。
+   ⚠ 选择器必须带 `.on` —— 基线的 `#huaGameOverlay.on{display:flex}` 特异性更高，
+     只写 `#huaGameOverlay{display:grid}` 会被它压掉。 */
+@media (max-height:520px) and (orientation:landscape){
+  #huaGameOverlay.on{
+    display:grid;justify-content:center;gap:.5rem 1.2rem;
+    grid-template-columns:auto auto;
+    grid-template-areas:"head grid" "msg grid" "btns grid";
+    align-content:center;
+  }
+  .hg-head{grid-area:head;flex-wrap:wrap;justify-content:center;font-size:.78rem;gap:.9rem}
+  .hg-grid{grid-area:grid;grid-template-columns:repeat(3,minmax(46px,12vh));grid-auto-rows:minmax(46px,12vh)}
+  .hg-msg{grid-area:msg;max-width:14rem;font-size:.78rem}
+  .hg-btns{grid-area:btns;justify-content:center}
+}
 
 /* SECTION: responsive */
 @media(max-width:768px){
@@ -599,11 +653,11 @@ body.burning .section-title{opacity:.45;transition:opacity .6s ease}
   <div class="hg-head">
     <span>得分 <b id="hgScore">0</b></span>
     <span>连击 <b id="hgCombo">0</b></span>
-    <span>剩余 <b id="hgTime">45</b>s</span>
+    <span>漏掉 <b id="hgMiss">0</b></span>
     <span>最佳 <b id="hgBest">0</b></span>
   </div>
   <div class="hg-grid" id="hgGrid"></div>
-  <p class="hg-msg" id="hgMsg">敲木桩，练寸劲。金色的小师妹是自己人——千万别打。</p>
+  <p class="hg-msg" id="hgMsg">无尽模式 · 敲木桩练寸劲，敲到你想收手为止。金色的小师妹是自己人——千万别打。</p>
   <div class="hg-btns">
     <button class="hg-btn" id="hgStart">开始修行</button>
     <button class="hg-btn ghost" id="hgClose">下山</button>
@@ -629,14 +683,15 @@ body.burning .section-title{opacity:.45;transition:opacity .6s ease}
     var gridEl = document.getElementById('hgGrid');
     var scoreEl = document.getElementById('hgScore');
     var comboEl = document.getElementById('hgCombo');
-    var timeEl = document.getElementById('hgTime');
+    var missEl = document.getElementById('hgMiss');
     var bestEl = document.getElementById('hgBest');
     var msgEl = document.getElementById('hgMsg');
     var startBtn = document.getElementById('hgStart');
     var closeBtn = document.getElementById('hgClose');
     var holes = [];
-    var score = 0, combo = 0, timeLeft = 45;
-    var running = false, spawnTimer = null, tickTimer = null;
+    /* 无尽模式：**没有倒计时、也没有命** —— 漏掉只扣分，玩到玩家自己按「下山」。 */
+    var score = 0, combo = 0, misses = 0, spawned = 0;
+    var running = false, spawnTimer = null;
     var best = 0;
     try { best = parseInt(localStorage.getItem('huaDummyBest') || '0', 10) || 0; } catch(err){ best = 0; }
     bestEl.textContent = String(best);
@@ -698,43 +753,59 @@ body.burning .section-title{opacity:.45;transition:opacity .6s ease}
       var free = holes.filter(function(s){ return !s.up; });
       if (!free.length) return;
       var slot = free[Math.floor(Math.random() * free.length)];
+      spawned++;
+      /* ⚠ 这个是**给断言看的**：本页没有画布，`check_explore.py` 通用那四条靠
+         `canvas.toDataURL()` 的画面签名判「在不在动」—— 这里换成一个单调递增的
+         冒头计数（`#hgGrid[data-spawns]`），判据等价（见 HANDOVER §10.13 三）。 */
+      gridEl.setAttribute('data-spawns', String(spawned));
       slot.up = true;
       slot.gold = Math.random() < 0.16;
       slot.dummy.className = 'dummy ' + (slot.gold ? 'gold' : 'wood');
       slot.dummy.textContent = slot.gold ? '妹' : '桩';
       slot.el.classList.add('up');
+      /* **漏掉**：冒头之后自己缩回去 = 玩家没打中 → 扣 5 分（分数不低于 0）、连击清零。
+         无尽模式**不因此结束**，这就是「无尽」与原来那版倒计时的区别。 */
       slot.hideTimer = setTimeout(function(){
+        if (!slot.up) return;
         slot.up = false;
         slot.el.classList.remove('up');
+        if (!slot.gold && running){
+          misses++;
+          combo = 0;
+          score = Math.max(0, score - 5);
+          missEl.textContent = String(misses);
+          comboEl.textContent = '0';
+          scoreEl.textContent = String(score);
+          msgEl.textContent = '「漏了。心要静。」';
+        }
       }, 620 + Math.random() * 420);
-      var next = Math.max(280, 620 - (45 - timeLeft) * 7) + Math.random() * 220;
+      /* 越敲越快：难度按**冒头次数**涨（没有倒计时了）。620ms 起，每冒一个头快 7ms，最快 280ms。 */
+      var next = Math.max(280, 620 - spawned * 7) + Math.random() * 220;
       spawnTimer = setTimeout(spawn, next);
     }
 
     function start(){
-      score = 0; combo = 0; timeLeft = 45;
+      score = 0; combo = 0; misses = 0; spawned = 0;
       scoreEl.textContent = '0';
       comboEl.textContent = '0';
-      timeEl.textContent = '45';
-      msgEl.textContent = '「站定，凝神。修行开始。」';
+      missEl.textContent = '0';
+      gridEl.setAttribute('data-spawns', '0');
+      msgEl.textContent = '「站定，凝神。修行开始 —— 无尽模式，敲到你想收手。」';
       startBtn.textContent = '重新修行';
       running = true;
       clearTimeout(spawnTimer);
-      clearInterval(tickTimer);
       spawnTimer = setTimeout(spawn, 500);
-      tickTimer = setInterval(function(){
-        timeLeft--;
-        timeEl.textContent = String(timeLeft);
-        if (timeLeft <= 0) finish();
-      }, 1000);
     }
 
+    /* 收手（「下山」）时才结算：无尽模式没有「时间到」这条路径，
+       所以 `finish()` 只由退出键与重新开局调用。 */
     function finish(){
       running = false;
       clearTimeout(spawnTimer);
-      clearInterval(tickTimer);
       holes.forEach(function(s){ s.up = false; clearTimeout(s.hideTimer); s.el.classList.remove('up'); });
-      var rank = score < 150 ? '初入门径' : (score < 320 ? '太虚外门' : (score < 520 ? '太虚七剑候补' : '赤鸢亲传'));
+      /* ⚠ 门槛比原来那版（150 / 320 / 520）高一档：那是 45 秒版的分档，
+         无尽模式没有时间上限，分数会明显更高。 */
+      var rank = score < 200 ? '初入门径' : (score < 500 ? '太虚外门' : (score < 900 ? '太虚七剑候补' : '赤鸢亲传'));
       var newBest = score > best;
       if (newBest){
         best = score;
@@ -775,25 +846,41 @@ body.burning .section-title{opacity:.45;transition:opacity .6s ease}
       } catch(err){}
     }
 
-    return {
+    /* 「入山修行」= 开遮罩**并直接开局** —— 不再要求玩家进去再点一次「开始修行」
+       （其它四页也是「点开就在玩」）。遮罩里那颗按钮此时已是「重新修行」。 */
+    function openGame(){
+      overlay.classList.add('on');
+      overlay.setAttribute('aria-hidden','false');
+      start();
+    }
+
+    /* ⚠ 游戏卡是**共享契约**（spec §4.5）：`bottom.js` 只调 `mod.mount(host)`，
+       而卡上的标题与说明**必须**来自模块自己声明的 `title` / `hint` ——
+       `check_explore.py` 的 `check_game_card_matches_module` 就钉这一条。
+       （2026-10-08 之前本页只丢了一枚裸按钮，那条断言正是红的。）
+       卡样式（`.game-card*`）留在本页 `<style>` 里，不进共享层。 */
+    var API = {
       title: '木人桩 · 寸劲修行',
-      hint: '木人桩会冒头——用寸劲敲回去。金色的小师妹是自己人，千万别打。',
+      hint: '无尽模式：木人桩一直冒头，漏一下扣 5 分，敲到你想收手为止。金色的小师妹是自己人，千万别打。',
       mount: function(host){
+        var card = document.createElement('div');
+        card.className = 'game-card';
+        var t = document.createElement('h3');
+        t.className = 'game-card-title';
+        t.textContent = API.title;
+        var h = document.createElement('p');
+        h.className = 'game-card-hint';
+        h.textContent = API.hint;
         var btn = document.createElement('button');
-        btn.className = 'hg-btn';
-        btn.style.marginTop = '.8rem';
+        btn.className = 'game-card-start';
         btn.textContent = '入山修行';
-        btn.addEventListener('click', function(){
-          overlay.classList.add('on');
-          overlay.setAttribute('aria-hidden','false');
-        });
-        host.appendChild(btn);
+        btn.addEventListener('click', openGame);
+        card.appendChild(t); card.appendChild(h); card.appendChild(btn);
+        host.appendChild(card);
       },
-      open: function(){
-        overlay.classList.add('on');
-        overlay.setAttribute('aria-hidden','false');
-      }
+      open: openGame
     };
+    return API;
   })();
 
   /* ============ THEME（按共享层 schema） ============ */
@@ -860,7 +947,9 @@ body.burning .section-title{opacity:.45;transition:opacity .6s ease}
         { id:'hua-10', at:'#quotes',  x:0.06, y:0.72, verb:'slide',      art:'sheath',
           line:'念死无常，生灭有时！',
           src:'游戏内 · 浮生·渡尘之羽 战斗语音' },
-        { id:'hua-11', at:'#ending',  x:0.12, y:0.40, verb:'hold',       art:'moon',
+        /* ⚠ 原来在 (0.12, 0.40) —— 375 宽下正压在结尾台词上（check_explore 的
+           「可发现物不许压在文字上」抓到）。挪到这一段的上缘，两个视口都不压字。 */
+        { id:'hua-11', at:'#ending',  x:0.10, y:0.06, verb:'hold',       art:'moon',
           line:'在入队之初，我受过爱莉希雅许多关照。',
           src:'官方档案馆 · 英桀档案 · 华评爱莉希雅' },
         { id:'hua-12', at:'#bottom',  x:0.50, y:0.12, verb:'click',      art:'petal',
