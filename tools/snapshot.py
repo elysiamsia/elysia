@@ -66,6 +66,7 @@ PAGES = [
     'mobius/index.html',
     'griseo/index.html',
     'hua/index.html',
+    'pardofelis/index.html',
 ]
 SIZES = [(1920, 1080), (768, 1024), (375, 812)]
 

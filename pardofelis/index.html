@@ -50,6 +50,27 @@
   --text:#f7ede2;--text-dim:#cbb6a4;--text-muted:#9a8471;
   --glass-bg:rgba(255,209,102,.05);--glass-border:rgba(255,217,160,.16);
   --glass-bg2:rgba(255,157,92,.05);--glass-border2:rgba(255,157,92,.13);
+
+  /* 生日倒计时的配色覆盖（assets/explore.css 里那组 --bday-*）。
+     ⚠ 一个字都不新发明：全部从上面这套「黄昏街的暖金」里取 ——
+       她这一页是金币的暖金（--coin）、杏色（--apricot）、橙（--orange）。
+       不覆盖的话它会吃共享层的默认值，那是**首页爱莉希雅的粉紫**，串页。 */
+  --bday-ink:#f7ede2;                                  /* = --text */
+  --bday-accent:#ffd166;                               /* = --coin，圆点与强调 */
+  --bday-title:#cbb6a4;                                /* = --text-dim */
+  --bday-date:#ffd9a0;                                 /* = --apricot */
+  --bday-num:#ff9d5c;                                  /* = --orange，倒计时那四位数 */
+  --bday-unit:#9a8471;                                 /* = --text-muted */
+  --bday-egg-bg:linear-gradient(135deg,rgba(255,209,102,.16),rgba(255,157,92,.10));
+  --bday-egg-border:rgba(255,209,102,.25);
+  --bday-egg-glow:rgba(255,209,102,.18);
+  --bday-egg-glow-hover:rgba(255,209,102,.3);
+  --bday-panel-bg:linear-gradient(150deg,rgba(18,10,20,.92),rgba(46,26,42,.92));
+  --bday-panel-border:rgba(255,209,102,.22);
+  --bday-panel-glow:rgba(255,209,102,.12);
+  --bday-cell-bg:rgba(255,209,102,.07);
+  --bday-cell-border:rgba(255,209,102,.14);
+  --bday-src:rgba(203,182,164,.55);
 }
 html{scroll-behavior:smooth}
 body{
@@ -264,8 +285,18 @@ body{
 }
 .ending-sub.visible{opacity:.9}
 .ending-sub .src{display:block;font-size:.68rem;color:var(--text-muted);margin-top:.4rem;letter-spacing:.08em}
-.back-link{color:var(--coin);border:1px solid var(--glass-border);background:rgba(255,209,102,.06)}
-.back-link:hover{background:rgba(255,209,102,.14);box-shadow:0 0 24px rgba(255,209,102,.25)}
+/* 返回按钮 —— ⚠ 本页原来**只**写了颜色与边框，而共享层 `site.css` 只提供
+   `.back-link.visible` 的淡入；圆角 / 内距 / 44px 最小点击高度**各页自己写**。
+   漏了那套，它渲染出来就是「一条带描边的纯文本」，看着不像能点。
+   （华那一页踩过一模一样的坑 —— 这是同一个位置第二次咬人，见 HANDOVER §10.14。） */
+.back-link{
+  display:inline-flex;align-items:center;gap:.5rem;margin-top:3rem;
+  min-height:44px;padding:.6rem 1.6rem;border-radius:999px;text-decoration:none;
+  color:var(--coin);font-size:.85rem;letter-spacing:.15em;
+  border:1px solid var(--glass-border);background:rgba(255,209,102,.06);
+  transition:background .3s ease,box-shadow .3s ease,transform .3s ease;opacity:0;
+}
+.back-link:hover{background:rgba(255,209,102,.14);box-shadow:0 0 24px rgba(255,209,102,.25);transform:translateY(-2px)}
 
 /* SECTION: coin HUD */
 #coinHud{
@@ -318,12 +349,38 @@ body{
   100%{opacity:0;transform:translate(-50%,-60%) scale(.85) rotate(var(--paw-rot,0deg))}
 }
 
+/* SECTION: game card（下方区块里那张卡）
+   ⚠ 这几条**留在本页**、不进共享层 —— spec §3.1：「游戏是最各写各的部分」。 */
+.game-card{
+  max-width:26rem;margin:0 auto;padding:1.6rem 1.5rem;border-radius:16px;
+  background:rgba(255,255,255,.03);border:1px solid var(--glass-border);
+}
+.game-card-title{margin:0 0 .6rem;font-size:1.05rem;letter-spacing:.1em;color:var(--coin)}
+.game-card-hint{margin:0 0 1.2rem;font-size:.8rem;line-height:1.9;color:var(--text-muted)}
+.game-card-start{
+  min-height:44px;padding:.6rem 1.8rem;border-radius:999px;cursor:pointer;font-family:inherit;
+  font-size:.85rem;letter-spacing:.14em;color:var(--text);
+  background:rgba(255,209,102,.12);border:1px solid var(--glass-border);
+  transition:background .25s ease,box-shadow .25s ease;
+}
+.game-card-start:hover{background:rgba(255,209,102,.22);box-shadow:0 0 20px rgba(255,209,102,.25)}
+
 /* SECTION: game overlay (接罐头) */
 #catGameOverlay{
   position:fixed;inset:0;z-index:9997;display:none;align-items:center;justify-content:center;flex-direction:column;gap:.8rem;
   background:rgba(18,10,20,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:1rem;
 }
 #catGameOverlay.on{display:flex}
+/* 退出键「收摊」挪到**遮罩右上角** —— 它原来在画布正下方（实测只隔 74px），
+   而画布就是玩家**手指一直拖来拖去**的那一片：落低一点就收摊了。
+   判据是「拖动面离退出键 ≥ 50px / 点触面 ≥ 100px」（见 check_explore 的 GAMES）。 */
+#cgClose{
+  position:absolute;top:calc(1rem + env(safe-area-inset-top));right:1rem;z-index:1;
+  min-height:44px;padding:.5rem 1.2rem;border-radius:999px;cursor:pointer;font-family:inherit;
+  font-size:.78rem;letter-spacing:.14em;color:var(--coin);
+  background:rgba(255,209,102,.1);border:1px solid var(--glass-border);transition:background .25s ease;
+}
+#cgClose:hover{background:rgba(255,209,102,.2)}
 .cg-head{display:flex;gap:1.4rem;color:var(--text-dim);font-size:.85rem;letter-spacing:.08em;font-variant-numeric:tabular-nums}
 .cg-head b{color:var(--coin)}
 #catCanvas{
@@ -339,6 +396,25 @@ body{
 }
 .cg-btn:hover{background:rgba(255,209,102,.2);box-shadow:0 0 16px rgba(255,209,102,.25)}
 .cg-btn.ghost{color:var(--text-muted);background:transparent}
+
+/* 横屏（矮屏）—— 画布是 340×420 的固定尺寸，横屏只有 360px 高 ⇒ **上下都被切**，
+   而 `fixed` 遮罩没有滚动条、切掉的够不着（实测：画布 top -59 / bottom 363，
+   状态行整个在屏幕外 −95）。改成横排：状态 / 台词 / 按钮一列、画布一列，
+   画布按**视口高度**缩放并保持 340:420 的固有比例（否则断言会报「被拉扁」）。
+   ⚠ 选择器必须带 `.on` —— 基线的 `#catGameOverlay.on{display:flex}` 特异性更高，
+     只写 `#catGameOverlay{display:grid}` 会被它压掉。 */
+@media (max-height:520px) and (orientation:landscape){
+  #catGameOverlay.on{
+    display:grid;justify-content:center;gap:.5rem 1.1rem;
+    grid-template-columns:auto auto;
+    grid-template-areas:"head cv" "msg cv" "btns cv";
+    align-content:center;
+  }
+  .cg-head{grid-area:head;flex-wrap:wrap;justify-content:center;font-size:.78rem;gap:.9rem}
+  #catCanvas{grid-area:cv;height:min(56vh,320px);width:auto;max-width:none}
+  .cg-msg{grid-area:msg;max-width:14rem;font-size:.78rem}
+  .cg-btns{grid-area:btns;justify-content:center}
+}
 
 /* SECTION: toast */
 #pdToast{
@@ -649,6 +725,9 @@ body{
     var basket = { x: W / 2, w: 64 };
     var items = [], score = 0, timeLeft = 45, running = false;
     var tickTimer = null, raf = null, lastSpawn = 0;
+    /* 「收摊」的保护期：打开之后 400ms 内点它不算（与樱 / 科斯魔 / 格蕾修同款）——
+       反应类游戏里手指落低一点就误触退出，这道保险能挡住「刚开就关」。 */
+    var CLOSE_GUARD_MS = 400, openedAt = 0;
     var best = 0;
     try { best = parseInt(localStorage.getItem('pdCatBest') || '0', 10) || 0; } catch(err){ best = 0; }
     bestEl.textContent = String(best);
@@ -667,11 +746,11 @@ body{
       }
       return ITEM_TYPES[0];
     }
-    function spawnItem(){
+    function spawnItem(y0){
       var t = pickType();
       items.push({
         x: 20 + Math.random() * (W - 40),
-        y: -20,
+        y: (typeof y0 === 'number') ? y0 : -20,
         vy: 1.6 + Math.random() * 1.6 + (45 - timeLeft) * 0.035,
         ch: t.ch, pts: t.pts,
       });
@@ -718,6 +797,10 @@ body{
       startBtn.textContent = '重新进货';
       running = true;
       lastSpawn = 0;
+      /* ⚠ 开局**立刻**来一件：原来第一件要等 ~0.76s 才冒出来，那之前画布是
+         **完全静止**的（实测前 4 次采样签名一字不差）—— 一是手感发木，
+         二是通用那条「开局在动」的断言正好只看 0.9s（s2/s3 撞进空窗就红）。 */
+      spawnItem(18);
       clearInterval(tickTimer);
       cancelAnimationFrame(raf);
       tickTimer = setInterval(function(){
@@ -756,6 +839,7 @@ body{
     }, { passive: true });
     startBtn.addEventListener('click', start);
     closeBtn.addEventListener('click', function(){
+      if (Date.now() - openedAt < CLOSE_GUARD_MS) return;   // ← 保护期内点它不算
       overlay.classList.remove('on');
       overlay.setAttribute('aria-hidden','true');
       if (running) finish();
@@ -763,21 +847,40 @@ body{
     ctx.font = '30px serif';
     ctx.textAlign = 'center';
     ctx.fillText('🧺', basket.x, H - 12);
-    return {
+    /* 「开张进货」= 开遮罩**并直接开局**（其它页也是「点开就在玩」）。 */
+    function openGame(){
+      overlay.classList.add('on');
+      overlay.setAttribute('aria-hidden','false');
+      openedAt = Date.now();          // ⚠ 给「收摊」的保护期用，见上面的 closeBtn
+      start();
+    }
+
+    /* ⚠ 游戏卡是**共享契约**（spec §4.5）：`bottom.js` 只调 `mod.mount(host)`，
+       而卡上的标题与说明**必须**来自模块自己声明的 `title` / `hint` ——
+       `check_explore.py` 的 `check_game_card_matches_module` 就钉这一条。
+       卡样式（`.game-card*`）留在本页 `<style>` 里，不进共享层。 */
+    var API = {
       title: '去吧，罐头！',
       hint: '左右移动接住罐头、银币和宝石——劫哥的火焰可千万别碰。',
       mount: function(host){
+        var card = document.createElement('div');
+        card.className = 'game-card';
+        var t = document.createElement('h3');
+        t.className = 'game-card-title';
+        t.textContent = API.title;
+        var h = document.createElement('p');
+        h.className = 'game-card-hint';
+        h.textContent = API.hint;
         var btn = document.createElement('button');
-        btn.className = 'cg-btn';
-        btn.style.marginTop = '.8rem';
+        btn.className = 'game-card-start';
         btn.textContent = '开张进货';
-        btn.addEventListener('click', function(){
-          overlay.classList.add('on');
-          overlay.setAttribute('aria-hidden','false');
-        });
-        host.appendChild(btn);
-      }
+        btn.addEventListener('click', openGame);
+        card.appendChild(t); card.appendChild(h); card.appendChild(btn);
+        host.appendChild(card);
+      },
+      open: openGame
     };
+    return API;
   })();
 
   /* ============ THEME（按共享层 schema） ============ */
@@ -844,7 +947,9 @@ body{
         { id:'pardo-10', at:'#quotes',  x:0.06, y:0.72, verb:'slide',      art:'dawn',
           line:'英雄的事就交给英雄去做不就好了，我只不过是个凡人而已。',
           src:'游戏内 · 往世乐土剧情台词' },
-        { id:'pardo-11', at:'#ending',  x:0.12, y:0.42, verb:'hold',       art:'moon',
+        /* ⚠ 原来在 (0.12, 0.42) —— 375 宽下正压在结尾台词上（check_explore 的
+           「可发现物不许压在文字上」抓到）。挪到这一段的上缘，两个视口都不压字。 */
+        { id:'pardo-11', at:'#ending',  x:0.10, y:0.06, verb:'hold',       art:'moon',
           line:'我会把我的好运分给你，你就放心吧！',
           src:'官方档案馆 · 英桀告别台词' },
         { id:'pardo-12', at:'#bottom',  x:0.50, y:0.12, verb:'click',      art:'mouse',
@@ -1133,8 +1238,26 @@ body{
     }
   }, 1000);
 
+  /* ⚠ 「罐头不挡路」（2026-10-13 加）：它是 `position:fixed`、位置随机、还会追着
+     激光笔走 —— 于是会**盖在底下的可点东西上**（按钮 / 可发现物 / 主要互动区），
+     那一下点击就被它吃掉了。实测：手机上进行「点游戏卡开局」时被它截胡，
+     `check_explore` 的「手机上摸得到」因此偶发变红（把猫临时 display:none 就 3/3 绿）。
+     所以每帧看一眼它正压着什么：压着可点内容就把自己的 `pointer-events` 让开；
+     压在正文 / 背景上时照旧可以戳（撸猫一点没少）。
+     ⚠ 必须先把自身的 `pointer-events` 临时关掉再 `elementFromPoint`，
+       否则量到的永远是它自己。 */
+  function catDodge(){
+    if (!catState.active){ cat.style.pointerEvents = ''; return; }
+    var r = cat.getBoundingClientRect();
+    cat.style.pointerEvents = 'none';
+    var under = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    cat.style.pointerEvents = '';
+    var blocker = !!under && under !== cat
+      && !!under.closest('button, a, .explore-find, [data-primary-action]');
+    cat.style.pointerEvents = blocker ? 'none' : '';
+  }
   function catStep(){
-    if (!catState.active || reducedMotion){ requestAnimationFrame(catStep); return; }
+    if (!catState.active || reducedMotion){ catDodge(); requestAnimationFrame(catStep); return; }
     var dx = catState.tx - catState.x;
     var dy = catState.ty - catState.y;
     var dist = Math.sqrt(dx * dx + dy * dy);
@@ -1146,6 +1269,7 @@ body{
     }
     cat.style.left = catState.x + 'px';
     cat.style.top = catState.y + 'px';
+    catDodge();
     requestAnimationFrame(catStep);
   }
   requestAnimationFrame(catStep);

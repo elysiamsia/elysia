@@ -69,6 +69,9 @@ EXPECTED_FINDS = {
     #   `check_hua_game_*`，以及 HANDOVER §2.3 第 10 步 / §10.13 三）。
     #   **故意不登记进 `GAMES`** —— 哪天她搬上画布，那四条删掉、改登记即可。
     'hua/index.html': 12,
+    # ⚠ 2026-10-13 帕朵菲莉丝登记收口。她那页的游戏是**画布版**（`#catCanvas`），
+    #   所以走**正道**：卡按共享契约补上，并登记进下面的 `GAMES` 吃通用那四条。
+    'pardofelis/index.html': 12,
 }
 
 # ── 樱这一页的**台词登记表** ─────────────────────────────────────────
@@ -2330,6 +2333,14 @@ GAMES = {
     #     下面那条 `if cfg['play'] and pl and pl['h'] > 1` 会自动跳过，正是想要的。
     'griseo/index.html':  {'overlay': 'griseoGameOverlay', 'canvas': '.gr-canvas',
                            'close': '.gr-close', 'play': '#gr-pad', 'guard': True},
+    # ⚠ 帕朵菲莉丝「接罐头」（2026-10-13 接入）：画布版，但**没有独立操作区** ——
+    #   篮子是用手指 / 鼠标**在画布上拖**着动的 ⇒ 画布是**拖动面**，显式写 `swipe: True`
+    #   （本文件的口径：显式给了 swipe 就按它；否则没有 play 的页会按点触面的 100px 量，
+    #     那对拖动面过严）。
+    #   ⚠ 她原来的「收摊」在画布正下方只隔 74px ⇒ 已挪到遮罩右上角；
+    #     并加了 400ms 保护期（与樱 / 科斯魔 / 格蕾修同款）⇒ `guard: True`。
+    'pardofelis/index.html': {'overlay': 'catGameOverlay', 'canvas': '#catCanvas',
+                              'close': '#cgClose', 'play': None, 'swipe': True, 'guard': True},
 }
 GAME_PAGES = tuple(sorted(GAMES.keys()))
 
@@ -2845,10 +2856,24 @@ MEASURE_FIND_SPOTS = """(() => {
                 if (under.childNodes[i].nodeType === 3) text += under.childNodes[i].nodeValue;
             }
         }
+        /* ⚠ 2026-10-13：**浮动元素路过**不算「压在文字上」。
+           可发现物是按锚点百分比定位的**静态排版**，而 `position:fixed / sticky`
+           的东西会自己走到落点上（帕朵页那只追着激光笔跑的猫、悬浮 HUD…）——
+           它既不是「小简笔画压在一句话正中间」那个观感问题，也不是静态遮挡
+           （静态遮挡由 `check_reachable` 的命中判据守着，那条一字未动）。
+           所以单独标出来、在摘要里报个数，不参与 text / leaf 判定。
+           ⚠ `!under.contains(n)` —— 万一锚点自己就是 fixed/sticky（落点本就长在
+             它上面），那不算「路过」，照旧按文字判。 */
+        var floating = false;
+        if (under) {
+            var pos = getComputedStyle(under).position;
+            floating = (pos === 'fixed' || pos === 'sticky') && !under.contains(n);
+        }
         out.push({
             id: n.getAttribute('data-find-id'),
             tag: under ? under.tagName.toLowerCase() : null,
-            text: text.trim().slice(0, 24),
+            text: floating ? '' : text.trim().slice(0, 24),
+            floating: floating,
         });
     });
     return JSON.stringify(out);
@@ -2905,6 +2930,7 @@ def check_finds_not_on_text(b, page, expected):
     LEAF = ('p', 'span', 'h1', 'h2', 'h3', 'h4', 'b', 'strong', 'em', 'a', 'img', 'li')
     fails = []
     total = 0
+    floaters = 0          # 浮动元素路过的次数（只在摘要里报，不算失败）
 
     # ⚠ **两个视口都要量。** 这条断言原先只在默认视口（约 1256）跑 ——
     #   而本站的主要访客是**手机**。2026-10-02 实测：1256 下 0 个压字，
@@ -2921,7 +2947,10 @@ def check_finds_not_on_text(b, page, expected):
             fails.append(u'[%s] 取不到可发现物的落点信息' % label)
             continue
         total = max(total, len(d))
+        floaters = max(floaters, len([x for x in d if x.get('floating')]))
         for n in d:
+            if n.get('floating'):
+                continue
             if n['text']:
                 fails.append(u'[%s] %s：正压着文字「%s」（<%s>）—— 看着会像渲染故障'
                              % (label, n['id'], n['text'], n['tag']))
@@ -2934,7 +2963,8 @@ def check_finds_not_on_text(b, page, expected):
     b._send('Emulation.clearDeviceMetricsOverride')
     time.sleep(0.6)
 
-    return (fails, u'%d 个都落在容器上（两个视口）' % total if not fails
+    note = u'（另有浮动元素路过，不计）' if floaters else u''
+    return (fails, u'%d 个都落在容器上（两个视口）%s' % (total, note) if not fails
             else u'%d 处压着东西' % len(fails))
 
 
