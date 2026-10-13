@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="same-origin">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="description" content="逐火十三英桀 · 位次 XIII · 刻印「空梦」。">
+<link rel="canonical" href="https://elysiad.top/pardofelis/">
+<title>elysiad.top/pardofelis — 致帕朵菲莉丝</title>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "elysiad.top/pardofelis — 致帕朵菲莉丝",
+  "url": "https://elysiad.top/pardofelis/",
+  "description": "逐火十三英桀 · 位次 XIII · 刻印「空梦」。",
+  "inLanguage": "zh-CN",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "elysiad.top — 致爱莉希雅",
+    "url": "https://elysiad.top/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "首页", "item": "https://elysiad.top/" },
+    { "@type": "ListItem", "position": 2, "name": "帕朵菲莉丝", "item": "https://elysiad.top/pardofelis/" }
+  ]
+}
+</script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="elysiad.top">
+<meta property="og:title" content="致帕朵菲莉丝 — elysiad.top">
+<meta property="og:description" content="逐火十三英桀 · 位次 XIII · 刻印「空梦」。明天的事明天再烦恼。">
+<meta property="og:url" content="https://elysiad.top/pardofelis/">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/explore.css">
+<!-- SECTION: page styles -->
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-abyss:#120a14;--bg-deep:#1c1020;--bg-dusk:#2e1a2a;--bg-mid:#412438;
+  --apricot:#ffd9a0;--coin:#ffd166;--orange:#ff9d5c;--dusk-rose:#e8849c;
+  --eyeblue:#7fb8e8;--eyegreen:#7dd8b0;
+  --text:#f7ede2;--text-dim:#cbb6a4;--text-muted:#9a8471;
+  --glass-bg:rgba(255,209,102,.05);--glass-border:rgba(255,217,160,.16);
+  --glass-bg2:rgba(255,157,92,.05);--glass-border2:rgba(255,157,92,.13);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg-abyss);color:var(--text);overflow-x:hidden;line-height:1.7;
+}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg-abyss)}
+::-webkit-scrollbar-thumb{background:var(--orange);border-radius:3px}
+
+#sunCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+
+/* SECTION: opening */
+.section-opening{
+  position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:2rem;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 108%,rgba(255,157,92,.16),transparent 70%),
+    radial-gradient(ellipse 45% 30% at 18% 22%,rgba(127,184,232,.06),transparent 70%),
+    linear-gradient(180deg,var(--bg-abyss) 0%,var(--bg-deep) 30%,var(--bg-dusk) 62%,var(--bg-deep) 100%);
+}
+.opening-ornament{font-size:1rem;color:var(--coin);letter-spacing:.7em;opacity:0;transition:opacity 1.2s ease;margin-bottom:1.3rem}
+.opening-title{
+  font-size:clamp(1.4rem,4.4vw,2.6rem);font-weight:400;letter-spacing:.1em;
+  color:var(--apricot);text-shadow:0 0 30px rgba(255,157,92,.35),0 0 60px rgba(255,209,102,.15);
+  min-height:2.6em;max-width:880px;
+}
+.typing-cursor{display:inline-block;font-weight:100;color:var(--orange);animation:blink-cursor .8s step-end infinite}
+.typing-cursor.hidden{display:none}
+@keyframes blink-cursor{0%,100%{opacity:1}50%{opacity:0}}
+.opening-subtitle{
+  font-size:clamp(.9rem,2.5vw,1.2rem);color:var(--text-dim);letter-spacing:.35em;
+  margin-top:1.5rem;opacity:0;transition:opacity 1.5s ease;
+}
+.opening-subtitle.visible{opacity:1}
+.opening-hint{font-size:.72rem;color:var(--text-muted);letter-spacing:.1em;margin-top:1rem;opacity:0;transition:opacity 1.5s ease 1s}
+.opening-hint.visible{opacity:.75}
+.scroll-hint{
+  position:absolute;bottom:calc(2.5rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  opacity:0;transition:opacity 1s ease .5s;
+}
+.scroll-hint.visible{opacity:.6}
+.scroll-hint span{font-size:.75rem;color:var(--text-muted);letter-spacing:.2em}
+.scroll-chevron{
+  width:20px;height:20px;border-right:2px solid var(--orange);border-bottom:2px solid var(--orange);
+  transform:rotate(45deg);animation:chevron-bounce 2s ease-in-out infinite;
+}
+@keyframes chevron-bounce{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(6px)}}
+
+/* SECTION: common section */
+.content-section{
+  position:relative;z-index:2;padding:6rem 1.5rem;
+  background:linear-gradient(180deg,transparent 0%,rgba(18,10,20,.3) 20%,rgba(18,10,20,.3) 80%,transparent 100%);
+}
+.section-title{
+  font-size:clamp(1.5rem,4vw,2.2rem);font-weight:400;letter-spacing:.2em;cursor:pointer;user-select:none;
+  color:var(--coin);text-shadow:0 0 20px rgba(255,209,102,.28);transition:text-shadow .3s ease;
+}
+.section-title:hover{text-shadow:0 0 32px rgba(255,209,102,.5)}
+.section-title-line{display:block;width:60px;height:1px;margin:1rem auto 0;background:linear-gradient(90deg,transparent,var(--orange),transparent)}
+.section-title-mark{display:inline-block;font-size:.8em;color:var(--orange);margin:0 .8rem}
+
+/* SECTION: profile */
+.profile-card{
+  max-width:720px;margin:0 auto;padding:clamp(2rem,5vw,3rem);
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--glass-border);border-radius:24px;
+  box-shadow:0 0 50px rgba(255,157,92,.07),0 0 100px rgba(255,209,102,.05),inset 0 1px 0 rgba(255,255,255,.06);
+  position:relative;overflow:hidden;animation:glow-pulse 6s ease-in-out infinite;
+}
+.profile-card::before{
+  content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+  background:conic-gradient(from 0deg,transparent,rgba(255,209,102,.05),transparent,rgba(255,157,92,.05),transparent);
+  animation:card-rotate 18s linear infinite;
+}
+@keyframes card-rotate{to{transform:rotate(360deg)}}
+@keyframes glow-pulse{
+  0%,100%{box-shadow:0 0 50px rgba(255,157,92,.07),0 0 100px rgba(255,209,102,.05)}
+  50%{box-shadow:0 0 62px rgba(255,157,92,.13),0 0 120px rgba(255,209,102,.09)}
+}
+.profile-card-inner{position:relative;z-index:1}
+.cat-ears-wrap{display:flex;justify-content:center;margin-bottom:.6rem}
+.cat-ears{cursor:pointer;transition:transform .3s ease;user-select:none}
+.cat-ears:hover{transform:scale(1.06)}
+.cat-ears.wiggle{animation:ear-wiggle .5s ease}
+@keyframes ear-wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-7deg) scale(1.05)}75%{transform:rotate(7deg) scale(1.05)}}
+.profile-name{
+  font-size:clamp(1.7rem,4.8vw,2.6rem);font-weight:400;letter-spacing:.1em;cursor:pointer;user-select:none;
+  color:var(--apricot);text-align:center;margin-bottom:.2em;text-shadow:0 0 26px rgba(255,217,160,.35);
+}
+.profile-name-en{
+  font-size:clamp(.85rem,1.9vw,1.05rem);font-weight:300;letter-spacing:.4em;
+  color:var(--orange);text-align:center;margin-bottom:2rem;
+}
+.profile-divider{width:100%;height:1px;margin:1.5rem 0;background:linear-gradient(90deg,transparent,var(--glass-border),var(--glass-border2),transparent)}
+.profile-grid{display:grid;grid-template-columns:auto 1fr;gap:.6rem 1.5rem;font-size:.92rem}
+.profile-label{color:var(--text-muted);white-space:nowrap;font-weight:400}
+.profile-value{color:var(--text);font-weight:300}
+.profile-value .highlight{color:var(--coin);font-weight:400}
+.profile-value .blue{color:var(--eyeblue);font-weight:400}
+.profile-value .green{color:var(--eyegreen);font-weight:400}
+.profile-desc{
+  margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--glass-border);
+  font-size:.9rem;color:var(--text-dim);line-height:1.9;font-weight:300;
+}
+
+/* SECTION: shop (她的小卖部) */
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1.1rem;max-width:1000px;margin:0 auto}
+.shop-card{
+  padding:1.3rem 1.4rem;cursor:pointer;user-select:none;min-height:112px;position:relative;
+  background:linear-gradient(150deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--glass-border);border-radius:16px;
+  transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;
+}
+.shop-card:hover{transform:translateY(-3px) rotate(-.4deg);box-shadow:0 0 26px rgba(255,209,102,.14)}
+.shop-card.open{border-color:var(--coin);box-shadow:0 0 22px rgba(255,209,102,.2)}
+.shop-icon{font-size:1.5rem;margin-bottom:.5rem;display:block}
+.shop-name{font-size:1rem;color:var(--coin);letter-spacing:.06em;margin-bottom:.25rem}
+.shop-price{font-size:.72rem;color:var(--text-muted);letter-spacing:.05em}
+.shop-detail{
+  max-height:0;overflow:hidden;opacity:0;font-size:.8rem;color:var(--text-dim);line-height:1.8;font-weight:300;
+  transition:max-height .45s ease,opacity .45s ease,margin .45s ease;
+}
+.shop-card.open .shop-detail{max-height:240px;opacity:1;margin-top:.7rem}
+
+/* SECTION: timeline */
+.timeline{position:relative;max-width:800px;margin:0 auto;padding:2rem 0}
+.timeline-line{
+  position:absolute;left:50%;top:0;bottom:0;width:2px;
+  background:linear-gradient(180deg,transparent,var(--orange) 10%,var(--coin) 50%,var(--dusk-rose) 82%,transparent);
+  transform:translateX(-50%);
+}
+.timeline-node{
+  position:relative;display:flex;align-items:flex-start;margin-bottom:3rem;
+  opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;
+}
+.timeline-node.visible{opacity:1;transform:translateY(0)}
+.timeline-node:nth-child(odd){flex-direction:row}
+.timeline-node:nth-child(even){flex-direction:row-reverse}
+.timeline-dot{
+  position:absolute;left:50%;top:.5rem;width:13px;height:13px;border-radius:50%;
+  border:2px solid var(--coin);background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
+  box-shadow:0 0 12px rgba(255,209,102,.45);transition:background .3s;
+}
+.timeline-node.visible .timeline-dot{background:var(--coin)}
+.timeline-card{
+  width:calc(50% - 2.5rem);padding:1.2rem 1.5rem;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 0 20px rgba(255,157,92,.04);
+  transition:box-shadow .3s ease;
+}
+.timeline-card:hover{box-shadow:0 0 28px rgba(255,209,102,.12)}
+.timeline-node:nth-child(odd) .timeline-card{margin-right:auto}
+.timeline-node:nth-child(even) .timeline-card{margin-left:auto}
+.timeline-card h3{font-size:1.05rem;font-weight:500;color:var(--apricot);margin-bottom:.5rem;letter-spacing:.1em}
+.timeline-card p{font-size:.85rem;color:var(--text-dim);line-height:1.8;font-weight:300}
+
+/* SECTION: quotes */
+.quote-card{
+  padding:1.5rem;min-height:140px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
+  transition:transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
+}
+.quote-card:hover{transform:translateY(-3px) rotate(.4deg);box-shadow:0 0 30px rgba(255,209,102,.14),0 8px 30px rgba(0,0,0,.2)}
+.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition:opacity .4s ease}
+.quote-text.fading{opacity:0}
+.quote-hint{position:absolute;bottom:.6rem;right:.8rem;font-size:.65rem;color:var(--text-muted);opacity:.4}
+
+/* SECTION: fortune (今日好运) */
+.fortune-wrap{max-width:560px;margin:0 auto;text-align:center}
+.fortune-tube{
+  width:120px;height:150px;margin:0 auto;cursor:pointer;position:relative;user-select:none;
+  transition:transform .12s ease;
+}
+.fortune-tube.shaking{animation:tube-shake .55s ease}
+@keyframes tube-shake{
+  0%,100%{transform:rotate(0)}
+  20%{transform:rotate(-14deg) translateY(-6px)}
+  45%{transform:rotate(12deg) translateY(-4px)}
+  70%{transform:rotate(-8deg)}
+  85%{transform:rotate(5deg)}
+}
+.fortune-result{
+  margin:1.8rem auto 0;max-width:440px;min-height:150px;padding:1.4rem 1.5rem;border-radius:18px;
+  background:linear-gradient(160deg,rgba(255,233,196,.96),rgba(255,217,160,.92));
+  color:#4a2f1a;box-shadow:0 10px 34px rgba(0,0,0,.35),0 0 30px rgba(255,209,102,.2);
+  opacity:0;transform:translateY(14px) rotate(-1deg);transition:opacity .45s ease,transform .45s ease;
+  text-align:left;position:relative;
+}
+.fortune-result.show{opacity:1;transform:translateY(0) rotate(-1deg)}
+.fortune-result.gold{background:linear-gradient(160deg,#fff3cf,#ffd166);box-shadow:0 10px 34px rgba(0,0,0,.35),0 0 44px rgba(255,209,102,.55)}
+.fortune-level{font-size:1.25rem;font-weight:700;letter-spacing:.2em;color:#a34d1f;margin-bottom:.5rem}
+.fortune-line{font-size:.88rem;line-height:1.9;color:#5c3c22}
+.fortune-item{margin-top:.7rem;font-size:.78rem;color:#8a5a2e;letter-spacing:.08em}
+.fortune-hint{font-size:.75rem;color:var(--text-muted);letter-spacing:.12em;margin-top:1.2rem;opacity:.8}
+
+/* SECTION: ending */
+.ending-quote{
+  font-size:clamp(1rem,2.8vw,1.4rem);font-weight:300;letter-spacing:.08em;cursor:pointer;user-select:none;
+  color:var(--apricot);line-height:2.1;text-shadow:0 0 25px rgba(255,217,160,.3);
+  max-width:680px;
+}
+.ending-sub{
+  margin-top:1.6rem;font-size:.85rem;color:var(--text-dim);letter-spacing:.06em;line-height:2;
+  max-width:580px;opacity:0;transition:opacity 1s ease;min-height:1.4em;
+}
+.ending-sub.visible{opacity:.9}
+.ending-sub .src{display:block;font-size:.68rem;color:var(--text-muted);margin-top:.4rem;letter-spacing:.08em}
+.back-link{color:var(--coin);border:1px solid var(--glass-border);background:rgba(255,209,102,.06)}
+.back-link:hover{background:rgba(255,209,102,.14);box-shadow:0 0 24px rgba(255,209,102,.25)}
+
+/* SECTION: coin HUD */
+#coinHud{
+  position:fixed;top:calc(.9rem + env(safe-area-inset-top));right:.9rem;z-index:9988;
+  display:flex;align-items:center;gap:.5rem;padding:.45rem .9rem;border-radius:999px;
+  background:rgba(28,16,32,.82);border:1px solid rgba(255,209,102,.3);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  color:var(--coin);font-size:.8rem;letter-spacing:.08em;user-select:none;
+  box-shadow:0 0 14px rgba(255,209,102,.15);font-variant-numeric:tabular-nums;
+}
+#coinHud.bump{animation:hud-bump .35s ease}
+@keyframes hud-bump{0%,100%{transform:scale(1)}45%{transform:scale(1.14)}}
+
+/* SECTION: floating coin & cat & laser */
+.world-coin{
+  position:fixed;z-index:9987;font-size:22px;cursor:pointer;user-select:none;
+  animation:coin-bob 1.6s ease-in-out infinite;
+  filter:drop-shadow(0 0 8px rgba(255,209,102,.7));
+  transition:transform .15s ease;
+}
+.world-coin:hover{transform:scale(1.3)}
+@keyframes coin-bob{0%,100%{margin-top:0}50%{margin-top:-7px}}
+.world-coin.gone{animation:coin-taken .4s ease forwards;pointer-events:none}
+@keyframes coin-taken{to{opacity:0;transform:scale(1.8) translateY(-24px)}}
+
+#laserDot{
+  position:fixed;width:10px;height:10px;border-radius:50%;z-index:9986;pointer-events:none;
+  background:radial-gradient(circle,#ff5a4e 30%,rgba(255,90,78,.4) 70%,transparent);
+  box-shadow:0 0 10px rgba(255,90,78,.9);display:none;transform:translate(-50%,-50%);
+}
+#theCat{
+  position:fixed;z-index:9989;font-size:34px;cursor:pointer;user-select:none;
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,.5));
+  transition:opacity .6s ease;display:none;
+}
+#theCat.pounce{animation:cat-pounce .3s ease}
+@keyframes cat-pounce{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
+#theCat .zzz{position:absolute;top:-14px;right:-10px;font-size:14px;opacity:0;transition:opacity .5s}
+#theCat.sleeping .zzz{opacity:1;animation:zzz-float 2s ease-in-out infinite}
+@keyframes zzz-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+/* SECTION: paw ripple */
+.paw-mark{
+  position:fixed;pointer-events:none;z-index:9993;font-size:20px;
+  transform:translate(-50%,-50%) scale(.4) rotate(var(--paw-rot,0deg));opacity:.9;
+  animation:paw-fade .8s ease-out forwards;
+}
+@keyframes paw-fade{
+  30%{opacity:.85;transform:translate(-50%,-50%) scale(1.05) rotate(var(--paw-rot,0deg))}
+  100%{opacity:0;transform:translate(-50%,-60%) scale(.85) rotate(var(--paw-rot,0deg))}
+}
+
+/* SECTION: game overlay (接罐头) */
+#catGameOverlay{
+  position:fixed;inset:0;z-index:9997;display:none;align-items:center;justify-content:center;flex-direction:column;gap:.8rem;
+  background:rgba(18,10,20,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:1rem;
+}
+#catGameOverlay.on{display:flex}
+.cg-head{display:flex;gap:1.4rem;color:var(--text-dim);font-size:.85rem;letter-spacing:.08em;font-variant-numeric:tabular-nums}
+.cg-head b{color:var(--coin)}
+#catCanvas{
+  border:1px solid rgba(255,209,102,.25);border-radius:14px;background:#160d18;
+  box-shadow:0 0 40px rgba(255,157,92,.12);max-width:94vw;touch-action:none;
+}
+.cg-msg{color:var(--apricot);font-size:.88rem;letter-spacing:.06em;min-height:1.6em;text-align:center}
+.cg-btns{display:flex;gap:.8rem}
+.cg-btn{
+  min-height:44px;padding:.55rem 1.5rem;border-radius:999px;cursor:pointer;font-family:inherit;
+  border:1px solid var(--glass-border);background:rgba(255,209,102,.1);color:var(--coin);
+  font-size:.85rem;letter-spacing:.12em;transition:background .3s,box-shadow .3s;
+}
+.cg-btn:hover{background:rgba(255,209,102,.2);box-shadow:0 0 16px rgba(255,209,102,.25)}
+.cg-btn.ghost{color:var(--text-muted);background:transparent}
+
+/* SECTION: toast */
+#pdToast{
+  position:fixed;left:50%;bottom:15%;transform:translateX(-50%) translateY(10px);z-index:9996;
+  max-width:88vw;padding:.75rem 1.5rem;border-radius:999px;font-size:.86rem;letter-spacing:.05em;
+  color:var(--text);background:linear-gradient(135deg,rgba(46,26,42,.95),rgba(65,36,56,.95));
+  border:1px solid rgba(255,209,102,.35);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 6px 30px rgba(0,0,0,.5),0 0 24px rgba(255,209,102,.18);
+  opacity:0;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:opacity .35s ease,transform .35s ease;text-align:center;
+}
+#pdToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#pdToast.rich{color:#ffe9b8;border-color:rgba(255,209,102,.75);box-shadow:0 6px 30px rgba(0,0,0,.5),0 0 36px rgba(255,209,102,.45)}
+@media(max-width:600px){#pdToast{white-space:normal;line-height:1.6}}
+
+/* SECTION: responsive */
+@media(max-width:768px){
+  .timeline-line{left:1.5rem}
+  .timeline-node,.timeline-node:nth-child(odd),.timeline-node:nth-child(even){flex-direction:row}
+  .timeline-dot{left:1.5rem}
+  .timeline-card,.timeline-node:nth-child(odd) .timeline-card,.timeline-node:nth-child(even) .timeline-card{
+    width:calc(100% - 3.5rem);margin-left:3.5rem;margin-right:0;
+  }
+  .quotes-grid{grid-template-columns:1fr}
+  .shop-grid{grid-template-columns:1fr 1fr}
+  .profile-grid{grid-template-columns:auto 1fr;gap:.5rem 1rem;font-size:.85rem}
+}
+@media(max-width:480px){
+  .content-section{padding:4rem 1rem}
+  .profile-card{padding:1.5rem}
+  .quote-card{min-height:120px;padding:1.2rem}
+  .shop-grid{grid-template-columns:1fr}
+  #coinHud{padding:.35rem .7rem;font-size:.72rem}
+}
+@media(prefers-reduced-motion:reduce){
+  .timeline-node{transition:none;opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<canvas id="sunCanvas"></canvas>
+
+<!-- SECTION: opening -->
+<section class="section-opening" id="opening">
+  <div class="opening-content">
+    <div class="opening-ornament" id="openingOrn">🐾 ── ✦ ── 🐾</div>
+    <h1 class="opening-title" id="typewriterText"></h1><span class="typing-cursor" id="typingCursor">|</span>
+    <p class="opening-subtitle" id="openingSub">欢迎光临菲莉丝的小卖部</p>
+    <p class="opening-hint" id="openingHint">本店出售：亮闪闪的东西、好运、午后的太阳。收银币，也收故事。</p>
+  </div>
+  <div class="scroll-hint" id="scrollHint">
+    <span>进店逛逛</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</section>
+
+<!-- SECTION: about -->
+<section class="content-section" id="about">
+  <div class="section-title-wrap">
+    <h2 class="section-title" data-snark="about"><span class="section-title-mark">🐾</span>关于她<span class="section-title-mark">🐾</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="profile-card">
+    <div class="profile-card-inner">
+      <div class="cat-ears-wrap">
+        <div class="cat-ears" id="catEars" role="button" tabindex="0" aria-label="猫耳朵，戳一下试试">
+          <svg viewBox="0 0 140 64" width="132" height="60" aria-hidden="true">
+            <path d="M18 58 L10 12 L48 34 Z" fill="#c98d5a" stroke="#8a5a33" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M24 50 L19 24 L41 38 Z" fill="#f2b8c6" opacity=".85"/>
+            <path d="M122 58 L130 12 L92 34 Z" fill="#c98d5a" stroke="#8a5a33" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M116 50 L121 24 L99 38 Z" fill="#f2b8c6" opacity=".85"/>
+            <path d="M40 52 Q70 66 100 52" stroke="#c98d5a" stroke-width="8" fill="none" stroke-linecap="round"/>
+            <circle cx="58" cy="46" r="3.4" fill="#7fb8e8"/>
+            <circle cx="82" cy="46" r="3.4" fill="#7dd8b0"/>
+          </svg>
+        </div>
+      </div>
+      <div class="profile-name" id="profileName" role="button" tabindex="0">帕朵菲莉丝</div>
+      <div class="profile-name-en">P A R D O F E L I S</div>
+      <div class="profile-divider"></div>
+      <div class="profile-grid">
+        <span class="profile-label">名字来源</span>
+        <span class="profile-value">Pardofelis——<span class="highlight">云猫</span>的学名</span>
+        <span class="profile-label">出处</span>
+        <span class="profile-value">《崩坏3》第一文明纪元</span>
+        <span class="profile-label">身份</span>
+        <span class="profile-value">黄昏街义盗 → 逐火之蛾融合战士 → 往世乐土小卖部老板娘</span>
+        <span class="profile-label">位次</span>
+        <span class="profile-value"><span class="highlight">ⅩⅢ</span>（末席）</span>
+        <span class="profile-label">刻印</span>
+        <span class="profile-value"><span class="highlight">「空梦」</span>——人类对未来美好的幻想</span>
+        <span class="profile-label">生日</span>
+        <span class="profile-value"><span class="highlight">7月11日</span> · 巨蟹座</span>
+        <span class="profile-label">身体数据</span>
+        <span class="profile-value">164cm / 50kg</span>
+        <span class="profile-label">外貌</span>
+        <span class="profile-value">棕发，<span class="blue">左蓝</span><span class="green">右绿</span>的异色瞳；手术后长出了毛茸茸的猫耳和尾巴</span>
+        <span class="profile-label">融合崩坏兽</span>
+        <span class="profile-value">官方未公布——只知道术后的她，变得很毛茸茸</span>
+        <span class="profile-label">武器</span>
+        <span class="profile-value">环刃「往世的幻梦·夜之瞳」（维尔薇出品，亮闪闪的）</span>
+        <span class="profile-label">搭档</span>
+        <span class="profile-value">猫「罐头」——心情分为<span class="highlight">「生气了」</span>和<span class="highlight">「超乖巧」</span></span>
+        <span class="profile-label">配音</span>
+        <span class="profile-value">金娜（汉语）/ 山本希望（日语）；罐头：花玲</span>
+        <span class="profile-label">爱好</span>
+        <span class="profile-value">收集值钱的东西（亮闪闪的也行）、晒太阳睡午觉、和猫猫玩、集齐逐火之蛾所有款式的队服</span>
+        <span class="profile-label">讨厌的东西</span>
+        <span class="profile-value">「失去」</span>
+        <span class="profile-label">最大的梦想</span>
+        <span class="profile-value"><span class="highlight">能和大家一起晒太阳</span></span>
+      </div>
+      <div class="profile-desc">
+        如猫儿一般无忧无虑的少女，同时也是一位精明的商人。她踩着黄昏而来，脚步轻巧，将那熔炉一般的过往抛于脑后。昔日困苦如雁过无痕，唯有欢乐与眼前的珍宝唾手可及。她似乎无枝可栖，却又似处处为家——最不像英雄的英雄，也是活得最像我们理想中样子的英桀。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: shop -->
+<section class="content-section" id="shop">
+  <div class="section-title-wrap">
+    <h2 class="section-title" data-snark="shop"><span class="section-title-mark">🐾</span>她的小卖部<span class="section-title-mark">🐾</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="shop-grid" id="shopGrid" data-primary-action></div>
+</section>
+
+<!-- SECTION: journey -->
+<section class="content-section" id="journey">
+  <div class="section-title-wrap">
+    <h2 class="section-title" data-snark="journey"><span class="section-title-mark">🐾</span>她的空梦<span class="section-title-mark">🐾</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="timeline">
+    <div class="timeline-line"></div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>黄昏街的孩子</h3>
+        <p>她出生在黄昏街，被一位老流浪汉收养。老人走后，她的家人是一群同样流浪的野猫——帕朵喜欢猫，猫也喜欢帕朵。睡醒了找吃的，中午一起晒太阳，晚上挤在一起取暖。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>义盗</h3>
+        <p>为了活下去，她学会在夜色里「进货」，劫富济贫，成了黄昏街人人皆知的义盗——连悬赏令都拍得比谁都清楚。口袋里的旧硬币替她挡过一次子弹，从此她相信：自己的运气向来不差。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>阴差阳错</h3>
+        <p>一场博弈、一次误会，被追捕的少女误入飞蛾的领地，阴差阳错躺上了超变手术台。醒来时，她成了融合战士——还长出了猫耳和尾巴。从那以后，黄昏街的猫再不肯走近她。「排斥异类」，是刻在生物本能里的事。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>毒蛹（挂名）</h3>
+        <p>为了集齐逐火之蛾所有款式的队服，她加入又退出了所有小队——包括暗杀小队「毒蛹」，但一次任务都没参加过。她还和梅比乌斯、樱、爱莉希雅、伊甸组成了「女子八卦队」。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>约束之后</h3>
+        <p>约束之律者降临时，她莫名其妙病倒在床，错过了整场战斗。等她醒来，活着的融合战士只剩十三人——她的朋友，无一例外，全都战死了。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>樱团</h3>
+        <p>侵蚀之律者诞生那晚她恰好在外出任务，逃过一劫——樱却没有。她带着樱最爱吃的樱团子来到墓前，第一次明白：无能为力的痛苦，比死还难受。从那以后，那个偷懒摸鱼的猫猫，把「英桀」两个字放在了心上。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>埋藏的宝箱</h3>
+        <p>终焉确定降临，她接下一个必死的任务：登上月球，开启那扇辐射足以杀死融合战士的门，让「普罗米修斯」入侵崩坏意志。出发前一天，她回了趟黄昏街，把一生珍视的宝物装进箱子，埋进了大地。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>小卖部</h3>
+        <p>往世乐土里，她重新支起了小摊：亮闪闪的银币是硬通货，老主顾打八折（居然不是免费），搭档是一只叫「罐头」的猫。她带芽衣走进乐土深处，也把黄昏街的夕阳，永远开在了数据的世界里。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>谢幕</h3>
+        <p>侵蚀之律者入侵乐土，她被「极恶」维尔薇袭击、记忆体消散——却借「专家」留下的后门潜入律者体内，保住自主意识，成为致命一击的定位信标。她怕得要命，但还是站在了那里。天火落下的时候，这位末席英桀，完成了她此生最像英雄的一件事。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: quotes -->
+<section class="content-section" id="quotes">
+  <div class="section-title-wrap">
+    <h2 class="section-title" data-snark="quotes"><span class="section-title-mark">🐾</span>空梦之言<span class="section-title-mark">🐾</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="quotes-grid" id="quotesGrid"></div>
+</section>
+
+<!-- SECTION: fortune -->
+<section class="content-section" id="fortune">
+  <div class="section-title-wrap">
+    <h2 class="section-title" data-snark="fortune"><span class="section-title-mark">🐾</span>今日好运<span class="section-title-mark">🐾</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="fortune-wrap">
+    <div class="fortune-tube" id="fortuneTube" role="button" tabindex="0" aria-label="好运签筒，摇一摇" data-primary-action>
+      <svg viewBox="0 0 120 150" width="120" height="150" aria-hidden="true">
+        <rect x="30" y="52" width="60" height="86" rx="10" fill="#a3672f" stroke="#6e4420" stroke-width="2.5"/>
+        <rect x="30" y="52" width="60" height="16" rx="8" fill="#c98d5a"/>
+        <text x="60" y="106" font-size="26" text-anchor="middle" fill="#ffd166" font-weight="bold">运</text>
+        <line x1="42" y1="52" x2="36" y2="14" stroke="#e8c98a" stroke-width="4" stroke-linecap="round"/>
+        <line x1="58" y1="52" x2="58" y2="8" stroke="#ff9d5c" stroke-width="4" stroke-linecap="round"/>
+        <line x1="74" y1="52" x2="82" y2="16" stroke="#e8849c" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="36" cy="12" r="4.5" fill="#ffd166"/>
+        <circle cx="58" cy="6" r="4.5" fill="#ff9d5c"/>
+        <circle cx="82" cy="14" r="4.5" fill="#e8849c"/>
+      </svg>
+    </div>
+    <p class="fortune-hint">摇一摇签筒，抽一支帕朵亲笔的「好运签」。（她保证有用，今早还捡到宝贝了）</p>
+    <div class="fortune-result" id="fortuneResult">
+      <div class="fortune-level" id="fortuneLevel"></div>
+      <p class="fortune-line" id="fortuneLine"></p>
+      <p class="fortune-item" id="fortuneItem"></p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: ending -->
+<section class="section-ending" id="ending">
+  <div class="ending-stars" id="endingStars"></div>
+  <p class="ending-quote" id="endingQuote" role="button" tabindex="0">我会把我的好运分给你，你就放心吧！<br>今后不论你是在很久没穿过的衣服口袋里发现了钱，<br>还是自动贩卖机多掉了一瓶饮料——<br>那都说明，是咱的好运生效啦！</p>
+  <p class="ending-sub" id="endingSub"></p>
+  <p class="ending-attr" id="endingAttr">致帕朵菲莉丝 · elysiad.top/pardofelis</p>
+  <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
+  <div class="ending-fade"></div>
+</section>
+
+<!-- SECTION: coin hud -->
+<div id="coinHud" title="捡到的闪亮的银币">🪙 银币 × <b id="coinCount">0</b></div>
+
+<!-- SECTION: laser & cat -->
+<div id="laserDot"></div>
+<div id="theCat" role="button" tabindex="0" aria-label="罐头，戳它">🐱<span class="zzz">💤</span></div>
+
+<!-- SECTION: game overlay -->
+<div id="catGameOverlay" aria-hidden="true">
+  <div class="cg-head">
+    <span>进货 <b id="cgScore">0</b></span>
+    <span>剩余 <b id="cgTime">45</b>s</span>
+    <span>最佳 <b id="cgBest">0</b></span>
+  </div>
+  <canvas id="catCanvas" width="340" height="420"></canvas>
+  <p class="cg-msg" id="cgMsg">左右移动（方向键 / 拖动），接住罐头和小钱钱——劫哥的火焰可千万别碰！</p>
+  <div class="cg-btns">
+    <button class="cg-btn" id="cgStart">开始进货</button>
+    <button class="cg-btn ghost" id="cgClose">收摊</button>
+  </div>
+</div>
+
+<div id="pdToast" role="status"></div>
+
+<!-- SECTION: shared layer -->
+<script src="/assets/site.js"></script>
+<script src="/assets/explore.js"></script>
+<script src="/assets/bottom.js"></script>
+<script src="/assets/bday.js"></script>
+<script src="/data/bdays.js"></script>
+
+<!-- SECTION: page script -->
+<script>
+(function(){
+  /* ============ 游戏模块：去吧，罐头！ ============ */
+  window.ElysiaGames = window.ElysiaGames || {};
+  window.ElysiaGames.pardofelis = (function(){
+    var overlay = document.getElementById('catGameOverlay');
+    var cv = document.getElementById('catCanvas');
+    var ctx = cv.getContext('2d');
+    var scoreEl = document.getElementById('cgScore');
+    var timeEl = document.getElementById('cgTime');
+    var bestEl = document.getElementById('cgBest');
+    var msgEl = document.getElementById('cgMsg');
+    var startBtn = document.getElementById('cgStart');
+    var closeBtn = document.getElementById('cgClose');
+    var W = 340, H = 420;
+    var basket = { x: W / 2, w: 64 };
+    var items = [], score = 0, timeLeft = 45, running = false;
+    var tickTimer = null, raf = null, lastSpawn = 0;
+    var best = 0;
+    try { best = parseInt(localStorage.getItem('pdCatBest') || '0', 10) || 0; } catch(err){ best = 0; }
+    bestEl.textContent = String(best);
+
+    var ITEM_TYPES = [
+      { ch:'🐟', pts:10, w:0.34 },
+      { ch:'🪙', pts:5,  w:0.34 },
+      { ch:'💎', pts:20, w:0.12 },
+      { ch:'🔥', pts:-15, w:0.20 },
+    ];
+    function pickType(){
+      var r = Math.random(), acc = 0;
+      for (var i = 0; i < ITEM_TYPES.length; i++){
+        acc += ITEM_TYPES[i].w;
+        if (r <= acc) return ITEM_TYPES[i];
+      }
+      return ITEM_TYPES[0];
+    }
+    function spawnItem(){
+      var t = pickType();
+      items.push({
+        x: 20 + Math.random() * (W - 40),
+        y: -20,
+        vy: 1.6 + Math.random() * 1.6 + (45 - timeLeft) * 0.035,
+        ch: t.ch, pts: t.pts,
+      });
+    }
+    function loop(ts){
+      if (!running) return;
+      ctx.clearRect(0, 0, W, H);
+      if (!lastSpawn) lastSpawn = ts;
+      var gap = Math.max(340, 760 - (45 - timeLeft) * 9);
+      if (ts - lastSpawn > gap){ lastSpawn = ts; spawnItem(); }
+      for (var i = items.length - 1; i >= 0; i--){
+        var it = items[i];
+        it.y += it.vy;
+        if (it.y > H - 34 && it.y < H - 8 && Math.abs(it.x - basket.x) < basket.w / 2 + 12){
+          score = Math.max(0, score + it.pts);
+          scoreEl.textContent = String(score);
+          if (it.pts > 0){
+            blip(660 + Math.random() * 220, 0.07, 'triangle', 0.2);
+            if (it.pts >= 20) msgEl.textContent = '「哇！是宝石！老板大气！」';
+          } else {
+            blip(150, 0.22, 'sawtooth', 0.22);
+            msgEl.textContent = '「呜哇！劫哥的火！毛毛要烧焦啦！」';
+          }
+          items.splice(i, 1);
+          continue;
+        }
+        if (it.y > H + 24){ items.splice(i, 1); continue; }
+        ctx.font = '22px serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(it.ch, it.x, it.y);
+      }
+      ctx.font = '30px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🧺', basket.x, H - 12);
+      ctx.fillStyle = 'rgba(255,209,102,.35)';
+      ctx.fillRect(basket.x - basket.w / 2, H - 6, basket.w, 4);
+      raf = requestAnimationFrame(loop);
+    }
+    function start(){
+      items = []; score = 0; timeLeft = 45;
+      scoreEl.textContent = '0';
+      timeEl.textContent = '45';
+      msgEl.textContent = '「进货开始咯～今天的货色不错嘛！」';
+      startBtn.textContent = '重新进货';
+      running = true;
+      lastSpawn = 0;
+      clearInterval(tickTimer);
+      cancelAnimationFrame(raf);
+      tickTimer = setInterval(function(){
+        timeLeft--;
+        timeEl.textContent = String(timeLeft);
+        if (timeLeft <= 0) finish();
+      }, 1000);
+      raf = requestAnimationFrame(loop);
+    }
+    function finish(){
+      running = false;
+      clearInterval(tickTimer);
+      cancelAnimationFrame(raf);
+      var rank = score < 120 ? '小本生意' : (score < 260 ? '黄昏街义盗' : (score < 420 ? '乐土金牌老板娘' : '第十三英桀'));
+      var isBest = score > best;
+      if (isBest){
+        best = score;
+        try { localStorage.setItem('pdCatBest', String(best)); } catch(err){}
+        bestEl.textContent = String(best);
+      }
+      msgEl.textContent = '共进货 ' + score + ' ·「' + rank + '」' + (isBest ? ' ——新纪录！她数钱数得爪子都在抖。' : ' ——「明天继续，明天的太阳只有明天能晒嘛～」');
+    }
+    document.addEventListener('keydown', function(e){
+      if (!running) return;
+      if (e.key === 'ArrowLeft'){ basket.x = Math.max(basket.w / 2, basket.x - 26); e.preventDefault(); }
+      if (e.key === 'ArrowRight'){ basket.x = Math.min(W - basket.w / 2, basket.x + 26); e.preventDefault(); }
+    });
+    function pointerMove(clientX){
+      var r = cv.getBoundingClientRect();
+      var x = (clientX - r.left) * (W / r.width);
+      basket.x = Math.max(basket.w / 2, Math.min(W - basket.w / 2, x));
+    }
+    cv.addEventListener('mousemove', function(e){ pointerMove(e.clientX); });
+    cv.addEventListener('touchmove', function(e){
+      if (e.touches.length) pointerMove(e.touches[0].clientX);
+    }, { passive: true });
+    startBtn.addEventListener('click', start);
+    closeBtn.addEventListener('click', function(){
+      overlay.classList.remove('on');
+      overlay.setAttribute('aria-hidden','true');
+      if (running) finish();
+    });
+    ctx.font = '30px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🧺', basket.x, H - 12);
+    return {
+      title: '去吧，罐头！',
+      hint: '左右移动接住罐头、银币和宝石——劫哥的火焰可千万别碰。',
+      mount: function(host){
+        var btn = document.createElement('button');
+        btn.className = 'cg-btn';
+        btn.style.marginTop = '.8rem';
+        btn.textContent = '开张进货';
+        btn.addEventListener('click', function(){
+          overlay.classList.add('on');
+          overlay.setAttribute('aria-hidden','false');
+        });
+        host.appendChild(btn);
+      }
+    };
+  })();
+
+  /* ============ THEME（按共享层 schema） ============ */
+  var THEME = {
+    endingStars: {
+      count: [80, 12],
+      size: [0.5, 2],
+      minO: [0.1, 0.3], maxO: [0.5, 0.5],
+      dur: [2, 4], delay: [0, 5],
+      colors: { pool: ['#ffffff', '#ffd166', '#ff9d5c', '#7dd8b0'] },
+    },
+    quotes: {
+      list: [
+        '「明天的事明天再烦恼，今天的太阳，可是只有今天才能晒呀！」',
+        '「人也好，物也好，只要报酬给够了，咱肯定都能帮你弄到手。」',
+        '「你可以叫我帕朵，也可以叫我菲莉丝，随你喜欢，哪个都行！」',
+        '「欢迎来到菲莉丝的商店！纵横古今包罗万象应有尽有，只有你想不到没有你买不到！当然，要拿亮闪闪的东西交换才行呀~」',
+        '「人生不过是一场随机的游戏——掷下骰子，决定结果。」',
+        '「果然……越是喜欢的东西，就越是容易从身边溜走呀。」',
+        '「去吧，罐头！」',
+        '「我最怕死了呀。英雄的事，就交给英雄去做不就好了……咱只不过是个凡人而已。」',
+        '「她的运气向来不差，那便是她唯一的力量。」',
+        '「我会把我的好运分给你，你就放心吧！」'
+      ],
+      ariaLabel: '空梦之言，点击切换',
+    },
+    typewriter: {
+      text: '明天的事明天再烦恼，今天的太阳，可是只有今天才能晒呀！',
+      delay: 130, jitter: 70, startDelay: 800,
+      tailDelay: 600, hintDelay: 1200,
+      hintEl: true,
+      preReveal: 'openingOrn',
+    },
+    explore: {
+      pageId: 'pardofelis',
+      finds: [
+        { id:'pardo-01', at:'#opening', x:0.10, y:0.20, verb:'click',      art:'glint',
+          line:'欢迎来到菲莉丝的商店！纵横古今包罗万象应有尽有，只有你想不到没有你买不到！',
+          src:'官方档案馆 · 事件-帕朵菲莉丝 · 给予刻印·其一' },
+        { id:'pardo-02', at:'#about',   x:0.08, y:0.14, verb:'hold',       art:'mouse',
+          line:'当然，要拿亮闪闪的东西交换才行呀~',
+          src:'官方档案馆 · 事件-帕朵菲莉丝 · 给予刻印·其一' },
+        { id:'pardo-03', at:'#about',   x:0.92, y:0.88, verb:'triple_tap', art:'glint',
+          line:'人也好，物也好，只要报酬给够了，咱肯定都能帮你弄到手。',
+          src:'官方档案馆 · 英桀档案' },
+        { id:'pardo-04', at:'#shop',    x:0.07, y:0.30, verb:'slide',      art:'ark',
+          line:'她的运气向来不差，那便是她唯一的力量。',
+          src:'官方档案馆 · 英桀档案 · 简介' },
+        { id:'pardo-05', at:'#shop',    x:0.93, y:0.70, verb:'click',      art:'sleeping',
+          line:'明天的事明天再烦恼，今天的太阳，可是只有今天才能晒呀！',
+          src:'官方档案馆 · 英桀档案' },
+        { id:'pardo-06', at:'#journey', x:0.08, y:0.18, verb:'hold',       art:'moon',
+          line:'果然……越是喜欢的东西，就越是容易从身边溜走呀。',
+          src:'官方档案馆 · 追忆「百味空欢」' },
+        { id:'pardo-07', at:'#journey', x:0.92, y:0.42, verb:'drag',       art:'shadow',
+          line:'「排斥异类」，这是被刻写在生物体内的本能。人是如此，猫也一样。',
+          src:'官方档案馆 · 追忆「百味空欢」' },
+        { id:'pardo-08', at:'#journey', x:0.08, y:0.66, verb:'click',      art:'petal',
+          line:'——那……就以后再见啦。',
+          src:'官方档案馆 · 追忆「一梦方醒」' },
+        { id:'pardo-09', at:'#quotes',  x:0.94, y:0.30, verb:'triple_tap', art:'glint',
+          line:'去吧，罐头！',
+          src:'游戏内 · 空梦·掠集之兽 必杀技' },
+        { id:'pardo-10', at:'#quotes',  x:0.06, y:0.72, verb:'slide',      art:'dawn',
+          line:'英雄的事就交给英雄去做不就好了，我只不过是个凡人而已。',
+          src:'游戏内 · 往世乐土剧情台词' },
+        { id:'pardo-11', at:'#ending',  x:0.12, y:0.42, verb:'hold',       art:'moon',
+          line:'我会把我的好运分给你，你就放心吧！',
+          src:'官方档案馆 · 英桀告别台词' },
+        { id:'pardo-12', at:'#bottom',  x:0.50, y:0.12, verb:'click',      art:'mouse',
+          line:'老板，有什么需要的，都可以找咱，价钱好商量。',
+          src:'游戏内 · 往世乐土剧情台词' },
+      ],
+      unlock: {
+        title: '最不像英雄的英雄',
+        text: '「今后不论你是在很久没穿过的衣服口袋里发现了钱，还是自动贩卖机多掉了一瓶饮料……那都说明是咱的好运生效啦！」',
+        src: '官方档案馆 · 英桀告别台词',
+      },
+      whisper: [
+        '「价钱好商量~」',
+        '「咱可是小本买卖哦。」',
+        '「今天的太阳，可是……」',
+        '「喵呜——！」',
+      ],
+      whisperCooldownMs: 9000,
+    },
+    game: { module: 'pardofelis' },
+  };
+
+  /* ============ 共享层挂载 ============ */
+  ElysiaShared.buildQuoteCards({
+    grid: document.getElementById('quotesGrid'),
+    quotes: THEME.quotes.list,
+    ariaLabel: THEME.quotes.ariaLabel,
+  });
+  ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+  ElysiaShared.observeReveal('.timeline-node');
+  ElysiaShared.observeReveal('#ending', {
+    threshold: 0.3, reveal: ['endingQuote', 'endingAttr', 'backLink'],
+  });
+  ElysiaShared.makeTypewriter(THEME.typewriter);
+  ElysiaExplore.init(THEME.explore);
+  ElysiaBottom.mount({ game: THEME.game });
+  ElysiaBday.mount();   /* 生日 7/11 已在 data/bdays.js 登记，自动生效 */
+
+  /* ============ toast ============ */
+  var toastEl = document.getElementById('pdToast');
+  var toastTimer = null;
+  function showToast(text, rich){
+    clearTimeout(toastTimer);
+    toastEl.textContent = text;
+    toastEl.classList.toggle('rich', !!rich);
+    toastEl.classList.remove('show');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, rich ? 4200 : 3000);
+  }
+
+  /* ============ 小卖部商品卡 ============ */
+  var goods = [
+    { icon:'🪙', name:'闪亮的银币', price:'乐土硬通货',
+      detail:'往世乐土商店的通用货币。她给老主顾打八折——居然不是免费。开局送你 500 枚，算是老板娘的一点心意。' },
+    { icon:'🐱', name:'罐头', price:'非卖品！！！',
+      detail:'她的搭档，一只猫。心情分为「生气了」和「超乖巧」两种，决定了它在战场上怎么帮你。乐土里的罐头，是记忆映射出的小小梦想。' },
+    { icon:'🗡', name:'往世的幻梦·夜之瞳', price:'维尔薇出品',
+      detail:'她的环刃。「看！它最后一个缺陷——不够亮闪闪的问题，也被我解决了！」亮闪闪的武器，配亮闪闪的老板娘。' },
+    { icon:'🔘', name:'幸运硬币', price:'无价',
+      detail:'一枚替她挡过子弹的旧硬币。从那以后她走哪儿带哪儿——《如何获得好运气》第四条：放一枚硬币在胸包里，关键时刻能挡子弹。' },
+    { icon:'📜', name:'悬赏令', price:'非卖品',
+      detail:'黄昏街义盗的荣耀证明，被她本人珍藏。说来心酸：那是她童年唯一的一张照片。' },
+    { icon:'📦', name:'宝箱', price:'埋在了黄昏街',
+      detail:'终焉之战前一天，她把一生珍视的宝物装进箱子，埋进了黄昏街的大地。里面有什么，只有她和野猫们知道。' },
+  ];
+  var shopGrid = document.getElementById('shopGrid');
+  goods.forEach(function(g){
+    var card = document.createElement('div');
+    card.className = 'shop-card';
+    card.setAttribute('role','button');
+    card.setAttribute('tabindex','0');
+    var iconEl = document.createElement('span');
+    iconEl.className = 'shop-icon';
+    iconEl.textContent = g.icon;
+    var nameEl = document.createElement('div');
+    nameEl.className = 'shop-name';
+    nameEl.textContent = g.name;
+    var priceEl = document.createElement('div');
+    priceEl.className = 'shop-price';
+    priceEl.textContent = g.price;
+    var detailEl = document.createElement('div');
+    detailEl.className = 'shop-detail';
+    detailEl.textContent = g.detail;
+    card.appendChild(iconEl);
+    card.appendChild(nameEl);
+    card.appendChild(priceEl);
+    card.appendChild(detailEl);
+    card.addEventListener('click', function(){
+      var open = card.classList.toggle('open');
+      if (open){
+        showToast(g.name === '罐头' ? '「罐头是家人！家人不卖！」' : '「眼光不错嘛，老板～」', false);
+        blip(880, 0.06, 'triangle', 0.15);
+      }
+    });
+    card.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+    });
+    shopGrid.appendChild(card);
+  });
+
+  /* ============ 好运签筒（大彩蛋其一） ============ */
+  var tube = document.getElementById('fortuneTube');
+  var fResult = document.getElementById('fortuneResult');
+  var fLevel = document.getElementById('fortuneLevel');
+  var fLine = document.getElementById('fortuneLine');
+  var fItem = document.getElementById('fortuneItem');
+  var fortunes = [
+    { lv:'大吉', line:'《如何获得好运气》第一条：走路要低头，这样一定能捡到钱！', item:'幸运物：一枚还带着体温的硬币' },
+    { lv:'财运', line:'《如何获得好运气》第二条：路过自动售货机时蹲下看一看，肯定有不小心掉进去的硬币！', item:'幸运物：售货机角落的银币' },
+    { lv:'猫运', line:'《如何获得好运气》第三条：平时多跟猫猫走，总能发现好东西！', item:'幸运物：一根油光水滑的猫毛' },
+    { lv:'中吉', line:'《如何获得好运气》第四条：放一枚硬币在胸包里，关键时刻能挡子弹。', item:'幸运物：挡过子弹的那一枚' },
+    { lv:'小吉', line:'《如何获得好运气》第五十一条：遇到打不过的敌人就开溜，活命要紧。', item:'幸运物：一双跑得飞快的靴子（厚的不要）' },
+    { lv:'宝石运', line:'《如何获得好运气》第五十二条：常和伊甸姐聊天，你会得到好多好多好多宝石。', item:'幸运物：伊甸姐随手送的红宝石' },
+    { lv:'午觉运', line:'今天的太阳，可是只有今天才能晒呀。找个阳光好的草地，睡到自然醒。', item:'幸运物：一片晒得暖烘烘的斜坡' },
+    { lv:'进货运', line:'纵横古今包罗万象应有尽有——今天出门，适合「进货」。', item:'幸运物：一只装得下整个黄昏街的麻袋' },
+  ];
+  var drawCount = 0;
+  function drawFortune(){
+    if (reducedMotion){ showFortune(); return; }
+    tube.classList.remove('shaking');
+    void tube.offsetWidth;
+    tube.classList.add('shaking');
+    blip(300, 0.1, 'triangle', 0.15);
+    setTimeout(showFortune, 560);
+  }
+  function showFortune(){
+    drawCount++;
+    var f = fortunes[Math.floor(Math.random() * fortunes.length)];
+    var superLuck = Math.random() < 0.08;
+    fLevel.textContent = superLuck ? '✦ 超级大吉 ✦' : '【' + f.lv + '】';
+    fLine.textContent = superLuck ? '帕朵翻了翻签筒，突然把整筒都塞给了你：「今天你是老板娘！全乐土的好运都归你！」' : f.line;
+    fItem.textContent = superLuck ? '幸运物：整个黄昏街的夕阳' : f.item;
+    fResult.classList.toggle('gold', superLuck);
+    fResult.classList.add('show');
+    if (superLuck){
+      showToast('哇——这种签，咱也是头一回见！', true);
+      if (!reducedMotion) coinRain(14);
+    } else if (drawCount % 5 === 0){
+      showToast('「抽了这么多次……记得照顾一下小本生意嘛。」', false);
+    }
+  }
+  tube.addEventListener('click', drawFortune);
+  tube.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); drawFortune(); }
+  });
+
+  /* ============ 闪亮的银币（大彩蛋其二） ============ */
+  var coinCount = 0;
+  try { coinCount = parseInt(localStorage.getItem('pdCoins') || '0', 10) || 0; } catch(err){ coinCount = 0; }
+  var coinCountEl = document.getElementById('coinCount');
+  var coinHud = document.getElementById('coinHud');
+  coinCountEl.textContent = String(coinCount);
+
+  function bumpHud(){
+    coinHud.classList.remove('bump');
+    void coinHud.offsetWidth;
+    coinHud.classList.add('bump');
+  }
+  function coinRain(n){
+    for (var k = 0; k < n; k++){
+      (function(kk){
+        setTimeout(function(){ spawnCoin(true); }, kk * 130);
+      })(k);
+    }
+  }
+  function spawnCoin(anywhere){
+    var c = document.createElement('div');
+    c.className = 'world-coin';
+    c.textContent = '🪙';
+    c.setAttribute('role','button');
+    c.setAttribute('aria-label','闪亮的银币，点击拾取');
+    c.style.left = (6 + Math.random() * 84) + 'vw';
+    c.style.top = (anywhere ? (10 + Math.random() * 70) : (14 + Math.random() * 66)) + 'vh';
+    document.body.appendChild(c);
+    var lifeTimer = setTimeout(function(){ c.remove(); }, 9000);
+    c.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      clearTimeout(lifeTimer);
+      coinCount++;
+      try { localStorage.setItem('pdCoins', String(coinCount)); } catch(err){}
+      coinCountEl.textContent = String(coinCount);
+      bumpHud();
+      blip(1050 + Math.random() * 200, 0.09, 'triangle', 0.2);
+      c.classList.add('gone');
+      setTimeout(function(){ c.remove(); }, 420);
+      if (!reducedMotion) sparkle(c);
+      if (coinCount === 10) showToast('「哟，攒了十枚了！有经商天赋嘛～」', false);
+      if (coinCount === 25) showToast('「发财啦！！这些够盘下半个乐土商店了！」', true);
+      if (coinCount === 50) showToast('「五十枚……你该不会把咱的库存都捡走了吧？！」', true);
+    });
+  }
+  function sparkle(el){
+    var r = el.getBoundingClientRect();
+    burstAt(r.left + r.width / 2, r.top + r.height / 2, 8, ['#ffd166','#ffe9b8','#ff9d5c']);
+  }
+  setTimeout(function(){ spawnCoin(false); }, 5000);
+  setInterval(function(){
+    if (!document.hidden && Math.random() < 0.75) spawnCoin(false);
+  }, 22000);
+
+  /* ============ 罐头与激光笔（大彩蛋其三） ============ */
+  var laser = document.getElementById('laserDot');
+  var cat = document.getElementById('theCat');
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var catState = { active:false, x:-100, y:-100, tx:-100, ty:-100, sleeping:false, pets:0, idle:0 };
+  var laserPos = { x:-100, y:-100, on:false };
+  var canHover = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+
+  if (canHover){
+    document.addEventListener('mousemove', function(e){
+      laserPos.x = e.clientX; laserPos.y = e.clientY; laserPos.on = true;
+      laser.style.display = 'block';
+      laser.style.left = e.clientX + 'px';
+      laser.style.top = e.clientY + 'px';
+      if (catState.active && !catState.sleeping){
+        catState.tx = e.clientX;
+        catState.ty = e.clientY;
+        catState.idle = 0;
+      }
+    });
+    document.addEventListener('mouseleave', function(){ laser.style.display = 'none'; laserPos.on = false; });
+  }
+
+  function wakeCat(){
+    if (catState.active) return;
+    catState.active = true;
+    catState.sleeping = false;
+    cat.classList.remove('sleeping');
+    var fromLeft = Math.random() > 0.5;
+    catState.x = fromLeft ? -50 : window.innerWidth + 50;
+    catState.y = window.innerHeight * (0.35 + Math.random() * 0.5);
+    catState.tx = laserPos.on ? laserPos.x : Math.random() * window.innerWidth;
+    catState.ty = laserPos.on ? laserPos.y : catState.y;
+    cat.style.display = 'block';
+    cat.style.opacity = '1';
+    cat.style.transform = 'scaleX(' + (catState.tx < catState.x ? -1 : 1) + ')';
+  }
+  function napCat(){
+    catState.sleeping = true;
+    cat.classList.add('sleeping');
+    showToast('罐头睡着了……（小声）晒太阳的午觉，是谁也吵不醒的。', false);
+    setTimeout(function(){
+      catState.sleeping = false;
+      cat.classList.remove('sleeping');
+    }, 9000);
+  }
+  cat.addEventListener('click', function(ev){
+    ev.stopPropagation();
+    if (catState.sleeping){
+      showToast('「喵呜……别闹，午觉时间。」', false);
+      return;
+    }
+    catState.pets++;
+    cat.classList.remove('pounce');
+    void cat.offsetWidth;
+    cat.classList.add('pounce');
+    blip(760 + Math.random() * 180, 0.1, 'sine', 0.22);
+    var r = cat.getBoundingClientRect();
+    if (!reducedMotion) burstAt(r.left + 17, r.top + 17, 8, ['#e8849c','#ffd166','#ffd9a0']);
+    var petLines = [
+      '「喵呜~」',
+      '「嘿嘿，罐头说你摸得不错～」',
+      '「尾巴不可以抓哦……好吧，就这一次。」',
+      '「罐头超乖巧！心情值 +100！」'
+    ];
+    showToast(petLines[(catState.pets - 1) % petLines.length], false);
+    if (catState.pets === 8){
+      napCat();
+      catState.pets = 0;
+    }
+  });
+  cat.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cat.click(); }
+  });
+  setTimeout(wakeCat, 9000);
+  setInterval(function(){
+    if (!catState.active && !document.hidden && Math.random() < 0.5) wakeCat();
+    if (catState.active && !catState.sleeping){
+      catState.idle++;
+      if (catState.idle > 60){
+        catState.idle = 0;
+        catState.tx = Math.random() * window.innerWidth;
+        catState.ty = window.innerHeight * (0.3 + Math.random() * 0.6);
+      }
+    }
+  }, 1000);
+
+  function catStep(){
+    if (!catState.active || reducedMotion){ requestAnimationFrame(catStep); return; }
+    var dx = catState.tx - catState.x;
+    var dy = catState.ty - catState.y;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 6){
+      var spd = Math.min(4.2, dist * 0.06);
+      catState.x += dx / dist * spd;
+      catState.y += dy / dist * spd;
+      cat.style.transform = 'scaleX(' + (dx < 0 ? -1 : 1) + ')';
+    }
+    cat.style.left = catState.x + 'px';
+    cat.style.top = catState.y + 'px';
+    requestAnimationFrame(catStep);
+  }
+  requestAnimationFrame(catStep);
+
+  /* ============ 点名字 & 猫耳 & 标题吐槽 ============ */
+  var nameEl = document.getElementById('profileName');
+  var nameLines = [
+    '「喵？」',
+    '「客人，要点什么？咱这儿啥都有！」',
+    '「老板，要什么货尽管开口！」',
+    '「帕朵，或者菲莉丝，叫哪个都行～」',
+    '「诶嘿嘿……盯着咱看，是想买东西了吧？」'
+  ];
+  var nameIdx = 0;
+  nameEl.addEventListener('click', function(){
+    showToast(nameLines[nameIdx % nameLines.length], false);
+    nameIdx++;
+  });
+  nameEl.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nameEl.click(); }
+  });
+
+  var ears = document.getElementById('catEars');
+  ears.addEventListener('click', function(){
+    ears.classList.remove('wiggle');
+    void ears.offsetWidth;
+    ears.classList.add('wiggle');
+    blip(620, 0.08, 'sine', 0.18);
+    var earLines = ['「喵呜~」','「耳朵很敏感的哦！」','「呼噜呼噜……」'];
+    showToast(earLines[Math.floor(Math.random() * earLines.length)], false);
+  });
+  ears.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ears.click(); }
+  });
+
+  var snarkMap = {
+    about: '「看咱的档案可以，买点什么再走嘛～」',
+    shop: '「随便看随便看——不过最好买一点哦？」',
+    journey: '「……这些老故事，咱平时可不讲的。」',
+    quotes: '「这些话是咱说的吗？嗯……挺像的！」',
+    fortune: '「让咱来给你抽一支——不要钱！」'
+  };
+  document.querySelectorAll('.section-title[data-snark]').forEach(function(t){
+    t.addEventListener('click', function(){
+      var key = t.getAttribute('data-snark');
+      if (snarkMap[key]) showToast(snarkMap[key], false);
+    });
+  });
+
+  /* ============ 结尾宝箱心声 ============ */
+  var endingQuote = document.getElementById('endingQuote');
+  var endingSub = document.getElementById('endingSub');
+  var hearts = [
+    { t: '她守着自己微小的幸运，在动荡离乱的法外之街寻得安稳的生计。', s: '官方档案馆 · 英桀档案 · 简介' },
+    { t: '少女小心打点着自己的生活，却从未有人告知她，她从初生便时乖运蹇，从未有过安宁。', s: '官方档案馆 · 英桀档案 · 简介' },
+    { t: '在人类文明的废墟上，少女终究握住了命运予她的骰子，亦握住了她阴差阳错背负的责任。', s: '官方档案馆 · 英桀档案 · 简介' },
+    { t: '——那……就以后再见啦。', s: '官方档案馆 · 追忆「一梦方醒」' },
+  ];
+  var heartIdx = 0;
+  endingQuote.addEventListener('click', function(){
+    var h = hearts[heartIdx % hearts.length];
+    heartIdx++;
+    endingSub.textContent = '「' + h.t + '」';
+    var src = document.createElement('span');
+    src.className = 'src';
+    src.textContent = '—— ' + h.s;
+    endingSub.appendChild(src);
+    endingSub.classList.add('visible');
+    if (!reducedMotion){
+      var r = endingQuote.getBoundingClientRect();
+      burstAt(r.left + r.width / 2, r.top + r.height / 2, 10, ['#ffd166','#e8849c','#7dd8b0']);
+    }
+  });
+  endingQuote.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); endingQuote.click(); }
+  });
+
+  /* ============ canvas：阳光浮尘 + 爪印 ============ */
+  var canvas = document.getElementById('sunCanvas');
+  var ctx = canvas.getContext('2d');
+  var Wc = 0, Hc = 0;
+  var P = { W: 0, H: 0 };
+  var resizeCanvas = ElysiaShared.makeResize(canvas, P);
+  resizeCanvas();
+  Wc = P.W; Hc = P.H;
+  window.addEventListener('resize', function(){
+    resizeCanvas();
+    Wc = P.W; Hc = P.H;
+  });
+
+  var dustColors = ['#ffd166','#ffd9a0','#ff9d5c','#fff3d6'];
+  var dusts = [];
+  var dustCount = Math.min(40, Math.floor(window.innerWidth / 30));
+  function createDust(){
+    return {
+      x: Math.random() * Wc,
+      y: Math.random() * Hc,
+      size: 0.5 + Math.random() * 2,
+      speedY: -(0.06 + Math.random() * 0.2),
+      drift: (Math.random() - 0.5) * 0.16,
+      baseOpacity: 0.12 + Math.random() * 0.38,
+      twinkleSpd: 0.006 + Math.random() * 0.02,
+      twinkleOff: Math.random() * Math.PI * 2,
+      color: dustColors[Math.floor(Math.random() * dustColors.length)]
+    };
+  }
+  for (var i = 0; i < dustCount; i++) dusts.push(createDust());
+
+  var paws = [];
+  var bursts = [];
+  var time = 0;
+  var scrollRatio = 0;
+  window.addEventListener('scroll', function(){
+    var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    scrollRatio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+  });
+
+  function animate(){
+    if (reducedMotion) return;
+    time++;
+    ctx.clearRect(0, 0, Wc, Hc);
+    var fade = 1 - scrollRatio * 0.5;
+    var i, d, tw, p, b;
+
+    for (i = 0; i < dusts.length; i++){
+      d = dusts[i];
+      d.y += d.speedY;
+      d.x += d.drift + Math.sin(time * 0.006 + d.twinkleOff) * 0.14;
+      if (d.y < -8){ d.y = Hc + 8; d.x = Math.random() * Wc; }
+      tw = 0.5 + 0.5 * Math.sin(time * d.twinkleSpd + d.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = d.baseOpacity * tw * fade;
+      ctx.fillStyle = d.color;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, Math.max(0.25, d.size), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (i = 0; i < paws.length; i++){
+      p = paws[i];
+      p.y -= 0.35;
+      p.rotation += p.rotSpeed;
+      p.life -= 0.006;
+      if (p.life <= 0){ paws.splice(i, 1); i--; continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.life) * 0.16 * fade;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation);
+      ctx.fillStyle = p.color;
+      ctx.font = p.size + 'px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🐾', 0, 0);
+      ctx.restore();
+    }
+    if (paws.length < 6 && Math.random() < 0.004){
+      paws.push({
+        x: Math.random() * Wc,
+        y: Hc + 20,
+        size: 16 + Math.random() * 18,
+        rotation: (Math.random() - 0.5) * 0.6,
+        rotSpeed: (Math.random() - 0.5) * 0.004,
+        life: 1,
+        color: '#ffd9a0',
+      });
+    }
+
+    for (i = bursts.length - 1; i >= 0; i--){
+      b = bursts[i];
+      b.x += b.vx; b.y += b.vy; b.vy += 0.07; b.vx *= 0.985;
+      b.life -= 0.02;
+      if (b.life <= 0){ bursts.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, b.life);
+      ctx.fillStyle = b.color;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    requestAnimationFrame(animate);
+  }
+  function burstAt(cx, cy, count, colors){
+    for (var k = 0; k < count; k++){
+      var angle = (k / count) * Math.PI * 2 + Math.random() * 0.6;
+      var speed = 1.2 + Math.random() * 3.4;
+      bursts.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1,
+        r: 1.6 + Math.random() * 2.6,
+        life: 1,
+        color: colors[Math.floor(Math.random() * colors.length)]
+      });
+    }
+  }
+  animate();
+
+  function blip(freq, dur, type, vol){
+    try{
+      if (!window.__pdAC){
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        window.__pdAC = new AC();
+      }
+      var ac = window.__pdAC;
+      if (ac.state === 'suspended') ac.resume();
+      var t = ac.currentTime;
+      var osc = ac.createOscillator();
+      var gain = ac.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, t);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(60, freq * 0.5), t + dur);
+      gain.gain.setValueAtTime(vol, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      osc.connect(gain);
+      gain.connect(ac.destination);
+      osc.start(t);
+      osc.stop(t + dur + 0.05);
+    } catch(err){}
+  }
+
+  /* ============ 全局点击反馈：爪印戳 everywhere ============ */
+  var pawChars = ['🐾','✨','🐾'];
+  document.addEventListener('click', function(e){
+    if (e.target.closest && (e.target.closest('#catGameOverlay') || e.target.closest('#theCat') || e.target.closest('.world-coin'))) return;
+    if (!reducedMotion){
+      var paw = document.createElement('div');
+      paw.className = 'paw-mark';
+      paw.textContent = pawChars[Math.floor(Math.random() * pawChars.length)];
+      paw.style.left = e.clientX + 'px';
+      paw.style.top = e.clientY + 'px';
+      paw.style.setProperty('--paw-rot', ((Math.random() - 0.5) * 50).toFixed(0) + 'deg');
+      document.body.appendChild(paw);
+      setTimeout(function(){ paw.remove(); }, 850);
+      burstAt(e.clientX, e.clientY, 5, ['#ffd166','#ffd9a0','#e8849c']);
+    }
+    blip(500 + Math.random() * 160, 0.05, 'sine', 0.06);
+    if (Math.random() < 0.06) showToast('「喵？」', false);
+  });
+
+  /* ============ 触屏：点哪儿激光笔到哪儿，罐头追 ============ */
+  document.addEventListener('touchstart', function(e){
+    if (!e.touches.length) return;
+    var t = e.touches[0];
+    catState.tx = t.clientX;
+    catState.ty = t.clientY;
+    catState.idle = 0;
+    if (!catState.active) wakeCat();
+  }, { passive: true });
+
+  /* ============ resize guard ============ */
+  window.addEventListener('resize', function(){
+    for (var j = 0; j < dusts.length; j++){
+      if (dusts[j].x > Wc) dusts[j].x = Math.random() * Wc;
+    }
+  });
+})();
+</script>
+</body>
+</html>
