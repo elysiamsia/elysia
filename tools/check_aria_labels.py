@@ -55,6 +55,7 @@ EXPECTED = {
     'mobius/index.html': ('无限之言，点击切换',           'shared'),
     'griseo/index.html': ('繁星之画，点击切换',           'shared'),
     'hua/index.html':    ('浮生之语，点击切换',           'shared'),
+    'pardofelis/index.html': ('空梦之言，点击切换',        'shared'),
 }
 
 
