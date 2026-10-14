@@ -55,6 +55,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
 <link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/explore.css">
 <meta name="referrer" content="same-origin">
 <title>elysiad.top/kevin — 致凯文</title>
 <!-- SECTION: styles -->
@@ -545,6 +546,8 @@ body{
 
 <!-- SECTION: scripts -->
 <script src="/assets/site.js"></script>
+<script src="/assets/bottom.js"></script>
+<script src="/assets/games/kevin.js"></script>
 <script>
 (function(){
   /* SECTION: quotes data */
@@ -733,6 +736,9 @@ body{
   // 呀！星星的区间就是这一页的脾气，交给共享层的时候一个数都不敢动呢♥
   // ⚠ 区间写法是 [起点, 跨度]，与原来的 `0.1 + Math.random() * 0.3` 一一对应。
   var THEME = {
+    /* ⚠ 游戏槽（2026-10-15 加）：`module` 指向 `window.ElysiaGames.kevin`
+       （`assets/games/kevin.js`）。卡上的标题/说明由模块自己给 —— 契约见 spec §4.5。 */
+    game: { module: 'kevin' },
     endingStars: {
       count: [80, 12],
       size: [0.5, 2],
@@ -742,6 +748,10 @@ body{
     },
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+
+  /* 下方区块（2026-10-15）：先挂游戏槽 —— 探索度那一槽等探索系统铺开时自己回来
+     （`bottom.js` 里那槽是 `if (global.ElysiaExplore && ...)`，没有就安静跳过）。 */
+  ElysiaBottom.mount({ game: THEME.game });
   /* 呀，这一页原本没有「粒子迸发」那个工具函数 —— 从别的页抄名字会直接报错。
      用他自己的冰晶写一个：点剑时溅出碎冰♥ */
   function shardBurst(cx, cy, count, colors){
