@@ -72,6 +72,8 @@ EXPECTED_FINDS = {
     # ⚠ 2026-10-13 帕朵菲莉丝登记收口。她那页的游戏是**画布版**（`#catCanvas`），
     #   所以走**正道**：卡按共享契约补上，并登记进下面的 `GAMES` 吃通用那四条。
     'pardofelis/index.html': 12,
+    'kevin/index.html': 12,          # 2026-10-15 按位铺开（逐字核准表见 plans/2026-10-15-kevin-finds-table.md）
+    'su/index.html': 12,             # 2026-10-15 按位铺开（核准表见 plans/2026-10-15-su-finds-table.md）
 }
 
 # ── 樱这一页的**台词登记表** ─────────────────────────────────────────
