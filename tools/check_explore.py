@@ -2346,10 +2346,13 @@ GAMES = {
     #   所以退出键按 `CLOSE_FAR_MIN=100` 量。收起键固定挂在遮罩右上角。
     'su/index.html':      {'overlay': 'suBeadOverlay', 'canvas': '#suCanvas',
                            'close': '#suClose', 'play': None, 'guard': True},
-    # ⚠ 凯文「碎冰」（2026-10-15 接入）：**按住拖着挥剑** —— 画布就是挥砍面（拖动面），
-    #   所以显式写 `swipe: True` ⇒ 退出键按 `CLOSE_SWIPE_MIN=50` 量。
+    # ⚠ 凯文「五万年」（2026-10-15 **重做**）：**按住屏幕烧自己的年岁**，把寒潮顶回天上 ——
+    #   画布是「按住不放」的面、**不是拖动面** ⇒ **不写 `swipe`**，按 `CLOSE_FAR_MIN=100` 量
+    #   （实测 164px，稳过）。
+    #   ⚠ 第一版《碎冰》被需求方否掉了（原话「游戏意义不明」）—— 那只是冰 + 剑的皮，
+    #     跟凯文这个人没关系。重做理由见 `assets/games/kevin.js` 顶上的注释与 HANDOVER 2.3。
     'kevin/index.html':   {'overlay': 'kevinGameOverlay', 'canvas': '#kvCanvas',
-                           'close': '#kvClose', 'play': None, 'swipe': True, 'guard': True},
+                           'close': '#kvClose', 'play': None, 'guard': True},
 }
 GAME_PAGES = tuple(sorted(GAMES.keys()))
 
