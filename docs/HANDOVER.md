@@ -8,7 +8,7 @@
 >
 > §六 是踩过的坑（**动手前务必扫一遍**），§十 是历史案例（出问题时再查）。
 >
-> 最后更新：**2026-10-13**（这一轮：**帕朵菲莉丝建成收口 —— 十三页到齐**，见 §2.3 / §10.14）
+> 最后更新：**2026-10-15**（这一轮：**从 0 重盘 + 逐页精修计划**，见 §2.3 /「精修计划」）
 
 ---
 
@@ -84,7 +84,7 @@
 | **每页小游戏** | `assets/games/<角色>.js` | 每位一个**互不干涉**的独立游戏，契约见 spec §4.5 |
 | `canonical` + JSON-LD | **12 页** `<head>`（含 `armor.html`） | 首页 `WebSite`，其余 `WebPage` + `BreadcrumbList` |
 | favicon / 404 / robots / sitemap | 根目录 | 404 是引路版（一句话 + 三扇门） |
-| 图片优化 | `images/*.webp` | **5.0 MB → 0.86 MB** |
+| 图片优化 | `images/*.webp` | **在用 1.12 MB**（2026-10-15 实测）。⚠ 但 `images/` 里另有 **6.47 MB 从来没被引用**（webp 的 PNG 原图）—— 见「精修计划」4.3 节 |
 
 **工程侧**：
 
@@ -93,7 +93,97 @@
 - **`.gitattributes`**：统一 LF（本机系统级 `core.autocrlf=true`）
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
 
-### 2.3 最近一轮（2026-10-13）：帕朵菲莉丝（ⅩⅢ · 空梦）—— 最后一页，十三页到齐 🎉
+### 2.3 最近一轮（2026-10-15）：B1 地基 —— 首页瘦身 75%、部署产物瘦 62%
+
+**目标**（精修计划的 B1）：先做**跨页受益**的那几刀，让每一页「更轻」。
+**只动加载时机与派生图，不动任何正文、素材与玩法。**
+
+| 刀 | 做法 | 实测 |
+|---|---|---|
+| ① **立绘瘦身** | 明信片选择器的八张格子**只显示 54×72**，却在下 1024px 原图；画布上的立绘框最大也只有 454px。⇒ 出派生小图：`images/thumb/*-200.webp`（4~19 KB）给选择器、`images/mid/*-700.webp` 给画布与 armor 卡片（走 `srcset`） | **首页 1033 → 213~271 KB（-75%）**；**armor 558 → 344 KB** |
+| ② **拆预载** | `postcard.js` 原来一开页就预载**八张全分辨率**。⇒ 只加载当前那张，其余等访客**第一次碰选择器**才补；`pickArt()` 点到没加载的当场加载（到了自己重画） | 首屏少下 ~800 KB，切图依旧瞬时 |
+| ③ **死重清理** | `images/` 根目录躺着 10 张**没有任何地方引用**的 PNG（webp 的源图，6.24 MB），而 `static.yml` 是整目录拷 `images/` ⇒ 全部进了产物。⇒ `git mv` 到 `images/raw/webp-src/`（raw 本来就被部署排除、而且自检里有它） | **产物 8.75 → 3.33 MB（-62%）**；`images/` 根目录只剩真正被引用的 16 个文件 |
+| ④ **减动补三页** | `check_reduced_motion.PAGES` 实测漏了 **aponia / eden / su** | 补齐后 **13/13 页双向全过** |
+| ⑤ **华/帕朵的分享图** | 她们是全站**唯二没有 `og:image`** 的页（分享到 QQ / 微信没图）。⇒ 扩了 `tools/og-card.html`（`tone` / `title` / `meta` / `glyph` 参数），出两张专属卡 | `og-hua.jpg` 33 KB、`og-pardo.jpg` 49 KB（1200×630），配色与她们各自的页面一致 |
+
+**验收**：
+
+| 项 | 结果 |
+|---|---|
+| `check_postcard.py` | **12 / 12** ✅ —— 拆预载之后这两条最关键：「八张逐张就绪、每步画布都变」「**存下来那张的二维码还扫得出来**」 |
+| `check_page_health.py` | 16 页只剩 **404.html 与 guestbook 两条已知豁免项**；首页 **213 KB**、armor **344 KB** |
+| `check_reduced_motion.py` | **13 / 13** ✅ |
+| 部署产物（模拟 CI 打包） | 73 个文件 / **3.33 MB**；白名单自检干净（tools / docs / .github / worker / images/raw 都没混进去） |
+| 快照差分 | `after-pardo → b1-images` **零差异** —— ⚠ 但它只比**计算样式**，比不了这次（见下） |
+
+> ⚠ **本轮学到的（已写进计划）**：`snapshot_diff.py` 比的是**计算样式**（`sel + prop` 的旧值/新值），
+> **不比截图像素**。所以「换了图片源」这种改动它**根本看不见**（元素样式没变）——
+> 这类改动得靠 `check_postcard`（功能没坏）与 `check_page_health`（传输量掉了）来证。
+> **别把「快照零差异」当成「视觉没变」。**
+
+**顺带修的**：`tools/pick_og.py` 的轮换名单漏了后来建的四页（sakura / kosma / mobius / griseo）——
+轮换时它们不会跟着换。已补进；华 / 帕朵**故意不在名单里**（她们有自己的卡）。
+
+**有意不做的**：`images/raw`（21.59 MB）**不从 git 里摘** —— 部署本来就排除它，
+而 `git rm --cached` 不会让 clone 变小（历史里还有那些 blob），却会让素材在别人 clone 时消失。**风险大于收益。**
+
+#### 上一轮（2026-10-15 早些时候）：从 0 重盘 + 逐页精修计划
+
+十三页到齐之后，这一轮**没有改任何页面的行为**（页面零改动），做的是两件事：
+**把项目重新盘一遍**（每条结论都要能被工具复现），和**把接下来的路写清楚**。
+
+> **为什么要重盘**：旧文档是几十轮攒出来的，里面**有与实测不符的地方**（本轮抓到两处，见下）。
+> 「照旧文档转抄」会把错一路传下去 —— 所以这一轮**先造尺子、再量**。
+
+**新增工具：`tools/check_page_health.py`（逐页体检）** —— console 报错 / 404 / 破图 / 缺 `alt` /
+控件没有可读名字 / `h1` 数量 / **传输量 / 请求数 / DOM 高 / DCL**。
+**建页阶段没人管这些**（每个工具只管自己那一件事），而它们正是精修阶段每一轮要看的数。
+
+**实测得到的四条硬结论**：
+
+| # | 结论 | 数据（无头 Edge、关缓存实测） |
+|---|---|---|
+| 1 | **首页是全站最重的一页** | 传输 **1033 KB / 23 个请求**，其中八张立绘 webp ≈ **880 KB** |
+| 2 | **armor.html 次重** | **558 KB**（同一组里的三张立绘）；它的返回键也只有 **163×36**（< 44px 约定） |
+| 3 | **图片：在用 1.12 MB，另有 6.47 MB 从来没被引用** | PNG 原图 10 张（webp 才是产物）+ 备用 `og-2/og-3`；仓库另有 `images/raw` **21.59 MB** 仍在 git 里 |
+| 4 | **六位老页仍是 2026-09-17 的状态** | 只有 `site.css` + `site.js` 两个请求（探索 / 下方区块 / 生日胶囊 / 小游戏**都没有**） |
+
+**其余 12 页的传输量**（同一把尺子）：sakura 118 / kosma 121 / mobius 115 / **griseo 209**（其中 `griseo.js` 107 KB）/ hua 101 / pardofelis 101 /
+kevin·aponia·eden·villv·kalpas·su 各 **25 KB**；404 与 guestbook 不加载任何资源。
+
+**旧文档与实测不符的两处（本轮已改正）**：
+
+1. ~~「aponia / eden / villv 的生日胶囊**串页**（吃首页粉紫兜底）」~~ →
+   **实测：那三页压根没有胶囊**（没引 `bday.js`、没调 `ElysiaBday.mount`）—— 真问题是「**没接入**」。
+2. ~~「图片优化：5.0 MB → 0.86 MB」~~ → **实测在用 1.12 MB**，另有 **6.47 MB 死重**。
+
+**本轮验收**（页面零改动，所以这里量的是「现状基线」）：
+
+| 项 | 结果 |
+|---|---|
+| `check_page_health.py` | 16 个页面：**4 个有 FAIL 级问题**（404 缺 description/canonical 属豁免；**hua / pardofelis 缺 `og:image`**；guestbook 缺 canonical）—— 全部记进计划 |
+| `check_explore.py`（6 个探索页，normal） | mobius **38/38**、sakura **39/39**、kosma **30/30**、griseo **43/43**、hua **29/29**、pardofelis **29/29** ✅ —— **全绿，无回归** |
+| `check_explore.py --reduced`（6 页） | **各 6/6** ✅ |
+| worker 单元测试 | `node test/smoke.mjs` **38 项** + `smoke-notes.mjs` **55 项** = **93 项全过**（纯 node、无依赖） |
+| `check_aria_labels.py` | **13 / 13** ✅ |
+| `check_timeline_lore.py` | 13 段 lore 无重复段 / 前缀行 / OCR 坏词 ✅ |
+| `check_reduced_motion.py` | **10 / 10** 页双向 ✅（⚠ 实测差集：**缺 aponia / eden / su** 三页，记进计划 4.5.2） |
+| 站内引用对账 | 14 页的站内 `src`/`href` **零缺失**；head 该有的都有（title / description / canonical / lang / viewport / og×8） |
+| 登记对账 | 名片 url **12/12**、aria **13/13**、快照清单 **14/14**、探索登记 **6/6**、`GAMES` **5 处** |
+| 快照差分 | `pardo-round` → `after-pardo` **零差异** —— 新基线可信，且印证「快照测不出交互」（上一轮那两处改动都在交互里） |
+
+**产出**：
+
+- 计划：`docs/superpowers/plans/2026-10-15-page-refinement-and-optimization.md`
+  —— 实测基线 + 六个批次（**B1 地基** → B2 首页 → B3 六位老页 → B4 armor → B5 六页精修 → B6 收尾）
+  + 每轮验收规程 + **明确不做的事**。
+- 工具：`tools/check_page_health.py`（已写进 §4.3 验收与 §7 命令速查）。
+
+> ⚠️ **这一轮最值钱的一条**：**旧文档的结论必须能被复现**。
+> 本轮抓到的两处错（三页胶囊、图片体积）都是「上一轮写的、下一轮照着做」会踩的坑 ——
+> 所以计划里每一条都标了**数据来源**，能被人用命令推翻。
+
+#### 上一轮（2026-10-13）：帕朵菲莉丝（ⅩⅢ · 空梦）—— 最后一页，十三页到齐 🎉
 
 ✅ **ⅩⅢ · 空梦 · 帕朵菲莉丝，整页交付。** 和华那一轮**同一种来料**：又是
 **从 GitHub 网页「Add files via upload」上传的单个文件**（`pardofelis/index.html`，1343 行），
@@ -344,10 +434,16 @@ aria **12/12**、减动 **9/9 页**双向、快照与 `hua-registration` 比**�
 
 ### 2.4 下一步做什么
 
-**公共层重构（2026-10-01）、明信片重做（2026-10-02）与格蕾修建页（2026-10-03）都已经做完。**
-下一步回到「铺开」与「建页」—— **下一次开工可以做第 3 条（按位铺开 · 其余 6 页）
-或第 5 条（建剩下 2 页）**。⚠ **格蕾修 2026-10-03 已从零建成**（第 5 条那 3 页里的第 1 页），
-她现在**连小游戏「上色」也做完了**（计划 B · `plans/2026-10-03-griseo-game.md`，Task 1–5 全部完成）。
+**建页阶段结束了**：13 页大计 2026-10-13 全部完成（§2.1）。**项目进入「逐页精修与优化」阶段。**
+
+> ✅ **下一阶段的主计划**：
+> `docs/superpowers/plans/2026-10-15-page-refinement-and-optimization.md`
+> （**从 0 重盘的实测基线 + 六个批次 B1~B6 + 每轮验收规程**）。
+> **开工先读它**；下面这份编号清单是**建页阶段**留下的历史账，
+> 第 3 条（六位老页按位铺开）已经并进那份计划的 **B3**。
+>
+> 一句话的优先级：**① 首页/armor 的立绘体积（省 ~1.2 MB）→ ② 减动补三页 + 华/帕朵的 og:image
+> → ③ 死重 6.47 MB 与仓库瘦身 → ④ 六位老页铺开 → ⑤ 帕朵游戏手感 → ⑥ 游戏 JS 懒加载**。
 
 1. ~~公共层重构 + `/mobius/` 上线~~ ← ✅ **2026-10-01 完成**（见 §2.3 与 §10.9）
    - 设计 spec：`docs/superpowers/specs/2026-10-01-elysiad-explore-refactor-design.md`
@@ -741,6 +837,11 @@ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8500/assets/site.css  
 PYTHONIOENCODING=utf-8 python tools/snapshot.py after-<本步>
 PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py after-postcard after-<本步>; echo "退出码 $?"
 
+# 2.5) 逐页体检（2026-10-15 新增，精修阶段**先跑它**：看数字有没有退化）
+#      console 报错 / 404 / 破图 / 缺 alt / 控件没名字 / h1 数 / 传输量 / 请求数 / DOM 高 / DCL
+PYTHONIOENCODING=utf-8 python tools/check_page_health.py                 # 全部页
+PYTHONIOENCODING=utf-8 python tools/check_page_health.py hua/index.html  # 单页
+
 # 3) 属性断言 —— 快照**测不出来**的那一类（ARIA 等）
 PYTHONIOENCODING=utf-8 python tools/check_aria_labels.py
 
@@ -852,7 +953,7 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py "https://elysiad.top/sakura/" size 12
 | `check_postcard.py` | **首页明信片断言（12 组）** —— 现有四个工具**一个都测不到它**：整张画在 `<canvas>` 上，快照只有计算样式（画面是像素）、另外三个各有各的视野；而它偏偏是**唯一一个把本站带出去的东西**，坏了不冒烟（画布照样出图，只是图是错的：立绘空白、文字压出边框…）。<br>两部分：**纯文本**（弹幕话术的键要逐字对得上、二维码真解得出来 —— 秒级）+ **浏览器**（真点缩略图与弹幕圆片、真打字、真存图；连**存下来那张 PNG** 也量一遍，二维码当场再解一次）。<br>⚠ 它自带服务器（**8502**）+ 无头 Edge（**9323**），刻意避开 8501/9321/9322。<br>跑法：`PYTHONIOENCODING=utf-8 python tools/check_postcard.py`（不带参数 = 全量）/ `--only <名字片段>`（给变异测试用，报告里会写明「筛过的」） |
 | `pick_og.py` | 分享卡片轮换 |
 | `og_convert.py` | PNG → JPEG（省 82%） |
-| `to_webp.py` | 图片 → WebP（5.0 MB → 0.86 MB 就是它干的） |
+| `to_webp.py` | 图片 → WebP（当初 5.0 MB 的 PNG 就是它压到 0.86 MB 的）。⚠ 2026-10-15 实测：**在用 1.12 MB**，另有 6.47 MB 死重 —— 扩一个 `--width` 出派生小图是精修计划 4.1 的第一步 |
 | `convert_audio.py` | wma → mp3 转码 |
 
 > `check_*` 这几个都**自带服务器**（`check_aria_labels` / `check_reduced_motion` / `check_explore`
@@ -943,7 +1044,7 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py "https://elysiad.top/sakura/" size 12
 
 | ~~`/mobius/` 的遮罩在横屏放不下~~ | ✅ **2026-10-02 已修** | 640×360 下实测：画布 y **-34**、方向键一直伸到 **369** —— 上下都被切，而 fixed 遮罩没有滚动条，切掉的**够不着**。根因是它的内容总高约 **718px**，而横屏只有 360。<br>⚠ 是**泛化后的通用断言**翻出来的（原本只有樱页的断言，横屏那一档没人量 mobius）|
 | ~~`/mobius/` 的「逃离实验室」离画布只有 58px~~ | ✅ **2026-10-02 已修**（58 → 87px） | 离 `#dpad` 是 **502px ✓**（那是手机上真正连点的地方，上一轮修的就是它），但离**画布**只有 58px。<br>⚠ 它那页的画布是**滑动面**（玩家拖、不是点），风险比樱那页低，但 58px 仍偏紧 —— 修它要动遮罩布局，属那一页自己的事 |
-| **aponia / eden / villv 三页的生日胶囊还是「串页」的配色** | **不改，留到各自那一轮**（2026-10-02 定） | 她们三页在 `data/bdays.js` 里有生日、**会渲染胶囊**，但没有覆盖那 15 个 `--bday-*` 变量 → 吃的是**首页爱莉希雅的粉紫 + 金**。樱这一轮补了自己的（`3e9a2d7`）。<br>⚠ **当时是故意不顺手补另外三页的**：那会让「这一轮只动 `/sakura/` 一页」的验收证据（其余 10 页零差异）当场失效。而且每页的配色要照各自的 `:root` 取 —— 属各自那一轮的活 |
+| ~~aponia / eden / villv 三页的生日胶囊「串页」~~ | **✅ 2026-10-15 重盘更正：这不是「串页」，是「没接入」** | ⚠ 旧文档说她们「有生日、**会渲染胶囊**、只是配色串页」—— **实测（grep + 无头浏览器）那三页压根没有胶囊**：没引 `bday.js`、没调 `ElysiaBday.mount`，整页只有档案表里一行「生日」文字。<br>所以真问题是「**这三页还没接胶囊**」⇒ 并进精修计划 **B3（按位铺开）**：接入时照各自 `:root` 一起配 `--bday-*`（`data/bdays.js` 里她们的生日早就写好了，接上即生效） |
 
 > 💡 **mobius 那两个是怎么修的（2026-10-02）**：
 > · **横屏**：竖排时内容总高 ~524px 而横屏只有 360 —— 必然上下都被切。改成
@@ -1057,6 +1158,11 @@ cd D:\claude-code\elysia-main
 # 本地服务器（截图与手测都走它）
 python -m http.server 8500
 
+# 逐页体检（精修阶段每轮先跑：传输量 / 请求数 / console / 404 / 破图 / 无障碍）
+PYTHONIOENCODING=utf-8 python tools/check_page_health.py
+PYTHONIOENCODING=utf-8 python tools/check_page_health.py hua/index.html   # 单页
+PYTHONIOENCODING=utf-8 python tools/check_page_health.py --json > tmp/health.json
+
 # 截图（桌面 / 移动）—— ⚠ 元素在视口外要先 scrollIntoView
 PYTHONIOENCODING=utf-8 python tools/cdp.py http://localhost:8500/index.html \
   size 1280x900 sleep 2000 shot screenshots/x.png
@@ -1105,6 +1211,12 @@ docs/theme-schema.md                              ★ THEME 的完整 schema（1
                                                   §二 = 共享层默认值清单  §八 = 与计划的 6 处偏差
 
 docs/superpowers/
+├── plans/
+│   └── 2026-10-15-page-refinement-and-optimization.md
+│                                              ★ **当前阶段的主计划**：从 0 重盘的实测基线
+│                                                + 六个批次（B1 地基 → B2 首页 → B3 六位老页
+│                                                → B4 armor → B5 六页精修 → B6 收尾）+ 验收规程
+│
 ├── specs/
 │   ├── 2026-09-15-elysiad-update-design.md      设计文档（十项功能 + 匿名花笺 + 上线后待办）
 │   │                                              ★ 改功能前先读这份

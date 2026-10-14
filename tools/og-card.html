@@ -4,13 +4,21 @@
 <meta charset="UTF-8">
 <!--
   呀！这是出分享卡片用的模板，不是给人看的页面——
-  用 tools/cdp.py 按 1200x630 截一张图，存成 images/og-N.png 就完成啦♥
+  用 tools/cdp.py 按 1200x630 截一张图，存成 images/og-N.jpg 就完成啦♥
   立绘在右、文案在左，因为分享卡片的唯一任务是让人愿意点进来：
   在任何缩略图尺寸下，都要还能看出「这是什么地方」。
 
-  立绘可以换：用 ?art=armor-pink / armor-ego / armor-elf 指定，
-  不传就默认 armor-pink。三张变体都存在 images/ 下，
-  由 tools/pick_og.py 随机决定当前生效的是哪一张。
+  ── 两种用法 ──────────────────────────────────────────────────────
+  ① 首页那三张轮换卡（默认，不带参数）：立绘 armor-pink，文案写死「致爱莉希雅」。
+     立绘可以换：?art=armor-pink / armor-ego / armor-elf；
+     三张变体都存在 images/ 下，由 tools/pick_og.py 决定当前生效的是哪一张。
+  ② 角色页自己的分享卡（2026-10-15 加，为华 / 帕朵这两页——**她们没有立绘**）：
+     ?tone=hua|pardo  配色预设（取各自页面的主色）
+     &title= &en= &bday=  文案
+     &meta=第一行|第二行   （用 | 分行）
+     &glyph=浮生        没有立绘时，右侧放一个巨大的半透明刻印字（竖排）
+     &art=none          明确不要立绘
+     ⚠ 文案一律走 textContent / createTextNode，不拼 HTML —— 这模板会被 query 参数直接渲染。
 -->
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
@@ -33,6 +41,10 @@
     background:radial-gradient(circle at 55% 62%,rgba(255,143,163,.30),transparent 62%)}
   .art{position:absolute;inset:0;z-index:0;width:100%;height:100%;
     object-fit:cover;object-position:50% 20%}
+  /* 没有立绘时的替身：刻印字竖排，压得很淡（只是个背景装饰，不抢文案） */
+  .glyph{position:absolute;inset:0;z-index:1;display:none;align-items:center;justify-content:center;
+    writing-mode:vertical-rl;font-size:190px;font-weight:200;letter-spacing:.18em;
+    color:#fff;opacity:.20;text-shadow:0 0 60px currentColor}
 </style>
 </head>
 <body>
@@ -45,15 +57,71 @@
   </div>
   <div class="right">
     <img class="art" id="art" src="/images/armor-pink.webp" alt="">
-    <div class="glow"></div>
+    <div class="glyph" id="glyph"></div>
+    <div class="glow" id="glow"></div>
   </div>
 <script>
-  // 立绘由 ?art= 决定；允许的取值写死在白名单里，避免这个模板被拿来读任意文件
   (function () {
-    var OK = ['armor-pink', 'armor-ego', 'armor-elf'];
-    var want = new URLSearchParams(location.search).get('art');
-    if (want && OK.indexOf(want) >= 0) {
-      document.getElementById('art').src = '/images/' + want + '.webp';
+    var q = new URLSearchParams(location.search);
+    var $ = function (s) { return document.querySelector(s); };
+
+    /* 配色预设：默认那套 = 首页三张卡原来的颜色（⚠ 不带参数时**必须一模一样**，
+       否则重出首页那三张时画面会变）。hua / pardo 取各自页面的主色：
+       hua   = 丹砂 #c8402f + 金 #c9a86a + 月白 #f2ede2（她那一页是灰青绿打底）
+       pardo = 金币 #ffd166 + 杏 #ffd9a0 + 橙 #ff9d5c + 暗紫底 #120a14 */
+    var TONES = {
+      elysia: { bg: "linear-gradient(115deg,#0a0612 0%,#1a0e2e 55%,#2d1b4e 100%)",
+                title: "#ffc8dd", en: "#c77dff", meta: "#a89cc8", bday: "#ffd166",
+                glow: "radial-gradient(circle at 55% 62%,rgba(255,143,163,.30),transparent 62%)" },
+      hua:    { bg: "linear-gradient(115deg,#0b100f 0%,#16241f 55%,#2b3a2e 100%)",
+                title: "#f2ede2", en: "#c9a86a", meta: "#9fb3a8", bday: "#c8402f",
+                glow: "radial-gradient(circle at 55% 62%,rgba(200,64,47,.30),transparent 62%)" },
+      pardo:  { bg: "linear-gradient(115deg,#120a14 0%,#2e1a2a 55%,#43261a 100%)",
+                title: "#ffd9a0", en: "#ffd166", meta: "#cbb6a4", bday: "#ff9d5c",
+                glow: "radial-gradient(circle at 55% 62%,rgba(255,157,92,.32),transparent 62%)" }
+    };
+    var tone = TONES[q.get("tone")] || TONES.elysia;
+
+    var setText = function (sel, txt) { if (txt) $(sel).textContent = txt; };
+    setText(".title", q.get("title"));
+    setText(".en", q.get("en"));
+    setText(".bday", q.get("bday"));
+    var meta = q.get("meta");
+    if (meta) {
+      var box = $(".meta");
+      box.innerHTML = "";
+      meta.split("|").forEach(function (line, i) {
+        if (i) box.appendChild(document.createElement("br"));
+        box.appendChild(document.createTextNode(line));
+      });
+    }
+    document.body.style.background = tone.bg;
+    $(".title").style.color = tone.title;
+    $(".title").style.textShadow = "0 0 40px " + tone.title + "66";
+    $(".en").style.color = tone.en;
+    $(".en").style.textShadow = "0 0 18px " + tone.en + "80";
+    $(".line").style.background = "linear-gradient(90deg," + tone.en + ",transparent)";
+    $(".meta").style.color = tone.meta;
+    $(".bday").style.color = tone.bday;
+    $("#glow").style.background = tone.glow;
+
+    /* 立绘：白名单写死，避免这模板被拿来读任意文件；给了 glyph 就用刻印字顶上 */
+    var OK = ["armor-pink", "armor-ego", "armor-elf"];
+    var art = q.get("art");
+    var glyph = q.get("glyph");
+    if (art && OK.indexOf(art) >= 0) {
+      $("#art").src = "/images/" + art + ".webp";
+      if (glyph) { $("#glyph").textContent = glyph; $("#glyph").style.display = "flex"; }
+    } else if (glyph) {
+      $("#art").style.display = "none";
+      var g = $("#glyph");
+      g.textContent = glyph;
+      g.style.display = "flex";
+      g.style.color = tone.title;
+    } else if (art === "none") {
+      $(".right").style.display = "none";
+      $(".left").style.flex = "1 1 100%";
+      $(".left").style.paddingRight = "84px";
     }
   })();
 </script>

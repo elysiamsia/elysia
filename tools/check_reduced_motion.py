@@ -32,7 +32,10 @@ EDGE = r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
 
 # 逐页检查「减动生效」的目标：选择器 → 期望的 animation-name
 #   （'none' 表示应当被关掉）
-PAGES = ['index.html', 'kevin/index.html', 'kalpas/index.html', 'villv/index.html',
+# ⚠ 2026-10-15：补上 aponia / eden / su —— 之前这份清单**漏了这三页**（实测差集），
+#   而它们都是老页：减动那套共享层到底进没进去，只有量过才算数。
+PAGES = ['index.html', 'kevin/index.html', 'aponia/index.html', 'eden/index.html',
+         'villv/index.html', 'kalpas/index.html', 'su/index.html',
          'sakura/index.html', 'kosma/index.html', 'mobius/index.html', 'griseo/index.html',
          'hua/index.html', 'pardofelis/index.html']
 

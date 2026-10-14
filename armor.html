@@ -236,7 +236,16 @@ body{
           (it.subtitle ? '<div class="card-sub">' + it.subtitle + '</div>' : '') +
           '<div class="card-meta">' + meta + '</div>' +
           '<div class="card-desc">' + it.desc + '</div>' +
+          /* ⚠ 2026-10-15（精修计划 4.1）：卡片立绘显示 341px 宽，2x 屏只要 ~700px，
+             而原图是 1024（3x）。所以出一档 700 走 `srcset`，让浏览器自己挑：
+             1x / 2x 的屏都挑 700（省一半），只有 3x 屏才落到 1024。
+             ⚠ 源本来就窄于 700 的（skin-3 是 403）没有中档，也就不写 srcset。
+             宽高属性照旧写**原图**的尺寸 —— 它管的是占位比例，不是下载哪张。 */
           (it.img ? '<div class="card-image"><img src="' + it.img + '" alt="' + it.title + '"'
+                    + (it.img_w && it.img_w > 700
+                        ? ' srcset="' + it.img.replace('images/', 'images/mid/').replace('.webp', '-700.webp')
+                          + ' 700w, ' + it.img + ' ' + it.img_w + 'w" sizes="(max-width: 720px) 92vw, 341px"'
+                        : '')
                     + (it.img_w ? ' width="' + it.img_w + '" height="' + it.img_h + '"' : '')
                     + ' loading="lazy" decoding="async"></div>' : '') +
           (it.detail ? '<div class="card-detail">' + it.detail + '</div>' : '') +
