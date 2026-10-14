@@ -1335,6 +1335,10 @@ docs/superpowers/
 │                                                → B4 armor → B5 六页精修 → B6 收尾）+ 验收规程
 │
 ├── specs/
+│   └── 2026-10-15-four-games-design.md          ★ **四位英桀的小游戏设计**（阿波尼亚 / 伊甸 /
+│                                                维尔薇 / 千劫）—— 各自「玩法 ＝ 哪一句」、
+│                                                共同契约、GAMES 登记口径、实施批次
+│
 │   ├── 2026-09-15-elysiad-update-design.md      设计文档（十项功能 + 匿名花笺 + 上线后待办）
 │   │                                              ★ 改功能前先读这份
 │   ├── 2026-10-01-elysiad-explore-refactor-design.md
