@@ -501,8 +501,11 @@ body{
 
 <!-- SECTION: scripts -->
 <script src="/assets/site.js"></script>
+<script src="/assets/explore.js"></script>
 <script src="/assets/bottom.js"></script>
 <script src="/assets/games/su.js"></script>
+<script src="/assets/bday.js"></script>
+<script src="/data/bdays.js"></script>
 <script>
 (function(){
   /* SECTION: quotes data */
@@ -867,6 +870,67 @@ body{
   // 呀！星星的区间就是这一页的脾气，交给共享层的时候一个数都不敢动呢♥
   // ⚠ 区间写法是 [起点, 跨度]，与原来的 `0.1 + Math.random() * 0.3` 一一对应。
   var THEME = {
+    /* ── 探索系统（2026-10-15 按位铺开）───────────────────────────────
+       12 个可发现物。⚠ `line` 与 `src` 是**逐字抄自官方档案馆「事件-苏」**的
+       （`https://baike.mihoyo.com/bh3/wiki/content/879/detail`）—— 一个字都不许改。
+       逐字核准表：`docs/superpowers/plans/2026-10-15-su-finds-table.md`。
+       ⚠ 与他页面顶部的语录卡**故意不重复**（已逐条核对）。 */
+    explore: {
+      pageId: 'su',          // 进度存 localStorage['elysia:explore:su']
+      finds: [
+        { id:'su-01', at:'#opening', x:0.16, y:0.72, verb:'click', art:'shadow',
+          line:'请勿在意。我只是一个影子，这方天地也不过是昨日风景的残存。',
+          src:'官方档案馆 · 事件-苏 · 觉者的追忆 · 其一' },
+        { id:'su-02', at:'#about', x:0.1, y:0.28, verb:'hold', art:'petal',
+          line:'须弥芥子中，每一片树叶的凋零，都宣告着一个世界的终结。枯叶飘落、消散，溶于无存之海中，化作幻梦泡影。',
+          src:'官方档案馆 · 事件-苏 · 觉者的追忆 · 其三' },
+        { id:'su-03', at:'#about', x:0.9, y:0.74, verb:'triple_tap', art:'glint',
+          line:'这并非伤口，来访者，而是不容有失的信标。',
+          src:'官方档案馆 · 事件-苏 · 觉者的追忆 · 其八' },
+        { id:'su-04', at:'#merit', x:0.14, y:0.3, verb:'click', art:'infinity',
+          line:'我已注视过太多的世界诞生消弭——成住坏空，从无例外。',
+          src:'官方档案馆 · 事件-苏 · 觉者的追忆 · 其十' },
+        { id:'su-05', at:'#merit', x:0.86, y:0.7, verb:'hold', art:'scale',
+          line:'数字「7」是十三的中值，如天平的支点，连接首尾，位列中立之席。',
+          src:'官方档案馆 · 事件-苏 · 关于位次 · 其一' },
+        { id:'su-06', at:'#journey', x:0.1, y:0.35, verb:'drag', art:'moon',
+          line:'自学生时代开始，我们就是朋友。',
+          src:'官方档案馆 · 事件-苏 · 关于凯文 · 其一' },
+        { id:'su-07', at:'#journey', x:0.9, y:0.65, verb:'click', art:'silhouette',
+          line:'你虽神情孤独，却心无迷惘。我想，你也曾经拥有值得托付后背的友人吧？',
+          src:'官方档案馆 · 事件-苏 · 关于友人 · 其一' },
+        { id:'su-08', at:'#quotes', x:0.1, y:0.55, verb:'slide', art:'dawn',
+          line:'所谓真相，依时依势。',
+          src:'官方档案馆 · 事件-苏 · 关于自身 · 其二' },
+        { id:'su-09', at:'#quotes', x:0.9, y:0.5, verb:'click', art:'blade',
+          line:'以此「天慧」，授予你踏破试炼之理。',
+          src:'官方档案馆 · 事件-苏 · 给予刻印 · 其三' },
+        { id:'su-10', at:'#journey', x:0.5, y:0.55, verb:'triple_tap', art:'petal',
+          line:'落叶翩翩，而大树依旧枝繁叶茂。无穷无尽的树叶，绵延成生生不息的文明。',
+          src:'官方档案馆 · 事件-苏 · 给予刻印 · 其十三' },
+        { id:'su-11', at:'#ending', x:0.5, y:0.92, verb:'hold', art:'sleeping',
+          line:'每片树叶中都有新的文明诞生，繁荣，最终走向衰亡。与之相比，人的生命不过眨眼之间。',
+          src:'官方档案馆 · 事件-苏 · 给予刻印 · 其十七' },
+        { id:'su-12', at:'#bottom', x:0.5, y:0.9, verb:'click', art:'moon',
+          line:'落叶归根，我们不过是找到了自己的归处。',
+          src:'官方档案馆 · 事件-苏 · 给予刻印 · 其二十' },
+      ],
+      unlock: {
+        title: '「天慧」一瞬的虚像',
+        text: '「存在于此的我，不过是「天慧」一瞬的虚像。」',
+        src: '官方档案馆 · 事件-苏 · 关于预见 · 其一',
+      },
+      /* ── 陪伴层台词池（spec §6.5 的余量）─────────────────────────────
+         ⚠ **按顺序推进，不随机抽** —— 见 explore.js 的文件头。
+         ⚠ 全部来自同一份档案馆页面，逐字未改。 */
+      whisper: [
+        '请勿在意。我只是一个影子，这方天地也不过是昨日风景的残存。',
+        '适时停下脚步，才能回首来时的路，想起一些曾被忽视的事。',
+        '所谓真相，依时依势。',
+        '那片叶子里没有你想看到的未来，爱莉希雅。',
+        '你无需知晓过去的因果，克莱茵。',
+      ],
+    },
     /* ⚠ 游戏槽（2026-10-15 加）：`module` 指向 `window.ElysiaGames.su`
        （就是 `assets/games/su.js` 挂上去的那个）。卡上的标题/说明由模块自己给，
        这里只说「这一页用哪个模块」—— 契约见 spec §4.5。 */
@@ -881,9 +945,16 @@ body{
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
 
-/* 下方区块（2026-10-15）：先只挂游戏槽 —— 探索度那一槽等探索系统铺开时自己回来
-   （`bottom.js` 里那槽是 `if (global.ElysiaExplore && ...)`，没有就安静跳过，不会渲染成 0/0）。 */
-ElysiaBottom.mount({ game: THEME.game });
+  /* 探索系统（2026-10-15 铺开）：12 个落点 + 解锁 + 陪伴层，配置在 THEME.explore。 */
+  ElysiaExplore.init(THEME.explore);
+
+  /* 生日胶囊（2026-10-15）：苏的生日**查不到**（页面与档案馆都没有），`data/bdays.js` 里没有他这一条，
+     胶囊整个不会出现。⚠ 组件仍然要挂 —— 别的断言要读它的状态（凯文那一轮学到的）。
+     ⚠ 哪天查到生日：① 加进 `data/bdays.js` ② **同时补那 15 个 `--bday-*` 变量**，否则会串页。 */
+  ElysiaBday.mount({});
+
+  /* 下方区块：探索度那一槽由 ElysiaExplore 自己放回来，这里只挂游戏槽。 */
+  ElysiaBottom.mount({ game: THEME.game });
   /* SECTION: resize guard */
   window.addEventListener('resize', function(){
     for (var j = 0; j < dusts.length; j++){
