@@ -546,8 +546,11 @@ body{
 
 <!-- SECTION: scripts -->
 <script src="/assets/site.js"></script>
+<script src="/assets/explore.js"></script>
 <script src="/assets/bottom.js"></script>
 <script src="/assets/games/kevin.js"></script>
+<script src="/assets/bday.js"></script>
+<script src="/data/bdays.js"></script>
 <script>
 (function(){
   /* SECTION: quotes data */
@@ -736,6 +739,68 @@ body{
   // 呀！星星的区间就是这一页的脾气，交给共享层的时候一个数都不敢动呢♥
   // ⚠ 区间写法是 [起点, 跨度]，与原来的 `0.1 + Math.random() * 0.3` 一一对应。
   var THEME = {
+    /* ── 探索系统（2026-10-15 按位铺开）───────────────────────────────
+       12 个可发现物。⚠ `line` 与 `src` 是**逐字抄自官方档案馆「事件-凯文」**的
+       （`https://baike.mihoyo.com/bh3/wiki/content/937/detail`）—— 一个字都不许改，
+       连 `······` 六个中点也别「规范化」成 `……`。逐字核准表：
+       `docs/superpowers/plans/2026-10-15-kevin-finds-table.md`。
+       ⚠ 与他页面顶部那 10 句「语录卡」**故意不重复**：那是门面，这 12 条是藏起来等人来找的。 */
+    explore: {
+      pageId: 'kevin',          // 进度存 localStorage['elysia:explore:kevin']
+      finds: [
+        { id:'kevin-01', at:'#opening', x:0.16, y:0.72, verb:'click', art:'blade',
+          line:'一把剑之所以能成为我的武器，是因为只有我能亲手折断它。关于力量，我只能言尽于此。',
+          src:'官方档案馆 · 事件-凯文 · 给予刻印 · 其二' },
+        { id:'kevin-02', at:'#about', x:0.1, y:0.28, verb:'hold', art:'scale',
+          line:'你已选择了自己的路，那你就必须前往这条路的尽头，无论付出什么代价。',
+          src:'官方档案馆 · 事件-凯文 · 给予刻印 · 其三' },
+        { id:'kevin-03', at:'#about', x:0.9, y:0.74, verb:'triple_tap', art:'glint',
+          line:'「救世」绝非易事，有时我们甚至连拯救一个人都很难做到。但，这绝不是我们轻言放弃的理由。',
+          src:'官方档案馆 · 事件-凯文 · 给予刻印 · 其十' },
+        { id:'kevin-04', at:'#journey', x:0.12, y:0.22, verb:'click', art:'silhouette',
+          line:'很多人只是在窥见那条小径时就选择了放弃。「救世」之途并非是他们想象中的平原易野，甚至容不下两个人并肩而行。',
+          src:'官方档案馆 · 事件-凯文 · 给予刻印 · 其十六' },
+        { id:'kevin-05', at:'#journey', x:0.88, y:0.78, verb:'hold', art:'throne',
+          line:'任何人都有机会看清世界的本貌，并且承担它的重量——这就是我们所说的牺牲。',
+          src:'官方档案馆 · 事件-凯文 · 给予刻印 · 其十八' },
+        { id:'kevin-06', at:'#blade', x:0.12, y:0.3, verb:'drag', art:'sheath',
+          line:'天火圣裁第一次「出鞘」时，我冻结了它残存的火焰。',
+          src:'官方档案馆 · 事件-凯文 · 英雄的追忆 · 其三' },
+        { id:'kevin-07', at:'#blade', x:0.88, y:0.72, verb:'click', art:'silhouette',
+          line:'「凯文」就是这样的人，从前是，以后也是。',
+          src:'官方档案馆 · 事件-凯文 · 英雄的追忆 · 其四' },
+        { id:'kevin-08', at:'#quotes', x:0.1, y:0.55, verb:'slide', art:'dawn',
+          line:'我只是在做自己能做的事，仅此而已。',
+          src:'官方档案馆 · 事件-凯文 · 英雄的追忆 · 其十' },
+        { id:'kevin-09', at:'#quotes', x:0.9, y:0.65, verb:'click', art:'shed',
+          line:'世界蛇的建立和我无关。',
+          src:'官方档案馆 · 事件-凯文 · 关于自身 · 其一' },
+        { id:'kevin-10', at:'#journey', x:0.5, y:0.6, verb:'triple_tap', art:'horn',
+          line:'科斯魔······在我们还未成为融合战士的时候，他曾隶属于我的小队。',
+          src:'官方档案馆 · 事件-凯文 · 关于科斯魔 · 其一' },
+        { id:'kevin-11', at:'#ending', x:0.5, y:0.92, verb:'hold', art:'petal',
+          line:'根本就没有那样的事，爱莉希雅。无聊的谎言就到此为止吧。',
+          src:'官方档案馆 · 事件-凯文 · 关于过去 · 其一' },
+        { id:'kevin-12', at:'#bottom', x:0.5, y:0.9, verb:'click', art:'glint',
+          line:'你不必向我讲述自己的行程，雷电芽衣。这毫无意义。',
+          src:'官方档案馆 · 事件-凯文 · 关于背叛者 · 其一' },
+      ],
+      unlock: {
+        title: '「救世」之铭',
+        text: '「既然是「我」让你来到这里，那所有该被说出的，你都已经听过了。」',
+        src: '官方档案馆 · 事件-凯文 · 给予刻印',
+      },
+      /* ── 陪伴层台词池（spec §6.5 的余量）─────────────────────────────
+         ⚠ **按顺序推进，不随机抽** —— 见 explore.js 的文件头。
+         ⚠ 全部来自同一份档案馆页面，逐字未改。 */
+      whisper: [
+        '我没必要回到这里。',
+        '就像我说过的，无论是过去还是现在，「凯文」从未变过。',
+        '天火出鞘，它所带来的后果确实非我本意。但我所说的警醒，也不是出于悔恨。',
+        '不，这只是因为你还不够了解他，雷电芽衣。',
+        '约束之律者······抱歉，与她作战的经验你没办法参考。',
+      ],
+    },
     /* ⚠ 游戏槽（2026-10-15 加）：`module` 指向 `window.ElysiaGames.kevin`
        （`assets/games/kevin.js`）。卡上的标题/说明由模块自己给 —— 契约见 spec §4.5。 */
     game: { module: 'kevin' },
@@ -749,9 +814,17 @@ body{
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
 
-  /* 下方区块（2026-10-15）：先挂游戏槽 —— 探索度那一槽等探索系统铺开时自己回来
-     （`bottom.js` 里那槽是 `if (global.ElysiaExplore && ...)`，没有就安静跳过）。 */
+  /* 探索系统（2026-10-15 铺开）：12 个落点 + 解锁 + 陪伴层，配置在 THEME.explore。 */
+  ElysiaExplore.init(THEME.explore);
+  /* 下方区块：探索度那一槽由 ElysiaExplore 自己放回来，这里只挂游戏槽。 */
   ElysiaBottom.mount({ game: THEME.game });
+
+  /* 生日胶囊（2026-10-15）：凯文的生日**查不到**（页面与档案馆都没有「生日」二字），
+     所以 `data/bdays.js` 里没有他这一条，胶囊**整个不会出现**。
+     ⚠ 组件仍然要挂 —— 别的断言要读它的状态；没生日时它自己安静待着。
+     ⚠ 哪天查到生日：① 加进 `data/bdays.js` ② **同时补那 15 个 `--bday-*` 变量**
+       （不然会吃共享层默认值 = 首页爱莉希雅的粉紫，串页。见 HANDOVER §4.1.2 / §5.2）。 */
+  ElysiaBday.mount({});
   /* 呀，这一页原本没有「粒子迸发」那个工具函数 —— 从别的页抄名字会直接报错。
      用他自己的冰晶写一个：点剑时溅出碎冰♥ */
   function shardBurst(cx, cy, count, colors){
