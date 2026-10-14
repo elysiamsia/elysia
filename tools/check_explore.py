@@ -2341,6 +2341,11 @@ GAMES = {
     #     并加了 400ms 保护期（与樱 / 科斯魔 / 格蕾修同款）⇒ `guard: True`。
     'pardofelis/index.html': {'overlay': 'catGameOverlay', 'canvas': '#catCanvas',
                               'close': '#cgClose', 'play': None, 'swipe': True, 'guard': True},
+    # ⚠ 苏「数珠」（2026-10-15 接入）：念珠**记忆序列** —— 玩家在画布上**点珠子**；
+    #   同样没有独立操作区，但**不写 `swipe`**：画布是**点触面**（不是拖动面），
+    #   所以退出键按 `CLOSE_FAR_MIN=100` 量。收起键固定挂在遮罩右上角。
+    'su/index.html':      {'overlay': 'suBeadOverlay', 'canvas': '#suCanvas',
+                           'close': '#suClose', 'play': None, 'guard': True},
 }
 GAME_PAGES = tuple(sorted(GAMES.keys()))
 
