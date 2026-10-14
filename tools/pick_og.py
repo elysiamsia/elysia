@@ -35,6 +35,12 @@ PAGES = [
     'index.html', 'armor.html',
     'aponia/index.html', 'eden/index.html', 'kalpas/index.html',
     'kevin/index.html', 'su/index.html', 'villv/index.html',
+    # ⚠ 2026-10-15：补上后来建的这四页 —— 它们同样用「站点三张轮换卡」，
+    #   之前漏在名单外：轮换时它们不会跟着换（一直停在 og-1）。
+    'sakura/index.html', 'kosma/index.html', 'mobius/index.html', 'griseo/index.html',
+    # ⚠ 华 / 帕朵**故意不在名单里**：她们有各自的专属分享卡
+    #   （images/og-hua.jpg / og-pardo.jpg，由 tools/og-card.html 的 tone/title/glyph 出的）——
+    #   跑这个工具会把她们改回通用卡。
 ]
 
 # 变体编号 → 立绘，仅用于打印说明

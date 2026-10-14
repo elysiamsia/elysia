@@ -60,7 +60,7 @@
 
 | 批次 | 内容 | 完成判据 |
 |---|---|---|
-| **B1 地基** | 体积治理（首页/armor 立绘、游戏 JS 懒加载）、死重清理、工具与文档补齐 | 首页传输 **< 300 KB**、armor **< 200 KB**；`check_page_health` 全绿（404/guestbook 已知豁免除外） |
+| **B1 地基** | 体积治理（首页/armor 立绘、游戏 JS 懒加载）、死重清理、工具与文档补齐 | ✅ **立绘瘦身 / 拆预载 / 死重清理 / 减动补三页 / og:image 都已完成**（首页 **213 KB** ✓）。只剩 **4.2 游戏 JS 懒加载**（有踩断言风险，单独一轮）与 armor 的可选 `400w` 档 |
 | **B2 首页专项** | index.html（P1 Task 10）：首屏、明信片、剩下的待拍板 | 同上 + `check_postcard.py` 12 组全绿 |
 | **B3 六位老页铺开** | kevin / aponia / eden / villv / kalpas / su：探索 + 下方区块 + 生日胶囊 + 小游戏 + 登记 | 每页 `check_explore` 全绿 + `snapshot_diff` 其余页零差异 |
 | **B4 armor 专项** | armor.html（P1 Task 11）：体积 + 返回键 + 它那套与子页不同的组件 | 返回键 ≥ 44px；传输 < 200 KB |
@@ -69,7 +69,13 @@
 
 ## 四、B1 地基（先做，后面每页都受益）
 
-### 4.1 首页与 armor 的立绘体积（**最大的一项**）
+### 4.1 首页与 armor 的立绘体积（**最大的一项**）✅ **2026-10-15 已完成**
+
+> **结果**：首页 **1033 → 213~271 KB（-75%）**、armor **558 → 344 KB**。
+> 做法（两件一起）：① 出派生小图 `images/thumb/*-200.webp`（选择器格子只显示 54×72）
+> 与 `images/mid/*-700.webp`（画布上立绘框最大 454px、armor 卡片 341×2x）；
+> ② 把画布那个「一开页预载八张」拆成**按需**（见 `postcard.js` 的 `loadArt/preloadRest`）。
+> ⚠ armor 还能再省一档（给 1x 桌面加 `400w` 候选），本轮没做 —— 收益只在桌面 1x。
 
 实测：首页 1033 KB，其中**八张立绘 webp ≈ 880 KB**（armor-ego 247 / armor-elf 190 / skin-4 119 / skin-1 116 / armor-pink 94 / skin-5 46 / skin-2 44 / skin-3 24）；
 armor.html 558 KB 是同一组里的三张（armor-ego / armor-elf / armor-pink）。
@@ -86,7 +92,12 @@ armor.html 558 KB 是同一组里的三张（armor-ego / armor-elf / armor-pink�
 `griseo.js` **107 KB**（最大的一块脚本）页面一打开就下，而它只在玩家点「开始」后才用得到。
 ⚠ 但**断言依赖它已加载**（`check_explore` 会点游戏卡开局）⇒ 懒加载必须在点击时**同步触发并等待**，否则断言和真机都会闪一下。**单独一轮、单独验收。**
 
-### 4.3 死重清理（6.47 MB）
+### 4.3 死重清理（6.24 MB，不含备用 og）✅ **2026-10-15 已完成**
+
+> **结果**：那 10 张 PNG `git mv` 到 **`images/raw/webp-src/`**（比计划里说的 `images/src/` 更好：
+> `images/raw` 本来就被部署排除，而且 `static.yml` 的自检里就有它）。
+> **部署产物 8.75 → 3.33 MB（-62%）**，`images/` 根目录只剩真正被引用的 16 个文件。
+> `tools/to_webp.py` 的读源路径跟着改了（`SRC = images/raw/webp-src`），`--dry-run` 已验证。
 
 | 文件 | 大小 | 判断 |
 |---|---|---|
@@ -96,12 +107,23 @@ armor.html 558 KB 是同一组里的三张（armor-ego / armor-elf / armor-pink�
 ⚠ `static.yml` 是「整目录拷 `images/`」⇒ **留在 `images/` 就一定会进产物**。
 建议新建 `images/src/`（不部署）放原始 PNG。
 
-### 4.4 仓库体积（21.59 MB 的 raw）
+### 4.4 仓库体积（21.59 MB 的 raw）❌ **2026-10-15 决定不做**
+
+> **理由**：部署本来就排除它（`static.yml` 里 `rm -rf _site/images/raw`），
+> 而 `git rm --cached` **不会让 clone 变小**（历史里还有那些 blob），
+> 却会让素材在别人 clone 时消失（它被 `.gitignore` 挡着）。**风险大于收益。**
+> 真要缩，只有 filter-repo 重写历史 —— 那个代价不值得。
 
 `images/raw/` 已排除部署，但**仍在 git 里**（17 个文件 21.59 MB）：`.gitignore` 里写的 `images/raw/` 对**已跟踪**文件无效。
 建议 `git rm -r --cached images/raw`（保留工作区文件），仓库瘦一圈；历史里的旧副本要清就得 filter-repo（**不建议**，收益不抵风险）。
 
-### 4.5 工具与验收流程补齐（都是小活）
+### 4.5 工具与验收流程补齐（都是小活）✅ **1/2/3 已完成**
+
+> ① `check_page_health.py` 已进 4.3 节验收流程；
+> ② 减动总表已补 aponia / eden / su ⇒ **13/13 页双向全过**；
+> ③ 华 / 帕朵的 `og:image` 已补（专属卡 `og-hua.jpg` / `og-pardo.jpg`）；
+> ④ 404 的 canonical 维持豁免（引路页不需要）。
+> 顺带：`tools/pick_og.py` 的轮换名单补了 sakura / kosma / mobius / griseo 四页（华/帕朵故意不入）。
 
 1. **`check_page_health.py` 进 4.3 节验收流程**（每轮先跑，看数字有没有退化）。
 2. **减动总表补三页**：`check_reduced_motion.PAGES` 现在缺 **aponia / eden / su**（实测差集）—— 补上并跑一遍。

@@ -821,41 +821,43 @@ body{
     <!-- 立绘缩略图一行（spec §四）：八张可选 + 一个「随机」。
          ⚠ 顺序必须与 `assets/postcard.js` 里的 `ART` **一一对应** ——
            断言是逐个点、逐个核对句柄里的 `art`，写错了会被抓出来。
-         ⚠ 不新增资源：就是首页本来在用的那八张 webp；而且明信片在页面加载时
-           已经把八张都预载了（`loadImages()`），这一行**不会多出一个请求**。
+         ⚠ 这里用的是**派生小图**（`images/thumb/*-200.webp`，每张 4~19 KB），不是原图 ——
+           格子只显示 54×72，原来指原图时首页要下 **880 KB**（精修计划 4.1，2026-10-15）。
+           原图仍由 `postcard.js` 按需加载：开页只加载当前那张，其余等访客碰选择器才补。
+           ⚠ 换源**不影响断言**：选择走的是按钮上的 `data-art`，没人读 `img.src`。
          ⚠ 图上的 `alt` 留空 —— 名字在按钮的 `aria-label` 上，免得读屏念两遍。 -->
     <div class="postcard-art" id="postcardArt" role="group" aria-label="换一张立绘">
       <button class="postcard-thumb" type="button" aria-pressed="false"
               aria-label="第 1 张立绘：装甲 · 粉色妖精小姐" data-art="0">
-        <img src="images/armor-pink.webp" alt="">
+        <img src="images/thumb/armor-pink-200.webp" alt="" loading="lazy" decoding="async">
       </button>
       <button class="postcard-thumb" type="button" aria-pressed="false"
               aria-label="第 2 张立绘：装甲 · 嗨爱愿妖精" data-art="1">
-        <img src="images/armor-elf.webp" alt="">
+        <img src="images/thumb/armor-elf-200.webp" alt="" loading="lazy" decoding="async">
       </button>
       <button class="postcard-thumb" type="button" aria-pressed="false"
               aria-label="第 3 张立绘：装甲 · 真我人之律者" data-art="2">
-        <img src="images/armor-ego.webp" alt="">
+        <img src="images/thumb/armor-ego-200.webp" alt="" loading="lazy" decoding="async">
       </button>
       <button class="postcard-thumb" type="button" aria-pressed="false"
               aria-label="第 4 张立绘：皮肤 · 粉色甜心小姐" data-art="3">
-        <img src="images/skin-1.webp" alt="">
+        <img src="images/thumb/skin-1-200.webp" alt="" loading="lazy" decoding="async">
       </button>
       <button class="postcard-thumb" type="button" aria-pressed="false"
               aria-label="第 5 张立绘：皮肤 · 夏日妖精小姐" data-art="4">
-        <img src="images/skin-2.webp" alt="">
+        <img src="images/thumb/skin-2-200.webp" alt="" loading="lazy" decoding="async">
       </button>
       <button class="postcard-thumb" type="button" aria-pressed="false"
               aria-label="第 6 张立绘：皮肤 · 褪色妖精小姐" data-art="5">
-        <img src="images/skin-3.webp" alt="">
+        <img src="images/thumb/skin-3-200.webp" alt="" loading="lazy" decoding="async">
       </button>
       <button class="postcard-thumb" type="button" aria-pressed="false"
               aria-label="第 7 张立绘：皮肤 · 春好桃夭" data-art="6">
-        <img src="images/skin-4.webp" alt="">
+        <img src="images/thumb/skin-4-200.webp" alt="" loading="lazy" decoding="async">
       </button>
       <button class="postcard-thumb" type="button" aria-pressed="false"
               aria-label="第 8 张立绘：皮肤 · 霁月婵娟" data-art="7">
-        <img src="images/skin-5.webp" alt="">
+        <img src="images/thumb/skin-5-200.webp" alt="" loading="lazy" decoding="async">
       </button>
       <!-- 第九个是**动作**（重抽一张），不是一种「选中态」——
            所以它没有 `aria-pressed`。抽完亮起来的是被抽中的那一张。 -->

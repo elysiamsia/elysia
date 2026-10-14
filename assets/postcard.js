@@ -39,16 +39,20 @@
   var manual = false;                       // 用户是否手动切过
 
   /* 八张立绘（spec §四）。⚠ 顺序就是缩略图的顺序，别随便调。
-     3 装甲 + 5 皮肤，都**已经在站点上**（首页本来就在用），不新增资源。 */
+     3 装甲 + 5 皮肤。
+     ⚠ 2026-10-15（精修计划 4.1）：这里改指**派生中档** `images/mid/*-700.webp`。
+       量过画布上的立绘框：竖版最多 454px、横版最多 426px 宽（contain 之后更小），
+       所以 700 那档是 1.5 倍超采样——**存出来的明信片看不出区别**，但体积省一半。
+       ⚠ 只有 `skin-3` 例外：源本来就 403 宽，没有 700 那档（也不用造），照旧用原图（24 KB）。 */
   var ART = [
-    'images/armor-pink.webp',   // 装甲 · 粉色妖精小姐（抠图）
-    'images/armor-elf.webp',    // 装甲 · 嗨爱愿妖精（抠图）
-    'images/armor-ego.webp',    // 装甲 · 真我人之律者
-    'images/skin-1.webp',       // 皮肤 · 粉色甜心小姐（抠图）
-    'images/skin-2.webp',       // 皮肤 · 夏日妖精小姐（带背景）
+    'images/mid/armor-pink-700.webp',   // 装甲 · 粉色妖精小姐（抠图）
+    'images/mid/armor-elf-700.webp',    // 装甲 · 嗨爱愿妖精（抠图）
+    'images/mid/armor-ego-700.webp',    // 装甲 · 真我人之律者
+    'images/mid/skin-1-700.webp',       // 皮肤 · 粉色甜心小姐（抠图）
+    'images/mid/skin-2-700.webp',       // 皮肤 · 夏日妖精小姐（带背景）
     'images/skin-3.webp',       // 皮肤 · 褪色妖精小姐（带背景）
-    'images/skin-4.webp',       // 皮肤 · 春好桃夭
-    'images/skin-5.webp'        // 皮肤 · 霁月婵娟（带背景）
+    'images/mid/skin-4-700.webp',       // 皮肤 · 春好桃夭
+    'images/mid/skin-5-700.webp'        // 皮肤 · 霁月婵娟（带背景）
   ];
   var QR_SRC = 'images/qr-elysiad.png';     // 见 tools/make_qr.py
 
@@ -90,19 +94,37 @@
   function artFailed() { var r = artImgs[cur]; return !!(r && r.failed); }
   function qrFailed() { return !!qrImg.failed; }
 
-  /* ── 预载 ────────────────────────────────────────────────────────────
-     ⚠ onerror 一定要接：图挂了要**记得**，不能等到画的时候才发现。 */
+  /* ── 图片加载：**按需**，不再一开页就预载八张 ──────────────────────────
+     ⚠ 2026-10-15 改（精修计划 4.1）。原来这里一上来就把**八张立绘全预载**，
+       实测首页因此要下 **880 KB** 的 1024px 原图 —— 而选择器格子只显示 54×72、
+       画布一次也只用得到**当前那一张**。现在：
+         · 开页只加载 `cur` 那一张（画布真需要的）+ 二维码；
+         · 其余七张等访客**第一次碰选择器**时才补（见下面的 warm-up），切图依旧瞬时；
+         · `pickArt()` 点到还没加载的那张时**当场加载**，到了自己重画。
+     ⚠ onerror 一定要接：图挂了要**记得**，不能等到画的时候才发现。
+     ⚠ `imagesSettled()` 也跟着改：只等**已经在加载的**那些 —— 没有记录的不算「没就绪」，
+       否则开页那圈「等图再画一版」的轮询会一直空等到超时。 */
+  function loadArt(i) {
+    if (artImgs[i]) return artImgs[i];
+    var rec = { el: new Image(), ok: false, failed: false };
+    rec.el.onload = function () {
+      rec.ok = true;
+      if (artImgs[cur] === rec) redraw();   // 切到的那张到了 → 立刻重画一版
+    };
+    rec.el.onerror = function () { rec.failed = true; };
+    rec.el.src = ART[i];
+    artImgs[i] = rec;
+    return rec;
+  }
+
+  function preloadRest() {
+    for (var i = 0; i < ART.length; i++) if (!artImgs[i]) loadArt(i);
+  }
+
   function loadImages() {
     artImgs = [];
-    for (var i = 0; i < ART.length; i++) {
-      (function () {
-        var rec = { el: new Image(), ok: false, failed: false };
-        rec.el.onload = function () { rec.ok = true; };
-        rec.el.onerror = function () { rec.failed = true; };
-        rec.el.src = ART[artImgs.length];
-        artImgs.push(rec);
-      })();
-    }
+    for (var i = 0; i < ART.length; i++) artImgs.push(null);   // 占位：还没开始加载
+    loadArt(cur);
     qrImg = { el: new Image(), ok: false, failed: false };
     qrImg.el.onload = function () { qrImg.ok = true; };
     qrImg.el.onerror = function () { qrImg.failed = true; };
@@ -111,7 +133,8 @@
 
   function imagesSettled() {
     for (var i = 0; i < artImgs.length; i++) {
-      if (!artImgs[i].ok && !artImgs[i].failed) return false;
+      var r = artImgs[i];
+      if (r && !r.ok && !r.failed) return false;   // 只等已经开始加载的
     }
     return qrImg.ok || qrImg.failed;
   }
@@ -234,7 +257,7 @@
     ctx.fillStyle = 'rgba(255,255,255,0.028)';
     ctx.fill();
     ctx.clip();                                   // 图片不许溢出圆角
-    var rec = artImgs[cur];
+    var rec = artImgs[cur] || loadArt(cur);
     if (rec && rec.ok && rec.el) {
       var iw = rec.el.naturalWidth || rec.el.width;
       var ih = rec.el.naturalHeight || rec.el.height;
@@ -521,6 +544,9 @@
 
   function pickArt(i) {
     cur = i;
+    /* ⚠ 点到**还没加载**的那张 → 当场加载（`onload` 里会自己重画一次）。
+       访客第一次碰选择器时 `preloadRest()` 已经把七张补上了，所以正常路径下这里是空转。 */
+    loadArt(i);
     syncThumbs();
     redraw();
   }
@@ -548,6 +574,14 @@
     });
   }
   syncThumbs();
+
+  /* ⚠ 访客**第一次碰选择器**（悬停 / 按下 / 键盘聚焦）时，才把那七张补上 ——
+     这样「真要换图」的人切起来依旧瞬时，而只是路过的人不必先下那 800 KB。 */
+  if (artBox) {
+    ['pointerenter', 'pointerdown', 'touchstart', 'focusin'].forEach(function (ev) {
+      artBox.addEventListener(ev, preloadRest, { once: true, passive: true });
+    });
+  }
 
   /* ── 弹幕圆片 ──────────────────────────────────────────────────────────
      ⚠ 取词是**每次现读** `window.POSTCARD_PROMPTS`，不在加载时缓存 ——
