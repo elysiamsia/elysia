@@ -55,6 +55,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
 <link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/explore.css">
 <meta name="referrer" content="same-origin">
 <title>elysiad.top/aponia — 致阿波尼亚</title>
 <!-- SECTION: styles -->
@@ -66,6 +67,27 @@
   --text:#e9e5f4;--text-dim:#b3abcc;--text-muted:#7f7699;
   --glass-bg:rgba(157,143,208,.06);--glass-border:rgba(200,194,220,.14);
   --glass-bg2:rgba(232,201,138,.05);--glass-border2:rgba(232,201,138,.13);
+
+  /* 生日倒计时的配色覆盖（assets/explore.css 里那组 --bday-*，共 16 个）。
+     ⚠ 一个字都不新发明：全部从上面那套**紫 + 银 + 烛光金**里取。
+       不覆盖的话它会吃共享层默认值 —— 那是**首页爱莉希雅的粉紫**，串页（HANDOVER §4.1.2 / §5.2）。
+     ⚠ 她的生日在 data/bdays.js 里是 [4, 25]（格式是 [月-1, 日]）= 5 月 25 日。 */
+  --bday-ink:#e9e5f4;                              /* = --text */
+  --bday-accent:#9d8fd0;                           /* = --violet，圆点与强调 */
+  --bday-title:#b3abcc;                            /* = --text-dim */
+  --bday-date:#c8c2dc;                             /* = --silver */
+  --bday-num:#e8c98a;                              /* = --candle，倒计时那四位数 */
+  --bday-unit:#7f7699;                             /* = --text-muted */
+  --bday-src:#7f7699;
+  --bday-egg-bg:linear-gradient(135deg,rgba(157,143,208,.16),rgba(232,201,138,.10));
+  --bday-egg-border:rgba(157,143,208,.25);
+  --bday-egg-glow:rgba(157,143,208,.18);
+  --bday-egg-glow-hover:rgba(157,143,208,.32);
+  --bday-panel-bg:linear-gradient(160deg,rgba(28,18,48,.96),rgba(8,6,14,.96));
+  --bday-panel-border:rgba(200,194,220,.16);
+  --bday-panel-glow:rgba(157,143,208,.14);
+  --bday-cell-bg:rgba(157,143,208,.06);
+  --bday-cell-border:rgba(200,194,220,.14);
 }
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
@@ -499,6 +521,10 @@ body{
 
 <!-- SECTION: scripts -->
 <script src="/assets/site.js"></script>
+<script src="/assets/bottom.js"></script>
+<script src="/assets/games/aponia.js"></script>
+<script src="/assets/bday.js"></script>
+<script src="/data/bdays.js"></script>
 <script>
 (function(){
   /* SECTION: quotes data */
@@ -683,6 +709,9 @@ body{
   // 呀！星星的区间就是这一页的脾气，交给共享层的时候一个数都不敢动呢♥
   // ⚠ 区间写法是 [起点, 跨度]，与原来的 `0.1 + Math.random() * 0.3` 一一对应。
   var THEME = {
+    /* ⚠ 游戏槽（2026-10-15）：`module` 指向 `window.ElysiaGames.aponia`（`assets/games/aponia.js`）。
+       卡上的标题/说明由模块自己给 —— 同名同形，别两处维护（§10.5 的教训）。 */
+    game: { module: 'aponia' },
     endingStars: {
       count: [80, 12],
       size: [0.5, 2],
@@ -692,6 +721,13 @@ body{
     },
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+
+  /* 下方区块（2026-10-15）：先挂游戏槽 —— 探索度那一槽等探索系统铺开时自己回来。 */
+  ElysiaBottom.mount({ game: THEME.game });
+
+  /* 生日胶囊（2026-10-15）：她**有**生日（5 月 25 日，data/bdays.js 里是 [4, 25]），
+     胶囊会出现 —— 所以上面那一组 --bday-* 必须跟着有（否则就是首页的粉紫）。 */
+  ElysiaBday.mount({});
   /* SECTION: toast */
   var toastEl = document.getElementById('apToast');
   var toastTimer = null;

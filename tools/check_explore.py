@@ -2348,6 +2348,10 @@ GAMES = {
     #   所以退出键按 `CLOSE_FAR_MIN=100` 量。收起键固定挂在遮罩右上角。
     'su/index.html':      {'overlay': 'suBeadOverlay', 'canvas': '#suCanvas',
                            'close': '#suClose', 'play': None, 'guard': True},
+    # ⚠ 阿波尼亚「戒律」（2026-10-15 按位铺开第五位）：**按住拖线把「因」牵到「果」** ——
+    #   画布是**拖动面** ⇒ 显式 `swipe: True`，退出键按 `CLOSE_SWIPE_MIN=50` 量（spec §八 口径）。
+    'aponia/index.html':  {'overlay': 'apoGameOverlay', 'canvas': '#apoCanvas',
+                           'close': '#apoClose', 'play': None, 'swipe': True, 'guard': True},
     # ⚠ 凯文「五万年」（2026-10-15 **重做**）：**按住屏幕烧自己的年岁**，把寒潮顶回天上 ——
     #   画布是「按住不放」的面、**不是拖动面** ⇒ **不写 `swipe`**，按 `CLOSE_FAR_MIN=100` 量
     #   （实测 164px，稳过）。
