@@ -72,6 +72,9 @@ EXPECTED_FINDS = {
     # ⚠ 2026-10-13 帕朵菲莉丝登记收口。她那页的游戏是**画布版**（`#catCanvas`），
     #   所以走**正道**：卡按共享契约补上，并登记进下面的 `GAMES` 吃通用那四条。
     'pardofelis/index.html': 12,
+    'aponia/index.html': 12,         # 2026-10-15 按位铺开（核准表见 plans/2026-10-15-aponia-finds-table.md）
+    'eden/index.html': 12,          # 2026-10-15 铺开（核准表 plans/2026-10-15-eden-finds-table.md）
+    'villv/index.html': 12,         # 2026-10-15 铺开（核准表 plans/2026-10-15-villv-finds-table.md）
     'kevin/index.html': 12,          # 2026-10-15 按位铺开（逐字核准表见 plans/2026-10-15-kevin-finds-table.md）
     'su/index.html': 12,             # 2026-10-15 按位铺开（核准表见 plans/2026-10-15-su-finds-table.md）
 }
@@ -2348,6 +2351,17 @@ GAMES = {
     #   所以退出键按 `CLOSE_FAR_MIN=100` 量。收起键固定挂在遮罩右上角。
     'su/index.html':      {'overlay': 'suBeadOverlay', 'canvas': '#suCanvas',
                            'close': '#suClose', 'play': None, 'guard': True},
+    # ⚠ 阿波尼亚「戒律」（2026-10-15 按位铺开第五位）：**按住拖线把「因」牵到「果」** ——
+    #   画布是**拖动面** ⇒ 显式 `swipe: True`，退出键按 `CLOSE_SWIPE_MIN=50` 量（spec §八 口径）。
+    # 伊甸「和声」（2026-10-15 第六位）：按住拖跟线 ⇒ 拖动面，退出键 50px 口径。
+    #   四款里唯一破例配音的（乐句完成时一声很轻的和弦）。
+    # 维尔薇「戏法」（2026-10-15 第七位）：点选杯子 ⇒ **点触面**，退出键按 100px 口径量（不写 swipe）。
+    'villv/index.html':   {'overlay': 'villvGameOverlay', 'canvas': '#villvCanvas',
+                           'close': '#villvClose', 'play': None, 'guard': True},
+    'eden/index.html':    {'overlay': 'edenGameOverlay', 'canvas': '#edenCanvas',
+                           'close': '#edenClose', 'play': None, 'swipe': True, 'guard': True},
+    'aponia/index.html':  {'overlay': 'apoGameOverlay', 'canvas': '#apoCanvas',
+                           'close': '#apoClose', 'play': None, 'swipe': True, 'guard': True},
     # ⚠ 凯文「五万年」（2026-10-15 **重做**）：**按住屏幕烧自己的年岁**，把寒潮顶回天上 ——
     #   画布是「按住不放」的面、**不是拖动面** ⇒ **不写 `swipe`**，按 `CLOSE_FAR_MIN=100` 量
     #   （实测 164px，稳过）。

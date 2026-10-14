@@ -55,6 +55,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
 <link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/explore.css">
 <meta name="referrer" content="same-origin">
 <title>elysiad.top/aponia — 致阿波尼亚</title>
 <!-- SECTION: styles -->
@@ -66,6 +67,27 @@
   --text:#e9e5f4;--text-dim:#b3abcc;--text-muted:#7f7699;
   --glass-bg:rgba(157,143,208,.06);--glass-border:rgba(200,194,220,.14);
   --glass-bg2:rgba(232,201,138,.05);--glass-border2:rgba(232,201,138,.13);
+
+  /* 生日倒计时的配色覆盖（assets/explore.css 里那组 --bday-*，共 16 个）。
+     ⚠ 一个字都不新发明：全部从上面那套**紫 + 银 + 烛光金**里取。
+       不覆盖的话它会吃共享层默认值 —— 那是**首页爱莉希雅的粉紫**，串页（HANDOVER §4.1.2 / §5.2）。
+     ⚠ 她的生日在 data/bdays.js 里是 [4, 25]（格式是 [月-1, 日]）= 5 月 25 日。 */
+  --bday-ink:#e9e5f4;                              /* = --text */
+  --bday-accent:#9d8fd0;                           /* = --violet，圆点与强调 */
+  --bday-title:#b3abcc;                            /* = --text-dim */
+  --bday-date:#c8c2dc;                             /* = --silver */
+  --bday-num:#e8c98a;                              /* = --candle，倒计时那四位数 */
+  --bday-unit:#7f7699;                             /* = --text-muted */
+  --bday-src:#7f7699;
+  --bday-egg-bg:linear-gradient(135deg,rgba(157,143,208,.16),rgba(232,201,138,.10));
+  --bday-egg-border:rgba(157,143,208,.25);
+  --bday-egg-glow:rgba(157,143,208,.18);
+  --bday-egg-glow-hover:rgba(157,143,208,.32);
+  --bday-panel-bg:linear-gradient(160deg,rgba(28,18,48,.96),rgba(8,6,14,.96));
+  --bday-panel-border:rgba(200,194,220,.16);
+  --bday-panel-glow:rgba(157,143,208,.14);
+  --bday-cell-bg:rgba(157,143,208,.06);
+  --bday-cell-border:rgba(200,194,220,.14);
 }
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
@@ -499,6 +521,11 @@ body{
 
 <!-- SECTION: scripts -->
 <script src="/assets/site.js"></script>
+<script src="/assets/explore.js"></script>
+<script src="/assets/bottom.js"></script>
+<script src="/assets/games/aponia.js"></script>
+<script src="/assets/bday.js"></script>
+<script src="/data/bdays.js"></script>
 <script>
 (function(){
   /* SECTION: quotes data */
@@ -683,6 +710,69 @@ body{
   // 呀！星星的区间就是这一页的脾气，交给共享层的时候一个数都不敢动呢♥
   // ⚠ 区间写法是 [起点, 跨度]，与原来的 `0.1 + Math.random() * 0.3` 一一对应。
   var THEME = {
+    /* ── 探索系统（2026-10-15 按位铺开）───────────────────────────────
+       12 个可发现物。⚠ `line` 与 `src` 是**逐字抄自官方档案馆「事件-阿波尼亚」**的
+       （`https://baike.mihoyo.com/bh3/wiki/content/1666/detail`）—— 一个字都不许改，
+       连小标题也是「**给与**刻印」（别人那边写的是「给予」）。
+       逐字核准表：`docs/superpowers/plans/2026-10-15-aponia-finds-table.md`。
+       ⚠ 与页面顶部的语录卡**故意不重复**（已逐条核对）。 */
+    explore: {
+      pageId: 'aponia',      // 进度存 localStorage['elysia:explore:aponia']
+      finds: [
+        { id:'apo-01', at:'#opening', x:0.16, y:0.72, verb:'click', art:'silhouette',
+          line:'是呀，我在那里出生，也在那里长大。直到逐火之蛾将我认定为罪犯前，从未离开过那里。',
+          src:'官方档案馆 · 事件-阿波尼亚 · 苦修的追忆 · 其二' },
+        { id:'apo-02', at:'#about', x:0.1, y:0.28, verb:'hold', art:'scale',
+          line:'我是为「承受」而存在的，在我面前不需要这么顾忌。',
+          src:'官方档案馆 · 事件-阿波尼亚 · 苦修的追忆 · 其四' },
+        { id:'apo-03', at:'#about', x:0.9, y:0.74, verb:'triple_tap', art:'moon',
+          line:'我没有停下，只是······不再寄托最终的希望了。',
+          src:'官方档案馆 · 事件-阿波尼亚 · 苦修的追忆 · 其五' },
+        { id:'apo-04', at:'#fate', x:0.5, y:0.94, verb:'drag', art:'infinity',
+          line:'如果有一本记录了你一生命运的书摆在你面前，你会选择翻开吗？',
+          src:'官方档案馆 · 事件-阿波尼亚 · 苦修的追忆 · 其七' },
+        { id:'apo-05', at:'#fate', x:0.14, y:0.3, verb:'click', art:'glint',
+          line:'即使你的意志是那么显明，可我还是想劝说你就此离开。比起今后的所见所得，你此刻的伤痕累累更加令我感到不忍。',
+          src:'官方档案馆 · 事件-阿波尼亚 · 给与刻印 · 其六' },
+        { id:'apo-06', at:'#fate', x:0.86, y:0.7, verb:'hold', art:'silhouette',
+          line:'可惜，我多想真正地触碰你。那些消失在歧途尽头的可怜人，他们都曾拥有回头的机会，却因缺少一个拥抱······而拖憾终身。',
+          src:'官方档案馆 · 事件-阿波尼亚 · 给与刻印 · 其三' },
+        { id:'apo-07', at:'#fate', x:0.5, y:0.7, verb:'triple_tap', art:'throne',
+          line:'请原谅我想要将你留在这里的私心，从断点传来的回声，我无法充耳不闻。',
+          src:'官方档案馆 · 事件-阿波尼亚 · 给与刻印 · 其十六' },
+        { id:'apo-08', at:'#journey', x:0.1, y:0.5, verb:'slide', art:'scale',
+          line:'命运对于我来说不再「无常」，因此，它才被镀上了「残忍」的光泽。',
+          src:'官方档案馆 · 事件-阿波尼亚 · 给与刻印 · 其十一' },
+        { id:'apo-09', at:'#journey', x:0.9, y:0.5, verb:'click', art:'frame',
+          line:'作恶的压力是那么巨大······如果有一天我不得不向你施以「戒律」，请相信，我首先考虑的······是保护你自己。',
+          src:'官方档案馆 · 事件-阿波尼亚 · 给与刻印 · 其十三' },
+        { id:'apo-10', at:'#quotes', x:0.1, y:0.55, verb:'triple_tap', art:'infinity',
+          line:'站于因果之上，却在循路而前。我······是个非常怪异的人吧？',
+          src:'官方档案馆 · 事件-阿波尼亚 · 给与刻印 · 其十七' },
+        { id:'apo-11', at:'#ending', x:0.5, y:0.92, verb:'hold', art:'dawn',
+          line:'我曾想在一片至暗中升起晨明，而凯文却告诉我，予以长夜终尽的，并非光明，而是劫火——时至今日，我还是无法赞同这一点。',
+          src:'官方档案馆 · 事件-阿波尼亚 · 给与刻印 · 其二十' },
+        { id:'apo-12', at:'#bottom', x:0.5, y:0.9, verb:'click', art:'ark',
+          line:'那是连你们都知道无法成功的计划啊，苏。',
+          src:'官方档案馆 · 事件-阿波尼亚 · 关于往世乐土 · 其一' },
+      ],
+      unlock: {
+        title: '站于因果之上',
+        text: '「站于因果之上，却在循路而前。我······是个非常怪异的人吧？」',
+        src: '官方档案馆 · 事件-阿波尼亚 · 给与刻印 · 其十七',
+      },
+      /* ── 陪伴层台词池（spec §6.5 的余量）——**按顺序推进，不随机抽** */
+      whisper: [
+        '我是为「承受」而存在的，在我面前不需要这么顾忌。',
+        '我在注视你的时候，同样在注视着你生命的每一个瞬间。',
+        '命运对于我来说不再「无常」，因此，它才被镀上了「残忍」的光泽。',
+        '弱者往往心甘情愿背负枷锁。毫无滞涩的「自由」，首先会唤起他们的恐惧。',
+        '「请」先留步——让我再为你整理下衣领吧。',
+      ],
+    },
+    /* ⚠ 游戏槽（2026-10-15）：`module` 指向 `window.ElysiaGames.aponia`（`assets/games/aponia.js`）。
+       卡上的标题/说明由模块自己给 —— 同名同形，别两处维护（§10.5 的教训）。 */
+    game: { module: 'aponia' },
     endingStars: {
       count: [80, 12],
       size: [0.5, 2],
@@ -692,6 +782,15 @@ body{
     },
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+
+  /* 探索系统（2026-10-15 铺开）：12 个落点 + 解锁 + 陪伴层，配置在 THEME.explore。 */
+  ElysiaExplore.init(THEME.explore);
+  /* 下方区块：探索度那一槽由 ElysiaExplore 自己放回来，这里只挂游戏槽。 */
+  ElysiaBottom.mount({ game: THEME.game });
+
+  /* 生日胶囊（2026-10-15）：她**有**生日（5 月 25 日，data/bdays.js 里是 [4, 25]），
+     胶囊会出现 —— 所以上面那一组 --bday-* 必须跟着有（否则就是首页的粉紫）。 */
+  ElysiaBday.mount({});
   /* SECTION: toast */
   var toastEl = document.getElementById('apToast');
   var toastTimer = null;

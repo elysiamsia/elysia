@@ -55,6 +55,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
 <link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/explore.css">
 <meta name="referrer" content="same-origin">
 <title>elysiad.top/villv — 致维尔薇</title>
 <!-- SECTION: styles -->
@@ -68,6 +69,26 @@
   --text:#f5eaf2;--text-dim:#c3aed0;--text-muted:#8a7499;
   --glass-bg:rgba(255,107,157,.06);--glass-border:rgba(255,209,102,.16);
   --glass-bg2:rgba(78,205,196,.05);--glass-border2:rgba(78,205,196,.13);
+
+  /* 生日倒计时配色覆盖（explore.css 那组 --bday-*，共 16 个）—— 从她的舞台紫 + 魔术粉里取。
+     不覆盖就吃共享层默认值（首页爱莉希雅的粉紫）⇒ 串页。
+     她的生日在 data/bdays.js 里是 [4, 5]（格式 [月-1, 日]）= 5 月 5 日。 */
+  --bday-ink:#ffe6f1;
+  --bday-accent:#ff6b9d;
+  --bday-title:#c9a0bd;
+  --bday-date:#ffe6f1;
+  --bday-num:#ffd166;
+  --bday-unit:#8a6a86;
+  --bday-src:#8a6a86;
+  --bday-egg-bg:linear-gradient(135deg,rgba(255,107,157,.16),rgba(255,209,102,.10));
+  --bday-egg-border:rgba(255,107,157,.26);
+  --bday-egg-glow:rgba(255,107,157,.18);
+  --bday-egg-glow-hover:rgba(255,107,157,.34);
+  --bday-panel-bg:linear-gradient(160deg,rgba(42,16,64,.96),rgba(26,10,20,.96));
+  --bday-panel-border:rgba(255,107,157,.16);
+  --bday-panel-glow:rgba(255,107,157,.14);
+  --bday-cell-bg:rgba(255,107,157,.06);
+  --bday-cell-border:rgba(255,107,157,.14);
 }
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
@@ -642,6 +663,11 @@ body.kk-shaking{animation:kk-quake .1s linear infinite}
 
 <!-- SECTION: scripts -->
 <script src="/assets/site.js"></script>
+<script src="/assets/explore.js"></script>
+<script src="/assets/bottom.js"></script>
+<script src="/assets/games/villv.js"></script>
+<script src="/assets/bday.js"></script>
+<script src="/data/bdays.js"></script>
 <script>
 (function(){
   /* SECTION: quotes data */
@@ -1007,6 +1033,64 @@ body.kk-shaking{animation:kk-quake .1s linear infinite}
   // 呀！星星的区间就是这一页的脾气，交给共享层的时候一个数都不敢动呢♥
   // ⚠ 区间写法是 [起点, 跨度]，与原来的 `0.1 + Math.random() * 0.3` 一一对应。
   var THEME = {
+    /* 探索系统（2026-10-15 按位铺开）：12 个可发现物，逐字抄自官方档案馆「事件-维尔薇」
+       （baike.mihoyo.com/bh3/wiki/content/1667/detail）—— 一个字都不许改。核准表见 plans/ 同名文件。
+       ⚠ 落点刻意避开 #quotes（伊甸那页教过：375 下几乎整段被引语卡铺满）。 */
+    explore: {
+      pageId: 'villv',
+      finds: [
+        { id:'villv-01', at:'#opening', x:0.16, y:0.72, verb:'click', art:'silhouette',
+          line:'嗯······我还以为「我」已经跟你混的很熟了呢。唉，这种事果然不能指望其他的「我」。',
+          src:'官方档案馆 · 事件-维尔薇 · 愚人的追忆 · 其一' },
+        { id:'villv-02', at:'#about', x:0.1, y:0.28, verb:'hold', art:'brick',
+          line:'工程部部长——如假包换。',
+          src:'官方档案馆 · 事件-维尔薇 · 愚人的追忆 · 其二' },
+        { id:'villv-03', at:'#about', x:0.9, y:0.74, verb:'triple_tap', art:'frame',
+          line:'一般是根据形势需要啦······你还是只见过三种吗？我，魔术师，机械师······还有其他的吗？',
+          src:'官方档案馆 · 事件-维尔薇 · 愚人的追忆 · 其八' },
+        { id:'villv-04', at:'#personas', x:0.14, y:0.3, verb:'click', art:'glint',
+          line:'不是我说······你怎么总是愁眉苦脸的？笑一笑吧，往世乐土没那么不堪。',
+          src:'官方档案馆 · 事件-维尔薇 · 愚人的追忆 · 其十' },
+        { id:'villv-05', at:'#personas', x:0.86, y:0.7, verb:'hold', art:'frame',
+          line:'这就对了，我想看到的就是这种表情——你应该也注意到了吧？只有真正的惊讶，是不可能被伪装出来的。',
+          src:'官方档案馆 · 事件-维尔薇 · 给予刻印 · 其一' },
+        { id:'villv-06', at:'#journey', x:0.12, y:0.3, verb:'drag', art:'infinity',
+          line:'下次，也介绍一些其它的「我」给你认识吧，仅仅是我自己······可根本没办法向你诠释「螺旋」。',
+          src:'官方档案馆 · 事件-维尔薇 · 给予刻印 · 其二' },
+        { id:'villv-07', at:'#ending', x:0.86, y:0.7, verb:'slide', art:'scale',
+          line:'要想一直成功没有什么诀窍，非要说的话，对于根本不可能做到的事，一定要放弃得比别人更快，而且不能让他们知道。',
+          src:'官方档案馆 · 事件-维尔薇 · 给予刻印 · 其三' },
+        { id:'villv-08', at:'#about', x:0.5, y:0.94, verb:'click', art:'throne',
+          line:'没错，又是我。螺旋工坊最年轻的主人，对凯文武装的发明者，黄昏纪元的魔术王，俯瞰群星之人！顺便再提醒一次，别把我的名字念得太快哦？',
+          src:'官方档案馆 · 事件-维尔薇 · 给予刻印 · 其四' },
+        { id:'villv-09', at:'#draw', x:0.14, y:0.3, verb:'hold', art:'sheath',
+          line:'哪怕是自己的身体，也要留一个能够反制的后招，更别说其他事物了——如今大家连「自己」都不能信任了，是吧？',
+          src:'官方档案馆 · 事件-维尔薇 · 给予刻印 · 其九' },
+        { id:'villv-10', at:'#draw', x:0.86, y:0.7, verb:'triple_tap', art:'frame',
+          line:'看仔细了，我的意思是——再仔细一点。只有那些自以为知道真相的人，揭开幕布的时候，脸上的神情才更有意思。',
+          src:'官方档案馆 · 事件-维尔薇 · 给予刻印 · 其十二' },
+        { id:'villv-11', at:'#ending', x:0.14, y:0.3, verb:'click', art:'scale',
+          line:'所谓常理，就是世界给人类留下的谜题，对我来说，它们存在的意义，只有「能够被推翻」这一点了。',
+          src:'官方档案馆 · 事件-维尔薇 · 给予刻印 · 其十三' },
+        { id:'villv-12', at:'#bottom', x:0.5, y:0.9, verb:'click', art:'moon',
+          line:'稍等一下，我要先删除一点数据······嗯，把凯文从乐土删除掉怎么样，轻而易举哦。由你来决定吧？',
+          src:'官方档案馆 · 事件-维尔薇 · 给予刻印 · 其十四' },
+      ],
+      unlock: {
+        title: '揭开幕布',
+        text: '「只有那些自以为知道真相的人，揭开幕布的时候，脸上的神情才更有意思。」',
+        src: '官方档案馆 · 事件-维尔薇 · 给予刻印 · 其十二',
+      },
+      whisper: [
+        '随便坐吧，都已经这么熟悉了，别客气。',
+        '嗯······我还以为「我」已经跟你混的很熟了呢。',
+        '喔！芽衣女士，在这种地方徘徊，是找不到出去的路了吗？',
+        '哈······看来我之前对你的劝导，你完全没放在心上啊——和以前的我真像。',
+        '别把我的名字念得太快哦？',
+      ],
+    },
+    /* 游戏槽（2026-10-15）：module 指向 window.ElysiaGames.villv（assets/games/villv.js）。 */
+    game: { module: 'villv' },
     endingStars: {
       count: [80, 12],
       size: [0.5, 2],
@@ -1016,6 +1100,14 @@ body.kk-shaking{animation:kk-quake .1s linear infinite}
     },
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+
+  /* 探索系统（2026-10-15 铺开） */
+  ElysiaExplore.init(THEME.explore);
+  /* 下方区块：探索度那一槽由 ElysiaExplore 自己放回来，这里只挂游戏槽。 */
+  ElysiaBottom.mount({ game: THEME.game });
+
+  /* 生日胶囊：她有生日（5 月 5 日，bdays.js 里是 [4, 5]）⇒ 上面那组 --bday-* 必须跟着有。 */
+  ElysiaBday.mount({});
   /* SECTION: click ripple (彩带迸发) */
   document.addEventListener('click', function(e){
     if (reducedMotion) return;

@@ -55,6 +55,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
 <link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/explore.css">
 <meta name="referrer" content="same-origin">
 <title>elysiad.top/eden — 致伊甸</title>
 <!-- SECTION: styles -->
@@ -66,6 +67,26 @@
   --text:#f5e9d8;--text-dim:#cdb79a;--text-muted:#96805f;
   --glass-bg:rgba(255,209,102,.06);--glass-border:rgba(255,209,102,.14);
   --glass-bg2:rgba(168,50,70,.07);--glass-border2:rgba(168,50,70,.16);
+
+  /* 生日倒计时配色覆盖（explore.css 里那组 --bday-*，共 16 个）—— 全部从暖金 + 酒红里取，
+     不覆盖就吃共享层默认值（首页爱莉希雅的粉紫）⇒ 串页。
+     她的生日在 data/bdays.js 里是 [9, 31]（格式 [月-1, 日]）= 10 月 31 日。 */
+  --bday-ink:#ffe9b8;
+  --bday-accent:#ffd166;
+  --bday-title:#c9a86a;
+  --bday-date:#ffe9b8;
+  --bday-num:#ffd166;
+  --bday-unit:#8a7350;
+  --bday-src:#8a7350;
+  --bday-egg-bg:linear-gradient(135deg,rgba(255,209,102,.16),rgba(255,233,184,.10));
+  --bday-egg-border:rgba(255,209,102,.26);
+  --bday-egg-glow:rgba(255,209,102,.18);
+  --bday-egg-glow-hover:rgba(255,209,102,.34);
+  --bday-panel-bg:linear-gradient(160deg,rgba(36,16,25,.96),rgba(10,6,8,.96));
+  --bday-panel-border:rgba(255,209,102,.16);
+  --bday-panel-glow:rgba(255,209,102,.14);
+  --bday-cell-bg:rgba(255,209,102,.06);
+  --bday-cell-border:rgba(255,209,102,.14);
 }
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
@@ -518,6 +539,11 @@ body{
 
 <!-- SECTION: scripts -->
 <script src="/assets/site.js"></script>
+<script src="/assets/explore.js"></script>
+<script src="/assets/bottom.js"></script>
+<script src="/assets/games/eden.js"></script>
+<script src="/assets/bday.js"></script>
+<script src="/data/bdays.js"></script>
 <script>
 (function(){
   /* SECTION: quotes data */
@@ -669,6 +695,66 @@ body{
   // 呀！星星的区间就是这一页的脾气，交给共享层的时候一个数都不敢动呢♥
   // ⚠ 区间写法是 [起点, 跨度]，与原来的 `0.1 + Math.random() * 0.3` 一一对应。
   var THEME = {
+    /* 探索系统（2026-10-15 按位铺开）：12 个可发现物，逐字抄自官方档案馆「事件-伊甸」
+       （baike.mihoyo.com/bh3/wiki/content/909/detail）—— 一个字都不许改。
+       逐字核准表：docs/superpowers/plans/2026-10-15-eden-finds-table.md 。
+       ⚠ 与页面顶部那 5 句语录卡（recLines）故意不重复。 */
+    explore: {
+      pageId: 'eden',
+      finds: [
+        { id:'eden-01', at:'#opening', x:0.16, y:0.72, verb:'click', art:'frame',
+          line:'用「紫海伦」酿的。这种葡萄曾经是穆大陆的特产，现在已经绝种了。用它酿的酒会比其他葡萄酒更细腻一些。',
+          src:'官方档案馆 · 事件-伊甸 · 歌者的追忆 · 其三' },
+        { id:'eden-02', at:'#about', x:0.1, y:0.28, verb:'hold', art:'silhouette',
+          line:'那时我就站在澳洲的巨蛋里——在那座如银河般璀璨的舞台被终末的火舌所吞噬时，我就站在那里，见证一切的终结。',
+          src:'官方档案馆 · 事件-伊甸 · 关于自身 · 其二' },
+        { id:'eden-03', at:'#about', x:0.9, y:0.74, verb:'triple_tap', art:'glint',
+          line:'我第一次知道逐火之蛾的存在，也就是在澳洲那场大火的时候。',
+          src:'官方档案馆 · 事件-伊甸 · 关于自身 · 其三' },
+        { id:'eden-04', at:'#journey', x:0.12, y:0.3, verb:'click', art:'ark',
+          line:'「往世乐土」是之后才被赋予的称呼，它最初的名字叫「黄金庭园」。',
+          src:'官方档案馆 · 事件-伊甸 · 关于往世乐土 · 其一' },
+        { id:'eden-05', at:'#journey', x:0.88, y:0.7, verb:'hold', art:'record',
+          line:'演奏、歌唱、起舞······我所做的，不过都是我喜欢的罢了。',
+          src:'官方档案馆 · 事件-伊甸 · 关于往世乐土 · 其二' },
+        { id:'eden-06', at:'#record', x:0.14, y:0.3, verb:'drag', art:'palette',
+          line:'我一直认为，音乐家除了要对自己的音乐负责之外，还应该对自己的观众负责。',
+          src:'官方档案馆 · 事件-伊甸 · 关于音乐 · 其二' },
+        { id:'eden-07', at:'#record', x:0.86, y:0.7, verb:'triple_tap', art:'dawn',
+          line:'即使举目四望已是生灵涂炭，艺术仍然能够存续下来，鼓舞活着的人们，带来希望。',
+          src:'官方档案馆 · 事件-伊甸 · 歌者的追忆 · 其四' },
+        { id:'eden-08', at:'#record', x:0.5, y:0.94, verb:'click', art:'brush',
+          line:'我会永远将此刻铭记，这是一曲探寻真相的史诗。',
+          src:'官方档案馆 · 事件-伊甸 · 给予刻印 · 其一' },
+        { id:'eden-09', at:'#quotes', x:0.1, y:0.55, verb:'slide', art:'horn',
+          line:'当年我将歌声献予观众，他们以掌声为报；如今我将这份刻印献给你，只愿能为你奏响胜利的凯歌。',
+          src:'官方档案馆 · 事件-伊甸 · 给予刻印 · 其八' },
+        { id:'eden-10', at:'#ending', x:0.14, y:0.3, verb:'click', art:'moon',
+          line:'只要相信自己的光芒，那么自然会照亮眼前的黑暗。',
+          src:'官方档案馆 · 事件-伊甸 · 给予刻印 · 其十三' },
+        { id:'eden-11', at:'#ending', x:0.5, y:0.92, verb:'hold', art:'infinity',
+          line:'艺术是对于现实的表达、是对于希望的表达。我能理解为什么那时人们都不再歌唱，因为那个时代已经失去了希望。',
+          src:'官方档案馆 · 事件-伊甸 · 给予刻印 · 其十五' },
+        { id:'eden-12', at:'#bottom', x:0.5, y:0.9, verb:'click', art:'petal',
+          line:'我喜欢看你战斗的身姿，十分优雅，就好像在欣赏一段舞步一样。',
+          src:'官方档案馆 · 事件-伊甸 · 给予刻印 · 其二十四' },
+      ],
+      unlock: {
+        title: '黄金庭园最初的名字',
+        text: '「它最初的名字叫「黄金庭园」。」',
+        src: '官方档案馆 · 事件-伊甸 · 关于往世乐土 · 其一',
+      },
+      whisper: [
+        '其实我一个人的时候，也还是会唱的哦。',
+        '演奏、歌唱、起舞······我所做的，不过都是我喜欢的罢了。',
+        '女生们或多或少都采纳了我的建议，男孩子比较随意，有些人还是更喜欢自己的打扮。',
+        '要是什么时候想听以前的故事了，我会在庭园里等你的。',
+        '如果为你写一首曲子的话，用什么调子会比较好呢？咏叹调怎么样？',
+      ],
+    },
+    /* 游戏槽（2026-10-15）：module 指向 window.ElysiaGames.eden（assets/games/eden.js）。
+       卡上的标题与说明由模块自己给，别两处维护。 */
+    game: { module: 'eden' },
     endingStars: {
       count: [80, 12],
       size: [0.5, 2],
@@ -678,6 +764,14 @@ body{
     },
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+
+  /* 探索系统（2026-10-15 铺开） */
+  ElysiaExplore.init(THEME.explore);
+  /* 下方区块：探索度那一槽由 ElysiaExplore 自己放回来，这里只挂游戏槽。 */
+  ElysiaBottom.mount({ game: THEME.game });
+
+  /* 生日胶囊：她有生日（10 月 31 日）⇒ 上面那组 --bday-* 必须跟着有。 */
+  ElysiaBday.mount({});
   /* SECTION: toast */
   var toastEl = document.getElementById('edToast');
   var toastTimer = null;
