@@ -384,3 +384,20 @@
   };
 
 })(window);
+
+
+/* ── Service Worker 注册（2026-10-15）─────────────────────────────────
+   为什么：实测并发访问时页面请求会挂死（Cloudflare 回源合并那一下），
+   有 SW 之后**回访**直接从本地缓存出页面。细节见 sw.js 的文件头。
+   ⚠ 跳过 127.0.0.1 / 局域网 IP：验收工具（check_explore / check_page_health）就走 127.0.0.1，
+     让 SW 掺进去的话，断言会读到缓存里的旧页面 —— 那是自欺欺人。
+   ⚠ SW 需要安全上下文：https 或 localhost（所以本机可以用 http://localhost:8500 验它）。 */
+(function () {
+  if (!('serviceWorker' in navigator)) return;
+  var h = location.hostname;
+  if (h === '127.0.0.1' || /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(h)) return;
+  if (location.protocol !== 'https:' && h !== 'localhost') return;
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('/sw.js').catch(function () {});
+  });
+})();
