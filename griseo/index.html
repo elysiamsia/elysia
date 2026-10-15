@@ -167,7 +167,7 @@ body{
 .profile-card{
   max-width:720px;margin:0 auto;padding:clamp(2rem,5vw,3rem);
   background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
-  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  
   border:1px solid var(--glass-border);border-radius:24px;
   box-shadow:0 0 50px rgba(201,160,255,.07),0 0 100px rgba(255,217,122,.05),inset 0 1px 0 rgba(255,255,255,.05);
   position:relative;overflow:hidden;animation:glow-pulse 8s ease-in-out infinite;
@@ -226,7 +226,7 @@ body{
 .timeline-card{
   width:calc(50% - 2.5rem);padding:1.2rem 1.5rem;
   background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  
   border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 0 20px rgba(201,160,255,.05);
 }
 .timeline-card h3{font-size:1.05rem;font-weight:400;color:var(--gold);margin-bottom:.5rem;letter-spacing:.12em}
@@ -261,7 +261,7 @@ body{
 .quote-card{
   padding:1.5rem;min-height:140px;display:flex;align-items:center;justify-content:center;
   background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  
   border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
   box-shadow:0 0 20px rgba(201,160,255,.04);
   transition:transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
@@ -496,6 +496,15 @@ body{
   .profile-card{padding:1.5rem}
   .quote-card{min-height:120px;padding:1.2rem}
 }
+</style>
+<style id="signet-mark">
+#opening{position:relative}
+#opening::before{content:'';position:absolute;left:50%;top:36%;width:min(74vw,400px);height:min(74vw,400px);transform:translate(-50%,-50%);background-image:url('/images/signet/繁星-256.webp');background-repeat:no-repeat;background-position:center;background-size:contain;opacity:.16;pointer-events:none;z-index:0}
+.opening-content{position:relative;z-index:1}
+</style>
+<style id="signet-badge-css">
+.opening-subtitle::before{content:'';display:inline-block;width:20px;height:20px;margin-right:.45rem;vertical-align:-3px;
+  background:url('/images/signet/繁星-256.webp') center/contain no-repeat;opacity:.85}
 </style>
 </head>
 <body>
