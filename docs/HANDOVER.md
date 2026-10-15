@@ -94,6 +94,43 @@
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
 
 
+### 2.3 最近一轮（2026-10-15 · 深夜二十）：刻印水印铺满 12 页（刻印点缀第一半做完）
+
+样板页（阿波尼亚）经需求方确认「这版行」后，同一段最小 CSS 铺到其余 11 页：
+
+| 页 | 刻印 | 页 | 刻印 |
+|---|---|---|---|
+| mobius | 无限 | su | 天慧 |
+| sakura | 刹那 | kevin | 救世 |
+| kosma | 旭光 | eden | 黄金 |
+| griseo | 繁星 | villv | 螺旋 |
+| hua | 浮生 | kalpas | 鏖灭 |
+| pardofelis | 空梦 | **aponia** | 戒律（样板） |
+
+**写法**（每页一段，插在 `</head>` 前）：
+
+```html
+<style id="signet-mark">
+#opening{position:relative}
+#opening::before{content:'';position:absolute;left:50%;top:36%;width:min(74vw,400px);height:min(74vw,400px);
+  transform:translate(-50%,-50%);background-image:url('/images/signet/<刻印>-256.webp');
+  background-repeat:no-repeat;background-position:center;background-size:contain;opacity:.16;pointer-events:none;z-index:0}
+.opening-content{position:relative;z-index:1}
+</style>
+```
+
+**验收（每页都带 `?cb=<随机数>` 缓存破坏，量四项）**：11 页全部 ——
+样式节点 ✅ 在、`#opening` 的 `position = relative` ✅、伪元素背景图**各自指向自己那枚**（无限/刹那/旭光/繁星/浮生/空梦/天慧/救世/黄金/螺旋/鏖灭）✅、`opacity 0.16` ✅。
+另抽查两张渲染图（阿波尼亚 · 戒律 / 凯文 · 救世）确认观感一致。
+
+**体检**：kevin 143KB / 10 请求、kalpas 140KB / 9 请求、su 136KB / 9 请求，均无 FAIL 级问题（水印各加约 18KB + 1 请求）。
+
+> ⚠ **验收纪律（本轮血泪）**：`tools/cdp.py` 会复用浏览器 profile 的缓存 ——
+> **不带 `?cb=` 就等于在量上一次的页面**。上一轮「三种写法全失败」的结论就是这么来的（其实三种都没问题）。
+> **先怀疑自己的量法，再怀疑实现。**
+
+**刻印点缀还剩一半**：需求方原选的方案里还有「**名字旁小徽章**」与「**首页 13 枚总览**」，这两件本轮未做。
+（`真我` 那一枚属于爱莉希雅本人，本站没有她的独立页面 ⇒ 首页总览是它最合适的位置。）
 ### 2.3 最近一轮（2026-10-15 · 深夜十九）：刻印点缀 —— 样板页成了，**真因是我自己的测法**
 
 ## 一、真因纠正（上一轮的结论是错的）
