@@ -20,10 +20,10 @@
   'use strict';
   var GUARD = 400, openedAt = 0;
   var VW = 340, VH = 500, TOP = 78, G = 1350;
-  var R = [15, 22, 31, 43, 57, 72];            // 六级冰：碎冰…冰原（冰原再合 = 顶回天上）
-  var NAMES = ['碎冰', '冰棱', '冰柱', '冰墙', '冰川', '冰原'];
+  var R = [15, 22, 31, 43, 57, 72, 90];        // 七级：碎冰…冰原…寒潮（两块寒潮相碰 = 顶回天上）
+  var NAMES = ['碎冰', '冰棱', '冰柱', '冰墙', '冰川', '冰原', '寒潮'];
   /* ⚠ 合成**不再**扣年岁（需求方 2026-10-15 明确）：年岁只由时间流走 —— 它就是那条钟 */
-  var GAIN = [40, 90, 190, 400, 780, 1500];
+  var GAIN = [40, 90, 190, 400, 780, 1500, 2600];
   var CLEAR_GAIN = 6000;                       // 两块「冰原」相碰 = 寒潮被顶回天上
   var MY_YEARS = 50000, LIMIT = 90;
   var DRAIN = MY_YEARS / LIMIT;   // ⚠ 90 秒刚好流完（≈555.6 年/秒）—— 年岁＝倒计时本身
@@ -62,7 +62,7 @@
     for (var i = 0; i < 26; i++) snow.push({ x: Math.random() * VW, y: Math.random() * VH, r: .6 + Math.random() * 1.6, vy: 12 + Math.random() * 26, a: .1 + Math.random() * .3 });
     years = MY_YEARS; human = 0; over = false; overT = 0; t = 0; acc = 0; pity = 0;
     dropX = VW / 2; queue = [spawnTier(), spawnTier(), spawnTier()];
-    setHud(); setMsg('年岁在流走 —— 点一下投冰。同级相碰就合成更大的，给人间多留几年。');
+    setHud(); setMsg('年岁在流走 —— 点一下投冰。同级相碰就合成更大的 —— 一路合到「寒潮」，再合就把它顶回天上。');
     running = true; last = performance.now();
     if (!raf) raf = requestAnimationFrame(loop);
   }
@@ -136,8 +136,8 @@
         flash.push({ x: nb.x, y: nb.y, r: R[nt], life: 1, text: '' });
       } else {
         human += CLEAR_GAIN;
-        flash.push({ x: merged.mx, y: merged.my, r: 90, life: 1, text: '寒潮被顶回天上' });
-        setMsg('两块「冰原」相碰 —— 寒潮被顶回天上，人间又多了 ' + CLEAR_GAIN + ' 年。');
+        flash.push({ x: merged.mx, y: merged.my, r: 110, life: 1, text: '寒潮被顶回天上' });
+        setMsg('两块「寒潮」相碰 —— 天，被顶回去了。人间又多了 ' + CLEAR_GAIN + ' 年。');
       }
       var alive = [];
       for (i = 0; i < bodies.length; i++) {
@@ -325,7 +325,7 @@
   }
   var API = {
     title: '五万年',
-    hint: '冰块落下，两块同级相碰就合成更大的；两块「冰原」相碰会把**寒潮顶回天上**。⏳ 你自己的年岁一直在流走（90 秒流完），合成只做一件事：给人间多留几年。',
+    hint: '冰块落下，两块同级相碰就合成更大的；两块「寒潮」相碰会**把它顶回天上**。⏳ 你自己的年岁一直在流走（90 秒流完），合成只做一件事：给人间多留几年。',
     mount: mount, open: open,
     /* ⚠ 测试用投放钩子（只给验收脚本用）：直接投一块指定档位的冰 */
     __drop: function (tier) {
