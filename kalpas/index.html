@@ -503,6 +503,7 @@ body.raging{animation:rage-quake .09s linear infinite}
 
 <!-- SECTION: scripts -->
 <script src="/assets/site.js"></script>
+<script src="/assets/explore.js"></script>
 <script src="/assets/bottom.js"></script>
 <script src="/assets/games/kalpas.js"></script>
 <script src="/assets/bday.js"></script>
@@ -871,6 +872,62 @@ body.raging{animation:rage-quake .09s linear infinite}
   // 呀！星星的区间就是这一页的脾气，交给共享层的时候一个数都不敢动呢♥
   // ⚠ 区间写法是 [起点, 跨度]，与原来的 `0.1 + Math.random() * 0.3` 一一对应。
   var THEME = {
+    /* 探索系统（2026-10-15 按位铺开）：12 个可发现物，逐字抄自官方档案馆「事件-千劫」
+       （baike.mihoyo.com/bh3/wiki/content/880/detail）—— 一个字都不许改。核准表见 plans/ 同名文件。
+       ⚠ 与他页面顶部的语录卡逐条核对无重复。 */
+    explore: {
+      pageId: 'kalpas',
+      finds: [
+        { id:'kal-01', at:'#opening', x:0.16, y:0.72, verb:'click', art:'horn',
+          line:'你来的太迟了，「后继者」。',
+          src:'官方档案馆 · 事件-千劫 · 狂王的追忆 · 其一' },
+        { id:'kal-02', at:'#about', x:0.1, y:0.28, verb:'hold', art:'silhouette',
+          line:'不错，「非天」······曾经确实有人习惯这样称呼我。',
+          src:'官方档案馆 · 事件-千劫 · 狂王的追忆 · 其五' },
+        { id:'kal-03', at:'#about', x:0.9, y:0.74, verb:'triple_tap', art:'scale',
+          line:'你的时代真是无聊啊。哦······或许是因为你们都太弱了？',
+          src:'官方档案馆 · 事件-千劫 · 狂王的追忆 · 其七' },
+        { id:'kal-04', at:'#bottom', x:0.2, y:0.9, verb:'drag', art:'throne',
+          line:'原来我是第六位······无所谓了，我不在乎。',
+          src:'官方档案馆 · 事件-千劫 · 关于位次 · 其一' },
+        { id:'kal-05', at:'#journey', x:0.1, y:0.35, verb:'click', art:'blade',
+          line:'鏖战、鏖斗、鏖杀、鏖灭，铭记这一切，以此吹响破灭的号角。',
+          src:'官方档案馆 · 事件-千劫 · 给予刻印 · 其二' },
+        { id:'kal-06', at:'#journey', x:0.9, y:0.65, verb:'hold', art:'glint',
+          line:'你无需成为逐火的飞蛾——因为你就是火，你将如烈焰般，吞噬一切。',
+          src:'官方档案馆 · 事件-千劫 · 给予刻印 · 其四' },
+        { id:'kal-07', at:'#bottom', x:0.8, y:0.9, verb:'slide', art:'sheath',
+          line:'倘若退却半步，任你千刀万剐！对，我的意思就是让你对我这么说，现在。',
+          src:'官方档案馆 · 事件-千劫 · 给予刻印 · 其十一' },
+        { id:'kal-08', at:'#quotes', x:0.1, y:0.55, verb:'triple_tap', art:'record',
+          line:'我也是音乐家，伊甸。我指挥的声音残破不堪，但永远不会断绝。听啊！怪物们的哭号，这绝美的音乐！',
+          src:'官方档案馆 · 事件-千劫 · 给予刻印 · 其十六' },
+        { id:'kal-09', at:'#quotes', x:0.1, y:0.85, verb:'click', art:'shadow',
+          line:'我不需要谁和我并肩作战，我只需要敌人。',
+          src:'官方档案馆 · 事件-千劫 · 给予刻印 · 其十七' },
+        { id:'kal-10', at:'#ending', x:0.14, y:0.3, verb:'hold', art:'infinity',
+          line:'······闭嘴，我不想再听一次了。',
+          src:'官方档案馆 · 事件-千劫 · 关于过去 · 其三' },
+        { id:'kal-11', at:'#ending', x:0.86, y:0.7, verb:'click', art:'frame',
+          line:'······又怎么了，律者。闭嘴，谁提······谁死。',
+          src:'官方档案馆 · 事件-千劫 · 关于黄昏街 · 其一' },
+        { id:'kal-12', at:'#bottom', x:0.5, y:0.9, verb:'click', art:'glint',
+          line:'来吧，让我见证你的决断，让我见证你的怒火！将一切，燃烧殆尽吧！',
+          src:'官方档案馆 · 事件-千劫 · 给予刻印 · 其七' },
+      ],
+      unlock: {
+        title: '第六位 · 鏖灭',
+        text: '「鏖战、鏖斗、鏖杀、鏖灭，铭记这一切，以此吹响破灭的号角。」',
+        src: '官方档案馆 · 事件-千劫 · 给予刻印 · 其二',
+      },
+      whisper: [
+        '离我远点。我现在没心情回答你的问题。',
+        '怎么，律者？你是让梅比乌斯把你的脑子给切掉了吗？',
+        '呵，说不定她就在你眼皮子底下，只是太矮了，你没看到。',
+        '我试过，但大多数人听到后都在发抖。',
+        '我不需要谁和我并肩作战，我只需要敌人。',
+      ],
+    },
     /* 游戏槽（2026-10-15）：module 指向 window.ElysiaGames.kalpas（assets/games/kalpas.js）。 */
     game: { module: 'kalpas' },
     endingStars: {
@@ -883,7 +940,9 @@ body.raging{animation:rage-quake .09s linear infinite}
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
 
-  /* 下方区块（2026-10-15）：先挂游戏槽 —— 探索度那一槽等探索系统铺开时自己回来。 */
+  /* 探索系统（2026-10-15 铺开）：12 个落点 + 解锁 + 陪伴层。 */
+  ElysiaExplore.init(THEME.explore);
+  /* 下方区块：探索度那一槽由 ElysiaExplore 自己放回来，这里只挂游戏槽。 */
   ElysiaBottom.mount({ game: THEME.game });
 
   /* 生日胶囊：千劫**没有**生日（页面与档案馆都没有），data/bdays.js 里没有他这一条，胶囊不会出现。

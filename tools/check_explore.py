@@ -75,6 +75,7 @@ EXPECTED_FINDS = {
     'aponia/index.html': 12,         # 2026-10-15 按位铺开（核准表见 plans/2026-10-15-aponia-finds-table.md）
     'eden/index.html': 12,          # 2026-10-15 铺开（核准表 plans/2026-10-15-eden-finds-table.md）
     'villv/index.html': 12,         # 2026-10-15 铺开（核准表 plans/2026-10-15-villv-finds-table.md）
+    'kalpas/index.html': 12,         # 2026-10-15 铺开（核准表 plans/2026-10-15-kalpas-finds-table.md）
     'kevin/index.html': 12,          # 2026-10-15 按位铺开（逐字核准表见 plans/2026-10-15-kevin-finds-table.md）
     'su/index.html': 12,             # 2026-10-15 按位铺开（核准表见 plans/2026-10-15-su-finds-table.md）
 }
