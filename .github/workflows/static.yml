@@ -39,7 +39,7 @@ jobs:
           rm -rf _site && mkdir -p _site
 
           # 站点内容：存在才拷（后续阶段会陆续新增文件，此处不必每次改）
-          KEEP_FILES="index.html armor.html 404.html robots.txt sitemap.xml favicon.svg CNAME"
+          KEEP_FILES="index.html sw.js armor.html 404.html robots.txt sitemap.xml favicon.svg CNAME"
           for f in $KEEP_FILES; do
             [ -e "$f" ] && cp "$f" _site/
           done
