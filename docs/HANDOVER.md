@@ -94,6 +94,34 @@
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
 
 
+### 2.3 最近一轮（2026-10-15 · 深夜十八）：刻印点缀 —— **一页一图一确认**的第一页就没过（证据留档）
+
+按需求方要求改成「一页一图一确认」，拿阿波尼亚当样板，试了**三种写法，全部失败**，已回滚该页。
+
+| 试法 | 结果 |
+|---|---|
+| ① 在 `#opening` 里插 `<img class=signet-mark>` | DOM 里查不到（线上 HTML 有） |
+| ② 在 `</head>` 前插 `<style>#opening::before{…}` | 第一次生效（`position` 变成 relative），**再查又没了**；页面只剩 2 个 `<style>` |
+| ③ 在 `</body>` 前插固定层 `<div class=signet-layer>` + `<style>` | 同样查不到 |
+
+**决定性证据（可复跑）**：
+
+```
+磁盘文件含 signet-layer：true（40243 字符）
+线上返回含 signet-layer：true（40243 字符，结尾 ...opacity:.16}</style></body></html>）
+页面内检查：DOM含signet = false；document.body.innerHTML 尾部只剩 bday 区块；样式数 = 2
+```
+
+⇒ **不是「没写进去」，是那一页的脚本在运行时把追加的节点与样式冲掉了**（body 尾、head 里的 `<style>` 一起没）。
+
+**下一步该怎么查（留给下一轮，别重复试）**：
+1. 用 DevTools 的 DOM 断点 / `MutationObserver` 抓「谁在改 body 与 head」——
+   重点怀疑那一页自己的脚本（打字机 / 命运之丝 / 开篇演出）里有 `innerHTML =` 或 `document.write`；
+2. 若确属重建，**装饰就不能靠改 HTML**，得走**共享 CSS**（`assets/site.css` 里按 `#opening::before` 由页面 id 区分）——
+   但注意：**本轮 ② 里连 `#opening{position:relative}` 都出现过「一会儿有一会儿没有」**，说明连 CSS 生效时机也要一起查；
+3. 验收判据要改成「**加载完成后再查 DOM**」（本轮就是没等页面稳定就查，两次数值不一致）。
+
+> 📌 保留下来的：13 张刻印（512px 741KB + 256px 267KB），`images/signet/` 里，随取随用。
 ### 2.3 最近一轮（2026-10-15 · 深夜十七）：刻印点缀 —— **做了一半，主动回滚**
 
 **已就绪的部分（保留）**：13 张刻印已入库并瘦身 —— `images/raw/signet/`（源图，不进部署）+ `images/signet/*.webp`

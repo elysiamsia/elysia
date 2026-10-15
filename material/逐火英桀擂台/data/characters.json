@@ -1,0 +1,227 @@
+{
+  "meta": {
+    "version": "v1-baseline",
+    "upstream": "01_角色设计.md",
+    "note": "数值终稿以蒙特卡洛平衡迭代后的版本为准；本文件为设计基线 v1",
+    "battle_rules": {
+      "damage_formula": "max(1, atk - dfn)",
+      "element_cycle": {"生物": "异能", "异能": "机械", "机械": "生物"},
+      "element_mult": {"克制": 1.3, "被克": 0.8},
+      "energy": {"max": 100, "basic_attack_gain": 25, "hit_taken_gain": 15, "note": "科斯魔受击+20，见其被动"},
+      "turn_limit": 120,
+      "timeout_rule": "剩余血量百分比高者胜"
+    },
+    "status_effects": {
+      "stun": "跳过一整回合",
+      "slow": "速度-4，影响先手，按回合数衰减",
+      "seal": "被动技能失效，按回合数衰减",
+      "shield": "吸收等量伤害，可叠至上限，无视防御伤害同样先扣护盾",
+      "star_mark": "对手回合开始每层8点无视防御灼烧，层数-1，上限5层",
+      "revive": "致命伤保留1点生命，每场1次"
+    }
+  },
+  "heroes": [
+    {
+      "key": "kevin", "name": "凯文·卡斯兰娜", "signet": "救世", "rank": 1, "elem": "生物", "role": "全能均衡",
+      "stats": {"hp": 110, "atk": 22, "dfn": 10, "spd": 24, "power": 362},
+      "active": {
+        "name": "救世之冰",
+        "desc": "造成 攻击×1.6 的伤害，并使目标速度-4（持续2回合）",
+        "params": {"dmg_mult": 1.6, "slow": 4, "slow_turns": 2}
+      },
+      "passive": {
+        "name": "孤身难行",
+        "desc": "生命低于50%时，攻击+4、防御+3（实时生效）",
+        "params": {"threshold": 0.5, "atk_bonus": 4, "dfn_bonus": 3}
+      },
+      "energy_gain": {"basic": 25, "hit": 15}
+    },
+    {
+      "key": "elysia", "name": "爱莉希雅", "signet": "真我", "rank": 2, "elem": "异能", "role": "治疗续航",
+      "stats": {"hp": 105, "atk": 18, "dfn": 9, "spd": 25, "power": 352},
+      "active": {
+        "name": "真我之光",
+        "desc": "回复自身25生命，并造成 攻击×1.2 的伤害",
+        "params": {"heal": 25, "dmg_mult": 1.2}
+      },
+      "passive": {
+        "name": "无暇的爱心",
+        "desc": "每回合开始回复4生命；每场1次，受到致命伤害时保留1点生命",
+        "params": {"regen": 4, "revive_keep_hp": 1}
+      },
+      "energy_gain": {"basic": 25, "hit": 15}
+    },
+    {
+      "key": "aponia", "name": "阿波尼亚", "signet": "戒律", "rank": 3, "elem": "异能", "role": "控制封锁",
+      "stats": {"hp": 100, "atk": 19, "dfn": 8, "spd": 22, "power": 345},
+      "active": {
+        "name": "戒律之锁",
+        "desc": "造成 攻击×1.3 的伤害，并封印目标被动（持续2回合）",
+        "params": {"dmg_mult": 1.3, "seal_turns": 2}
+      },
+      "passive": {
+        "name": "苦修的锁链",
+        "desc": "目标每处于封印状态1回合，自身回复3生命",
+        "params": {"heal_per_seal_turn": 3}
+      },
+      "energy_gain": {"basic": 25, "hit": 15}
+    },
+    {
+      "key": "eden", "name": "伊甸", "signet": "黄金", "rank": 4, "elem": "机械", "role": "财富滚雪球",
+      "stats": {"hp": 108, "atk": 20, "dfn": 9, "spd": 23, "power": 356},
+      "active": {
+        "name": "黄金之杯",
+        "desc": "造成 攻击×1.4 的伤害，且本场攻击永久+2",
+        "params": {"dmg_mult": 1.4, "atk_up_per_cast": 2}
+      },
+      "passive": {
+        "name": "璀璨的馈赠",
+        "desc": "每次普攻命中，攻击永久+1（上限+6）",
+        "params": {"atk_up_per_hit": 1, "atk_up_cap": 6}
+      },
+      "energy_gain": {"basic": 25, "hit": 15}
+    },
+    {
+      "key": "villv", "name": "维尔薇", "signet": "螺旋", "rank": 5, "elem": "机械", "role": "混沌高方差",
+      "stats": {"hp": 100, "atk": 21, "dfn": 7, "spd": 24, "power": 350},
+      "active": {
+        "name": "螺旋之戏",
+        "desc": "造成 攻击×(0.8~2.2随机倍率) 的伤害",
+        "params": {"dmg_mult_min": 0.8, "dmg_mult_max": 2.2}
+      },
+      "passive": {
+        "name": "愚人的齿轮",
+        "desc": "每次受到伤害掷骰：35%概率该次伤害减半，65%概率该次伤害+20%",
+        "params": {"halve_chance": 0.35, "amplify": 1.2}
+      },
+      "energy_gain": {"basic": 25, "hit": 15}
+    },
+    {
+      "key": "qianjie", "name": "千劫", "signet": "鏖灭", "rank": 6, "elem": "生物", "role": "卖血爆发",
+      "stats": {"hp": 115, "atk": 25, "dfn": 6, "spd": 21, "power": 358},
+      "active": {
+        "name": "鏖灭之焰",
+        "desc": "造成 攻击×1.5 的伤害，自身失去10生命",
+        "params": {"dmg_mult": 1.5, "self_cost": 10}
+      },
+      "passive": {
+        "name": "狂王的怒火",
+        "desc": "每损失10点生命，攻击+2（实时结算）",
+        "params": {"atk_bonus_per_10hp_lost": 2}
+      },
+      "energy_gain": {"basic": 25, "hit": 15}
+    },
+    {
+      "key": "su", "name": "苏", "signet": "天慧", "rank": 7, "elem": "异能", "role": "暴击流",
+      "stats": {"hp": 102, "atk": 20, "dfn": 8, "spd": 23, "power": 348},
+      "active": {
+        "name": "天慧之叶",
+        "desc": "造成 攻击×1.3 的无视防御伤害，75%概率该次伤害×1.8",
+        "params": {"dmg_mult": 1.3, "pierce": true, "crit_chance": 0.75, "crit_mult": 1.8}
+      },
+      "passive": {
+        "name": "觉者的洞观",
+        "desc": "普攻25%概率暴击，该次伤害×1.8",
+        "params": {"crit_chance": 0.25, "crit_mult": 1.8}
+      },
+      "energy_gain": {"basic": 25, "hit": 15}
+    },
+    {
+      "key": "sakura", "name": "樱", "signet": "刹那", "rank": 8, "elem": "生物", "role": "速度连击",
+      "stats": {"hp": 95, "atk": 19, "dfn": 6, "spd": 28, "power": 346},
+      "active": {
+        "name": "刹那之樱",
+        "desc": "连续3段 攻击×0.7 的攻击（每段独立结算防御与元素）",
+        "params": {"hits": 3, "dmg_mult_per_hit": 0.7}
+      },
+      "passive": {
+        "name": "转瞬即逝",
+        "desc": "20%概率闪避普攻，闪避成功立即反击（攻击×0.6）",
+        "params": {"dodge_chance": 0.2, "counter_mult": 0.6}
+      },
+      "energy_gain": {"basic": 25, "hit": 15}
+    },
+    {
+      "key": "kosma", "name": "科斯魔", "signet": "旭光", "rank": 9, "elem": "机械", "role": "坦克护盾",
+      "stats": {"hp": 130, "atk": 16, "dfn": 14, "spd": 18, "power": 355},
+      "active": {
+        "name": "旭光之壁",
+        "desc": "获得30护盾（护盾上限50），并造成 攻击×1.0 的伤害",
+        "params": {"shield_gain": 30, "shield_cap": 50, "dmg_mult": 1.0}
+      },
+      "passive": {
+        "name": "黎明之哨",
+        "desc": "受到的所有伤害减免20%；受击能量+20（高于全场+15）；护盾被击破时对敌方造成15点固定伤害",
+        "params": {"dmg_reduction": 0.2, "hit_energy_gain": 20, "shield_break_dmg": 15}
+      },
+      "energy_gain": {"basic": 25, "hit": 20}
+    },
+    {
+      "key": "mobius", "name": "梅比乌斯", "signet": "无限", "rank": 10, "elem": "机械", "role": "无限成长",
+      "stats": {"hp": 105, "atk": 17, "dfn": 8, "spd": 22, "power": 347},
+      "active": {
+        "name": "无限之触",
+        "desc": "造成 攻击×1.2 的伤害，本场攻击永久+2",
+        "params": {"dmg_mult": 1.2, "atk_up_per_cast": 2}
+      },
+      "passive": {
+        "name": "噬界之蛇",
+        "desc": "每回合开始，攻击永久+1（无上限）",
+        "params": {"atk_up_per_turn": 1}
+      },
+      "energy_gain": {"basic": 25, "hit": 15}
+    },
+    {
+      "key": "griseo", "name": "格蕾修", "signet": "繁星", "rank": 11, "elem": "异能", "role": "印记灼烧",
+      "stats": {"hp": 100, "atk": 18, "dfn": 8, "spd": 23, "power": 344},
+      "active": {
+        "name": "繁星之绘",
+        "desc": "附加3层星之印记，并造成 攻击×0.8 的伤害",
+        "params": {"mark_layers": 3, "dmg_mult": 0.8}
+      },
+      "passive": {
+        "name": "绘世之卷",
+        "desc": "普攻附加1层星之印记（上限5层）",
+        "params": {"mark_per_basic": 1, "mark_cap": 5, "burn_per_layer": 8}
+      },
+      "energy_gain": {"basic": 25, "hit": 15}
+    },
+    {
+      "key": "hua", "name": "华", "signet": "浮生", "rank": 12, "elem": "生物", "role": "气劲连击",
+      "stats": {"hp": 103, "atk": 19, "dfn": 9, "spd": 25, "power": 349},
+      "active": {
+        "name": "浮生之刃",
+        "desc": "连续2段 攻击×1.0 的攻击，并获得15%闪避（持续2回合）",
+        "params": {"hits": 2, "dmg_mult_per_hit": 1.0, "dodge_chance": 0.15, "dodge_turns": 2}
+      },
+      "passive": {
+        "name": "太虚之握",
+        "desc": "每次普攻命中积累1层气；满3层时下次攻击额外造成 攻击×1.5 的无视防御伤害并清空层数",
+        "params": {"qi_per_hit": 1, "qi_cap": 3, "bonus_mult": 1.5, "bonus_pierce": true}
+      },
+      "energy_gain": {"basic": 25, "hit": 15}
+    },
+    {
+      "key": "pardo", "name": "帕朵菲莉丝", "signet": "空梦", "rank": 13, "elem": "异能", "role": "随机幸运",
+      "stats": {"hp": 98, "atk": 20, "dfn": 7, "spd": 26, "power": 351},
+      "active": {
+        "name": "空梦之愿",
+        "desc": "随机触发其一：35% 攻×2.0无视防御 / 25% 回复30生命 / 20% 能量+50 / 20% 攻×0.8并眩晕1回合",
+        "params": {
+          "roll": [
+            {"weight": 0.35, "dmg_mult": 2.0, "pierce": true},
+            {"weight": 0.25, "heal": 30},
+            {"weight": 0.20, "energy_gain": 50},
+            {"weight": 0.20, "dmg_mult": 0.8, "stun_turns": 1}
+          ]
+        }
+      },
+      "passive": {
+        "name": "掠集之兽",
+        "desc": "每回合开始随机获得其一：攻+2(本场) / 防+2(本场) / 回复5生命 / 能量+10",
+        "params": {"roll": ["atk+2", "dfn+2", "heal5", "energy+10"]}
+      },
+      "energy_gain": {"basic": 25, "hit": 15}
+    }
+  ]
+}
