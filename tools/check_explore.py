@@ -2360,6 +2360,10 @@ GAMES = {
                            'close': '#villvClose', 'play': None, 'guard': True},
     'eden/index.html':    {'overlay': 'edenGameOverlay', 'canvas': '#edenCanvas',
                            'close': '#edenClose', 'play': None,  'guard': True},
+    # 千劫「鏖灭」（2026-10-15 第八位）：点屏幕出拳 + 一个「收手」键 ⇒ **点触面**，退出键按 100px 口径量。
+    #   「收手」是契约第 14 条管的第二个键（离画布 ≥100px、开局 150ms 内忽略）。
+    'kalpas/index.html':  {'overlay': 'kalpasGameOverlay', 'canvas': '#kalpasCanvas',
+                           'close': '#kalpasClose', 'play': None, 'guard': True},
     'aponia/index.html':  {'overlay': 'apoGameOverlay', 'canvas': '#apoCanvas',
                            'close': '#apoClose', 'play': None, 'swipe': True, 'guard': True},
     # ⚠ 凯文「五万年」（2026-10-15 **重做**）：**按住屏幕烧自己的年岁**，把寒潮顶回天上 ——

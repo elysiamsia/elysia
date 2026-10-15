@@ -55,6 +55,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
 <link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/explore.css">
 <meta name="referrer" content="same-origin">
 <title>elysiad.top/kalpas — 致千劫</title>
 <!-- SECTION: styles -->
@@ -502,6 +503,10 @@ body.raging{animation:rage-quake .09s linear infinite}
 
 <!-- SECTION: scripts -->
 <script src="/assets/site.js"></script>
+<script src="/assets/bottom.js"></script>
+<script src="/assets/games/kalpas.js"></script>
+<script src="/assets/bday.js"></script>
+<script src="/data/bdays.js"></script>
 <script>
 (function(){
   /* SECTION: quotes data */
@@ -866,6 +871,8 @@ body.raging{animation:rage-quake .09s linear infinite}
   // 呀！星星的区间就是这一页的脾气，交给共享层的时候一个数都不敢动呢♥
   // ⚠ 区间写法是 [起点, 跨度]，与原来的 `0.1 + Math.random() * 0.3` 一一对应。
   var THEME = {
+    /* 游戏槽（2026-10-15）：module 指向 window.ElysiaGames.kalpas（assets/games/kalpas.js）。 */
+    game: { module: 'kalpas' },
     endingStars: {
       count: [70, 14],
       size: [0.5, 2],
@@ -875,6 +882,13 @@ body.raging{animation:rage-quake .09s linear infinite}
     },
   };
   ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+
+  /* 下方区块（2026-10-15）：先挂游戏槽 —— 探索度那一槽等探索系统铺开时自己回来。 */
+  ElysiaBottom.mount({ game: THEME.game });
+
+  /* 生日胶囊：千劫**没有**生日（页面与档案馆都没有），data/bdays.js 里没有他这一条，胶囊不会出现。
+     ⚠ 组件仍然要挂 —— 别的断言要读它的状态（凯文那一轮的教训）。 */
+  ElysiaBday.mount({});
   /* SECTION: resize guard */
   window.addEventListener('resize', function(){
     for (var j = 0; j < embers.length; j++){
