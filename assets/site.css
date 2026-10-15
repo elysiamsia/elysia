@@ -265,3 +265,18 @@ html {
     animation: none !important;
   }
 }
+
+/* ── 十三枚刻印总览（首页，2026-10-15）─────────────────────────────────
+   图片用 -256.webp（每张约 20KB）且 loading=lazy：这一节在页面底部，首屏不付这个代价。
+   真我那一枚不跳转（本站没有爱莉希雅的独立页），所以是 div 不是 a。 */
+.signet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:1rem;
+  max-width:52rem;margin:4rem auto;padding:0 1.2rem;text-align:center}
+.signet-grid-title{grid-column:1/-1;font-size:.82rem;letter-spacing:.34em;color:var(--text-muted,#8b8b9e);margin-bottom:1.2rem;font-weight:300}
+.signet-grid-item{display:flex;flex-direction:column;align-items:center;gap:.45rem;text-decoration:none;
+  border-radius:12px;padding:.7rem .3rem;transition:transform .25s ease,background .25s ease}
+.signet-grid-item img{width:100%;max-width:64px;height:auto;opacity:.72;transition:opacity .25s ease}
+.signet-grid-name{font-size:.72rem;letter-spacing:.2em;color:var(--text-dim);font-weight:300}
+a.signet-grid-item:hover{background:rgba(255,255,255,.035);transform:translateY(-2px)}
+a.signet-grid-item:hover img{opacity:1}
+.signet-grid-item--self{opacity:.75}
+@media (max-width:480px){.signet-grid{grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:.7rem;margin:2.6rem auto}}
