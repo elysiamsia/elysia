@@ -2359,7 +2359,7 @@ GAMES = {
     'villv/index.html':   {'overlay': 'villvGameOverlay', 'canvas': '#villvCanvas',
                            'close': '#villvClose', 'play': None, 'guard': True},
     'eden/index.html':    {'overlay': 'edenGameOverlay', 'canvas': '#edenCanvas',
-                           'close': '#edenClose', 'play': None, 'swipe': True, 'guard': True},
+                           'close': '#edenClose', 'play': None,  'guard': True},
     'aponia/index.html':  {'overlay': 'apoGameOverlay', 'canvas': '#apoCanvas',
                            'close': '#apoClose', 'play': None, 'swipe': True, 'guard': True},
     # ⚠ 凯文「五万年」（2026-10-15 **重做**）：**按住屏幕烧自己的年岁**，把寒潮顶回天上 ——
