@@ -94,6 +94,43 @@
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
 
 
+### 2.3 最近一轮（2026-10-15 · 深夜十九）：刻印点缀 —— 样板页成了，**真因是我自己的测法**
+
+## 一、真因纠正（上一轮的结论是错的）
+
+上一轮我写「那一页的脚本会重建 DOM、把追加的节点冲掉」—— **不对**。这一轮用**钩住 DOM 修改 API** 的探针查：
+
+```
+钩住 innerHTML setter / appendChild / removeChild / replaceChildren / document.write 后，插一个标记：
+  标记一开始在：true   三秒半后还在：true
+  日志只有 5 条，全是 assets/bday.js:231 在更新 #bdayMsg
+⇒ 页面**没有**重建 DOM。
+```
+
+**真因**：`tools/cdp.py` 复用了浏览器的既有 profile ⇒ **`aponia/index.html` 是从缓存里读的旧副本**。
+我「查不到 DOM 里的标记 / 截图上看不见」全是**在量旧页面**。（服务器上的文件我 fetch 验过是新 —— 但浏览器没去取。）
+
+⇒ **这是我这轮最该记住的一条：验收页面时必须带缓存破坏**（`?cb=<时间戳>`），否则量的是上一次的页面。
+
+## 二、样板页结果（阿波尼亚）
+
+写法（最小、无注释，插在 `</head>` 前）：
+
+```html
+<style id="signet-mark">
+#opening{position:relative}
+#opening::before{content:'';position:absolute;left:50%;top:36%;width:min(74vw,400px);height:min(74vw,400px);
+  transform:translate(-50%,-50%);background-image:url('/images/signet/戒律-256.webp');
+  background-repeat:no-repeat;background-position:center;background-size:contain;opacity:.16;pointer-events:none;z-index:0}
+.opening-content{position:relative;z-index:1}
+</style>
+```
+
+带 `?cb=` 复查：**样式节点 ✅ 在**、`#opening` 的 `position = relative` ✅、伪元素 `background-image` 指向 `戒律-256.webp` ✅、`opacity 0.16` ✅；
+**截图确认**：纹章衬在标题后面，能看到但不抢字（390×844 手机视口）。
+
+> 📌 上一轮「三种写法都失败」的教训要改写成：**三种写法其实都没问题，是我的测量把它们判死了**。
+> 结论：**先怀疑自己的量法，再怀疑实现** —— 这次的代价是白滚了两遍。
 ### 2.3 最近一轮（2026-10-15 · 深夜十八）：刻印点缀 —— **一页一图一确认**的第一页就没过（证据留档）
 
 按需求方要求改成「一页一图一确认」，拿阿波尼亚当样板，试了**三种写法，全部失败**，已回滚该页。
