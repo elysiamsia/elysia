@@ -22,10 +22,11 @@
   var VW = 340, VH = 500, TOP = 78, G = 1350;
   var R = [15, 22, 31, 43, 57, 72];            // 六级冰：碎冰…冰原（冰原再合 = 顶回天上）
   var NAMES = ['碎冰', '冰棱', '冰柱', '冰墙', '冰川', '冰原'];
-  var COST = [90, 200, 420, 820, 1500, 2600];  // 合成烧掉多少年岁
+  /* ⚠ 合成**不再**扣年岁（需求方 2026-10-15 明确）：年岁只由时间流走 —— 它就是那条钟 */
   var GAIN = [40, 90, 190, 400, 780, 1500];
-  var CLEAR_GAIN = 6000, CLEAR_COST = 8000;    // 两块「冰原」相碰 = 寒潮被顶回天上
-  var MY_YEARS = 50000, DRAIN = 120, LIMIT = 90;   // 年岁自然流失 120/秒；限时 90 秒
+  var CLEAR_GAIN = 6000;                       // 两块「冰原」相碰 = 寒潮被顶回天上
+  var MY_YEARS = 50000, LIMIT = 90;
+  var DRAIN = MY_YEARS / LIMIT;   // ⚠ 90 秒刚好流完（≈555.6 年/秒）—— 年岁＝倒计时本身
   var MAXV = 900, REST = 0.05, AIR = 0.4, SLEEP_V = 12, SLEEP_T = 0.35;
   var ITER = 4, SUBS = 3, FIXED = 1 / 120;
   var OVER_GRACE = 1.2;
@@ -61,7 +62,7 @@
     for (var i = 0; i < 26; i++) snow.push({ x: Math.random() * VW, y: Math.random() * VH, r: .6 + Math.random() * 1.6, vy: 12 + Math.random() * 26, a: .1 + Math.random() * .3 });
     years = MY_YEARS; human = 0; over = false; overT = 0; t = 0; acc = 0; pity = 0;
     dropX = VW / 2; queue = [spawnTier(), spawnTier(), spawnTier()];
-    setHud(); setMsg('点一下投冰 —— 两块同级冰碰在一起就合成更大的；两块「冰原」相碰，寒潮被顶回天上。');
+    setHud(); setMsg('年岁在流走 —— 点一下投冰。同级相碰就合成更大的，给人间多留几年。');
     running = true; last = performance.now();
     if (!raf) raf = requestAnimationFrame(loop);
   }
@@ -78,7 +79,7 @@
     running = false; over = true;
     var n = Math.round(human);
     if (n > best) { best = n; try { localStorage.setItem('elysia:kevin:best', String(best)); } catch (e) {} }
-    var line = kind === 'years' ? '你的年岁，烧完了。' : (kind === 'time' ? '九十年过去了。' : '寒潮压到了人间。');
+    var line = kind === 'overflow' ? '寒潮压到了人间。' : '你的年岁，走到了尽头。';
     setMsg(line + '　　你给人类留下了 ' + n + ' 年。');
     setHud(); draw(); raf = 0;
   }
@@ -131,10 +132,10 @@
         nb.y = merged.my; nb.vx = 0; nb.vy = 0; nb.r = R[nt]; nb.tier = nt;
         nb.age = 0.3; nb.cd = 0.12; nb.sleep = 0; nb.dead = false;
         bodies.push(nb);
-        years -= COST[nt - 1]; human += GAIN[nt - 1];
+        human += GAIN[nt - 1];
         flash.push({ x: nb.x, y: nb.y, r: R[nt], life: 1, text: '' });
       } else {
-        years -= CLEAR_COST; human += CLEAR_GAIN;
+        human += CLEAR_GAIN;
         flash.push({ x: merged.mx, y: merged.my, r: 90, life: 1, text: '寒潮被顶回天上' });
         setMsg('两块「冰原」相碰 —— 寒潮被顶回天上，人间又多了 ' + CLEAR_GAIN + ' 年。');
       }
@@ -324,7 +325,7 @@
   }
   var API = {
     title: '五万年',
-    hint: '冰块落下，两块同级相碰就合成更大的；两块「冰原」相碰会把**寒潮顶回天上**。限时 90 秒，年岁还会自己流走 —— 结局只报一件事：你给人类留下了多少年。',
+    hint: '冰块落下，两块同级相碰就合成更大的；两块「冰原」相碰会把**寒潮顶回天上**。⏳ 你自己的年岁一直在流走（90 秒流完），合成只做一件事：给人间多留几年。',
     mount: mount, open: open,
     /* ⚠ 测试用投放钩子（只给验收脚本用）：直接投一块指定档位的冰 */
     __drop: function (tier) {
