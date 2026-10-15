@@ -1,103 +1,165 @@
-/* assets/games/kevin.js — 凯文（Ⅰ · 救世）：《五万年》
+/* assets/games/kevin.js — 凯文（Ⅰ · 救世）：《五万年》堆冰合成
  *
  * 判据：这个玩法 ＝ 他的哪一句？——「无论付出多少代价，人类一定会战胜崩坏。」
- * ⇒ 每一次合成都烧掉你自己的年岁，换人间多一点时间；堆过顶线就是寒潮压到人间。
- * 结局只报一件事：你给人类留下了多少年。
+ * ⇒ 合成烧掉你自己的年岁、换人间的时间；两块「冰原」相碰 = **寒潮被顶回天上**（面板清出一块）。
  *
- * 重做史：①《碎冰》被否（意义不明）→ ②《五万年》按住烧年岁（意义对、可玩性薄）→
- * ③ 本版：堆冰合成（大西瓜那类），需求方 2026-10-15 提的。
- *
- * 手机优先：画布铺满窄屏（100vw-1.6rem，上限 420px）、DPR 限到 2、背景渐变预渲染缓存、
- * 遮罩不用 backdrop-filter（首页 43 处毛玻璃实测掉到 30fps）；拖动面 ⇒ 退出键 50px 口径。
+ * ── 2026-10-15 第三版（按需求方回图 + 大西瓜工程要点重写物理）────────────
+ * 需求方实测指出三件事：① 两个大球不能再合（我原档位表最大档天生不可合 ⇒ 面板必堵死）；
+ * ② 大球到处乱弹、球与球压在一起（我只做位置分离、**没有速度解算**）；③ 要限时与年岁自然流失。
+ * 这一版照「大西瓜」那套工程要点逐条改：
+ * · **固定步长物理**（1/120 秒、每帧最多 12 步）+ 3 次子步 + 4 次迭代（物理与渲染分离）
+ * · **弹性 0.05**（不再 q 弹）、空气阻尼、**速度上限 900**（防穿透）、切向摩擦 0.28
+ * · **休眠阈值**（|v|<12 持续 0.35 秒即清零，防止堆叠抖动）
+ * · **合成去重**：一帧只合成一对 + 新球 0.12 秒冷却（防连环爆）
+ * · **越线宽限 1.2 秒**（不是一碰线就死）
+ * · **预渲染球贴图**（每档一张离屏 canvas，draw 只 drawImage）—— 原版每帧给每个球新建 radialGradient
+ * · **预览队列（3 个）+ 保底**：连着 5 次没给可合成的档位就强制给一个
+ * · 数值：年岁自然流失 120/秒、**限时 90 秒**、合成代价/收益见 COST/GAIN 表
  */
 (function (global) {
   'use strict';
-  var CLOSE_GUARD_MS = 400, openedAt = 0;
-  var VW = 340, VH = 480, TOP = 74, G = 1500;
-  var R = [15, 22, 31, 43, 57, 72];
-  var COST = [120, 260, 520, 980, 1800, 3200];
-  var GAIN = [60, 140, 300, 620, 1200, 2200];
-  var MY_YEARS = 50000;
-  var STYLE = ".game-card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:14px;padding:1.6rem 1.4rem;text-align:center;max-width:26rem;margin:0 auto}\n.game-card-title{font-size:1.15rem;letter-spacing:.14em;color:#8fc7ff;margin-bottom:.5rem;font-weight:400}\n.game-card-hint{font-size:.82rem;line-height:1.9;color:var(--text-dim);margin-bottom:1.1rem;font-weight:300}\n.game-card-start{appearance:none;cursor:pointer;font:inherit;font-size:.85rem;letter-spacing:.14em;color:#04101c;background:#8fc7ff;border:none;border-radius:999px;padding:.66rem 2rem;min-height:48px}\n.kv-stage{position:fixed;inset:0;z-index:9997;display:none;align-items:center;justify-content:center;background:rgba(4,8,16,.97);padding:max(.6rem,env(safe-area-inset-top)) .8rem max(.6rem,env(safe-area-inset-bottom))}\n.kv-stage.on{display:flex}\n.kv-box{position:relative;display:flex;flex-direction:column;align-items:center;gap:.45rem;width:100%;max-width:460px}\n.kv-head{display:flex;gap:.7rem;flex-wrap:nowrap;justify-content:center;font-size:.78rem;letter-spacing:.06em;color:var(--text-dim);font-weight:300;white-space:nowrap}\n.kv-head b{color:#8fc7ff;font-weight:400;font-size:.92rem}\n.kv-msg{font-size:.84rem;letter-spacing:.04em;color:#dceaff;min-height:1.5em;font-weight:300;text-align:center;max-width:22rem}\n.kv-canvas{width:min(100vw - 1.6rem,420px);height:auto;aspect-ratio:340/480;border-radius:14px;box-shadow:0 0 0 1px var(--glass-border);touch-action:none;display:block;user-select:none}\n.kv-btn{appearance:none;cursor:pointer;font:inherit;font-size:.82rem;letter-spacing:.12em;min-height:44px;color:var(--text);background:transparent;border:1px solid var(--glass-border2);border-radius:999px;padding:.5rem 1.5rem}\n.kv-close{position:fixed;top:calc(.8rem + env(safe-area-inset-top));right:.8rem;appearance:none;cursor:pointer;font:inherit;font-size:.78rem;letter-spacing:.12em;color:var(--text-dim);background:rgba(4,8,16,.7);border:1px solid var(--glass-border2);border-radius:999px;padding:.55rem 1.15rem;min-height:44px}\n@media (max-height:560px) and (orientation:landscape){\n  .kv-box{flex-direction:row;align-items:center;justify-content:center;max-width:820px;gap:1.2rem}\n  .kv-canvas{width:auto;height:min(78vh,420px)}\n}";
+  var GUARD = 400, openedAt = 0;
+  var VW = 340, VH = 500, TOP = 78, G = 1350;
+  var R = [15, 22, 31, 43, 57, 72];            // 六级冰：碎冰…冰原（冰原再合 = 顶回天上）
+  var NAMES = ['碎冰', '冰棱', '冰柱', '冰墙', '冰川', '冰原'];
+  var COST = [90, 200, 420, 820, 1500, 2600];  // 合成烧掉多少年岁
+  var GAIN = [40, 90, 190, 400, 780, 1500];
+  var CLEAR_GAIN = 6000, CLEAR_COST = 8000;    // 两块「冰原」相碰 = 寒潮被顶回天上
+  var MY_YEARS = 50000, DRAIN = 120, LIMIT = 90;   // 年岁自然流失 120/秒；限时 90 秒
+  var MAXV = 900, REST = 0.05, AIR = 0.4, SLEEP_V = 12, SLEEP_T = 0.35;
+  var ITER = 4, SUBS = 3, FIXED = 1 / 120;
+  var OVER_GRACE = 1.2;
+  var STYLE = ".game-card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:14px;padding:1.6rem 1.4rem;text-align:center;max-width:26rem;margin:0 auto}\n.game-card-title{font-size:1.15rem;letter-spacing:.14em;color:#8fc7ff;margin-bottom:.5rem;font-weight:400}\n.game-card-hint{font-size:.82rem;line-height:1.9;color:var(--text-dim);margin-bottom:1.1rem;font-weight:300}\n.game-card-start{appearance:none;cursor:pointer;font:inherit;font-size:.85rem;letter-spacing:.14em;color:#04101c;background:#8fc7ff;border:none;border-radius:999px;padding:.66rem 2rem;min-height:48px}\n.kv-stage{position:fixed;inset:0;z-index:9997;display:none;align-items:center;justify-content:center;background:rgba(4,8,16,.97);padding:max(.6rem,env(safe-area-inset-top)) .8rem max(.6rem,env(safe-area-inset-bottom))}\n.kv-stage.on{display:flex}\n.kv-box{position:relative;display:flex;flex-direction:column;align-items:center;gap:.4rem;width:100%;max-width:460px}\n.kv-head{display:flex;gap:.55rem;flex-wrap:nowrap;justify-content:center;font-size:.76rem;letter-spacing:.03em;color:var(--text-dim);font-weight:300;white-space:nowrap}\n.kv-head b{color:#8fc7ff;font-weight:400;font-size:.9rem}\n.kv-msg{font-size:.84rem;letter-spacing:.04em;color:#dceaff;min-height:1.5em;font-weight:300;text-align:center;max-width:22rem}\n.kv-canvas{width:min(100vw - 1.6rem,420px);height:auto;aspect-ratio:340/500;border-radius:14px;box-shadow:0 0 0 1px var(--glass-border);touch-action:none;display:block;user-select:none}\n.kv-btn{appearance:none;cursor:pointer;font:inherit;font-size:.82rem;letter-spacing:.12em;min-height:44px;color:var(--text);background:transparent;border:1px solid var(--glass-border2);border-radius:999px;padding:.5rem 1.5rem}\n.kv-close{position:fixed;top:calc(.8rem + env(safe-area-inset-top));right:.8rem;appearance:none;cursor:pointer;font:inherit;font-size:.78rem;letter-spacing:.12em;color:var(--text-dim);background:rgba(4,8,16,.7);border:1px solid var(--glass-border2);border-radius:999px;padding:.55rem 1.15rem;min-height:44px}\n@media (max-height:560px) and (orientation:landscape){\n  .kv-box{flex-direction:row;align-items:center;justify-content:center;max-width:820px;gap:1.2rem}\n  .kv-canvas{width:auto;height:min(80vh,430px)}\n}";
   function injectStyle() {
     if (document.getElementById('kv-game-style')) return;
     var st = document.createElement('style');
     st.id = 'kv-game-style'; st.textContent = STYLE; document.head.appendChild(st);
   }
-  var host = null, overlay = null, canvas = null, ctx = null, bg = null;
-  var yearsEl = null, humanEl = null, bestEl = null, msgEl = null;
-  var running = false, raf = 0, last = 0, t = 0;
-  var bodies = [], dropX = 170, nextTier = 0, years = MY_YEARS, human = 0, best = 0;
-  var over = false, overT = 0, mergeFlash = [], snow = [];
+  var host = null, overlay = null, canvas = null, ctx = null, bg = null, sprite = [];
+  var yearsEl = null, humanEl = null, timeEl = null, bestEl = null, msgEl = null;
+  var running = false, raf = 0, last = 0, t = 0, acc = 0;
+  var bodies = [], pool = [], dropX = VW / 2, queue = [], years = MY_YEARS, human = 0, best = 0;
+  var over = false, overT = 0, flash = [], snow = [], lastTier = -1, pity = 0;
   try { best = parseInt(localStorage.getItem('elysia:kevin:best') || '0', 10) || 0; } catch (e) { best = 0; }
   function setMsg(s) { if (msgEl) msgEl.textContent = s; }
   function setHud() {
     if (yearsEl) yearsEl.textContent = Math.max(0, Math.round(years)).toLocaleString('en-US');
     if (humanEl) humanEl.textContent = String(Math.round(human));
+    if (timeEl) timeEl.textContent = String(Math.max(0, Math.ceil(LIMIT - t)));
     if (bestEl) bestEl.textContent = String(best);
   }
+  function newBody() { return pool.pop() || { x: 0, y: 0, vx: 0, vy: 0, r: 15, tier: 0, age: 0, cd: 0, sleep: 0, dead: false }; }
+  function spawnTier() {
+    /* 保底：连着 5 次都没给出可合成的档位，就强制给一个和场上最多的档位相同的（避免挫败） */
+    if (pity >= 5) { pity = 0; var c = {}; var mx = -1, mt = 0;
+      for (var i = 0; i < bodies.length; i++) { var k = bodies[i].tier; c[k] = (c[k] || 0) + 1; if (c[k] > mx) { mx = c[k]; mt = k; } }
+      if (mx >= 2 && mt < 3) return mt; }
+    return Math.random() < 0.6 ? 0 : 1;
+  }
   function reset() {
-    bodies = []; mergeFlash = []; snow = [];
+    bodies = []; pool = []; flash = []; snow = []; queue = [];
     for (var i = 0; i < 26; i++) snow.push({ x: Math.random() * VW, y: Math.random() * VH, r: .6 + Math.random() * 1.6, vy: 12 + Math.random() * 26, a: .1 + Math.random() * .3 });
-    years = MY_YEARS; human = 0; over = false; overT = 0; t = 0; dropX = VW / 2; nextTier = 0;
-    setHud(); setMsg('点一下投冰 —— 两块同级冰碰在一起就会合成更大的。每次合成都烧掉你的年岁。');
+    years = MY_YEARS; human = 0; over = false; overT = 0; t = 0; acc = 0; pity = 0;
+    dropX = VW / 2; queue = [spawnTier(), spawnTier(), spawnTier()];
+    setHud(); setMsg('点一下投冰 —— 两块同级冰碰在一起就合成更大的；两块「冰原」相碰，寒潮被顶回天上。');
     running = true; last = performance.now();
     if (!raf) raf = requestAnimationFrame(loop);
   }
   function drop() {
     if (over || !running) return;
-    var r = R[nextTier];
-    bodies.push({ x: Math.max(r + 2, Math.min(VW - r - 2, dropX)), y: TOP - r - 6, vx: 0, vy: 0, r: r, tier: nextTier, age: 0 });
-    nextTier = Math.random() < 0.6 ? 0 : 1;
+    var tier = queue.shift(); queue.push(spawnTier());
+    if (tier >= 2) pity++; else pity = 0;
+    var r = R[tier], b = newBody();
+    b.x = Math.max(r + 2, Math.min(VW - r - 2, dropX)); b.y = TOP - r - 6;
+    b.vx = 0; b.vy = 0; b.r = r; b.tier = tier; b.age = 0; b.cd = 0; b.sleep = 0; b.dead = false;
+    bodies.push(b); if (lastTier >= 0 && tier === lastTier) pity = 0; lastTier = tier;
   }
   function finish(kind) {
     running = false; over = true;
     var n = Math.round(human);
     if (n > best) { best = n; try { localStorage.setItem('elysia:kevin:best', String(best)); } catch (e) {} }
-    setMsg((kind === 'years' ? '你的年岁，烧完了。' : '寒潮压到了人间。') + '　　你给人类留下了 ' + n + ' 年。');
+    var line = kind === 'years' ? '你的年岁，烧完了。' : (kind === 'time' ? '九十年过去了。' : '寒潮压到了人间。');
+    setMsg(line + '　　你给人类留下了 ' + n + ' 年。');
     setHud(); draw(); raf = 0;
   }
-  function step(dt) {
+  function physics(dt) {
     var i, j, b;
     for (i = 0; i < bodies.length; i++) {
       b = bodies[i];
-      b.vy += G * dt; b.age += dt;
+      b.age += dt; if (b.cd > 0) b.cd -= dt;
+      b.vy += G * dt;
+      b.vx -= b.vx * AIR * dt;
+      var sp = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+      if (sp > MAXV) { b.vx = b.vx / sp * MAXV; b.vy = b.vy / sp * MAXV; }
       b.x += b.vx * dt; b.y += b.vy * dt;
-      if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx) * .2; }
-      if (b.x > VW - b.r) { b.x = VW - b.r; b.vx = -Math.abs(b.vx) * .2; }
-      if (b.y > VH - b.r) { b.y = VH - b.r; b.vy = -Math.abs(b.vy) * .12; b.vx *= .86; }
+      if (b.x < b.r) { b.x = b.r; if (b.vx < 0) b.vx = -b.vx * REST; }
+      if (b.x > VW - b.r) { b.x = VW - b.r; if (b.vx > 0) b.vx = -b.vx * REST; }
+      if (b.y > VH - b.r) { b.y = VH - b.r; if (b.vy > 0) b.vy = -b.vy * REST; b.vx *= (1 - 2.2 * dt); }
     }
-    var merged = false;
-    for (i = 0; i < bodies.length && !merged; i++) {
-      for (j = i + 1; j < bodies.length; j++) {
-        var a = bodies[i], c = bodies[j];
-        var dx = c.x - a.x, dy = c.y - a.y, d2 = dx * dx + dy * dy, rr = a.r + c.r;
-        if (d2 >= rr * rr || d2 === 0) continue;
-        var d = Math.sqrt(d2), nx = dx / d, ny = dy / d, ov = rr - d;
-        a.x -= nx * ov * .5; a.y -= ny * ov * .5; c.x += nx * ov * .5; c.y += ny * ov * .5;
-        if (a.tier === c.tier && a.tier < R.length - 1 && a.age > .12 && c.age > .12) {
-          var nt = a.tier + 1;
-          a.dead = true; c.dead = true; merged = true;
-          bodies.push({ x: (a.x + c.x) / 2, y: (a.y + c.y) / 2, vx: 0, vy: -40, r: R[nt], tier: nt, age: .2 });
-          years -= COST[nt - 1]; human += GAIN[nt - 1];
-          mergeFlash.push({ x: (a.x + c.x) / 2, y: (a.y + c.y) / 2, r: R[nt], life: 1 });
-          setHud();
-          if (years <= 0) { years = 0; setHud(); finish('years'); return; }
-          break;
+    var merged = null;
+    for (var it = 0; it < ITER; it++) {
+      for (i = 0; i < bodies.length; i++) {
+        for (j = i + 1; j < bodies.length; j++) {
+          var a = bodies[i], c = bodies[j];
+          var dx = c.x - a.x, dy = c.y - a.y, rr = a.r + c.r;
+          var d2 = dx * dx + dy * dy;
+          if (d2 >= rr * rr || d2 < 1e-6) continue;
+          var d = Math.sqrt(d2), nx = dx / d, ny = dy / d;
+          var ov = rr - d, corr = ov * (it === 0 ? 0.7 : 0.45);
+          a.x -= nx * corr; a.y -= ny * corr; c.x += nx * corr; c.y += ny * corr;
+          var rvx = c.vx - a.vx, rvy = c.vy - a.vy;
+          var vn = rvx * nx + rvy * ny;
+          if (vn < 0) {
+            var imp = -(1 + REST) * vn / 2;
+            a.vx -= imp * nx; a.vy -= imp * ny; c.vx += imp * nx; c.vy += imp * ny;
+            var tx = -ny, ty = nx, vt = (c.vx - a.vx) * tx + (c.vy - a.vy) * ty;
+            a.vx += tx * vt * 0.28; a.vy += ty * vt * 0.28; c.vx -= tx * vt * 0.28; c.vy -= ty * vt * 0.28;
+          }
+          if (!merged && a.tier === c.tier && a.age > 0.15 && c.age > 0.15 && a.cd <= 0 && c.cd <= 0) {
+            merged = { a: a, c: c, mx: (a.x + c.x) / 2, my: (a.y + c.y) / 2 };
+          }
         }
       }
+      if (merged) break;
     }
     if (merged) {
+      var A = merged.a, B = merged.c, tier = A.tier;
+      A.dead = true; B.dead = true;
+      if (tier < R.length - 1) {
+        var nt = tier + 1, nb = newBody();
+        nb.x = Math.max(R[nt] + 2, Math.min(VW - R[nt] - 2, merged.mx));
+        nb.y = merged.my; nb.vx = 0; nb.vy = 0; nb.r = R[nt]; nb.tier = nt;
+        nb.age = 0.3; nb.cd = 0.12; nb.sleep = 0; nb.dead = false;
+        bodies.push(nb);
+        years -= COST[nt - 1]; human += GAIN[nt - 1];
+        flash.push({ x: nb.x, y: nb.y, r: R[nt], life: 1, text: '' });
+      } else {
+        years -= CLEAR_COST; human += CLEAR_GAIN;
+        flash.push({ x: merged.mx, y: merged.my, r: 90, life: 1, text: '寒潮被顶回天上' });
+        setMsg('两块「冰原」相碰 —— 寒潮被顶回天上，人间又多了 ' + CLEAR_GAIN + ' 年。');
+      }
       var alive = [];
-      for (i = 0; i < bodies.length; i++) if (!bodies[i].dead) alive.push(bodies[i]);
+      for (i = 0; i < bodies.length; i++) {
+        if (bodies[i].dead) pool.push(bodies[i]); else alive.push(bodies[i]);
+      }
       bodies = alive;
+      setHud();
+      if (years <= 0) { years = 0; setHud(); finish('years'); return; }
     }
     for (i = 0; i < bodies.length; i++) {
       b = bodies[i];
-      if (b.age > .8 && b.y - b.r < TOP && Math.abs(b.vy) < 40) overT += dt;
+      if (b.age > 0.4 && Math.abs(b.vx) < SLEEP_V && Math.abs(b.vy) < SLEEP_V) {
+        b.sleep += dt;
+        if (b.sleep > SLEEP_T) { b.vx = 0; b.vy = 0; }
+      } else b.sleep = 0;
     }
-    if (overT > .5) { finish('overflow'); return; }
-    if (bodies.length > 46) bodies.splice(0, bodies.length - 46);
+    var above = false;
+    for (i = 0; i < bodies.length; i++) {
+      b = bodies[i];
+      if (b.age > 0.8 && b.y - b.r < TOP && b.sleep > 0.2) above = true;
+    }
+    overT = above ? overT + dt : 0;
+    if (overT > OVER_GRACE) { finish('overflow'); return; }
   }
   function makeBg(w, h) {
     var c = document.createElement('canvas'); c.width = w; c.height = h;
@@ -109,8 +171,24 @@
     rad.addColorStop(0, 'rgba(143,199,255,.10)'); rad.addColorStop(1, 'rgba(7,13,24,0)');
     g.fillStyle = rad; g.fillRect(0, 0, w, h);
     g.strokeStyle = 'rgba(143,199,255,.34)'; g.lineWidth = 1.4;
-    g.beginPath(); g.moveTo(0, TOP); g.lineTo(w, TOP); g.stroke();
+    g.beginPath(); g.moveTo(0, TOP * (h / VH)); g.lineTo(w, TOP * (h / VH)); g.stroke();
+    g.setLineDash([6, 7]); g.strokeStyle = 'rgba(143,199,255,.16)';
+    g.beginPath(); g.moveTo(0, (TOP - 46) * (h / VH)); g.lineTo(w, (TOP - 46) * (h / VH)); g.stroke();
+    g.setLineDash([]);
     return c;
+  }
+  function makeSprites(scale) {
+    sprite = [];
+    for (var i = 0; i < R.length; i++) {
+      var r = R[i] * scale;
+      var c = document.createElement('canvas'); c.width = c.height = Math.ceil(r * 2 + 4);
+      var g = c.getContext('2d'), cx = c.width / 2;
+      var rg = g.createRadialGradient(cx - r * .3, cx - r * .35, r * .12, cx, cx, r);
+      rg.addColorStop(0, '#eaf5ff'); rg.addColorStop(.62, '#9fc9f2'); rg.addColorStop(1, '#5d84b0');
+      g.beginPath(); g.arc(cx, cx, r, 0, 6.284); g.fillStyle = rg; g.fill();
+      g.strokeStyle = 'rgba(255,255,255,.32)'; g.lineWidth = Math.max(1, r * .04); g.stroke();
+      sprite.push(c);
+    }
   }
   function draw() {
     var s = canvas.width / VW, i;
@@ -126,26 +204,32 @@
       ctx.strokeStyle = 'rgba(143,199,255,.42)'; ctx.lineWidth = 1.2; ctx.setLineDash([5, 6]);
       ctx.beginPath(); ctx.moveTo(dropX, TOP - 6); ctx.lineTo(dropX, VH); ctx.stroke();
       ctx.setLineDash([]);
-      var pr = R[nextTier];
-      ctx.beginPath(); ctx.arc(dropX, TOP - pr - 6, pr, 0, 6.284);
-      ctx.fillStyle = 'rgba(214,236,255,.85)'; ctx.fill();
+      for (i = 0; i < queue.length; i++) {
+        var qr = R[queue[i]], qy = TOP - 96 - i * 26;
+        ctx.globalAlpha = 1 - i * 0.32;
+        if (sprite[queue[i]]) ctx.drawImage(sprite[queue[i]], dropX - qr, qy - qr, qr * 2, qr * 2);
+        ctx.globalAlpha = 1;
+      }
     }
     for (i = 0; i < bodies.length; i++) {
       var b = bodies[i];
-      var g2 = ctx.createRadialGradient(b.x - b.r * .3, b.y - b.r * .35, b.r * .15, b.x, b.y, b.r);
-      g2.addColorStop(0, '#eaf5ff'); g2.addColorStop(.65, '#9fc9f2'); g2.addColorStop(1, '#5d84b0');
-      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 6.284); ctx.fillStyle = g2; ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1; ctx.stroke();
+      if (sprite[b.tier]) ctx.drawImage(sprite[b.tier], b.x - b.r, b.y - b.r, b.r * 2, b.r * 2);
     }
-    for (i = mergeFlash.length - 1; i >= 0; i--) {
-      var m = mergeFlash[i]; m.life -= .05;
-      if (m.life <= 0) { mergeFlash.splice(i, 1); continue; }
-      ctx.beginPath(); ctx.arc(m.x, m.y, m.r * (1 + (1 - m.life) * .6), 0, 6.284);
-      ctx.strokeStyle = 'rgba(214,236,255,' + (m.life * .8).toFixed(3) + ')'; ctx.lineWidth = 2; ctx.stroke();
+    for (i = flash.length - 1; i >= 0; i--) {
+      var m = flash[i]; m.life -= .045;
+      if (m.life <= 0) { flash.splice(i, 1); continue; }
+      ctx.beginPath(); ctx.arc(m.x, m.y, m.r * (1 + (1 - m.life) * .5), 0, 6.284);
+      ctx.strokeStyle = 'rgba(214,236,255,' + (m.life * .85).toFixed(3) + ')'; ctx.lineWidth = 2.4; ctx.stroke();
+      if (m.text) {
+        ctx.font = '13px -apple-system,PingFang SC,Microsoft YaHei,sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(214,236,255,' + m.life.toFixed(3) + ')';
+        ctx.fillText(m.text, VW / 2, VH / 2 - 20);
+      }
     }
-    var lit = Math.min(1, human / 6000);
+    var lit = Math.min(1, human / 20000);
     for (i = 0; i < 9; i++) {
-      ctx.beginPath(); ctx.arc((i + .5) * (VW / 9), VH - 12, 2 + lit * 1.6, 0, 6.284);
+      ctx.beginPath(); ctx.arc((i + .5) * (VW / 9), VH - 12, 2 + lit * 1.8, 0, 6.284);
       ctx.fillStyle = 'rgba(255,231,170,' + (.28 + lit * .6).toFixed(3) + ')'; ctx.fill();
     }
   }
@@ -154,9 +238,15 @@
     var now = performance.now();
     var dt = Math.min(0.05, (now - last) / 1000);
     last = now; t += dt;
-    step(dt / 2); if (!running) return;
-    step(dt / 2); if (!running) return;
-    for (var i = 0; i < snow.length; i++) { snow[i].y += snow[i].vy * dt; if (snow[i].y > VH + 4) { snow[i].y = -4; snow[i].x = Math.random() * VW; } }
+    years -= DRAIN * dt;
+    if (years <= 0) { years = 0; setHud(); finish('years'); return; }
+    acc += dt;
+    var guard = 0;
+    while (acc >= FIXED && guard < 12) { acc -= FIXED; guard++; physics(FIXED); if (!running) return; }
+    var i;
+    for (i = 0; i < snow.length; i++) { snow[i].y += snow[i].vy * dt; if (snow[i].y > VH + 4) { snow[i].y = -4; snow[i].x = Math.random() * VW; } }
+    setHud();
+    if (t >= LIMIT) { finish('time'); return; }
     draw();
     raf = requestAnimationFrame(loop);
   }
@@ -174,6 +264,7 @@
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(w * dpr * (VH / VW));
     bg = makeBg(canvas.width, canvas.height);
+    makeSprites(canvas.width / VW);
     draw();
   }
   function ensureOverlay() {
@@ -186,9 +277,9 @@
     overlay.innerHTML = [
       '<div class="kv-box">',
       '  <button class="kv-close" id="kvClose" type="button">收起</button>',
-      '  <div class="kv-head">你的年岁 <b id="kvMine">50,000</b> · 人间 <b id="kvHuman">0</b> 年 · 最佳 <b id="kvBest">0</b></div>',
+      '  <div class="kv-head">年岁 <b id="kvMine">50,000</b> · 人间 <b id="kvHuman">0</b> 年 · <b id="kvTime">90</b> 秒 · 最佳 <b id="kvBest">0</b></div>',
       '  <div class="kv-msg" id="kvMsg">点一下投冰。</div>',
-      '  <canvas class="kv-canvas" id="kvCanvas" width="340" height="480" aria-label="五万年：堆冰合成" role="img"></canvas>',
+      '  <canvas class="kv-canvas" id="kvCanvas" width="340" height="500" aria-label="五万年：堆冰合成" role="img"></canvas>',
       '  <button class="kv-btn" id="kvAgain" type="button">再来一次</button>',
       '</div>',
     ].join('\n');
@@ -197,6 +288,7 @@
     ctx = canvas.getContext('2d');
     yearsEl = overlay.querySelector('#kvMine');
     humanEl = overlay.querySelector('#kvHuman');
+    timeEl = overlay.querySelector('#kvTime');
     bestEl = overlay.querySelector('#kvBest');
     msgEl = overlay.querySelector('#kvMsg');
     overlay.querySelector('#kvClose').addEventListener('click', close);
@@ -221,7 +313,7 @@
     host.appendChild(card); ensureOverlay(); return card;
   }
   function close() {
-    if (Date.now() - openedAt < CLOSE_GUARD_MS) return;
+    if (Date.now() - openedAt < GUARD) return;
     running = false; raf = 0;
     if (overlay) { overlay.classList.remove('on'); overlay.setAttribute('aria-hidden', 'true'); }
   }
@@ -232,8 +324,24 @@
   }
   var API = {
     title: '五万年',
-    hint: '冰块从上面落下来，两块同级的冰碰到一起会合成更大的。堆过顶线，寒潮就压到人间了。⚠ 每一次合成都烧掉你自己的年岁 —— 结局只报一件事：你给人类留下了多少年。',
-    mount: mount, open: open
+    hint: '冰块落下，两块同级相碰就合成更大的；两块「冰原」相碰会把**寒潮顶回天上**。限时 90 秒，年岁还会自己流走 —— 结局只报一件事：你给人类留下了多少年。',
+    mount: mount, open: open,
+    /* ⚠ 测试用投放钩子（只给验收脚本用）：直接投一块指定档位的冰 */
+    __drop: function (tier) {
+      if (over || !running) return;
+      if (tier < 0 || tier >= R.length) return;
+      var r = R[tier], b = newBody();
+      b.x = Math.max(r + 2, Math.min(VW - r - 2, dropX)); b.y = TOP - r - 6;
+      b.vx = 0; b.vy = 0; b.r = r; b.tier = tier; b.age = 0; b.cd = 0; b.sleep = 0; b.dead = false;
+      bodies.push(b);
+    },
+    __state: function () {
+      return { years: Math.round(years), human: Math.round(human), t: Math.round(t * 10) / 10, bodies: bodies.length,
+        tiers: bodies.map(function (b) { return b.tier; }),
+        pos: bodies.map(function (b) { return [Math.round(b.x), Math.round(b.y), b.r]; }), over: over,
+        maxV: bodies.reduce(function (m, b) { return Math.max(m, Math.abs(b.vx) + Math.abs(b.vy)); }, 0),
+        css: canvas ? Math.round(canvas.getBoundingClientRect().width) + 'x' + Math.round(canvas.getBoundingClientRect().height) : null };
+    }
   };
   global.ElysiaGames = global.ElysiaGames || {};
   global.ElysiaGames.kevin = API;
