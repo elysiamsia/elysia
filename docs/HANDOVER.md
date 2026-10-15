@@ -94,6 +94,29 @@
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
 
 
+### 2.3 最近一轮（2026-10-15 · 深夜二十一）：刻印点缀第二件 —— 徽章成了，**首页总览撤了**
+
+## 一、名字旁小徽章 ✅（阿波尼亚样板，已出图）
+
+```html
+<style id="signet-badge-css">
+.opening-subtitle::before{content:'';display:inline-block;width:20px;height:20px;margin-right:.45rem;vertical-align:-3px;
+  background:url('/images/signet/戒律-256.webp') center/contain no-repeat;opacity:.85}
+</style>
+```
+
+用**副标题的伪元素**（`inline-block`，不碰打字机标题、不用绝对定位）⇒ 渲染图确认：副标题「欢迎来到至深之处」前面多了一枚小纹章 ✅。
+待铺其余 11 页（同样的确认流程）。
+
+## 二、首页十三枚总览 ⚠ **撤掉了**
+
+插进 `#ending` 之前、样式写进 `site.css`，但**首次渲染不对**：截图里 13 枚是**一枚一行的大图**（约 256px）而且整页看着没吃到样式 ⇒ 与「3 列、64px 小图标」的设计不符。
+⇒ **不敢留：`index.html` 已还原**（`git show 6c0d57c:index.html`），只保留徽章与 `site.css` 里那段样式（未被引用即无害）。
+
+**下一步怎么查（下次照这个来）**：
+1. 带 `?cb=` 量 `.signet-grid` 的 `getComputedStyle().display` —— 先确定「CSS 到底有没有生效」，再谈布局；
+2. 若没生效，查**它落点是不是在 `#ending` 的某个容器里**（我插在 ending 的注释之前，需确认不在某个 flex/grid 子项内）；
+3. 若要稳，改成**在这一节上直接写内联样式**（不依赖 site.css 的加载与顺序）—— 阿波尼亚那段水印就是这么一次成的。
 ### 2.3 最近一轮（2026-10-15 · 深夜二十）：刻印水印铺满 12 页（刻印点缀第一半做完）
 
 样板页（阿波尼亚）经需求方确认「这版行」后，同一段最小 CSS 铺到其余 11 页：
