@@ -397,7 +397,11 @@
   var h = location.hostname;
   if (h === '127.0.0.1' || /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(h)) return;
   if (location.protocol !== 'https:' && h !== 'localhost') return;
+  /* ⚠ updateViaCache:'none' ⇒ SW 脚本本身也绕过 HTTP 缓存（Pages 给 .js 的 max-age 是 4 小时），
+     否则改了 SW 也要等 4 小时才生效；register 完再 update() 一次，催它立刻检查。 */
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('/sw.js').catch(function () {});
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(function (r) {
+      r.update().catch(function () {});
+    }).catch(function () {});
   });
 })();
