@@ -29,11 +29,13 @@ const NOTE_DAILY_LIMIT = 3;
 const NOTE_NAME_MAX = 16, NOTE_BODY_MAX = 80;
 
 function load() {
-  try { return JSON.parse(fs.readFileSync(DB_PATH, 'utf8')); }
-  catch {
-    // 首次运行：把擂台要用的表也一并初始化
-    return { total: 0, notes: [], nextId: 1, rate: {}, players: [], bets: [], settled: {}, nextPlayer: 1, nextBet: 1 };
-  }
+  /* ⚠ 默认值必须**每次读取都合并**，不能只在 catch 里给：
+     线上旧库（只有 total/notes）里没有擂台用的 players/bets/settled，
+     结果 settleDue 里 db.settled[m.id] 直接 TypeError ⇒ 服务一请求就崩。
+     （2026-10-16 真机踩到：curl 全空、journalctl 指向 arena.js:121） */
+  const DEF = { total: 0, notes: [], nextId: 1, rate: {}, players: [], bets: [], settled: {}, nextPlayer: 1, nextBet: 1 };
+  try { return Object.assign(DEF, JSON.parse(fs.readFileSync(DB_PATH, 'utf8'))); }
+  catch { return DEF; }
 }
 function save(db) {
   const tmp = DB_PATH + '.tmp';
