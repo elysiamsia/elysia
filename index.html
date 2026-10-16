@@ -614,6 +614,15 @@ body{
   .postcard-btn{transition:none}
 }
 </style>
+<style id="mobile-postcard-fix">
+/* 手机端修复（2026-10-15 实测）：明信片那节把布局视口撑到 571px（别的页 360）⇒ 整页缩小 + 43 处小字。
+   二分法定位到 section#postcard。这里用**内联样式 + 直接约束宽度**（不赌 min-width 机制、也不怕 site.css 被缓存）。
+   注意：.postcard-art 的横向滚动是设计（spec 原文「手机可横滑」），所以只是**把它压到视口内**，滚动保留。 */
+#postcard,#postcard *{min-width:0}
+#postcard .postcard-art{max-width:calc(100vw - 2rem)}
+.postcard-btn{min-height:44px}
+#bdayEgg{min-height:44px}
+</style>
 </head>
 <body>
 
