@@ -280,3 +280,15 @@ a.signet-grid-item:hover{background:rgba(255,255,255,.035);transform:translateY(
 a.signet-grid-item:hover img{opacity:1}
 .signet-grid-item--self{opacity:.75}
 @media (max-width:480px){.signet-grid{grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:.7rem;margin:2.6rem auto}}
+
+/* ── 手机端修复（2026-10-15 实测）──────────────────────────────────────
+   ① 首页布局视口被撑到 571px（别的页都是 360）⇒ 整页缩小显示、43 处小字。
+      **二分法定位**：藏掉 section#postcard ⇒ 视口立刻回到 360。
+      根因：明信片那节的缩略图行（.postcard-art 内容 555px）在 flex/grid 子项里，
+      子项默认 min-width:auto ⇒ 容器不能被压到内容以下，overflow-x:auto 因此失效，
+      **整个布局视口被撑宽**。修法就是给那一节解除 min-width 约束（经典解）。
+   ② 该节的三个按钮 38px 高、生日胶囊 41px —— 都差一点点到 44px（触控目标下限）。 */
+#postcard, #postcard *{min-width:0}
+.postcard-art{max-width:100%}
+.postcard-btn{min-height:44px}
+#bdayEgg{min-height:44px}
