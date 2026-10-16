@@ -1,0 +1,29 @@
+# deploy/elysia-api.service —— 那 4 个接口的小后端（Node 20 + SQLite）
+# 放 /etc/systemd/system/elysia-api.service，然后：
+#   systemctl daemon-reload && systemctl enable --now elysia-api
+#
+# 安全：只监听 127.0.0.1（外网只能经 nginx 进来），用独立低权用户跑。
+[Unit]
+Description=Elysia static site API (count / flower / notes)
+After=network.target
+
+[Service]
+Type=simple
+User=elysia
+WorkingDirectory=/opt/elysia-api
+Environment=NODE_ENV=production
+Environment=PORT=8787
+Environment=DB_PATH=/var/lib/elysia/elysia.db
+# MANAGE_KEY 与 DAILY_SALT 放这里（别提交进仓库）
+EnvironmentFile=/etc/elysia-api.env
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=3
+# 收紧权限：只读系统 + 只写自己的数据目录
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/elysia
+
+[Install]
+WantedBy=multi-user.target
