@@ -506,6 +506,12 @@ body{
 .opening-subtitle::before{content:'';display:inline-block;width:20px;height:20px;margin-right:.45rem;vertical-align:-3px;
   background:url('/images/signet/繁星-256.webp') center/contain no-repeat;opacity:.85}
 </style>
+<style id="mobile-ovf-fix">
+/* 手机端溢出修复（2026-10-15 实测）：刀光/画布一类装饰让文档宽多出 4~6px（360 视口下 364/366）⇒ 页面能横向拖一下。
+   典型成因是 `100vw`（它把滚动条宽度也算进去，比 100% 宽）。这里用 `overflow-x:clip` 兜住：
+   页面不再能横向拖，**内部刻意的横向滚动容器不受影响**（明信片缩略图那类照旧）。 */
+html,body{overflow-x:clip}
+</style>
 </head>
 <body>
 

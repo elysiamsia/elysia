@@ -94,6 +94,32 @@
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
 
 
+### 2.3 最近一轮（2026-10-15 · 深夜二十六）：全站体检**可信版** + griseo/sakura 溢出修好
+
+按三条纪律（`?cb=` / `sleep 4200` / 探针自检）重跑 15 页，**每页 `ok:true`**（确认量的是真页面）：
+
+| 页 | 视口 | 文档宽 | 小触控 | 小字(<12px) |
+|---|---|---|---|---|
+| index | 360 ✅ | 360 ✅ | **0** ✅ | 43 |
+| armor | 360 ✅ | 360 ✅ | 2 | 23 |
+| **griseo** | ~~364~~ → **360** ✅ | 360 ✅ | 1 | 21 |
+| **sakura** | ~~366~~ → **360** ✅ | 360 ✅ | 2 | 12 |
+| aponia / eden / guestbook / hua / kalpas / kevin / kosma / mobius / pardofelis / su / villv | 360 ✅ | 360 ✅ | 0~3 | 3~13 |
+
+**结论：15/15 页在 360 视口下文档宽都是 360 ✅**（手机端最要命的一类问题清零）。
+
+## 一、griseo / sakura 那多出来的 4~6px
+
+修法：`html,body{overflow-x:clip}`（内联，各自页面）⇒ 页面不再能横向拖，
+**内部刻意的横向滚动容器不受影响**（明信片缩略图那类照旧）✅ 复测：griseo 364→360、sakura 366→360、hua/pardofelis 无回归。
+
+> ⚠ 诚实说明：我原以为成因是 `100vw`，但 grep 下来 **griseo 一次都没有、sakura 那一处是无害的 `max-width:calc(100vw - 4rem)`** ⇒
+> **根因仍未查明**，这次是**实证修法**（挡住横向拖）而不是根治。要根治得再查「谁把文档撑宽了 4px」。
+
+## 二、剩下的（都要需求方或下一轮定）
+
+1. **小字块**：index 43 / armor 23 / griseo 21 处 <12px（站里大量 `.7rem` ≈ 11.2px）—— 抬不抬到 ≥12px 是**设计取舍**；
+2. **小触控目标**：armor 2 / mobius 3 / guestbook 2 / kosma 2 / pardofelis 2 / sakura 2 / aponia 1 / eden 1 / griseo 1 / hua 1 / kalpas 1 / villv 1（kevin、su、index 已是 0 ✅）。
 ### 2.3 最近一轮（2026-10-15 · 深夜二十五）：首页 571px **修好了**（+ 三条纪律）
 
 ## 一、元凶与修法
