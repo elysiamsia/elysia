@@ -94,6 +94,30 @@
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
 
 
+### 2.3 最近一轮（2026-10-15 · 深夜二十七）：**全站触控目标清零**（15/15 页）
+
+逐页点名（带自检、`sleep 4000`、`?cb=`），拿到清单后一次改完：
+
+| 元素 | 原尺寸 | 涉及页 |
+|---|---|---|
+| 生日胶囊 `#bdayEgg` | ~190×**41** | 8 页（aponía/eden/griseo/hua/mobius/pardofelis/sakura/villv） |
+| 开始按钮 `.game-card-start` | 91~122×**41** | kosma/mobius/sakura |
+| 返回链接 `a.back-link` / `a.back` | 163×**36** / 131×**37** | armor / guestbook |
+| 清空筛选 `.clear-btn` | 78×**27** | armor |
+| 送出 `.f-submit` | 101×**35** | guestbook |
+| 结局语录 `.ending-quote` | 190×**42** / 201×**35** | kalpas / kosma |
+| 装饰 `🪙.world-coin` / `🐭.lab-mouse` | 30×**37** / **36**×44 | pardofelis / mobius |
+
+**修法**：`<style id="touch-target-fix">` 一段（`min-height:44px` 为主，装饰类补 `min-width`），
+**写在各页内联、放 `</head>` 前** —— 外部 CSS 会被浏览器缓存，改动看不出来（上一次就栽在这）。
+
+**验收**：12 页逐个复测，`n:0`（小目标数量）**全部清零 ✅**；连首页与 kevin、su 在内，
+**15/15 页在 360 视口下零小触控目标**。
+
+## 剩下的最后一件：小字块（等需求方定）
+
+首页 43 / armor 23 / griseo 21 处 <12px（站里大量 `.7rem` ≈ **11.2px** 的小标签）。
+抬到 ≥12px 会略微改变版式的精致感，**保持现状也说得过去** ⇒ 这是设计取舍，**等一句话**。
 ### 2.3 最近一轮（2026-10-15 · 深夜二十六）：全站体检**可信版** + griseo/sakura 溢出修好
 
 按三条纪律（`?cb=` / `sleep 4200` / 探针自检）重跑 15 页，**每页 `ok:true`**（确认量的是真页面）：

@@ -452,6 +452,18 @@ body.burning .section-title{opacity:.45;transition:opacity .6s ease}
 .opening-subtitle::before{content:'';display:inline-block;width:20px;height:20px;margin-right:.45rem;vertical-align:-3px;
   background:url('/images/signet/浮生-256.webp') center/contain no-repeat;opacity:.85}
 </style>
+<style id="touch-target-fix">
+/* 手机端触控目标补到 ≥44px（2026-10-15 逐页实测清单）——
+   生日胶囊 41、开始按钮 41、返回链接 36/37、清空筛选 27、送出 35、结局语录 42/35、🪙30x37、🐭36 宽。
+   写在各页内联：外部 CSS 会被浏览器缓存，改动看不出来（上一次就栽在这）。 */
+#bdayEgg{min-height:44px}
+.game-card-start{min-height:44px}
+a.back-link,a.back{min-height:44px;display:inline-flex;align-items:center}
+.clear-btn,.f-submit{min-height:44px;padding-top:.45rem;padding-bottom:.45rem}
+.ending-quote{min-height:44px}
+.lab-mouse{min-width:44px}
+.world-coin{min-width:44px;min-height:44px}
+</style>
 </head>
 <body data-life="1">
 
