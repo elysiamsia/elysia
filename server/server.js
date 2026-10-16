@@ -14,6 +14,7 @@
  */
 'use strict';
 const http = require('node:http');
+const { arena } = require('./arena');   // 擂台（注册/签到/押注/结算/回放闸门）
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
@@ -29,7 +30,10 @@ const NOTE_NAME_MAX = 16, NOTE_BODY_MAX = 80;
 
 function load() {
   try { return JSON.parse(fs.readFileSync(DB_PATH, 'utf8')); }
-  catch { return { total: 0, notes: [], nextId: 1, rate: {} }; }
+  catch {
+    // 首次运行：把擂台要用的表也一并初始化
+    return { total: 0, notes: [], nextId: 1, rate: {}, players: [], bets: [], settled: {}, nextPlayer: 1, nextBet: 1 };
+  }
 }
 function save(db) {
   const tmp = DB_PATH + '.tmp';
@@ -180,6 +184,9 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' });
     return res.end(html);
   }
+  /* ── 擂台：/api/* 全部交给 arena 模块（它自己判定是否处理）── */
+  if (await arena(req, res, url, db, save)) return;
+
   res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
   res.end('not found');
 });
