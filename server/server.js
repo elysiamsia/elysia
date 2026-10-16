@@ -80,7 +80,10 @@ const server = http.createServer(async (req, res) => {
   for (const k of Object.keys(db.rate)) if (!k.endsWith(day)) delete db.rate[k];
 
   if (url.pathname === '/count' && req.method === 'GET') {
-    return ok(res, { total: db.total });
+    /* ⚠ 字段名必须是 count：前端契约（assets/flowers.js 顶部注释）写的是 {count}。
+       我最初返回 {total} ⇒ 前端读到 undefined ⇒ 判成失败 ⇒ 静默降级成本地计数。
+       total 一并返回只是为了兼容，真正被读的是 count。 */
+    return ok(res, { count: db.total, total: db.total });
   }
   if (url.pathname === '/flower' && req.method === 'POST') {
     const b = (await readBody(req)) || {};
@@ -88,10 +91,10 @@ const server = http.createServer(async (req, res) => {
     const key = 'f:' + ipHash;
     const used = Number(db.rate[key] || 0);
     const left = FLOWER_DAILY_LIMIT - used;
-    if (left <= 0) return ok(res, { total: db.total, added: 0, limit: true });
+    if (left <= 0) return ok(res, { count: db.total, total: db.total, added: 0, limit: true });
     const added = Math.min(n, left);
     db.total += added; db.rate[key] = used + added; save(db);
-    return ok(res, { total: db.total, added: added });
+    return ok(res, { count: db.total, total: db.total, added: added });
   }
   if (url.pathname === '/notes' && req.method === 'GET') {
     const tokens = String(url.searchParams.get('tokens') || '').split(',').map((t) => t.trim()).filter((t) => /^[0-9a-f]{32}$/.test(t)).slice(0, 20);
