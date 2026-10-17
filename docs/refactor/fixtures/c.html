@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>夹具</title>
+</head>
+<body>
+<section id="opening" class="opening-a">
+<h1>标题</h1>
+<p>正文 一段</p>
+</section>
+<script>
+var THEME = {
+  explore: {
+    pageId: 'fx',
+    finds: [
+      { id: 'fx-01', at: '#opening', x: 0.16, y: 0.72,
+        line: '含分号; 与花括号{} 的一行' },   // 这行有注释
+    ],
+    whisper: ['a', 'b'],
+  },
+  game: { module: 'fx' },
+};
+ElysiaExplore.init(THEME.explore);
+</script>
+</body>
+</html>
