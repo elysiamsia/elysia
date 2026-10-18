@@ -94,6 +94,26 @@
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
 
 
+### 2.3 最近一轮（2026-10-18）：重构 M1 完成 —— 12 页全部模板化，diff 全部为 0
+
+| 项 | 结果 |
+|---|---|
+| 模板化 | 12/12 页（base.njk + 三个共享 partial + 每页 page.css / page-fixes.css / body.html） |
+| DOM diff | 12 页全部 0（THEME 语义豁免，hash 相等） |
+| 构建产物手机扫 | 12 页 × 320/360/390 = 36 项全绿 |
+| 构建产物断言 | hua 29/29、sakura 39/39 |
+| 增量机制 | 无模板的页仍原样拷贝；--single 支持单页构建 |
+
+## 一、为了让 12 页都 diff=0 解决的四件事
+
+1. style 块顺序：sakura/griseo 的 touch-target-fix 在 mobile-ovf-fix 之后 ⇒ 共享块拆成 3 个 partial，按每页自己的 styles 令牌顺序渲染（顺序不同是历史事实，不能统一）；
+2. body 属性：hua 的 body 带 data-life 属性 ⇒ 做成数据 bodyAttrs；
+3. THEME 注入：node 侧算的 span 在 JSON 形态下差 1~2 字符，会留下多余花括号 ⇒ split_page 也改用 Python 扫括号；
+4. 断言与真源：第 33 条原本只认 JS 字面量 ⇒ 兼容 JSON 形态；樱专属「台词逐字」断言 ⇒ 优先读 content/characters/sakura.json，读不到才回退解析源码。
+
+> 纪律补充：断言读「源码文本」时，必须跟着真源迁移，否则模板化后会静默失真。
+
+**未做**：404 页模板化（结构简单，可单独做）；切换（Task 11，等主人确认）。
 ### 2.3 最近一轮（2026-10-18）：方案 B —— **统一 12 页 head**（改版，独立验收）+ 修掉工具串台
 
 主人选 B（现在就收敛）。顺序调整为「**先改版、后模板化**」：这样模板化那一步仍能做到 diff 为零。

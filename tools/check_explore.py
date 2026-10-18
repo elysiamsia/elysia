@@ -1920,10 +1920,18 @@ def _theme_explore_strings():
       这几个字段才是「台词必须有出处」这条纪律的射程。
     """
     src = io.open(os.path.join(ROOT_DIR, 'mobius', 'index.html'), encoding='utf-8').read()
+    # ⚠ 两种形态都要认（2026-10-18 模板化后）：
+    #   · 手写页面：`explore: {`（JS 字面量）
+    #   · 构建产物：`"explore":{`（THEME 已由 build 注入为 JSON）
+    #   只认前者会让 `--root public` 的验证集体误报。
     i = src.find('explore: {')
     if i < 0:
+        i = src.find('"explore":')
+        if i >= 0:
+            i = i + len('"explore":')
+    if i < 0:
         return None
-    j = src.index('{', i + len('explore:'))
+    j = src.index('{', i)
     depth, k = 1, j + 1
     while k < len(src) and depth:
         if src[k] == '{':
@@ -3252,11 +3260,24 @@ def check_sakura_finds_match_registry(b, page, expected):
       而 `line` 只有触发时才进气泡，所以 DOM 侧拿不全这 12 条。
     """
     src = io.open(os.path.join(ROOT, page), encoding='utf-8').read()
+    # 两种形态都认：手写页 `explore: {` / 构建产物 `"explore":{`（2026-10-18 模板化）
     i = src.find('explore: {')
     if i < 0:
+        i = src.find('"explore":')
+        if i >= 0:
+            i = i + len('"explore":')
+    if i < 0:
         return ([u'源码里找不到 `explore: {`'], u'—')
-    got = re.findall(
-        r"\{\s*id:'([^']*)',\s*at:'([^']*)',\s*x:[-0-9.]+,\s*y:[-0-9.]+,\s*"
+    # ⚠ 模板化后（2026-10-18）：台词真源是 content/characters/sakura.json；优先读它。
+    #   只有读不到 JSON 时才回退到解析页面源码里的 JS 字面量。
+    jp = os.path.join(ROOT_DIR, 'content', 'characters', 'sakura.json')
+    if os.path.exists(jp):
+        _d = json.load(io.open(jp, encoding='utf-8'))
+        got = [(f['id'], f['at'], f['verb'], f['art'], f['line'], f['src'])
+               for f in _d['explore']['finds']]
+    else:
+        got = re.findall(
+            r"\{\s*id:'([^']*)',\s*at:'([^']*)',\s*x:[-0-9.]+,\s*y:[-0-9.]+,\s*"
         r"verb:'([^']*)',\s*art:'([^']*)',\s*\n\s*line:'([^']*)',\s*\n\s*src:'([^']*)'",
         src[i:])
 
