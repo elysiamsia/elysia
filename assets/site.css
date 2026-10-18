@@ -292,3 +292,31 @@ a.signet-grid-item:hover img{opacity:1}
 .postcard-art{max-width:100%}
 .postcard-btn{min-height:44px}
 #bdayEgg{min-height:44px}
+
+/* ── 丝滑专项 v1（2026-10-18）─────────────────────────────────────────
+   1) motion tokens：全站动画时长/缓动只在此处定义，后续统一各页节奏。
+   2) 跨页过渡（MPA cross-document View Transitions）：同源跳转不再白屏硬切。
+      仅 Chrome 126+/Safari 18+ 生效，其它浏览器**无感降级**（没有过渡，功能不变）。
+   3) 减动偏好下**强制关掉**过渡（WCAG 2.3.1，本项目既有纪律）。
+   ⚠ 不用 content-visibility:auto —— 它会打乱滚动触发的入场动画，收益不值风险。 */
+:root{
+  --motion-fast: .18s;
+  --motion-mid: .35s;
+  --motion-slow: .6s;
+  --ease-soft: cubic-bezier(.22, .61, .36, 1);
+}
+
+@view-transition { navigation: auto; }
+::view-transition-old(root) {
+  animation-duration: var(--motion-mid);
+  animation-timing-function: var(--ease-soft);
+}
+::view-transition-new(root) {
+  animation-duration: var(--motion-mid);
+  animation-timing-function: var(--ease-soft);
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) { animation: none !important; }
+}
