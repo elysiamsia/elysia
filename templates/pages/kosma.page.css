@@ -33,7 +33,7 @@ body{
    两侧各一只他头上的弯角。黎明正是明暗交界的地方，所以日轮只画半轮：
    他从来不觉得自己是完整的那道光♥ */
 .opening-crest{
-  width:138px;height:99px;margin:0 auto 1.2rem;opacity:0;transition:opacity 2s ease;
+  width:138px;height:99px;margin:0 auto 1.2rem;opacity:0;transition: opacity 2s ease;
   filter:drop-shadow(0 0 24px rgba(249,161,82,.3));
 }
 .opening-crest.visible{opacity:.94}
@@ -55,15 +55,15 @@ body{
 .typing-cursor{display:inline-block;font-weight:100;color:var(--dawn);animation:blink-cursor .8s step-end infinite}
 .opening-subtitle{
   font-size:clamp(.9rem,2.5vw,1.25rem);color:var(--text-dim);letter-spacing:.4em;
-  margin-top:1.5rem;opacity:0;transition:opacity 1.5s ease;
+  margin-top:1.5rem;opacity:0;transition: opacity var(--motion-base) ease;
 }
 .opening-hint{
   font-size:.72rem;color:var(--text-muted);letter-spacing:.14em;margin-top:1rem;
-  opacity:0;transition:opacity 1.5s ease 1s;
+  opacity:0;transition: opacity var(--motion-base) ease var(--motion-quick);
 }
 .scroll-hint{
   position:absolute;bottom:calc(2.5rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.5rem;
-  opacity:0;transition:opacity 1s ease .5s;
+  opacity:0;transition: opacity var(--motion-quick) ease .5s;
 }
 .scroll-hint.visible{opacity:.6}
 .scroll-hint span{font-size:.75rem;color:var(--text-muted);letter-spacing:.2em}
@@ -106,7 +106,7 @@ body{
 .profile-name{
   font-size:clamp(2rem,5.5vw,3rem);font-weight:200;letter-spacing:.3em;text-indent:.3em;cursor:pointer;user-select:none;
   color:var(--dawn-soft);text-align:center;margin-bottom:.2em;
-  text-shadow:0 0 28px rgba(249,161,82,.3);transition:text-shadow .3s ease;
+  text-shadow:0 0 28px rgba(249,161,82,.3);transition: text-shadow .3s ease;
 }
 .profile-name:hover{text-shadow:0 0 40px rgba(249,161,82,.55)}
 .profile-name-en{
@@ -129,7 +129,7 @@ body{
   position:relative;display:inline-block;cursor:pointer;user-select:none;
   -webkit-tap-highlight-color:transparent;padding:1.2rem 1rem .4rem;
 }
-.harmonica-stage svg{display:block;transition:transform .16s cubic-bezier(.2,.8,.3,1);
+.harmonica-stage svg{display:block;transition: transform .16s cubic-bezier(.2,.8,.3,1);
   filter:drop-shadow(0 12px 26px rgba(0,0,0,.55))}
 /* 吹一下：琴身轻轻一仰 —— 像真有人对着它送了一口气 */
 .harmonica-stage.blown svg{transform:translateY(-4px) rotate(-1.4deg)}
@@ -151,7 +151,7 @@ body{
 .harmonica-glow{
   position:absolute;inset:-30px;border-radius:50%;pointer-events:none;opacity:0;
   background:radial-gradient(circle,rgba(249,161,82,.26),transparent 65%);
-  transition:opacity .8s ease;
+  transition: opacity .8s ease;
 }
 .harmonica-glow.lit{opacity:1}
 /* 呀！他吹的时候，心里其实一直在说话 —— 那些话就这样浮出来一句♥
@@ -163,7 +163,7 @@ body{
   color:var(--text-dim);
   background:linear-gradient(135deg,rgba(13,21,18,.72),rgba(22,36,28,.72));
   border:1px solid var(--glass-border);
-  opacity:.42;transition:opacity .7s ease;
+  opacity:.42;transition: opacity .7s ease;
 }
 .harmonica-inner.show{opacity:1}
 .harmonica-inner::before{
@@ -182,7 +182,7 @@ body{
   font-size:1.35rem;font-weight:300;letter-spacing:0;color:var(--text-dim);
   background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
   border:1px solid var(--glass-border);
-  transition:transform .3s ease,box-shadow .3s ease,color .3s ease,border-color .3s ease;
+  transition: transform .3s ease,box-shadow .3s ease,color .3s ease,border-color .3s ease;
 }
 .seal:hover{transform:translateY(-3px)}
 .seal.lit{
@@ -201,12 +201,12 @@ body{
 }
 .timeline-node{
   position:relative;display:flex;align-items:flex-start;margin-bottom:3rem;
-  opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;
+  opacity:0;transform:translateY(30px);transition: opacity .7s ease,transform .7s ease;
 }
 .timeline-dot{
   position:absolute;left:50%;top:.5rem;width:12px;height:12px;border-radius:50%;
   border:2px solid var(--dawn);background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
-  box-shadow:0 0 12px rgba(249,161,82,.4);transition:background .3s;
+  box-shadow:0 0 12px rgba(249,161,82,.4);transition: background .3s;
 }
 .timeline-node.visible .timeline-dot{background:var(--dawn)}
 .timeline-card{
@@ -225,32 +225,32 @@ body{
   
   border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
   box-shadow:0 0 20px rgba(249,161,82,.03);
-  transition:transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
+  transition: transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
 }
 .quote-card:hover{transform:translateY(-3px);box-shadow:0 0 30px rgba(249,161,82,.12),0 8px 30px rgba(0,0,0,.2)}
 .quote-card::after{
   content:'';position:absolute;top:0;left:0;right:0;bottom:0;
   background:radial-gradient(circle at 30% 30%,rgba(249,161,82,.05),transparent 60%);pointer-events:none;
 }
-.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition:opacity .4s ease}
+.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition: opacity .4s ease}
 .quote-hint{position:absolute;bottom:.6rem;right:.8rem;font-size:.65rem;color:var(--text-muted);opacity:.4}
 
 /* SECTION: ending */
 .ending-quote{
   font-size:clamp(1.1rem,3vw,1.6rem);font-weight:300;letter-spacing:.14em;cursor:pointer;user-select:none;
   color:var(--dawn-soft);line-height:2;text-shadow:0 0 25px rgba(249,161,82,.25);
-  max-width:640px;opacity:0;transform:translateY(20px);transition:opacity 1.5s ease,transform 1.5s ease;
+  max-width:640px;opacity:0;transform:translateY(20px);transition: opacity var(--motion-base) ease,transform var(--motion-base) ease;
 }
 .ending-attr{
   margin-top:2.2rem;font-size:.85rem;color:var(--text-muted);letter-spacing:.25em;
-  opacity:0;transition:opacity 1.5s ease .8s;
+  opacity:0;transition: opacity var(--motion-base) ease .8s;
 }
 .back-link{
   display:inline-flex;align-items:center;gap:.5rem;margin-top:3rem;
   min-height:44px;padding:.6rem 1.6rem;border-radius:999px;text-decoration:none;
   color:var(--dawn);font-size:.85rem;letter-spacing:.15em;
   border:1px solid var(--glass-border2);background:rgba(249,161,82,.05);
-  transition:background .3s ease,box-shadow .3s ease,transform .3s ease;opacity:0;
+  transition: background .3s ease,box-shadow .3s ease,transform .3s ease;opacity:0;
 }
 .back-link:hover{background:rgba(249,161,82,.12);box-shadow:0 0 24px rgba(249,161,82,.2);transform:translateY(-2px)}
 
@@ -278,7 +278,7 @@ body{
   border:1px solid var(--glass-border2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 24px rgba(249,161,82,.18);
   opacity:0;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  transition:opacity .35s ease,transform .35s ease;text-align:center;
+  transition: opacity .35s ease,transform .35s ease;text-align:center;
 }
 #kmToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #kmToast.golden{color:#ffe0b8;border-color:rgba(249,161,82,.6);box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 36px rgba(249,161,82,.4)}
@@ -296,7 +296,7 @@ body{
 }
 /* 「他被晨光泡住了」—— 送礼物那一刻，整页从底下暖上来 */
 #dawnVeil{
-  position:fixed;inset:0;z-index:9992;pointer-events:none;opacity:0;transition:opacity 1.4s ease;
+  position:fixed;inset:0;z-index:9992;pointer-events:none;opacity:0;transition: opacity var(--motion-quick) ease;
   background:radial-gradient(ellipse 90% 55% at 50% 100%,rgba(249,161,82,.3),transparent 72%);
 }
 #dawnVeil.lit{opacity:1}
@@ -335,7 +335,7 @@ body{
   padding:.6rem 1.8rem;border-radius:999px;cursor:pointer;
   font-size:.85rem;letter-spacing:.14em;color:var(--text);
   background:rgba(249,161,82,.12);border:1px solid var(--glass-border);
-  transition:background .25s ease,box-shadow .25s ease;
+  transition: background .25s ease,box-shadow .25s ease;
 }
 .game-card-start:hover{background:rgba(249,161,82,.22);box-shadow:0 0 20px rgba(249,161,82,.25)}
 
@@ -381,7 +381,7 @@ body{
   min-height:44px;padding:.5rem 1.2rem;border-radius:999px;cursor:pointer;
   font-size:.78rem;letter-spacing:.14em;color:var(--text);
   background:rgba(249,161,82,.1);border:1px solid var(--glass-border);
-  transition:background .25s ease;
+  transition: background .25s ease;
 }
 .km-close:hover{background:rgba(249,161,82,.2)}
 </style>

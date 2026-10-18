@@ -43,7 +43,7 @@ body{
   padding-bottom:calc(2rem + env(safe-area-inset-bottom));
   background:linear-gradient(180deg,var(--bg-abyss) 0%,var(--bg-deep) 30%,var(--bg-wine) 60%,var(--bg-deep) 100%);
 }
-.opening-ornament{font-size:1.1rem;color:var(--gold-deep);letter-spacing:.6em;opacity:0;transition:opacity 1.2s ease;margin-bottom:1.2rem}
+.opening-ornament{font-size:1.1rem;color:var(--gold-deep);letter-spacing:.6em;opacity:0;transition: opacity var(--motion-quick) ease;margin-bottom:1.2rem}
 .opening-title{
   font-size:clamp(1.6rem,5vw,3.2rem);font-weight:300;letter-spacing:.12em;
   color:var(--gold-mist);text-shadow:0 0 30px rgba(255,209,102,.35),0 0 60px rgba(255,209,102,.15);
@@ -52,11 +52,11 @@ body{
 .typing-cursor{display:inline-block;font-weight:100;color:var(--gold);animation:blink-cursor .8s step-end infinite}
 .opening-subtitle{
   font-size:clamp(.9rem,2.5vw,1.25rem);color:var(--text-dim);letter-spacing:.35em;
-  margin-top:1.5rem;opacity:0;transition:opacity 1.5s ease;
+  margin-top:1.5rem;opacity:0;transition: opacity var(--motion-base) ease;
 }
 .scroll-hint{
   position:absolute;bottom:calc(2.5rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.5rem;
-  opacity:0;transition:opacity 1s ease .5s;
+  opacity:0;transition: opacity var(--motion-quick) ease .5s;
 }
 .scroll-hint.visible{opacity:.6}
 .scroll-hint span{font-size:.75rem;color:var(--text-muted);letter-spacing:.2em}
@@ -120,12 +120,12 @@ body{
 }
 .timeline-node{
   position:relative;display:flex;align-items:flex-start;margin-bottom:3rem;
-  opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;
+  opacity:0;transform:translateY(30px);transition: opacity .7s ease,transform .7s ease;
 }
 .timeline-dot{
   position:absolute;left:50%;top:.5rem;width:14px;height:14px;border-radius:50%;
   border:2px solid var(--gold);background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
-  box-shadow:0 0 12px rgba(255,209,102,.4);transition:background .3s;
+  box-shadow:0 0 12px rgba(255,209,102,.4);transition: background .3s;
 }
 .timeline-node.visible .timeline-dot{background:var(--gold)}
 .timeline-card{
@@ -144,32 +144,32 @@ body{
   
   border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
   box-shadow:0 0 20px rgba(255,209,102,.04);
-  transition:transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
+  transition: transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
 }
 .quote-card:hover{transform:translateY(-3px);box-shadow:0 0 30px rgba(255,209,102,.12),0 8px 30px rgba(0,0,0,.2)}
 .quote-card::after{
   content:'';position:absolute;top:0;left:0;right:0;bottom:0;
   background:radial-gradient(circle at 30% 30%,rgba(255,209,102,.06),transparent 60%);pointer-events:none;
 }
-.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition:opacity .4s ease}
+.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition: opacity .4s ease}
 .quote-hint{position:absolute;bottom:.6rem;right:.8rem;font-size:.65rem;color:var(--text-muted);opacity:.4}
 
 /* SECTION: ending */
 .ending-quote{
   font-size:clamp(1.1rem,3vw,1.6rem);font-weight:300;letter-spacing:.12em;
   color:var(--gold-mist);line-height:2;text-shadow:0 0 25px rgba(255,209,102,.3);
-  max-width:640px;opacity:0;transform:translateY(20px);transition:opacity 1.5s ease,transform 1.5s ease;
+  max-width:640px;opacity:0;transform:translateY(20px);transition: opacity var(--motion-base) ease,transform var(--motion-base) ease;
 }
 .ending-attr{
   margin-top:2.5rem;font-size:.85rem;color:var(--text-muted);letter-spacing:.25em;
-  opacity:0;transition:opacity 1.5s ease .8s;
+  opacity:0;transition: opacity var(--motion-base) ease .8s;
 }
 .back-link{
   display:inline-flex;align-items:center;gap:.5rem;margin-top:3rem;
   min-height:44px;padding:.6rem 1.6rem;border-radius:999px;text-decoration:none;
   color:var(--gold);font-size:.85rem;letter-spacing:.15em;
   border:1px solid var(--glass-border);background:rgba(255,209,102,.05);
-  transition:background .3s ease,box-shadow .3s ease,transform .3s ease;
+  transition: background .3s ease,box-shadow .3s ease,transform .3s ease;
   opacity:0;
 }
 .back-link:hover{background:rgba(255,209,102,.12);box-shadow:0 0 24px rgba(255,209,102,.2);transform:translateY(-2px)}
@@ -182,7 +182,7 @@ body{
 .rec-stage.spinning .rec-disc{animation:recSpin 2.6s linear infinite}
 @keyframes recSpin{to{transform:rotate(360deg)}}
 .rec-stage.spinning .rec-arm{transform:rotate(19deg)}
-.rec-arm{transform-origin:188px 40px;transition:transform .7s cubic-bezier(.3,.8,.3,1)}
+.rec-arm{transform-origin:188px 40px;transition: transform .7s cubic-bezier(.3,.8,.3,1)}
 .rec-hint{font-size:.75rem;color:var(--text-muted);letter-spacing:.15em;margin-top:1.1rem;opacity:.8}
 .rec-count{margin-top:.7rem;font-size:.95rem;color:var(--gold);letter-spacing:.2em;
   font-variant-numeric:tabular-nums;text-shadow:0 0 14px rgba(232,201,138,.5)}
@@ -202,7 +202,7 @@ body{
 @keyframes goldUp{0%{opacity:0;transform:translateY(0) scaleY(.4)}
   22%{opacity:.9}100%{opacity:0;transform:translateY(-72vh) scaleY(1.6)}}
 #toastVeil{
-  position:fixed;inset:0;z-index:9992;pointer-events:none;opacity:0;transition:opacity .8s ease;
+  position:fixed;inset:0;z-index:9992;pointer-events:none;opacity:0;transition: opacity .8s ease;
   background:radial-gradient(ellipse at 50% 100%,rgba(232,201,138,.28),transparent 62%);
 }
 #toastVeil.lit{opacity:1}
@@ -229,7 +229,7 @@ body{
   border:1px solid var(--glass-border2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 24px rgba(232,201,138,.18);
   opacity:0;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  transition:opacity .35s ease,transform .35s ease;text-align:center;
+  transition: opacity .35s ease,transform .35s ease;text-align:center;
 }
 #edToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #edToast.golden{color:#ffe9b8;border-color:rgba(232,201,138,.65);
@@ -240,7 +240,7 @@ body{
 .ripple-note{
   position:fixed;pointer-events:none;z-index:9999;color:var(--gold);
   font-size:14px;opacity:.9;
-  transition:all .85s cubic-bezier(.22,.61,.36,1);
+  transition: all .85s cubic-bezier(.22,.61,.36,1);
   text-shadow:0 0 8px rgba(255,209,102,.6);
 }
 

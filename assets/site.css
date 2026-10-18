@@ -159,7 +159,7 @@ html {
   line-height: 2;
   max-width: 560px;
   opacity: 0;
-  transition: opacity 1s ease;
+  transition: opacity var(--motion-quick) ease;
   min-height: 1.4em;
 }
 
@@ -201,7 +201,7 @@ html {
 /* ---------- 8. 返回链接（子页专用，index 无 .back-link） ---------- */
 .back-link.visible {
   opacity: 1;
-  transition: opacity 1.5s ease 1.2s, background .3s ease, box-shadow .3s ease, transform .3s ease;
+  transition: opacity var(--motion-base) ease var(--motion-quick), background .3s ease, box-shadow .3s ease, transform .3s ease;
 }
 
 /* ---------- 9. 减动保护（减弱动效偏好） ----------
@@ -273,8 +273,8 @@ html {
   max-width:52rem;margin:4rem auto;padding:0 1.2rem;text-align:center}
 .signet-grid-title{grid-column:1/-1;font-size:.82rem;letter-spacing:.34em;color:var(--text-muted,#8b8b9e);margin-bottom:1.2rem;font-weight:300}
 .signet-grid-item{display:flex;flex-direction:column;align-items:center;gap:.45rem;text-decoration:none;
-  border-radius:12px;padding:.7rem .3rem;transition:transform .25s ease,background .25s ease}
-.signet-grid-item img{width:100%;max-width:64px;height:auto;opacity:.72;transition:opacity .25s ease}
+  border-radius:12px;padding:.7rem .3rem;transition: transform .25s ease,background .25s ease}
+.signet-grid-item img{width:100%;max-width:64px;height:auto;opacity:.72;transition: opacity .25s ease}
 .signet-grid-name{font-size:.72rem;letter-spacing:.2em;color:var(--text-dim);font-weight:300}
 a.signet-grid-item:hover{background:rgba(255,255,255,.035);transform:translateY(-2px)}
 a.signet-grid-item:hover img{opacity:1}
@@ -300,6 +300,11 @@ a.signet-grid-item:hover img{opacity:1}
    3) 减动偏好下**强制关掉**过渡（WCAG 2.3.1，本项目既有纪律）。
    ⚠ 不用 content-visibility:auto —— 它会打乱滚动触发的入场动画，收益不值风险。 */
 :root{
+  /* 交互节奏（2026-10-18 按站点自己的语言校准，不是通用网页的 .2/.3s）：
+     实测全站 257 处 transition 全部 ≥1s —— 这个站的语言就是「慢、缓、呼吸」。
+     quick = 微反馈（悬停、淡入、小卡片）；base = 主力（面板、遮罩、章节出现）。 */
+  --motion-quick: 1.2s;
+  --motion-base: 1.5s;
   --motion-fast: .18s;
   --motion-mid: .35s;
   --motion-slow: .6s;

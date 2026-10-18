@@ -56,7 +56,7 @@ body{
    她是全站唯一会画画的那位，所以这里不给单色，给一整道彩虹♥
    ⚠ .opening-content 没有宽度规则，块级装饰会贴左 —— 必须自己 margin:0 auto。 */
 .opening-star{
-  width:96px;height:96px;margin:0 auto 1.4rem;opacity:0;transition:opacity 2s ease;
+  width:96px;height:96px;margin:0 auto 1.4rem;opacity:0;transition: opacity 2s ease;
   filter:drop-shadow(0 0 26px rgba(255,217,122,.34));
 }
 .opening-star.visible{opacity:.95}
@@ -70,15 +70,15 @@ body{
 .typing-cursor{display:inline-block;font-weight:100;color:var(--gold);animation:blink-cursor .8s step-end infinite}
 .opening-subtitle{
   font-size:clamp(.9rem,2.5vw,1.25rem);color:var(--text-dim);letter-spacing:.4em;
-  margin-top:1.5rem;opacity:0;transition:opacity 1.5s ease;
+  margin-top:1.5rem;opacity:0;transition: opacity var(--motion-base) ease;
 }
 .opening-hint{
   font-size:.72rem;color:var(--text-muted);letter-spacing:.14em;margin-top:1rem;
-  opacity:0;transition:opacity 1.5s ease 1s;
+  opacity:0;transition: opacity var(--motion-base) ease var(--motion-quick);
 }
 .scroll-hint{
   position:absolute;bottom:calc(2.5rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.5rem;
-  opacity:0;transition:opacity 1s ease .5s;
+  opacity:0;transition: opacity var(--motion-quick) ease .5s;
 }
 .scroll-hint.visible{opacity:.6}
 .scroll-hint span{font-size:.75rem;color:var(--text-muted);letter-spacing:.2em}
@@ -124,7 +124,7 @@ body{
   text-align:center;margin-bottom:.2em;
   background:linear-gradient(90deg,var(--sky),var(--violet),var(--rose),var(--lemon),var(--jade));
   -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
-  transition:filter .3s ease;
+  transition: filter .3s ease;
 }
 .profile-name:hover{filter:drop-shadow(0 0 16px rgba(255,217,122,.55)) brightness(1.12)}
 .profile-name-en{
@@ -152,12 +152,12 @@ body{
 }
 .timeline-node{
   position:relative;display:flex;align-items:flex-start;margin-bottom:3rem;
-  opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;
+  opacity:0;transform:translateY(30px);transition: opacity .7s ease,transform .7s ease;
 }
 .timeline-dot{
   position:absolute;left:50%;top:.5rem;width:12px;height:12px;border-radius:50%;
   border:2px solid var(--gold);background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
-  box-shadow:0 0 12px rgba(255,217,122,.4);transition:background .3s;
+  box-shadow:0 0 12px rgba(255,217,122,.4);transition: background .3s;
 }
 .timeline-node.visible .timeline-dot{background:var(--gold)}
 .timeline-card{
@@ -176,18 +176,18 @@ body{
   text-align:center;border-radius:18px;
   background:linear-gradient(135deg,rgba(36,23,38,.94),rgba(58,36,64,.86));
   border:1px solid var(--glass-border);box-shadow:0 0 30px rgba(201,160,255,.06);
-  opacity:0;transform:translateY(24px);transition:opacity .8s ease,transform .8s ease;
+  opacity:0;transform:translateY(24px);transition: opacity .8s ease,transform .8s ease;
 }
 .timeline-growth.visible{opacity:1;transform:translateY(0)}
 .growth-frame{
   width:260px;height:330px;margin:0 auto 1rem;position:relative;cursor:pointer;user-select:none;
   border-radius:14px;overflow:hidden;border:1px solid var(--glass-border2);
   background:linear-gradient(165deg,rgba(125,211,252,.08),rgba(255,122,168,.08));
-  transition:box-shadow .3s ease;
+  transition: box-shadow .3s ease;
 }
 .growth-frame:hover{box-shadow:0 0 26px rgba(255,217,122,.22)}
 .growth-frame:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
-.growth-frame svg,.growth-frame img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;object-position:center;transition:opacity .5s ease}
+.growth-frame svg,.growth-frame img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;object-position:center;transition: opacity .5s ease}
 .growth-frame .gf-grown{opacity:0}
 .timeline-growth.grown .gf-young{opacity:0}
 .timeline-growth.grown .gf-grown{opacity:1}
@@ -201,32 +201,32 @@ body{
   
   border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
   box-shadow:0 0 20px rgba(201,160,255,.04);
-  transition:transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
+  transition: transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
 }
 .quote-card:hover{transform:translateY(-3px);box-shadow:0 0 30px rgba(255,217,122,.14),0 8px 30px rgba(0,0,0,.2)}
 .quote-card::after{
   content:'';position:absolute;top:0;left:0;right:0;bottom:0;
   background:radial-gradient(circle at 30% 30%,rgba(255,122,168,.05),transparent 60%);pointer-events:none;
 }
-.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition:opacity .4s ease}
+.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition: opacity .4s ease}
 .quote-hint{position:absolute;bottom:.6rem;right:.8rem;font-size:.65rem;color:var(--text-muted);opacity:.4}
 
 /* SECTION: ending */
 .ending-quote{
   font-size:clamp(1.1rem,3vw,1.6rem);font-weight:300;letter-spacing:.14em;cursor:pointer;user-select:none;
   color:var(--text);line-height:2;text-shadow:0 0 25px rgba(255,217,122,.25);
-  max-width:640px;opacity:0;transform:translateY(20px);transition:opacity 1.5s ease,transform 1.5s ease;
+  max-width:640px;opacity:0;transform:translateY(20px);transition: opacity var(--motion-base) ease,transform var(--motion-base) ease;
 }
 .ending-attr{
   margin-top:2.2rem;font-size:.85rem;color:var(--text-muted);letter-spacing:.25em;
-  opacity:0;transition:opacity 1.5s ease .8s;
+  opacity:0;transition: opacity var(--motion-base) ease .8s;
 }
 .back-link{
   display:inline-flex;align-items:center;gap:.5rem;margin-top:3rem;
   min-height:44px;padding:.6rem 1.6rem;border-radius:999px;text-decoration:none;
   color:var(--gold);font-size:.85rem;letter-spacing:.15em;
   border:1px solid var(--glass-border2);background:rgba(255,217,122,.05);
-  transition:background .3s ease,box-shadow .3s ease,transform .3s ease;opacity:0;
+  transition: background .3s ease,box-shadow .3s ease,transform .3s ease;opacity:0;
 }
 .back-link:hover{background:rgba(255,217,122,.12);box-shadow:0 0 24px rgba(255,217,122,.2);transform:translateY(-2px)}
 
@@ -238,7 +238,7 @@ body{
   border:1px solid var(--glass-border2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 24px rgba(255,217,122,.18);
   opacity:0;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  transition:opacity .35s ease,transform .35s ease;text-align:center;
+  transition: opacity .35s ease,transform .35s ease;text-align:center;
 }
 #grToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #grToast.golden{color:#fff3cf;border-color:rgba(255,217,122,.6);box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 36px rgba(255,217,122,.4)}
@@ -257,7 +257,7 @@ body{
 /* 色彩浸染 —— 长按她的名字时，整张画布被颜色浸透
    （她术后得来的那双眼：世界本就是一整片翻腾的颜色） */
 #paintVeil{
-  position:fixed;inset:0;z-index:9992;pointer-events:none;opacity:0;transition:opacity .6s ease;
+  position:fixed;inset:0;z-index:9992;pointer-events:none;opacity:0;transition: opacity .6s ease;
   background:
     radial-gradient(ellipse 60% 55% at 28% 30%,rgba(255,122,168,.30),transparent 62%),
     radial-gradient(ellipse 60% 55% at 72% 68%,rgba(125,211,252,.28),transparent 62%),
@@ -293,7 +293,7 @@ body{
   background:radial-gradient(circle at 34% 28%,var(--dab-hi),var(--dab) 58%,var(--dab-lo));
   box-shadow:0 5px 16px rgba(0,0,0,.38),0 0 18px var(--dab-soft);
   filter:saturate(.8) brightness(.92);transform:scale(1);
-  transition:transform .3s cubic-bezier(.34,1.56,.64,1),filter .3s ease,box-shadow .3s ease;
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1),filter .3s ease,box-shadow .3s ease;
 }
 .palette-dab:hover .dab-dot{transform:scale(1.09);filter:saturate(1) brightness(1.05)}
 .palette-dab:focus-visible{outline:none}
@@ -302,7 +302,7 @@ body{
   transform:scale(1.16);filter:saturate(1.12) brightness(1.1);
   box-shadow:0 6px 20px rgba(0,0,0,.42),0 0 24px var(--dab-soft),0 0 0 4px var(--dab-soft);
 }
-.palette-dab .dab-name{font-size:.68rem;color:var(--text-muted);letter-spacing:.14em;transition:color .3s ease}
+.palette-dab .dab-name{font-size:.68rem;color:var(--text-muted);letter-spacing:.14em;transition: color .3s ease}
 .palette-dab.active .dab-name,.palette-dab:hover .dab-name{color:var(--dab)}
 /* 五抹色的来历 —— 各自取自那一位朋友的调性 */
 /* 帕朵菲莉丝 · 暖橙：帕朵那一页还没建，取全站已有的暖橙（与科斯魔页 --dawn:#f9a152 那抹旭光橙同源）。 */
@@ -330,16 +330,16 @@ body{
   border:1px solid var(--glass-border);
   background:linear-gradient(135deg,rgba(21,14,24,.55),rgba(58,36,64,.42));
   box-shadow:0 0 26px rgba(201,160,255,.05);
-  transition:border-color .5s ease,box-shadow .5s ease;
+  transition: border-color .5s ease,box-shadow .5s ease;
 }
 .palette-line{
   font-size:clamp(.95rem,2.4vw,1.14rem);line-height:2;font-weight:300;letter-spacing:.02em;
   min-height:3.4em;display:flex;align-items:center;justify-content:center;
-  color:var(--text);transition:color .5s ease,text-shadow .5s ease;
+  color:var(--text);transition: color .5s ease,text-shadow .5s ease;
 }
 .palette-attr{
   margin-top:1rem;padding-top:.75rem;font-size:.72rem;color:var(--text-muted);letter-spacing:.14em;
-  border-top:1px solid rgba(255,255,255,.07);transition:color .5s ease,border-color .5s ease;
+  border-top:1px solid rgba(255,255,255,.07);transition: color .5s ease,border-color .5s ease;
 }
 @media(max-width:480px){.palette-stage{border-radius:26px}}
 /* JS 在加载时就按 reducedMotion 决定生成不生成 .palette-dye；但用户中途改系统偏好时这条会真生效 —— 别删 */
@@ -367,7 +367,7 @@ body{
   background:#efe6d6;   /* 画布底：暖白麻布 —— 两幅画在「还没画 / 画不了」时露出的都是它 */
   border:1px solid rgba(255,217,122,.3);
   box-shadow:0 0 26px rgba(201,160,255,.08),inset 0 0 34px rgba(0,0,0,.22);
-  transition:box-shadow .35s ease,transform .35s ease;
+  transition: box-shadow .35s ease,transform .35s ease;
   -webkit-tap-highlight-color:transparent;
 }
 .painting-frame:hover{transform:translateY(-3px);box-shadow:0 0 36px rgba(255,217,122,.24),inset 0 0 34px rgba(0,0,0,.22)}
@@ -375,13 +375,13 @@ body{
 .painting-frame svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 /* 一笔一笔显形：三层各自在自己的阶段亮起（JS 依次加 .show1/.show2/.show3），
    ⚠ opacity:0 的元素仍然会被 elementFromPoint 命中 —— 中心点命中的始终是这幅画自己，不是别处。 */
-.paint-layer{opacity:0;transition:opacity 1.15s ease}
+.paint-layer{opacity:0;transition: opacity var(--motion-quick) ease}
 .painting-frame.show1 .l1,
 .painting-frame.show2 .l2,
 .painting-frame.show3 .l3{opacity:1}
 /* 《那幅空白的画》上那层「极淡的微光」—— 点过才有，但画布**始终空白** */
 .painting-mist{
-  position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity 1.2s ease;
+  position:absolute;inset:0;pointer-events:none;opacity:0;transition: opacity var(--motion-quick) ease;
   background:radial-gradient(ellipse 62% 54% at 50% 46%,rgba(255,244,214,.34),rgba(255,244,214,.06) 62%,transparent 78%);
 }
 .painting-frame.lit .painting-mist{opacity:.5}
@@ -391,7 +391,7 @@ body{
 .painting-title{display:block;font-size:.86rem;color:var(--gold);letter-spacing:.14em}
 .painting-say{
   display:block;margin-top:.45rem;min-height:3.2em;font-size:.8rem;line-height:1.8;font-weight:300;
-  color:var(--text-dim);transition:color .5s ease;
+  color:var(--text-dim);transition: color .5s ease;
 }
 /* 同上：JS 只在加载时读一次 reducedMotion，用户中途改成减动时这条兜住 .pulse 的呼吸 —— 别删 */
 @media(prefers-reduced-motion:reduce){.painting-frame.pulse .painting-mist{animation:none;opacity:.5}}
