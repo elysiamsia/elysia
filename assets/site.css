@@ -307,13 +307,17 @@ a.signet-grid-item:hover img{opacity:1}
 }
 
 @view-transition { navigation: auto; }
+/* v2（2026-10-18）：整页「淡出上移 / 淡入上推」，比纯淡入有方向感；
+   底部返回链起名 ⇒ 它不跟着位移，像固定在页面上。 */
+@keyframes vt-out { to { opacity: 0; transform: translateY(-8px); } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(10px); } }
+.back-link { view-transition-name: back-link; }
+
 ::view-transition-old(root) {
-  animation-duration: var(--motion-mid);
-  animation-timing-function: var(--ease-soft);
+  animation: vt-out var(--motion-mid) var(--ease-soft) both;
 }
 ::view-transition-new(root) {
-  animation-duration: var(--motion-mid);
-  animation-timing-function: var(--ease-soft);
+  animation: vt-in var(--motion-mid) var(--ease-soft) both;
 }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),
