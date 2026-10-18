@@ -82,6 +82,26 @@ site.js → explore.js → bottom.js → [<!--@PAGE_INIT@--> 位置：角色模�
 4. **/v2/ 路径语义**（绝对 /assets/ ⇒ 打到生产；sw.js scope=/ ⇒ 不注册）→ 兜底：验证矩阵 + Task 11 切换后跑 SW 断言。
 5. **公共脚本顺序被改乱** → 兜底：base.njk 硬编码单一序列 + 角色模块走槽 + check_explore 的模块加载断言。
 
+## 新增决策点：head 有三种历史写法（2026-10-18 Task 9 前置调查发现）
+
+实测 12 页 `<head>` **不是同一套**（复制粘贴债的直接证据）：
+
+| 特征 | 页 |
+|---|---|
+| 标准写法（viewport 靠后、有「小花」注释、explore.css 外链） | kevin aponia eden villv kalpas su sakura mobius griseo |
+| **多一份 explore 内联样式**（同时还有外链 ⇒ 重复） | kosma |
+| **viewport 靠前 + 无小花注释 + 多一份 explore 内联** | hua pardofelis |
+
+⇒ 结论：**单一 base.njk 无法零差异复刻 12 页 head**。两条路：
+
+| 方案 | 做法 | 代价 |
+|---|---|---|
+| **A 同构优先（建议）** | 每页保留自己的 head 文件（`<key>.head.html`，其中 7 处数据值替换成占位符由 build 注入） | diff 为零；head 字面量仍按页维护，留到 M1.5 统一 |
+| B 现在就统一 | 12 页统一成标准 head（顺手去掉重复的 explore 内联） | 6 页出现**有意差异**，需逐条解释 + 重跑全套件 + 目视复核；省掉一份重复 CSS |
+
+> 建议 A：M1 的红线是「同构、diff 为零」，统一 head 属于**改版**，应单独做（M1.5），
+> 那时模板已在手，统一 = 改一次 base + 删 `headVariant` 数据，成本极低且可独立验收。
+
 ## 拍板记录（2026-10-18 · Task 7 盘点后）
 
 | # | 事项 | 决定 |
