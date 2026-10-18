@@ -94,6 +94,40 @@
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
 
 
+### 2.3 最近一轮（2026-10-18）：方案 B —— **统一 12 页 head**（改版，独立验收）+ 修掉工具串台
+
+主人选 B（现在就收敛）。顺序调整为「**先改版、后模板化**」：这样模板化那一步仍能做到 diff 为零。
+
+## 一、统一了什么
+
+| 项 | 结果 |
+|---|---|
+| head 残余模板 | **12 页收敛为 1 种**（`theme-color` 一行是唯一差异：10 页有、hua/pardofelis 本来没有 ⇒ base 用条件渲染） |
+| 被改写 | 6 页：sakura kosma mobius griseo hua pardofelis（注释/标签顺序 + hua/pardofelis 的结构性统一） |
+| 零变化 | 其余 6 页（kevin aponia eden villv kalpas su） |
+
+**数据保全（逐项比对改前备份）**：title / description / **og:description** / **og:image** / theme-color / canonical / 面包屑短名 —— **12 页全部一致，无丢失** ✅
+
+> ⚠ 过程中被我自己的粗心坑了两次，都记下来：
+> 1. 第一版只替换了 `<title>` 与 meta，漏了 **`og:title` 的另一种格式**（致X — elysiad.top）和 **JSON-LD 的 `"description"`** ⇒ 数据被写回一半；
+> 2. hua/pardofelis 的 **og:description 是长文案、og:image 是专属图（og-hua.jpg / og-pardo.jpg）**，若按统一值覆盖就是**静默降级** ⇒ 三者已全部改成数据。
+
+## 二、验收（B 方案要求）
+
+| 检查 | 结果 |
+|---|---|
+| hua / pardofelis `check_explore` | **各 29/29 全过** ✅ |
+| 6 个改动页 `mobile_sweep` 320/360/390 | **全绿** ✅ |
+| 6 个改动页 `check_page_health` | **无 FAIL** ✅ |
+| head 残余一致性 | **1 种** ✅ |
+| 数据保全 | **12 页全对** ✅ |
+
+## 三、工具修复：`check_explore` 不再硬编码调试端口
+
+`--remote-debugging-port=9322` 是写死的 ⇒ **两个 check_explore 并行会串台**，本次就制造了一批假失败（pardofelis 报 7 条、单独重跑 29/29 全过）。
+改为 `DBG_PORT = 9300 + PID % 300`，并同步改 `/json` 轮询地址（只改启动参数不够，会 StopIteration）。
+
+> 📌 纪律：**并行跑浏览器断言必须确认端口不冲突**；看到「一次挂好几条、单跑全过」，先怀疑测试环境再怀疑代码。
 ### 2.3 最近一轮（2026-10-18）：重构 M1 起步 —— Task 7/8（盘点 + 12 份数据 + 校验器）
 
 | Task | 产出 | 验收 |

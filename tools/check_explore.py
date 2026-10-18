@@ -47,6 +47,8 @@ import websocket  # 与 tools/cdp.py 同源依赖
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PORT = 8501
+# ⚠ 调试端口不能硬编码 9322：两个 check_explore 并行会串台 ⇒ 假失败（2026-10-18 亲历）
+DBG_PORT = 9300 + (os.getpid() % 300)
 EDGE = r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
 
 # 页面 → 该页声明的可发现物数量。
@@ -5001,7 +5003,7 @@ def main():
     #   对这种「加载了没加载」的断言，缓存会让它**假通过**。宁可贵一点。
     profile = tempfile.mkdtemp(prefix='edge_explore_')
     proc = subprocess.Popen([
-        EDGE, '--remote-debugging-port=9322', '--headless=new', '--disable-gpu',
+        EDGE, '--remote-debugging-port=%d' % DBG_PORT, '--headless=new', '--disable-gpu',
         '--no-first-run', '--remote-allow-origins=*',
         '--user-data-dir=' + profile, '--window-size=1280,900',
         'about:blank',
@@ -5013,7 +5015,7 @@ def main():
         targets = []
         for _ in range(20):
             try:
-                targets = json.load(urllib.request.urlopen('http://127.0.0.1:9322/json'))
+                targets = json.load(urllib.request.urlopen('http://127.0.0.1:%d' % DBG_PORT + '/json'))
                 break
             except Exception:
                 time.sleep(0.5)
