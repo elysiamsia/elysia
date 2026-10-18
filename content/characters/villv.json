@@ -3,6 +3,7 @@
   4,
   5
  ],
+ "bodyAttrs": "",
  "chibi": null,
  "endingStars": {
   "colors": {
@@ -198,5 +199,11 @@
  ],
  "shortName": "维尔薇",
  "signet": "螺旋",
- "signetImage": "/images/signet/螺旋-256.webp"
+ "signetImage": "/images/signet/螺旋-256.webp",
+ "styles": [
+  "page",
+  "signet-mark",
+  "signet-badge-css",
+  "touch-target-fix"
+ ]
 }

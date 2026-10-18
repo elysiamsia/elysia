@@ -29,6 +29,40 @@ def blocks(head):
     return out
 
 
+def scan_literal(text, start):
+    """从 text[start] 的 `{` 起扫到配对 `}`（尊重字符串/注释）。返回 (起, 止)。"""
+    depth, quote, esc, j, end = 0, None, False, start, -1
+    while j < len(text):
+        c = text[j]
+        if quote:
+            if esc:
+                esc = False
+            elif c == chr(92):
+                esc = True
+            elif c == quote:
+                quote = None
+        else:
+            if c in '"' + chr(39) + chr(96):
+                quote = c
+            elif c == '/' and j + 1 < len(text) and text[j + 1] == '/':
+                while j < len(text) and text[j] != chr(10):
+                    j += 1
+            elif c == '/' and j + 1 < len(text) and text[j + 1] == '*':
+                j += 2
+                while j + 1 < len(text) and not (text[j] == '*' and text[j + 1] == '/'):
+                    j += 1
+                j += 1
+            elif c == '{':
+                depth += 1
+            elif c == '}':
+                depth -= 1
+                if depth == 0:
+                    end = j + 1
+                    break
+        j += 1
+    return start, end
+
+
 def main():
     key = sys.argv[1]
     page_dir = os.path.join(ROOT, 'templates', 'pages')
@@ -47,20 +81,19 @@ def main():
     open(os.path.join(page_dir, key + '.page.css'), 'w', encoding='utf-8', newline='').write(page_style[0]['text'] if page_style else '')
     open(os.path.join(page_dir, key + '.page-fixes.css'), 'w', encoding='utf-8', newline='').write('\n'.join(b['text'] for b in fixes))
 
-    info = json.loads(subprocess.check_output(['node', EXTRACT, os.path.join(ROOT, key, 'index.html')]).decode('utf-8').strip().splitlines()[-1])
-    if 'span' not in info:
-        print('THEME 提取失败: %s' % info)
+    # ⚠ 用 Python 自己扫括号（node 的 span 在 JSON 形态下会差 1~2 字符，
+    #   曾导致注入后残留多余花括号、构建产物 THEME 非法 —— 2026-10-18 实测）
+    ti = body.find('var THEME')
+    if ti < 0:
+        print('body 里找不到 var THEME')
         return 1
-    a, b = info['span']
-    # span 相对整个文件；换算到 body 内偏移
-    body_start = bm.start(2)
-    ra, rb = a - body_start, b - body_start
-    if ra < 0 or rb > len(body):
-        print('THEME 跨度不在 body 内，需人工检查')
+    brace = body.find('{', ti)
+    ra, rb = scan_literal(body, brace)
+    if rb < 0:
+        print('THEME 括号不配对')
         return 1
     new_body = body[:ra] + '/*@THEME@*/' + body[rb:]
     open(os.path.join(page_dir, key + '.page.body.html'), 'w', encoding='utf-8', newline='').write(new_body)
-
     print('%s: 大块样式 %d B / 私有修复块 %d 个 / body %d B / 共享块 %s'
           % (key, len(page_style[0]['text']) if page_style else 0, len(fixes), len(new_body), [b['id'] for b in shared]))
     return 0

@@ -24,7 +24,7 @@ def main():
     bad = re.search(r'<style id="signet-badge-css">[\s\S]*?</style>', s)
     ttf = re.search(r'<style id="touch-target-fix">[\s\S]*?</style>', s)
     # touch-target-fix 属共享（决策①：全站统一，kevin/su 已补齐）⇒ 并入共享 partial
-    signet_partial = '\n'.join(x.group(0) for x in (smk, bad, ttf) if x)
+    signet_partial = ''  # 已拆分，见下方 partials
     for blk in (smk, bad, ttf):
         if blk:
             s = s.replace(blk.group(0), '', 1)
@@ -55,22 +55,26 @@ def main():
                '{{ themeColorTag | safe }}', s, count=1)
     # ⑥ 把占位插回样式区（保持顺序：page → signet-mark → badge → 私有修复）
     marker = '<!-- SECTION: styles -->'
-    styles_tail = '\n'.join(['', marker, '{{ pageStyle | safe }}', '{{ signetStyles | safe }}', '{{ pageFixes | safe }}', ''])
+    styles_tail = '\n'.join(['', marker, '{{ stylesHtml | safe }}', ''])
     if marker in s:
         s = s[:s.index(marker)] + styles_tail
     else:
         s = s + styles_tail
 
     base = ('<!DOCTYPE html>' + chr(10) + '<html lang="zh-CN">' + chr(10) + '<head>' + s + '</head>' + chr(10)
-            + '<body' + body_attrs + '>' + '{{ pageBody | safe }}' + '</body>' + chr(10) + '</html>' + chr(10))
+            + '<body{{ bodyAttrs | safe }}>' + '{{ pageBody | safe }}' + '</body>' + chr(10) + '</html>' + chr(10))
     os.makedirs(os.path.join(ROOT, 'templates'), exist_ok=True)
     open(os.path.join(ROOT, 'templates', 'base.njk'), 'w', encoding='utf-8', newline='').write(base)
     # 共享样式 partial：把刻印名/图变成变量
-    signet_partial = signet_partial.replace('天慧-256.webp', '{{ character.signetImage | replace("/images/signet/", "") }}')
+    # 三个共享块各自一个 partial（含 <style id> 标签本身），由 build 按每页令牌顺序拼接
     os.makedirs(os.path.join(ROOT, 'templates', 'partials'), exist_ok=True)
-    open(os.path.join(ROOT, 'templates', 'partials', 'signet.njk'), 'w', encoding='utf-8', newline='').write(signet_partial)
+    for blk, name in ((smk, 'signet-mark'), (bad, 'signet-badge'), (ttf, 'touch-target')):
+        if not blk:
+            continue
+        txt = blk.group(0).replace('天慧-256.webp', '{{ character.signetImage | replace("/images/signet/", "") }}')
+        open(os.path.join(ROOT, 'templates', 'partials', name + '.njk'), 'w', encoding='utf-8', newline='').write(txt)
     open(os.path.join(ROOT, 'templates', 'pages', SRC + '.page-fixes.css'), 'w', encoding='utf-8', newline='').write('\n'.join(fixed))
-    print('base.njk %d B；partials/signet.njk %d B；su 私有修复块 %d 个' % (len(base), len(signet_partial), len(fixed)))
+    print('base.njk %d B；共享 partial 三个；su 私有修复块 %d 个' % (len(base), len(fixed)))
     print('base 里剩余 su 专属字样：天慧=%d 致苏=%d /su/=%d' % (base.count('天慧'), base.count('致苏'), base.count('/su/')))
 
 

@@ -1,0 +1,399 @@
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-abyss:#080c0f;--bg-deep:#0d1418;--bg-ink:#12211f;--bg-mid:#1a2f2b;
+  --acc:#8fb8ad;--acc-deep:#5c8a7e;--acc2:#cfd8d3;
+  --cinnabar:#c8402f;--moon:#f2ede2;--gold:#c9a86a;
+  --text:#e9efec;--text-dim:#a9bab3;--text-muted:#71847d;
+  --glass-bg:rgba(143,184,173,.05);--glass-border:rgba(143,184,173,.16);
+  --glass-bg2:rgba(201,168,106,.04);--glass-border2:rgba(201,168,106,.12);
+
+  /* 生日倒计时的配色覆盖（assets/explore.css 里那组 --bday-*）。
+     ⚠ 一个字都不新发明：全部从上面这套「太虚山的墨」里取 ——
+       她这一页是灰青绿（--acc）、丹砂（--cinnabar）加一抹金（--gold）。
+       不覆盖的话它会吃共享层的默认值，那是**首页爱莉希雅的粉紫**，串页。
+     ⚠ 三世切换（body.life-*）只换 --acc / --bg-* 那几支，**不换这一组** ——
+       胶囊跟着「她这一页」走，不跟着某一世走。 */
+  --bday-ink:#e9efec;                                  /* = --text */
+  --bday-accent:#8fb8ad;                               /* = --acc，圆点与强调 */
+  --bday-title:#a9bab3;                                /* = --text-dim */
+  --bday-date:#cfd8d3;                                 /* = --acc2 */
+  --bday-num:#c9a86a;                                  /* = --gold，倒计时那四位数 */
+  --bday-unit:#71847d;                                 /* = --text-muted */
+  --bday-egg-bg:linear-gradient(135deg,rgba(143,184,173,.16),rgba(201,168,106,.10));
+  --bday-egg-border:rgba(143,184,173,.25);
+  --bday-egg-glow:rgba(143,184,173,.18);
+  --bday-egg-glow-hover:rgba(143,184,173,.3);
+  --bday-panel-bg:linear-gradient(150deg,rgba(8,12,15,.92),rgba(26,47,43,.92));
+  --bday-panel-border:rgba(143,184,173,.22);
+  --bday-panel-glow:rgba(143,184,173,.12);
+  --bday-cell-bg:rgba(143,184,173,.07);
+  --bday-cell-border:rgba(143,184,173,.14);
+  --bday-src:rgba(169,186,179,.55);
+}
+body.life-chiyuan{
+  --bg-abyss:#100806;--bg-deep:#1a0e0a;--bg-ink:#26140e;--bg-mid:#331b12;
+  --acc:#d05a42;--acc-deep:#9c3a28;--acc2:#e8d9c0;
+  --glass-bg:rgba(208,90,66,.06);--glass-border:rgba(232,217,192,.16);
+  --glass-bg2:rgba(232,217,192,.05);--glass-border2:rgba(232,217,192,.14);
+}
+body.life-fuhua{
+  --bg-abyss:#080a12;--bg-deep:#0d1120;--bg-ink:#131a2e;--bg-mid:#1c2740;
+  --acc:#c9a86a;--acc-deep:#9a7c45;--acc2:#7fa8c9;
+  --glass-bg:rgba(201,168,106,.05);--glass-border:rgba(127,168,201,.16);
+  --glass-bg2:rgba(127,168,201,.05);--glass-border2:rgba(201,168,106,.12);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg-abyss);color:var(--text);overflow-x:hidden;line-height:1.7;
+  transition:background 1.1s ease,color 1.1s ease;
+}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg-abyss)}
+::-webkit-scrollbar-thumb{background:var(--acc-deep);border-radius:3px}
+
+#inkCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+
+/* SECTION: opening */
+.section-opening{
+  position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:2rem;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 6%,rgba(143,184,173,.08),transparent 70%),
+    linear-gradient(180deg,var(--bg-abyss) 0%,var(--bg-deep) 32%,var(--bg-ink) 62%,var(--bg-deep) 100%);
+  transition:background 1.1s ease;
+}
+.opening-ornament{font-size:1rem;color:var(--acc);letter-spacing:.7em;opacity:0;transition:opacity 1.2s ease;margin-bottom:1.3rem}
+.opening-title{
+  font-size:clamp(1.45rem,4.4vw,2.7rem);font-weight:300;letter-spacing:.14em;
+  color:var(--moon);text-shadow:0 0 30px rgba(143,184,173,.3);
+  min-height:1.8em;max-width:860px;
+}
+.typing-cursor{display:inline-block;font-weight:100;color:var(--acc);animation:blink-cursor .8s step-end infinite}
+.typing-cursor.hidden{display:none}
+@keyframes blink-cursor{0%,100%{opacity:1}50%{opacity:0}}
+.opening-subtitle{
+  font-size:clamp(.9rem,2.5vw,1.2rem);color:var(--text-dim);letter-spacing:.4em;
+  margin-top:1.5rem;opacity:0;transition:opacity 1.5s ease;
+}
+.opening-subtitle.visible{opacity:1}
+.opening-hint{font-size:.72rem;color:var(--text-muted);letter-spacing:.12em;margin-top:1rem;opacity:0;transition:opacity 1.5s ease 1s}
+.opening-hint.visible{opacity:.7}
+.scroll-hint{
+  position:absolute;bottom:calc(2.5rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  opacity:0;transition:opacity 1s ease .5s;
+}
+.scroll-hint.visible{opacity:.6}
+.scroll-hint span{font-size:.75rem;color:var(--text-muted);letter-spacing:.2em}
+.scroll-chevron{
+  width:20px;height:20px;border-right:2px solid var(--acc);border-bottom:2px solid var(--acc);
+  transform:rotate(45deg);animation:chevron-bounce 2.2s ease-in-out infinite;
+}
+@keyframes chevron-bounce{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(6px)}}
+
+/* SECTION: common section */
+.content-section{
+  position:relative;z-index:2;padding:6rem 1.5rem;
+  background:linear-gradient(180deg,transparent 0%,rgba(8,12,15,.28) 20%,rgba(8,12,15,.28) 80%,transparent 100%);
+}
+.section-title{
+  font-size:clamp(1.5rem,4vw,2.2rem);font-weight:300;letter-spacing:.26em;cursor:pointer;user-select:none;
+  color:var(--acc2);text-shadow:0 0 20px rgba(143,184,173,.22);transition:text-shadow .3s ease,color 1.1s ease;
+}
+.section-title:hover{text-shadow:0 0 30px rgba(143,184,173,.45)}
+.section-title-line{display:block;width:60px;height:1px;margin:1rem auto 0;background:linear-gradient(90deg,transparent,var(--acc),transparent)}
+.section-title-mark{display:inline-block;font-size:.72em;color:var(--acc);margin:0 .9rem;opacity:.9}
+
+/* SECTION: profile */
+.profile-card{
+  max-width:720px;margin:0 auto;padding:clamp(2rem,5vw,3rem);
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  
+  border:1px solid var(--glass-border);border-radius:24px;
+  box-shadow:0 0 50px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.05);
+  position:relative;overflow:hidden;transition:background 1.1s ease,border-color 1.1s ease;
+}
+.profile-card-inner{position:relative;z-index:1}
+.profile-name{
+  font-size:clamp(2rem,5.5vw,3rem);font-weight:300;letter-spacing:.3em;text-indent:.3em;cursor:pointer;user-select:none;
+  color:var(--moon);text-align:center;margin-bottom:.2em;text-shadow:0 0 26px rgba(143,184,173,.3);
+}
+.profile-name-en{
+  font-size:clamp(.85rem,1.9vw,1.05rem);font-weight:300;letter-spacing:.5em;text-indent:.5em;
+  color:var(--acc);text-align:center;margin-bottom:2rem;filter:brightness(1.15);
+}
+.profile-divider{width:100%;height:1px;margin:1.5rem 0;background:linear-gradient(90deg,transparent,var(--glass-border),var(--glass-border2),transparent)}
+.profile-grid{display:grid;grid-template-columns:auto 1fr;gap:.6rem 1.5rem;font-size:.92rem}
+.profile-label{color:var(--text-muted);white-space:nowrap;font-weight:400}
+.profile-value{color:var(--text);font-weight:300}
+.profile-value .highlight{color:var(--acc);font-weight:400}
+.profile-value .cinnabar{color:#e0705a;font-weight:400}
+.profile-value .goldc{color:var(--gold);font-weight:400}
+.profile-desc{
+  margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--glass-border);
+  font-size:.9rem;color:var(--text-dim);line-height:1.9;font-weight:300;
+}
+
+/* SECTION: lives (三世) */
+.lives-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.3rem;max-width:1020px;margin:0 auto}
+.life-card{
+  padding:1.6rem 1.5rem;cursor:pointer;user-select:none;position:relative;overflow:hidden;
+  background:linear-gradient(160deg,var(--glass-bg),var(--glass-bg2));
+  
+  border:1px solid var(--glass-border);border-radius:20px;
+  transition:transform .35s ease,box-shadow .35s ease,border-color .5s ease;
+  opacity:0;transform:translateY(26px);
+}
+.life-card.visible{opacity:1;transform:translateY(0)}
+.life-card:hover{transform:translateY(-4px)}
+.life-card.active{border-color:var(--lc);box-shadow:0 0 30px var(--lcg)}
+.life-era{font-size:.68rem;letter-spacing:.3em;color:var(--text-muted);margin-bottom:.5rem}
+.life-title{font-size:1.35rem;font-weight:400;letter-spacing:.14em;color:var(--lc,var(--acc));margin-bottom:.2rem}
+.life-sub{font-size:.78rem;color:var(--text-dim);letter-spacing:.08em;margin-bottom:.8rem}
+.life-detail{
+  max-height:0;overflow:hidden;opacity:0;font-size:.82rem;color:var(--text-dim);line-height:1.9;font-weight:300;
+  transition:max-height .5s ease,opacity .5s ease;
+}
+.life-card.active .life-detail{max-height:320px;opacity:1}
+.life-swatch{
+  position:absolute;top:1.1rem;right:1.1rem;width:14px;height:14px;border-radius:50%;
+  background:var(--lc);box-shadow:0 0 10px var(--lcg);
+}
+.lives-note{text-align:center;font-size:.75rem;color:var(--text-muted);letter-spacing:.12em;margin-top:1.6rem;opacity:.8}
+
+/* SECTION: timeline */
+.timeline{position:relative;max-width:800px;margin:0 auto;padding:2rem 0}
+.timeline-line{
+  position:absolute;left:50%;top:0;bottom:0;width:1px;
+  background:linear-gradient(180deg,transparent,var(--acc-deep) 10%,var(--acc) 50%,var(--acc-deep) 90%,transparent);
+  transform:translateX(-50%);transition:background 1.1s ease;
+}
+.timeline-node{
+  position:relative;display:flex;align-items:flex-start;margin-bottom:3rem;
+  opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;
+}
+.timeline-node.visible{opacity:1;transform:translateY(0)}
+.timeline-node:nth-child(odd){flex-direction:row}
+.timeline-node:nth-child(even){flex-direction:row-reverse}
+.timeline-dot{
+  position:absolute;left:50%;top:.5rem;width:12px;height:12px;border-radius:50%;
+  border:2px solid var(--acc);background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
+  box-shadow:0 0 12px rgba(143,184,173,.4);transition:background .3s;
+}
+.timeline-node.visible .timeline-dot{background:var(--acc)}
+.timeline-card{
+  width:calc(50% - 2.5rem);padding:1.2rem 1.5rem;cursor:pointer;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  
+  border:1px solid var(--glass-border);border-radius:16px;transition:box-shadow .3s ease;
+}
+.timeline-card:hover{box-shadow:0 0 26px rgba(143,184,173,.12)}
+.timeline-node:nth-child(odd) .timeline-card{margin-right:auto}
+.timeline-node:nth-child(even) .timeline-card{margin-left:auto}
+.timeline-card h3{font-size:1.05rem;font-weight:400;color:var(--acc2);margin-bottom:.5rem;letter-spacing:.12em}
+.timeline-card p{font-size:.85rem;color:var(--text-dim);line-height:1.8;font-weight:300}
+.timeline-card .sword-flash{
+  position:absolute;top:0;bottom:0;width:38%;pointer-events:none;opacity:0;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.16),transparent);
+}
+.timeline-card .sword-flash.go{animation:sword-sweep .55s ease}
+@keyframes sword-sweep{0%{left:-45%;opacity:1}100%{left:110%;opacity:0}}
+
+/* SECTION: quotes */
+.quote-card{
+  padding:1.5rem;min-height:140px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  
+  border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
+  transition:transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
+}
+.quote-card:hover{transform:translateY(-3px);box-shadow:0 0 28px rgba(143,184,173,.13)}
+.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition:opacity .4s ease}
+.quote-text.fading{opacity:0}
+.quote-hint{position:absolute;bottom:.6rem;right:.8rem;font-size:.65rem;color:var(--text-muted);opacity:.4}
+
+/* SECTION: ending */
+.ending-quote{
+  font-size:clamp(1.05rem,3vw,1.5rem);font-weight:300;letter-spacing:.1em;cursor:pointer;user-select:none;
+  color:var(--moon);line-height:2.1;text-shadow:0 0 25px rgba(143,184,173,.25);
+  max-width:660px;
+}
+.ending-sub{
+  margin-top:1.6rem;font-size:.84rem;color:var(--text-dim);letter-spacing:.06em;line-height:2;
+  max-width:580px;opacity:0;transition:opacity 1s ease;min-height:1.4em;
+}
+.ending-sub.visible{opacity:.9}
+.ending-sub .src{display:block;font-size:.68rem;color:var(--text-muted);margin-top:.4rem;letter-spacing:.08em}
+/* 返回按钮 —— ⚠ 2026-10-08 修：本页原来**只**写了颜色与边框，而共享层 `site.css`
+   只提供 `.back-link.visible` 的淡入；圆角 / 内距 / 44px 最小点击高度**各页自己写**
+   （其余 6 页都写了完整那一套）。漏了那套，它就渲染成「一条带描边的纯文本」，
+   看着不像能点。 */
+.back-link{
+  display:inline-flex;align-items:center;gap:.5rem;margin-top:3rem;
+  min-height:44px;padding:.6rem 1.6rem;border-radius:999px;text-decoration:none;
+  color:var(--acc);font-size:.85rem;letter-spacing:.15em;
+  border:1px solid var(--glass-border);background:rgba(143,184,173,.05);
+  transition:background .3s ease,box-shadow .3s ease,transform .3s ease;opacity:0;
+}
+.back-link:hover{background:rgba(143,184,173,.12);box-shadow:0 0 24px rgba(143,184,173,.2);transform:translateY(-2px)}
+
+/* SECTION: feather fab (羽渡尘彩蛋) */
+#featherFab{
+  position:fixed;left:1.2rem;bottom:1.2rem;z-index:9990;
+  width:52px;height:52px;border-radius:50%;cursor:pointer;font-size:1.4rem;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(150deg,rgba(13,20,24,.92),rgba(26,47,43,.92));
+  border:1px solid var(--glass-border);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  box-shadow:0 0 18px rgba(143,184,173,.18);
+  transition:transform .25s ease,box-shadow .25s ease;
+  animation:fab-breathe 3.4s ease-in-out infinite;
+}
+#featherFab:hover{transform:scale(1.1) rotate(8deg);box-shadow:0 0 28px rgba(143,184,173,.35)}
+@keyframes fab-breathe{0%,100%{box-shadow:0 0 14px rgba(143,184,173,.14)}50%{box-shadow:0 0 24px rgba(143,184,173,.3)}}
+
+/* SECTION: burning memory effect */
+body.burning .timeline-card p,
+body.burning .quote-text,
+body.burning .profile-value,
+body.burning .life-detail,
+body.burning .profile-desc{
+  filter:blur(2.4px);opacity:.35;transition:filter .9s ease,opacity .9s ease;
+}
+body.burning .section-title{opacity:.45;transition:opacity .6s ease}
+
+/* SECTION: ink ripple */
+.ink-ring{
+  position:fixed;pointer-events:none;z-index:9993;border-radius:50%;
+  border:1.5px solid rgba(143,184,173,.55);
+  transform:translate(-50%,-50%) scale(0);opacity:.85;
+  animation:ink-spread .85s cubic-bezier(.22,.61,.36,1) forwards;
+}
+@keyframes ink-spread{to{transform:translate(-50%,-50%) scale(1);opacity:0}}
+
+/* SECTION: toast */
+#huaToast{
+  position:fixed;left:50%;bottom:15%;transform:translateX(-50%) translateY(10px);z-index:9996;
+  max-width:88vw;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;letter-spacing:.06em;
+  color:var(--text);background:linear-gradient(135deg,rgba(13,20,24,.95),rgba(26,47,43,.95));
+  border:1px solid var(--glass-border);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 6px 30px rgba(0,0,0,.5),0 0 22px rgba(143,184,173,.16);
+  opacity:0;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:opacity .35s ease,transform .35s ease;text-align:center;
+}
+#huaToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#huaToast.golden{color:#f5e6c8;border-color:rgba(201,168,106,.55);box-shadow:0 6px 30px rgba(0,0,0,.5),0 0 30px rgba(201,168,106,.3)}
+@media(max-width:600px){#huaToast{white-space:normal;line-height:1.6}}
+
+/* SECTION: game card（下方区块里那张卡）
+   ⚠ 这几条**留在本页**、不进共享层 —— spec §3.1：「游戏是最各写各的部分」。 */
+.game-card{
+  max-width:26rem;margin:0 auto;padding:1.6rem 1.5rem;border-radius:16px;
+  background:rgba(255,255,255,.03);border:1px solid var(--glass-border);
+}
+.game-card-title{margin:0 0 .6rem;font-size:1.05rem;letter-spacing:.1em;color:var(--acc)}
+.game-card-hint{margin:0 0 1.2rem;font-size:.8rem;line-height:1.9;color:var(--text-muted)}
+.game-card-start{
+  min-height:44px;padding:.6rem 1.8rem;border-radius:999px;cursor:pointer;font-family:inherit;
+  font-size:.85rem;letter-spacing:.14em;color:var(--text);
+  background:rgba(143,184,173,.12);border:1px solid var(--glass-border);
+  transition:background .25s ease,box-shadow .25s ease;
+}
+.game-card-start:hover{background:rgba(143,184,173,.22);box-shadow:0 0 20px rgba(143,184,173,.25)}
+
+/* SECTION: game overlay (木人桩) */
+#huaGameOverlay{
+  position:fixed;inset:0;z-index:9997;display:none;align-items:center;justify-content:center;flex-direction:column;gap:.9rem;
+  background:rgba(4,8,6,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:1rem;
+}
+#huaGameOverlay.on{display:flex}
+/* 退出键「下山」在**遮罩右上角**（2026-10-08 挪的）——
+   ⚠ 它原来待在九宫格正下方约 50px 处，而九宫格就是**玩家连点的那一片**：
+     手指落低一点就误触退出（樱 / 梅比乌斯两页踩过同一个坑，见 HANDOVER §5.2）。
+     判据是「退出键离操作区 ≥ 100px」。 */
+#hgClose{
+  position:absolute;top:calc(1rem + env(safe-area-inset-top));right:1rem;z-index:1;
+  min-height:44px;padding:.5rem 1.2rem;border-radius:999px;cursor:pointer;font-family:inherit;
+  font-size:.78rem;letter-spacing:.14em;color:var(--text);
+  background:rgba(143,184,173,.1);border:1px solid var(--glass-border);transition:background .25s ease;
+}
+#hgClose:hover{background:rgba(143,184,173,.2)}
+.hg-head{display:flex;gap:1.4rem;color:var(--text-dim);font-size:.85rem;letter-spacing:.08em;font-variant-numeric:tabular-nums}
+.hg-head b{color:var(--gold)}
+.hg-grid{
+  display:grid;grid-template-columns:repeat(3,minmax(72px,20vw));grid-auto-rows:minmax(72px,20vw);
+  gap:10px;max-width:340px;
+}
+.hg-hole{
+  border-radius:14px;border:1px solid rgba(143,184,173,.2);background:rgba(18,33,31,.6);
+  display:flex;align-items:center;justify-content:center;font-size:1.7rem;cursor:pointer;user-select:none;
+  transition:transform .08s ease;position:relative;
+}
+.hg-hole:active{transform:scale(.95)}
+.hg-hole .dummy{
+  opacity:0;transform:translateY(14px) scale(.7);transition:opacity .16s ease,transform .16s ease;
+  display:flex;align-items:center;justify-content:center;
+  width:72%;height:72%;border-radius:50%;font-size:1.2rem;font-weight:600;letter-spacing:0;
+}
+.hg-hole.up .dummy{opacity:1;transform:translateY(0) scale(1)}
+.hg-hole.up .dummy.wood{background:radial-gradient(circle at 34% 30%,#a3793f,#6e4d24);color:#3a2810;border:2px solid #4a3316;box-shadow:0 0 14px rgba(163,121,63,.4)}
+.hg-hole.up .dummy.gold{background:radial-gradient(circle at 34% 30%,#f0d494,#c9a86a);color:#5a4416;border:2px solid #9a7c45;box-shadow:0 0 18px rgba(240,212,148,.55)}
+.hg-msg{color:var(--acc2);font-size:.88rem;letter-spacing:.06em;min-height:1.6em;text-align:center}
+.hg-btns{display:flex;gap:.8rem}
+.hg-btn{
+  min-height:44px;padding:.55rem 1.5rem;border-radius:999px;cursor:pointer;font-family:inherit;
+  border:1px solid var(--glass-border);background:rgba(143,184,173,.1);color:var(--acc2);
+  font-size:.85rem;letter-spacing:.12em;transition:background .3s,box-shadow .3s;
+}
+.hg-btn:hover{background:rgba(143,184,173,.2);box-shadow:0 0 16px rgba(143,184,173,.22)}
+.hg-btn.ghost{color:var(--text-muted);background:transparent}
+.hg-pop{
+  position:absolute;left:50%;top:10%;transform:translateX(-50%);pointer-events:none;
+  font-size:.85rem;font-weight:600;color:var(--gold);text-shadow:0 0 8px rgba(201,168,106,.6);
+  animation:hg-rise .7s ease-out forwards;white-space:nowrap;
+}
+.hg-pop.bad{color:#e05a45;text-shadow:0 0 8px rgba(224,90,69,.6)}
+@keyframes hg-rise{0%{opacity:0;transform:translate(-50%,4px)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-30px)}}
+
+/* 横屏（矮屏）—— 九宫格一格的边长是 `20vw`，横屏 640 宽时涨到 128px，
+   三行就是 404px，而横屏只有 360px 高 ⇒ **上下都被切**，而 `fixed` 遮罩没有
+   滚动条、切掉的够不着（梅比乌斯那页踩过一模一样的坑，见 HANDOVER §5.2）。
+   改成横排：状态 / 台词 / 按钮一列，九宫格一列，格子边长改按**视口高度**算。
+   ⚠ 选择器必须带 `.on` —— 基线的 `#huaGameOverlay.on{display:flex}` 特异性更高，
+     只写 `#huaGameOverlay{display:grid}` 会被它压掉。 */
+@media (max-height:520px) and (orientation:landscape){
+  #huaGameOverlay.on{
+    display:grid;justify-content:center;gap:.5rem 1.2rem;
+    grid-template-columns:auto auto;
+    grid-template-areas:"head grid" "msg grid" "btns grid";
+    align-content:center;
+  }
+  .hg-head{grid-area:head;flex-wrap:wrap;justify-content:center;font-size:.78rem;gap:.9rem}
+  .hg-grid{grid-area:grid;grid-template-columns:repeat(3,minmax(46px,12vh));grid-auto-rows:minmax(46px,12vh)}
+  .hg-msg{grid-area:msg;max-width:14rem;font-size:.78rem}
+  .hg-btns{grid-area:btns;justify-content:center}
+}
+
+/* SECTION: responsive */
+@media(max-width:768px){
+  .timeline-line{left:1.5rem}
+  .timeline-node,.timeline-node:nth-child(odd),.timeline-node:nth-child(even){flex-direction:row}
+  .timeline-dot{left:1.5rem}
+  .timeline-card,.timeline-node:nth-child(odd) .timeline-card,.timeline-node:nth-child(even) .timeline-card{
+    width:calc(100% - 3.5rem);margin-left:3.5rem;margin-right:0;
+  }
+  .quotes-grid{grid-template-columns:1fr}
+  .lives-grid{grid-template-columns:1fr}
+  .profile-grid{grid-template-columns:auto 1fr;gap:.5rem 1rem;font-size:.85rem}
+}
+@media(max-width:480px){
+  .content-section{padding:4rem 1rem}
+  .profile-card{padding:1.5rem}
+  .quote-card{min-height:120px;padding:1.2rem}
+  #featherFab{width:46px;height:46px;font-size:1.2rem;left:.8rem;bottom:.8rem}
+}
+@media(prefers-reduced-motion:reduce){
+  .life-card,.timeline-node{transition:none;opacity:1;transform:none}
+}
+</style>

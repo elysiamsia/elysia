@@ -59,9 +59,7 @@
 <title>{{ meta.title }}</title>
 
 <!-- SECTION: styles -->
-{{ pageStyle | safe }}
-{{ signetStyles | safe }}
-{{ pageFixes | safe }}
+{{ stylesHtml | safe }}
 </head>
-<body>{{ pageBody | safe }}</body>
+<body{{ bodyAttrs | safe }}>{{ pageBody | safe }}</body>
 </html>

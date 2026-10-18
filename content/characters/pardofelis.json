@@ -3,6 +3,7 @@
   6,
   11
  ],
+ "bodyAttrs": "",
  "chibi": null,
  "endingStars": {
   "colors": {
@@ -213,6 +214,13 @@
  "shortName": "帕朵菲莉丝",
  "signet": "空梦",
  "signetImage": "/images/signet/空梦-256.webp",
+ "styles": [
+  "page",
+  "signet-mark",
+  "signet-badge-css",
+  "touch-target-fix",
+  "narrow-320-fix"
+ ],
  "typewriter": {
   "delay": 130,
   "hintDelay": 1200,

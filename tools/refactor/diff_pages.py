@@ -131,35 +131,15 @@ def load(path, allow_theme):
     text = raw.decode('utf-8', 'replace')
     theme_hash = None
     if allow_theme:
+        # 只用 Python 自行剥离（node 侧的 span 在 JSON 形态下会差字符，已废弃不用）
         text, _lit = strip_theme(text)
         info = extract(path)
-        if info and 'span' in info:
-            a, b = info['span']
-            text = text[:a] + '/*__THEME_NORMALIZED__*/' + text[b:]
+        if info:
             theme_hash = info.get('hash')
     parser = Tok()
     parser.feed(text)
     parser.close()
     return parser.tokens, theme_hash
-
-
-MARK = '/*__THEME_NORMALIZED__*/'
-
-
-def normalize_theme_tokens(tokens):
-    """把「含 THEME 占位符」的整条 token 归一，并返回去掉占位符后的残余文本（用于防掩盖）。
-    为什么需要：span 边界在 JS 字面量 vs JSON 上可能差几个字符（实测差 2），
-    导致占位符落点不同；但两侧 THEME 的规范化 hash 已证明语义相等。
-    """
-    out, residuals = [], []
-    for t in tokens:
-        if MARK in t:
-            out.append('<THEME-SCRIPT>')
-            residuals.append(t.replace(MARK, ''))
-        else:
-            out.append(t)
-    return out, residuals
-
 
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
@@ -177,15 +157,8 @@ def main():
     old_tokens, old_hash = load(old_path, allow)
     new_tokens, new_hash = load(new_path, allow)
 
+    # 豁免判定：两侧 THEME 的规范化 hash 相等 ⇒ 已在 load() 里用文本哨兵抹平，可直接比。
     exempted = bool(allow and old_hash and new_hash and old_hash == new_hash)
-    if exempted:
-        # 归一化 THEME 所在脚本 token；同时要求「去掉 THEME 后的残余」两侧一致，防止掩盖其他差异
-        a_norm, a_res = normalize_theme_tokens(old_tokens)
-        b_norm, b_res = normalize_theme_tokens(new_tokens)
-        if sorted(a_res) != sorted(b_res):
-            exempted = False
-        else:
-            old_tokens, new_tokens = a_norm, b_norm
     if allow and not exempted:
         old_tokens, _ = load(old_path, False)
         new_tokens, _ = load(new_path, False)

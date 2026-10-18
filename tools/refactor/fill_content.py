@@ -55,6 +55,12 @@ def main():
         od = re.search(r'<meta property="og:description" content="([^"]*)"', html)
         oi = re.search(r'<meta property="og:image" content="([^"]*)"', html)
         scripts = [os.path.basename(x) for x in re.findall(r'<script src="([^"]+)"', html)]
+        hm = re.search(r'<head[^>]*>([\s\S]*?)</head>', html, re.I)
+        head = hm.group(1) if hm else ''
+        styles_tokens = []
+        for sm2 in re.finditer(r'<style([^>]*)>', head):
+            sid = re.search(r'id="([^"]+)"', sm2.group(1))
+            styles_tokens.append(sid.group(1) if sid else 'page')
 
         full = None
         for h in heroes:
@@ -77,6 +83,9 @@ def main():
                          'canonical': (cm.group(1) if cm else None)}
         draft['scripts'] = scripts
         draft['chibi'] = None
+        draft['styles'] = styles_tokens
+        bm2 = re.search(r'<body([^>]*)>', html, re.I)
+        draft['bodyAttrs'] = (bm2.group(1) if bm2 else '')
         with open(dp, 'w', encoding='utf-8') as f:
             json.dump(draft, f, ensure_ascii=False, indent=1, sort_keys=True)
             f.write(chr(10))

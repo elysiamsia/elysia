@@ -3,6 +3,7 @@
   11,
   21
  ],
+ "bodyAttrs": "",
  "chibi": null,
  "endingStars": {
   "colors": {
@@ -200,5 +201,12 @@
  ],
  "shortName": "格蕾修",
  "signet": "繁星",
- "signetImage": "/images/signet/繁星-256.webp"
+ "signetImage": "/images/signet/繁星-256.webp",
+ "styles": [
+  "page",
+  "signet-mark",
+  "signet-badge-css",
+  "mobile-ovf-fix",
+  "touch-target-fix"
+ ]
 }

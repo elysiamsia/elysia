@@ -1,0 +1,394 @@
+<style>
+:root{
+  --bg-abyss:#04100b;--bg-deep:#071a12;--bg-lab:#0c2a1c;--bg-mid:#123a26;
+  --serpent:#3ddc84;--serpent-deep:#1fa860;--serpent-dark:#0e5c36;
+  --eye:#ffd166;--eye-deep:#e8a93c;
+  --pinkish:#ff7bac;
+  --text:#e2f2e8;--text-dim:#a5c4b0;--text-muted:#6f9080;
+  --glass-bg:rgba(61,220,132,.05);--glass-border:rgba(61,220,132,.16);
+  --glass-bg2:rgba(255,209,102,.04);--glass-border2:rgba(255,209,102,.12);
+
+  /* 生日倒计时的配色覆盖（assets/explore.css 里那组 --bday-*）。
+     ⚠ 一个字都不新发明：全部从上面这套绿 + 金里取 ——
+       她这一页是「蛇」的绿，眼睛那抹金是 --eye。
+       不覆盖的话它会吃共享层的默认值，那是**首页爱莉希雅的粉紫**，串页。 */
+  --bday-ink:#e2f2e8;                                  /* = --text */
+  --bday-accent:#3ddc84;                               /* = --serpent，圆点与强调 */
+  --bday-title:#a5c4b0;                                /* = --text-dim */
+  --bday-date:#c9ecd8;
+  --bday-num:#ffd166;                                  /* = --eye，那抹金 */
+  --bday-unit:#6f9080;                                 /* = --text-muted */
+  --bday-egg-bg:linear-gradient(135deg,rgba(61,220,132,.16),rgba(255,209,102,.10));
+  --bday-egg-border:rgba(61,220,132,.25);
+  --bday-egg-glow:rgba(61,220,132,.18);
+  --bday-egg-glow-hover:rgba(61,220,132,.3);
+  --bday-panel-bg:linear-gradient(150deg,rgba(7,26,18,.92),rgba(18,58,38,.92));
+  --bday-panel-border:rgba(61,220,132,.22);
+  --bday-panel-glow:rgba(61,220,132,.12);
+  --bday-cell-bg:rgba(61,220,132,.07);
+  --bday-cell-border:rgba(61,220,132,.14);
+  --bday-src:rgba(165,196,176,.55);
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg-abyss);color:var(--text);overflow-x:hidden;line-height:1.7;
+  transition:background 1.2s ease;
+}
+::-webkit-scrollbar-thumb{background:var(--serpent-dark);border-radius:3px}
+
+#serpentCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+#fallenVeil{
+  position:fixed;inset:0;z-index:9991;pointer-events:none;opacity:0;transition:opacity 1.4s ease;
+  background:radial-gradient(ellipse at center,transparent 35%,rgba(10,40,20,.55) 100%);
+}
+#fallenVeil.lit{opacity:1}
+body.fallen{--serpent:#7dff5a;--serpent-deep:#2fbf4f;--eye:#ff4d2d;--eye-deep:#c1121f;--bg-abyss:#020a05}
+body.fallen{background:#020a05}
+body.fallen #serpentCanvas{filter:saturate(1.5) brightness(1.15)}
+
+/* SECTION: opening */
+.section-opening{
+  position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:2rem;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(ellipse 65% 42% at 50% 8%,rgba(61,220,132,.1),transparent 70%),
+    radial-gradient(ellipse 45% 30% at 82% 30%,rgba(255,209,102,.05),transparent 70%),
+    linear-gradient(180deg,var(--bg-abyss) 0%,var(--bg-deep) 32%,var(--bg-lab) 62%,var(--bg-deep) 100%);
+}
+.opening-ornament{font-size:1.1rem;color:var(--serpent-deep);letter-spacing:.7em;opacity:0;transition:opacity 1.2s ease;margin-bottom:1.3rem}
+.opening-ornament.visible{opacity:.9}
+.opening-title{
+  font-size:clamp(1.5rem,4.8vw,3rem);font-weight:400;letter-spacing:.1em;
+  color:var(--serpent);text-shadow:0 0 30px rgba(61,220,132,.4),0 0 60px rgba(61,220,132,.18);
+  min-height:1.6em;max-width:880px;
+}
+.typing-cursor{display:inline-block;font-weight:100;color:var(--eye);animation:blink-cursor .8s step-end infinite}
+.opening-subtitle{
+  font-size:clamp(.9rem,2.5vw,1.25rem);color:var(--text-dim);letter-spacing:.35em;
+  margin-top:1.5rem;opacity:0;transition:opacity 1.5s ease;
+}
+.opening-hint{
+  font-size:.72rem;color:var(--text-muted);letter-spacing:.14em;margin-top:1rem;
+  opacity:0;transition:opacity 1.5s ease 1s;
+}
+.opening-hint.visible{opacity:.7}
+.scroll-hint{
+  position:absolute;bottom:calc(2.5rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  opacity:0;transition:opacity 1s ease .5s;
+}
+.scroll-hint.visible{opacity:.6}
+.scroll-hint span{font-size:.75rem;color:var(--text-muted);letter-spacing:.2em}
+.scroll-chevron{
+  width:20px;height:20px;border-right:2px solid var(--serpent);border-bottom:2px solid var(--serpent);
+  transform:rotate(45deg);animation:chevron-bounce 2s ease-in-out infinite;
+}
+
+/* SECTION: common section */
+.content-section{
+  position:relative;z-index:2;padding:6rem 1.5rem;
+  background:linear-gradient(180deg,transparent 0%,rgba(4,16,11,.3) 20%,rgba(4,16,11,.3) 80%,transparent 100%);
+}
+.section-title{
+  font-size:clamp(1.5rem,4vw,2.2rem);font-weight:400;letter-spacing:.2em;cursor:pointer;user-select:none;
+  color:var(--serpent);text-shadow:0 0 20px rgba(61,220,132,.3);transition:text-shadow .3s ease;
+}
+.section-title:hover{text-shadow:0 0 30px rgba(61,220,132,.55)}
+.section-title-line{display:block;width:60px;height:1px;margin:1rem auto 0;background:linear-gradient(90deg,transparent,var(--serpent-deep),transparent)}
+.section-title-mark{display:inline-block;font-size:.8em;color:var(--eye-deep);margin:0 .8rem}
+
+/* SECTION: profile */
+.profile-card{
+  max-width:720px;margin:0 auto;padding:clamp(2rem,5vw,3rem);
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  
+  border:1px solid var(--glass-border);border-radius:24px;
+  box-shadow:0 0 50px rgba(61,220,132,.08),0 0 100px rgba(255,209,102,.04),inset 0 1px 0 rgba(255,255,255,.05);
+  position:relative;overflow:hidden;
+}
+.snake-eye-wrap{display:flex;justify-content:center;margin-bottom:1.2rem}
+.snake-eye{cursor:pointer;transition:transform .3s ease;user-select:none}
+.snake-eye:hover{transform:scale(1.07)}
+.snake-eye .pupil{transition:transform .25s ease}
+.snake-eye.stare .pupil{transform:scaleX(.45)}
+.profile-name{
+  font-size:clamp(1.8rem,5vw,2.8rem);font-weight:400;letter-spacing:.14em;cursor:pointer;user-select:none;
+  color:var(--text);text-align:center;margin-bottom:.2em;text-shadow:0 0 24px rgba(61,220,132,.3);
+}
+/* 拖走的名字（彩蛋 B，spec §8.1）。
+   ⚠ --dx / --dy 由 JS 在拖动时写进 style，这里只负责怎么用它们。
+     拖的时候跟手走，松手后像蛇一样自己游回原位。 */
+.profile-name.dragging{
+  cursor:grabbing;transition:none;position:relative;z-index:6;
+  transform:translate(var(--dx,0),var(--dy,0)) rotate(-3deg);
+}
+@keyframes nameSwim{
+  0%{transform:translate(var(--dx,0),var(--dy,0)) rotate(-3deg)}
+  55%{transform:translate(calc(var(--dx,0) * -.14),calc(var(--dy,0) * -.14)) rotate(3deg)}
+  100%{transform:translate(0,0) rotate(0)}
+}
+.profile-name.swimming{animation:nameSwim .85s cubic-bezier(.3,1.15,.45,1) both}
+.profile-name-en{
+  font-size:clamp(.9rem,2vw,1.1rem);font-weight:300;letter-spacing:.45em;
+  color:var(--serpent-deep);text-align:center;margin-bottom:2rem;filter:brightness(1.3);
+}
+.profile-grid{display:grid;grid-template-columns:auto 1fr;gap:.6rem 1.5rem;font-size:.92rem}
+.profile-value .highlight{color:var(--serpent);font-weight:400}
+.profile-value .golden{color:var(--eye);font-weight:400}
+.profile-value .rose{color:var(--pinkish);font-weight:400}
+.profile-desc{
+  margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--glass-border);
+  font-size:.9rem;color:var(--text-dim);line-height:1.9;font-weight:300;
+}
+
+/* SECTION: creations */
+.creation-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1.1rem;max-width:1000px;margin:0 auto}
+.creation-card{
+  padding:1.3rem 1.4rem;cursor:pointer;user-select:none;min-height:120px;
+  background:linear-gradient(150deg,var(--glass-bg),var(--glass-bg2));
+  
+  border:1px solid var(--glass-border);border-radius:16px;
+  transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;
+}
+.creation-card:hover{transform:translateY(-3px);box-shadow:0 0 26px rgba(61,220,132,.14)}
+.creation-card.open{border-color:var(--serpent-deep);box-shadow:0 0 22px rgba(61,220,132,.18)}
+.creation-icon{font-size:1.5rem;margin-bottom:.5rem;display:block}
+.creation-name{font-size:1rem;color:var(--serpent);letter-spacing:.08em;margin-bottom:.3rem}
+.creation-sub{font-size:.75rem;color:var(--text-muted);letter-spacing:.05em}
+.creation-detail{
+  max-height:0;overflow:hidden;opacity:0;font-size:.8rem;color:var(--text-dim);line-height:1.8;font-weight:300;
+  transition:max-height .45s ease,opacity .45s ease,margin .45s ease;
+}
+.creation-card.open .creation-detail{max-height:260px;opacity:1;margin-top:.7rem}
+
+/* SECTION: timeline */
+.timeline{position:relative;max-width:800px;margin:0 auto;padding:2rem 0}
+.timeline-line{
+  position:absolute;left:50%;top:0;bottom:0;width:2px;
+  background:linear-gradient(180deg,transparent,var(--serpent-dark) 8%,var(--serpent-deep) 45%,var(--eye-deep) 80%,transparent);
+  transform:translateX(-50%);
+}
+.timeline-node{
+  position:relative;display:flex;align-items:flex-start;margin-bottom:3rem;
+  opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;
+}
+.timeline-dot{
+  position:absolute;left:50%;top:.5rem;width:13px;height:13px;border-radius:50%;
+  border:2px solid var(--serpent);background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
+  box-shadow:0 0 12px rgba(61,220,132,.4);transition:background .3s;
+}
+.timeline-node.visible .timeline-dot{background:var(--serpent)}
+.timeline-card{
+  width:calc(50% - 2.5rem);padding:1.2rem 1.5rem;cursor:pointer;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  
+  border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 0 20px rgba(61,220,132,.04);
+  transition:box-shadow .3s ease;
+}
+.timeline-card:hover{box-shadow:0 0 28px rgba(61,220,132,.12)}
+.timeline-card h3{font-size:1.05rem;font-weight:500;color:var(--serpent);margin-bottom:.5rem;letter-spacing:.1em}
+.timeline-card p{font-size:.85rem;color:var(--text-dim);line-height:1.8;font-weight:300}
+
+/* SECTION: quotes */
+.quote-card{
+  padding:1.5rem;min-height:140px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  
+  border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
+  transition:transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
+}
+.quote-card:hover{transform:translateY(-3px) rotate(-.3deg);box-shadow:0 0 30px rgba(61,220,132,.14),0 8px 30px rgba(0,0,0,.2)}
+.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition:opacity .4s ease}
+.quote-hint{position:absolute;bottom:.6rem;right:.8rem;font-size:.65rem;color:var(--text-muted);opacity:.4}
+
+/* SECTION: daily */
+.daily-wrap{max-width:620px;margin:0 auto;text-align:center}
+.daily-card{
+  padding:2rem 1.8rem;border-radius:20px;position:relative;overflow:hidden;
+  background:linear-gradient(150deg,var(--glass-bg),var(--glass-bg2));
+  
+  border:1px solid var(--glass-border2);box-shadow:0 0 34px rgba(255,209,102,.08);
+}
+.daily-label{font-size:.72rem;color:var(--eye-deep);letter-spacing:.35em;margin-bottom:1rem}
+.daily-quote{font-size:1rem;color:var(--text);line-height:2;font-weight:300;min-height:3.4em;transition:opacity .35s ease}
+.daily-quote.fading{opacity:0}
+.daily-btn{
+  margin-top:1.4rem;min-height:44px;padding:.6rem 1.8rem;border-radius:999px;cursor:pointer;
+  border:1px solid var(--glass-border);background:rgba(61,220,132,.08);
+  color:var(--serpent);font-size:.82rem;letter-spacing:.15em;font-family:inherit;
+  transition:background .3s ease,box-shadow .3s ease,transform .3s ease;
+}
+.daily-btn:hover{background:rgba(61,220,132,.16);box-shadow:0 0 20px rgba(61,220,132,.2);transform:translateY(-2px)}
+
+/* SECTION: ending */
+.ending-quote{
+  font-size:clamp(1.05rem,3vw,1.5rem);font-weight:300;letter-spacing:.1em;
+  color:var(--serpent);line-height:2;text-shadow:0 0 25px rgba(61,220,132,.35);
+  max-width:660px;opacity:0;transform:translateY(20px);transition:opacity 1.5s ease,transform 1.5s ease;
+}
+.ending-sub{
+  margin-top:1.6rem;font-size:.85rem;color:var(--text-muted);letter-spacing:.08em;line-height:2;
+  max-width:560px;opacity:0;transition:opacity 1s ease;min-height:1.4em;
+}
+.ending-attr{
+  margin-top:2.2rem;font-size:.85rem;color:var(--text-muted);letter-spacing:.25em;
+  opacity:0;transition:opacity 1.5s ease .8s;
+}
+.back-link{
+  display:inline-flex;align-items:center;gap:.5rem;margin-top:3rem;
+  min-height:44px;padding:.6rem 1.6rem;border-radius:999px;text-decoration:none;
+  color:var(--serpent);font-size:.85rem;letter-spacing:.15em;
+  border:1px solid var(--glass-border);background:rgba(61,220,132,.05);
+  transition:background .3s ease,box-shadow .3s ease,transform .3s ease;opacity:0;
+}
+.back-link:hover{background:rgba(61,220,132,.12);box-shadow:0 0 24px rgba(61,220,132,.22);transform:translateY(-2px)}
+
+/* SECTION: game card（下方区块里的那张卡，取代了原来的 #gameFab 悬浮按钮） */
+/* ⚠ 这几条**留在本页**、不进共享层 —— spec §3.1：「游戏是最各写各的部分」。
+   每位英桀的小游戏长什么样是自己的事。 */
+.game-card{
+  max-width:26rem;margin:0 auto;padding:1.6rem 1.5rem;border-radius:16px;
+  background:rgba(255,255,255,.03);border:1px solid var(--glass-border);
+}
+.game-card-title{margin:0 0 .6rem;font-size:1.05rem;letter-spacing:.1em;color:var(--serpent)}
+.game-card-hint{margin:0 0 1.2rem;font-size:.8rem;line-height:1.9;color:var(--text-muted)}
+.game-card-start{
+  padding:.6rem 1.8rem;border-radius:999px;cursor:pointer;
+  font-size:.85rem;letter-spacing:.14em;color:var(--text);
+  background:rgba(61,220,132,.12);border:1px solid var(--glass-border);
+  transition:background .25s ease,box-shadow .25s ease;
+}
+.game-card-start:hover{background:rgba(61,220,132,.22);box-shadow:0 0 20px rgba(61,220,132,.25)}
+
+/* 撞墙那一刻的「实验失败」（spec §6.3 ② 要的主题化） */
+.game-status{margin:.6rem 0 0;font-size:.78rem;letter-spacing:.2em;color:#ff7bac;min-height:1em}
+
+/* SECTION: game overlay */
+#gameOverlay{
+  position:fixed;inset:0;z-index:9997;display:none;align-items:center;justify-content:center;flex-direction:column;gap:.8rem;
+  background:rgba(2,8,5,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:1rem;
+}
+#gameOverlay.on{display:flex}
+/* ⚠ 「逃离实验室」—— 挪到**整个遮罩的右上角**（与樱页的「收刀」、科斯魔的「收工」一致）。
+   2026-10-02 实测：它原来在 `#dpad` **正下方 18px**（手机玩家一直点方向键，落低 18px 就退出）；
+   那一轮先把它挪到了遮罩右上角，离 dpad **502px** —— 但离**画布**只有 **58px**。
+   画布是**滑动面**（玩家在上面拖、不是点），风险比连点低；可内容只占 812 里的 625，
+   **没有理由不把间距也拉够** —— 所以下面还按视口把内容摆一摆。 */
+#gameClose{position:absolute;top:1rem;right:1rem;min-height:44px;padding:.55rem 1.2rem}
+
+@media (max-width:520px) and (orientation:portrait) and (min-height:720px){
+  /* 竖屏手机：内容**顶对齐 + 往下推**，把画布顶边推离按钮更远。
+     ⚠ 数值是量出来的：内容总高约 524px，居中时画布顶边在 114px、离按钮 58px；下推之后 ~87px。
+     ⚠⚠ **只在 `min-height:720px` 以上生效** —— 早先写死 7rem 时，640 / 568 高的屏上
+       方向键被顶出了视口（568 那档内容 524 + 下推 112 + 内边距 = 顶出 ~100px）。
+       **矮屏上「离画布 100px」几何上就做不到**（余量只有 44px），所以那些屏保持居中。 */
+  #gameOverlay{justify-content:flex-start;padding-top:7rem}
+}
+
+@media (max-height:520px) and (orientation:landscape){
+  /* 横屏手机：内容总高（约 718px）比视口（360px）高得多 —— 竖着排**必然上下都被切**，
+     而 fixed 遮罩没有滚动条，切掉的**永远够不着**（实测：画布 y=-34、dpad 伸到 369）。
+     所以改**横排**：画布一列，控制（标题/状态/台词/方向键/按钮）一列。
+     ⚠ 选择器带 `.on` —— 基线上的 `#gameOverlay.on{display:flex}` 特异性更高，
+       只写 `#gameOverlay{display:grid}` 会被它压掉。 */
+  #gameOverlay.on{
+    display:grid;justify-content:center;gap:.45rem 1.1rem;
+    grid-template-columns:auto auto;
+    grid-template-areas:"cv head" "cv status" "cv msg" "cv dpad" "cv btns";
+    /* ⚠ `align-content:start` + `padding-top` —— 给右上角那个**绝对定位**的
+       「逃离实验室」让出它那一行。早先写 `align-items:center` 时，它在横屏下
+       **压在标题行的「最高 0」上**（一眼就看出来了，而断言测不到这种重叠 ——
+       这类只能靠肉眼）。让出 ~58px 之后，标题行落到按钮下方。 */
+    align-content:start;
+    padding-top:3.6rem;
+  }
+  #snakeCanvas{grid-area:cv;max-height:74vh}
+  .game-head{grid-area:head}
+  #gameStatus{grid-area:status}
+  #gameMsg{grid-area:msg}
+  #dpad{grid-area:dpad;margin-top:0}
+  .game-btns{grid-area:btns;margin-top:0}
+}
+.game-head{display:flex;align-items:center;gap:1.2rem;color:var(--text-dim);font-size:.85rem;letter-spacing:.1em}
+.game-head .score{color:var(--eye);font-variant-numeric:tabular-nums}
+#snakeCanvas{
+  border:1px solid var(--serpent-dark);border-radius:12px;background:#031008;
+  box-shadow:0 0 40px rgba(61,220,132,.15);max-width:92vw;max-height:56vh;touch-action:none;
+}
+.game-msg{color:var(--serpent);font-size:.9rem;letter-spacing:.08em;min-height:1.6em;text-align:center}
+.game-btns{display:flex;gap:.8rem;margin-top:.3rem;justify-content:center}
+.game-btn{
+  min-height:44px;padding:.55rem 1.5rem;border-radius:999px;cursor:pointer;font-family:inherit;
+  border:1px solid var(--glass-border);background:rgba(61,220,132,.1);color:var(--serpent);
+  font-size:.85rem;letter-spacing:.12em;transition:background .3s,box-shadow .3s;
+}
+.game-btn:hover{background:rgba(61,220,132,.2);box-shadow:0 0 16px rgba(61,220,132,.25)}
+.game-btn.ghost{color:var(--text-muted);background:transparent}
+/* ⚠ 「逃离实验室」**挪到整个遮罩的右上角**，不再待在那排按钮里。
+   原来它就在**方向键 `#dpad` 正下方 18px** —— 而 dpad 正是手机上用来转向的东西，
+   玩家一直在点它，手指落低 18px（约 1.2 毫米）就正中退出键。
+   2026-10-02 在线上实测：dpad 底边往下 +5 ~ +55px 那一段点下去**必退**。
+   ⚠ 做法与 `/sakura/` 那页的「收刀」（`.sk-close`）一致 —— 两页的退出键都在右上角，
+     位置一致，也都不贴着操作区。
+   ⚠ 它是绝对定位，定位基准是 `#gameOverlay`（fixed）。**别**给 `.game-btns`
+     或别的祖先加 `position`，否则它会被拽回那排按钮里去。 */
+#dpad{display:none;grid-template-columns:repeat(3,56px);grid-template-rows:repeat(2,52px);gap:6px;margin-top:.5rem}
+#dpad button{
+  border-radius:12px;border:1px solid var(--glass-border);background:rgba(61,220,132,.08);
+  color:var(--serpent);font-size:1.1rem;cursor:pointer;min-height:48px;
+}
+#dpad button:active{background:rgba(61,220,132,.22)}
+#dpad .up{grid-column:2;grid-row:1}
+#dpad .left{grid-column:1;grid-row:2}
+#dpad .down{grid-column:2;grid-row:2}
+#dpad .right{grid-column:3;grid-row:2}
+@media(hover:none) and (pointer:coarse){#dpad{display:grid}}
+
+/* SECTION: mouse pet */
+.lab-mouse{
+  position:fixed;z-index:9989;font-size:26px;cursor:pointer;user-select:none;
+  transition:transform .2s ease;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));
+}
+.lab-mouse:hover{transform:scale(1.25)}
+.lab-mouse.caught{animation:mouse-poof .5s ease forwards;pointer-events:none}
+@keyframes mouse-poof{to{opacity:0;transform:scale(2) rotate(20deg)}}
+
+/* SECTION: toast */
+#mbToast{
+  position:fixed;left:50%;bottom:16%;transform:translateX(-50%) translateY(10px);z-index:9996;
+  max-width:88vw;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;letter-spacing:.06em;
+  color:var(--text);background:linear-gradient(135deg,rgba(7,26,18,.95),rgba(18,58,38,.95));
+  border:1px solid var(--glass-border);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 6px 30px rgba(0,0,0,.5),0 0 24px rgba(61,220,132,.2);
+  opacity:0;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:opacity .35s ease,transform .35s ease;text-align:center;
+}
+#mbToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#mbToast.hiss{color:#c9ffd9;border-color:rgba(125,255,90,.6);box-shadow:0 6px 30px rgba(0,0,0,.5),0 0 34px rgba(125,255,90,.4)}
+@media(max-width:600px){#mbToast{white-space:normal;line-height:1.6}}
+
+/* SECTION: ripple */
+.scale-ripple{
+  position:fixed;pointer-events:none;z-index:9993;border-radius:50% 50% 50% 8%;opacity:.9;
+  transition:all .8s cubic-bezier(.22,.61,.36,1);
+}
+
+/* SECTION: responsive */
+@media(max-width:768px){
+  .timeline-line{left:1.5rem}
+  .timeline-node,.timeline-node:nth-child(odd),.timeline-node:nth-child(even){flex-direction:row}
+  .timeline-dot{left:1.5rem}
+  .timeline-card,.timeline-node:nth-child(odd) .timeline-card,.timeline-node:nth-child(even) .timeline-card{
+    width:calc(100% - 3.5rem);margin-left:3.5rem;margin-right:0;
+  }
+  .quotes-grid{grid-template-columns:1fr}
+  .creation-grid{grid-template-columns:1fr 1fr}
+  .profile-grid{grid-template-columns:auto 1fr;gap:.5rem 1rem;font-size:.85rem}
+}
+@media(max-width:480px){
+  .content-section{padding:4rem 1rem}
+  .profile-card{padding:1.5rem}
+  .quote-card{min-height:120px;padding:1.2rem}
+  .creation-grid{grid-template-columns:1fr}
+}
+</style>

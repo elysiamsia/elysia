@@ -3,6 +3,7 @@
   6,
   22
  ],
+ "bodyAttrs": "",
  "chibi": null,
  "endingStars": {
   "colors": {
@@ -197,5 +198,12 @@
  ],
  "shortName": "樱",
  "signet": "刹那",
- "signetImage": "/images/signet/刹那-256.webp"
+ "signetImage": "/images/signet/刹那-256.webp",
+ "styles": [
+  "page",
+  "signet-mark",
+  "signet-badge-css",
+  "mobile-ovf-fix",
+  "touch-target-fix"
+ ]
 }

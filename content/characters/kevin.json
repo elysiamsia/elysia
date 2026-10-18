@@ -1,5 +1,6 @@
 {
  "birthday": null,
+ "bodyAttrs": "",
  "chibi": null,
  "endingStars": {
   "colors": {
@@ -192,5 +193,11 @@
  ],
  "shortName": "凯文",
  "signet": "救世",
- "signetImage": "/images/signet/救世-256.webp"
+ "signetImage": "/images/signet/救世-256.webp",
+ "styles": [
+  "page",
+  "signet-mark",
+  "signet-badge-css",
+  "touch-target-fix"
+ ]
 }

@@ -1,0 +1,850 @@
+
+
+<canvas id="inkCanvas"></canvas>
+
+<!-- SECTION: opening -->
+<section class="section-opening" id="opening">
+  <div class="opening-content">
+    <div class="opening-ornament" id="openingOrn">❖ ── ❖ ── ❖</div>
+    <h1 class="opening-title" id="typewriterText"></h1><span class="typing-cursor" id="typingCursor">|</span>
+    <p class="opening-subtitle" id="openingSub">欢迎来到太虚山</p>
+    <p class="opening-hint" id="openingHint">这一页藏着她的三段人生、一段被烧掉的记忆，和一座木人桩。</p>
+  </div>
+  <div class="scroll-hint" id="scrollHint">
+    <span>拾级而上</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</section>
+
+<!-- SECTION: about -->
+<section class="content-section" id="about">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❖</span>关于她<span class="section-title-mark">❖</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="profile-card">
+    <div class="profile-card-inner">
+      <div class="profile-name" id="profileName" role="button" tabindex="0">华</div>
+      <div class="profile-name-en">H U A</div>
+      <div class="profile-divider"></div>
+      <div class="profile-grid">
+        <span class="profile-label">别名</span>
+        <span class="profile-value"><span class="cinnabar">赤鸢仙人</span> · 符华 · 编号 MSA-209 / CM-014</span>
+        <span class="profile-label">出处</span>
+        <span class="profile-value">《崩坏3》第一文明纪元 → 第二文明纪元</span>
+        <span class="profile-label">身份</span>
+        <span class="profile-value">逐火之蛾融合战士 → 神州守护者 → 天命 A 级女武神 · 圣芙蕾雅学园班长</span>
+        <span class="profile-label">位次</span>
+        <span class="profile-value"><span class="highlight">Ⅻ</span></span>
+        <span class="profile-label">刻印</span>
+        <span class="profile-value"><span class="highlight">「浮生」</span>——脚踏实地的工作态度</span>
+        <span class="profile-label">生日</span>
+        <span class="profile-value"><span class="goldc">2月9日</span></span>
+        <span class="profile-label">身体数据</span>
+        <span class="profile-value">165cm / 53kg（五万多年了，一直是十七岁的样子）</span>
+        <span class="profile-label">融合崩坏兽</span>
+        <span class="profile-value">「迦楼罗」——古印度神话的巨型神鸟</span>
+        <span class="profile-label">神之键</span>
+        <span class="profile-value">第八神之键 <span class="highlight">「羽渡尘」</span>（意识之键）· 第十神之键 <span class="highlight">「太虚之握」</span>（支配之键 · 拳套）</span>
+        <span class="profile-label">武学</span>
+        <span class="profile-value">寸心拳法 · 太虚剑气（心 / 形 / 意 / 魂 / 神 五蕴）</span>
+        <span class="profile-label">配音</span>
+        <span class="profile-value">Mace（汉语）/ 高山南（日语）</span>
+        <span class="profile-label">珍视之物</span>
+        <span class="profile-value">一张晕开的旧照片——除了她，相纸上的人都已模糊难辨</span>
+      </div>
+      <div class="profile-desc">
+        沉默少言的年轻战士。彼时的少女青涩、迷茫，尚未预见自己明日的命途。未来永劫，她如一羽雏鸟，失去了来时的道路，亦不知去路的方向——但她还是一步一步，走了五万年。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: lives -->
+<section class="content-section" id="lives">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❖</span>她的三世<span class="section-title-mark">❖</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="lives-grid" id="livesGrid">
+    <div class="life-card active" id="life1" data-life="1" style="--lc:#8fb8ad;--lcg:rgba(143,184,173,.35)" role="button" tabindex="0">
+      <div class="life-swatch"></div>
+      <div class="life-era">第一文明纪元</div>
+      <div class="life-title">华</div>
+      <div class="life-sub">逐火之蛾 · 第五小队 · 融合战士</div>
+      <div class="life-detail">沧海市武馆的女儿，独自到长空市念书。崩坏爆发时她因恐惧抛下好友，这份愧疚成了往后五万年的刺。危机中喊出「我什么也做不到」的她觉醒了超变因子，成为融合战士——爱莉希雅为她办了欢迎会，教她「这里不讲上下关系」。融合「迦楼罗」，手持羽渡尘，以燃烧记忆为代价挥出每一拳。</div>
+    </div>
+    <div class="life-card" id="life2" data-life="2" style="--lc:#d05a42;--lcg:rgba(208,90,66,.35)" role="button" tabindex="0">
+      <div class="life-swatch"></div>
+      <div class="life-era">第二文明纪元 · 神州</div>
+      <div class="life-title">赤鸢</div>
+      <div class="life-sub">神州守护者 · 太虚剑派祖师</div>
+      <div class="life-detail">终焉之战后，火种的使命落在她肩上。沉睡五万年醒来，故人皆逝，她改名「赤鸢」，白发赤瞳，守护神州。她创立太虚剑派，收徒七人，史称「太虚七剑」；数千年间唯她与弟子程凌霜悟出太虚剑神。世人称她「唯一真仙」——直到 1476 年，天穹峰上，弟子合谋弑师，太虚山付之一炬。</div>
+    </div>
+    <div class="life-card" id="life3" data-life="3" style="--lc:#c9a86a;--lcg:rgba(201,168,106,.35)" role="button" tabindex="0">
+      <div class="life-swatch"></div>
+      <div class="life-era">现文明 · 至今</div>
+      <div class="life-title">符华</div>
+      <div class="life-sub">天命女武神 · 圣芙蕾雅学园班长</div>
+      <div class="life-detail">失去大半力量与剑心的仙人，与奥托达成交易，戴上红框眼镜，成为琪亚娜班上的班长。为压制空之律者，她发动羽渡尘第零额定功率，把意识搬进一根羽毛——空出来的身体里，诞生了识之律者。后来她们和解了。如今的她以「浮生·渡尘之羽」的姿态继续战斗，迦楼罗的火焰，还没有熄灭。</div>
+    </div>
+  </div>
+  <p class="lives-note">—— 点一段人生，这一页会陪她换一身颜色 ——</p>
+</section>
+
+<!-- SECTION: journey -->
+<section class="content-section" id="journey">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❖</span>她的浮生<span class="section-title-mark">❖</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="timeline">
+    <div class="timeline-line"></div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>沧海市</h3>
+        <p>武馆人家的女儿，独自离开故乡，到长空市的千羽学园读书，加入第五小队，编号 MSA-209。那是她第一次离开家，第一次拥有朋友——也是最后一次。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>心刺</h3>
+        <p>崩坏在长空市爆发。恐惧让她抛下了好友——这件事她记了五万年。后来她拼尽全力去「得到」，又总是立刻「失去」。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>觉醒</h3>
+        <p>战场上遭遇远超小队的崩坏兽，绝境中她喊出那句「我什么也做不到」——超变因子觉醒，成为融合战士。爱莉希雅接待了她，欢迎会上说：这里不讲上下关系。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>迦楼罗</h3>
+        <p>融合巨型神鸟「迦楼罗」的基因，成为对崩坏适应性最强的战士之一，也是「神音」实验唯一的存活者。羽渡尘认主——代价是，每一次全力出手，都要烧掉一段记忆。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>英桀</h3>
+        <p>「约束的惨剧」后，仅存的十三位融合战士被授予位次与刻印。她列第十二位，铭「浮生」。入队之初受爱莉希雅许多关照——那位粉色少女总以旁人想不到的方式解决问题。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>火种</h3>
+        <p>终焉之战，人类败了。伊甸把火种计划的使命交给她——比起留在过去的人，她这颗晨星更适合去开拓一个崭新的时代。她带着这句话，躺进了休眠舱。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>赤鸢</h3>
+        <p>五万年后醒来，世界已是第二文明。她改名赤鸢，行走神州，创立太虚剑派，收徒七人。数千年守护，世人称她仙人——只有她知道，自己只是想守住答应过的事。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>天穹峰</h3>
+        <p>1476 年，太虚七剑合谋弑师，火烧太虚山。她失去大半力量与不死之身，剑心碎裂，记忆残缺。有些东西，从此再也想不起来了。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>班长</h3>
+        <p>与奥托交易后，她以「符华」之名成为天命女武神，伪装成圣芙蕾雅学园的学生、琪亚娜班的班长。为压制空之律者，羽渡尘第零额定功率发动——意识移入羽毛，空出的身体里诞生了识之律者。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>渡尘之羽</h3>
+        <p>她与识之律者达成和解，取回身体。迦楼罗的超变因子再度激活——「浮生·渡尘之羽」，人为崩落，浴火而行。至于往世乐土里那个前文明的她，只留下一句告别，就把未来交给了来访者。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: quotes -->
+<section class="content-section" id="quotes">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❖</span>浮生之语<span class="section-title-mark">❖</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="quotes-grid" id="quotesGrid" data-primary-action></div>
+</section>
+
+<!-- SECTION: ending -->
+<section class="section-ending" id="ending">
+  <div class="ending-stars" id="endingStars"></div>
+  <p class="ending-quote" id="endingQuote" role="button" tabindex="0">谢谢你们帮助了未来的我。<br>至于「过去」……它早已是「未来」的一部分了，不是么？</p>
+  <p class="ending-sub" id="endingSub"></p>
+  <p class="ending-attr" id="endingAttr">致华 · elysiad.top/hua</p>
+  <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
+  <div class="ending-fade"></div>
+</section>
+
+<!-- SECTION: feather fab -->
+<button id="featherFab" aria-label="羽渡尘" title="羽渡尘">🪶</button>
+
+<!-- SECTION: game overlay -->
+<div id="huaGameOverlay" aria-hidden="true">
+  <div class="hg-head">
+    <span>得分 <b id="hgScore">0</b></span>
+    <span>连击 <b id="hgCombo">0</b></span>
+    <span>漏掉 <b id="hgMiss">0</b></span>
+    <span>最佳 <b id="hgBest">0</b></span>
+  </div>
+  <div class="hg-grid" id="hgGrid"></div>
+  <p class="hg-msg" id="hgMsg">无尽模式 · 敲木桩练寸劲，敲到你想收手为止。金色的小师妹是自己人——千万别打。</p>
+  <div class="hg-btns">
+    <button class="hg-btn" id="hgStart">开始修行</button>
+    <button class="hg-btn ghost" id="hgClose">下山</button>
+  </div>
+</div>
+
+<div id="huaToast" role="status"></div>
+
+<!-- SECTION: shared layer -->
+<script src="/assets/site.js"></script>
+<script src="/assets/explore.js"></script>
+<script src="/assets/bottom.js"></script>
+<script src="/assets/bday.js"></script>
+<script src="/data/bdays.js"></script>
+
+<!-- SECTION: page script -->
+<script>
+(function(){
+  /* ============ 游戏模块：木人桩·寸劲修行 ============ */
+  window.ElysiaGames = window.ElysiaGames || {};
+  window.ElysiaGames.hua = (function(){
+    var overlay = document.getElementById('huaGameOverlay');
+    var gridEl = document.getElementById('hgGrid');
+    var scoreEl = document.getElementById('hgScore');
+    var comboEl = document.getElementById('hgCombo');
+    var missEl = document.getElementById('hgMiss');
+    var bestEl = document.getElementById('hgBest');
+    var msgEl = document.getElementById('hgMsg');
+    var startBtn = document.getElementById('hgStart');
+    var closeBtn = document.getElementById('hgClose');
+    var holes = [];
+    /* 无尽模式：**没有倒计时、也没有命** —— 漏掉只扣分，玩到玩家自己按「下山」。 */
+    var score = 0, combo = 0, misses = 0, spawned = 0;
+    var running = false, spawnTimer = null;
+    var best = 0;
+    try { best = parseInt(localStorage.getItem('huaDummyBest') || '0', 10) || 0; } catch(err){ best = 0; }
+    bestEl.textContent = String(best);
+
+    for (var i = 0; i < 9; i++){
+      var hole = document.createElement('div');
+      hole.className = 'hg-hole';
+      var dummy = document.createElement('div');
+      dummy.className = 'dummy wood';
+      dummy.textContent = '桩';
+      hole.appendChild(dummy);
+      (function(h, idx){
+        h.addEventListener('click', function(){ onHit(h, idx); });
+      })(hole, i);
+      gridEl.appendChild(hole);
+      holes.push({ el: hole, dummy: dummy, up: false, gold: false, hideTimer: null });
+    }
+
+    function onHit(h, idx){
+      if (!running) return;
+      var slot = holes[idx];
+      if (!slot.up){
+        combo = 0;
+        comboEl.textContent = '0';
+        return;
+      }
+      slot.up = false;
+      clearTimeout(slot.hideTimer);
+      h.classList.remove('up');
+      if (slot.gold){
+        score = Math.max(0, score - 20);
+        combo = 0;
+        popText(h, '-20 自己人！', true);
+        msgEl.textContent = '「……那是小师妹。收着力点。」';
+        blip(160, 0.2, 'sawtooth', 0.2);
+      } else {
+        combo++;
+        var gain = 10 + Math.min(combo, 10) * 2;
+        score += gain;
+        popText(h, '+' + gain, false);
+        blip(520 + Math.min(combo, 12) * 30, 0.07, 'triangle', 0.22);
+        if (combo === 8) msgEl.textContent = '「寸劲——开天！」';
+        if (combo === 15) msgEl.textContent = '「不错的力道。继续。」';
+      }
+      scoreEl.textContent = String(score);
+      comboEl.textContent = String(combo);
+    }
+
+    function popText(h, text, bad){
+      var p = document.createElement('div');
+      p.className = 'hg-pop' + (bad ? ' bad' : '');
+      p.textContent = text;
+      h.appendChild(p);
+      setTimeout(function(){ p.remove(); }, 750);
+    }
+
+    function spawn(){
+      if (!running) return;
+      var free = holes.filter(function(s){ return !s.up; });
+      if (!free.length) return;
+      var slot = free[Math.floor(Math.random() * free.length)];
+      spawned++;
+      /* ⚠ 这个是**给断言看的**：本页没有画布，`check_explore.py` 通用那四条靠
+         `canvas.toDataURL()` 的画面签名判「在不在动」—— 这里换成一个单调递增的
+         冒头计数（`#hgGrid[data-spawns]`），判据等价（见 HANDOVER §10.13 三）。 */
+      gridEl.setAttribute('data-spawns', String(spawned));
+      slot.up = true;
+      slot.gold = Math.random() < 0.16;
+      slot.dummy.className = 'dummy ' + (slot.gold ? 'gold' : 'wood');
+      slot.dummy.textContent = slot.gold ? '妹' : '桩';
+      slot.el.classList.add('up');
+      /* **漏掉**：冒头之后自己缩回去 = 玩家没打中 → 扣 5 分（分数不低于 0）、连击清零。
+         无尽模式**不因此结束**，这就是「无尽」与原来那版倒计时的区别。 */
+      slot.hideTimer = setTimeout(function(){
+        if (!slot.up) return;
+        slot.up = false;
+        slot.el.classList.remove('up');
+        if (!slot.gold && running){
+          misses++;
+          combo = 0;
+          score = Math.max(0, score - 5);
+          missEl.textContent = String(misses);
+          comboEl.textContent = '0';
+          scoreEl.textContent = String(score);
+          msgEl.textContent = '「漏了。心要静。」';
+        }
+      }, 620 + Math.random() * 420);
+      /* 越敲越快：难度按**冒头次数**涨（没有倒计时了）。620ms 起，每冒一个头快 7ms，最快 280ms。 */
+      var next = Math.max(280, 620 - spawned * 7) + Math.random() * 220;
+      spawnTimer = setTimeout(spawn, next);
+    }
+
+    function start(){
+      score = 0; combo = 0; misses = 0; spawned = 0;
+      scoreEl.textContent = '0';
+      comboEl.textContent = '0';
+      missEl.textContent = '0';
+      gridEl.setAttribute('data-spawns', '0');
+      msgEl.textContent = '「站定，凝神。修行开始 —— 无尽模式，敲到你想收手。」';
+      startBtn.textContent = '重新修行';
+      running = true;
+      clearTimeout(spawnTimer);
+      spawnTimer = setTimeout(spawn, 500);
+    }
+
+    /* 收手（「下山」）时才结算：无尽模式没有「时间到」这条路径，
+       所以 `finish()` 只由退出键与重新开局调用。 */
+    function finish(){
+      running = false;
+      clearTimeout(spawnTimer);
+      holes.forEach(function(s){ s.up = false; clearTimeout(s.hideTimer); s.el.classList.remove('up'); });
+      /* ⚠ 门槛比原来那版（150 / 320 / 520）高一档：那是 45 秒版的分档，
+         无尽模式没有时间上限，分数会明显更高。 */
+      var rank = score < 200 ? '初入门径' : (score < 500 ? '太虚外门' : (score < 900 ? '太虚七剑候补' : '赤鸢亲传'));
+      var newBest = score > best;
+      if (newBest){
+        best = score;
+        try { localStorage.setItem('huaDummyBest', String(best)); } catch(err){}
+        bestEl.textContent = String(best);
+      }
+      msgEl.textContent = '得分 ' + score + ' ·「' + rank + '」' + (newBest ? ' ——新纪录。她微微点头。' : ' ——「再来。」');
+    }
+
+    startBtn.addEventListener('click', start);
+    closeBtn.addEventListener('click', function(){
+      overlay.classList.remove('on');
+      overlay.setAttribute('aria-hidden','true');
+      finish();
+    });
+
+    function blip(freq, dur, type, vol){
+      try{
+        if (!window.__huaAC){
+          var AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return;
+          window.__huaAC = new AC();
+        }
+        var ac = window.__huaAC;
+        if (ac.state === 'suspended') ac.resume();
+        var t = ac.currentTime;
+        var osc = ac.createOscillator();
+        var gain = ac.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(50, freq * 0.5), t + dur);
+        gain.gain.setValueAtTime(vol, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        osc.connect(gain);
+        gain.connect(ac.destination);
+        osc.start(t);
+        osc.stop(t + dur + 0.05);
+      } catch(err){}
+    }
+
+    /* 「入山修行」= 开遮罩**并直接开局** —— 不再要求玩家进去再点一次「开始修行」
+       （其它四页也是「点开就在玩」）。遮罩里那颗按钮此时已是「重新修行」。 */
+    function openGame(){
+      overlay.classList.add('on');
+      overlay.setAttribute('aria-hidden','false');
+      start();
+    }
+
+    /* ⚠ 游戏卡是**共享契约**（spec §4.5）：`bottom.js` 只调 `mod.mount(host)`，
+       而卡上的标题与说明**必须**来自模块自己声明的 `title` / `hint` ——
+       `check_explore.py` 的 `check_game_card_matches_module` 就钉这一条。
+       （2026-10-08 之前本页只丢了一枚裸按钮，那条断言正是红的。）
+       卡样式（`.game-card*`）留在本页 `<style>` 里，不进共享层。 */
+    var API = {
+      title: '木人桩 · 寸劲修行',
+      hint: '无尽模式：木人桩一直冒头，漏一下扣 5 分，敲到你想收手为止。金色的小师妹是自己人，千万别打。',
+      mount: function(host){
+        var card = document.createElement('div');
+        card.className = 'game-card';
+        var t = document.createElement('h3');
+        t.className = 'game-card-title';
+        t.textContent = API.title;
+        var h = document.createElement('p');
+        h.className = 'game-card-hint';
+        h.textContent = API.hint;
+        var btn = document.createElement('button');
+        btn.className = 'game-card-start';
+        btn.textContent = '入山修行';
+        btn.addEventListener('click', openGame);
+        card.appendChild(t); card.appendChild(h); card.appendChild(btn);
+        host.appendChild(card);
+      },
+      open: openGame
+    };
+    return API;
+  })();
+
+  /* ============ THEME（按共享层 schema） ============ */
+  var THEME = /*@THEME@*/;
+
+  /* ============ 共享层挂载 ============ */
+  ElysiaShared.buildQuoteCards({
+    grid: document.getElementById('quotesGrid'),
+    quotes: THEME.quotes.list,
+    ariaLabel: THEME.quotes.ariaLabel,
+  });
+  ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+  ElysiaShared.observeReveal('.timeline-node');
+  ElysiaShared.observeReveal('.life-card');
+  ElysiaShared.observeReveal('#ending', {
+    threshold: 0.3, reveal: ['endingQuote', 'endingAttr', 'backLink'],
+  });
+  ElysiaShared.makeTypewriter(THEME.typewriter);
+  ElysiaExplore.init(THEME.explore);
+  ElysiaBottom.mount({ game: THEME.game });
+  ElysiaBday.mount();   /* 生日 2/9 已在 data/bdays.js 登记，自动生效 */
+
+  /* ============ toast ============ */
+  var toastEl = document.getElementById('huaToast');
+  var toastTimer = null;
+  function showToast(text, golden){
+    clearTimeout(toastTimer);
+    toastEl.textContent = text;
+    toastEl.classList.toggle('golden', !!golden);
+    toastEl.classList.remove('show');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, golden ? 4200 : 3000);
+  }
+
+  /* ============ 三世切换（大彩蛋其一） ============ */
+  var lifeCards = document.querySelectorAll('.life-card');
+  var lifeToasts = {
+    '1': '第一世 ·「华」——那时她还相信，努力就一定能守住什么。',
+    '2': '第二世 ·「赤鸢」——白发赤瞳，神州称仙。山门焚毁之前，她守了几千年。',
+    '3': '第三世 ·「符华」——红框眼镜，全班最稳的班长。羽渡尘的羽毛，还剩几根呢。',
+  };
+  function setLife(n){
+    document.body.classList.remove('life-chiyuan','life-fuhua');
+    document.body.setAttribute('data-life', n);
+    if (n === '2') document.body.classList.add('life-chiyuan');
+    if (n === '3') document.body.classList.add('life-fuhua');
+    lifeCards.forEach(function(c){
+      c.classList.toggle('active', c.getAttribute('data-life') === n);
+    });
+    showToast(lifeToasts[n], n === '2');
+    if (!reducedMotion){
+      var r = document.getElementById('life' + n).getBoundingClientRect();
+      inkBurst(r.left + r.width / 2, r.top + 20, 10);
+    }
+  }
+  lifeCards.forEach(function(c){
+    c.addEventListener('click', function(){ setLife(c.getAttribute('data-life')); });
+    c.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setLife(c.getAttribute('data-life')); }
+    });
+  });
+
+  /* ============ 点名字（反馈彩蛋） ============ */
+  var nameEl = document.getElementById('profileName');
+  var nameLines = [
+    '「嗯。有何贵干？」',
+    '「浮生碌碌，切莫无为。」',
+    '「修行不辍，方得始终。」',
+    '「……你叫我班长？琪亚娜才这么叫。」',
+    '「我不认为自己有教导你的资格。不过——可以陪你练两招。」'
+  ];
+  var nameIdx = 0;
+  nameEl.addEventListener('click', function(){
+    showToast(nameLines[nameIdx % nameLines.length], false);
+    nameIdx++;
+  });
+  nameEl.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nameEl.click(); }
+  });
+
+  /* ============ 时间线卡：剑气掠过 ============ */
+  document.querySelectorAll('.timeline-card').forEach(function(card){
+    var flash = document.createElement('div');
+    flash.className = 'sword-flash';
+    card.appendChild(flash);
+    card.addEventListener('click', function(){
+      flash.classList.remove('go');
+      void flash.offsetWidth;
+      flash.classList.add('go');
+      blip(700, 0.06, 'sine', 0.08);
+    });
+  });
+
+  /* ============ 结尾心声 ============ */
+  var endingQuote = document.getElementById('endingQuote');
+  var endingSub = document.getElementById('endingSub');
+  var hearts = [
+    { t: '她总是拼尽全力「得到」一些，而后立刻「失去」。', s: '官方档案馆 · 追忆「故乡」' },
+    { t: '即便如此，她也依旧执拗地将那张照片带在身边。这成为了她为数不多的坚持。', s: '官方档案馆 · 追忆「纪念」' },
+    { t: '只是……故土遥远，此生难及。', s: '官方档案馆 · 追忆「故乡」' },
+    { t: '彼时的少女青涩、迷茫，尚未预见自己明日的命途。', s: '官方档案馆 · 英桀档案 · 简介' },
+  ];
+  var heartIdx = 0;
+  endingQuote.addEventListener('click', function(){
+    var h = hearts[heartIdx % hearts.length];
+    heartIdx++;
+    endingSub.textContent = '「' + h.t + '」';
+    var src = document.createElement('span');
+    src.className = 'src';
+    src.textContent = '—— ' + h.s;
+    endingSub.appendChild(src);
+    endingSub.classList.add('visible');
+    if (!reducedMotion){
+      var r = endingQuote.getBoundingClientRect();
+      inkBurst(r.left + r.width / 2, r.top + r.height / 2, 10);
+    }
+  });
+  endingQuote.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); endingQuote.click(); }
+  });
+
+  /* ============ 羽渡尘 · 记忆焚烧（大彩蛋其二） ============ */
+  var featherFab = document.getElementById('featherFab');
+  var burning = false;
+  var burnPool = '浮生碌碌切莫无为念死无常生灭有时命运只有一种谁也无法绕开'.split('');
+  featherFab.addEventListener('click', function(){
+    if (burning) return;
+    burning = true;
+    document.body.classList.add('burning');
+    showToast('羽渡尘 · 第零额定功率——有些记忆，先烧为敬。', true);
+    emberBurst();
+    /* 随机三段标题文字被「烧乱」 */
+    var titles = Array.prototype.slice.call(document.querySelectorAll('.section-title'));
+    var picked = [];
+    while (picked.length < 3 && titles.length){
+      var t = titles.splice(Math.floor(Math.random() * titles.length), 1)[0];
+      picked.push({ el: t, html: t.textContent });
+    }
+    var scramble = setInterval(function(){
+      picked.forEach(function(p){
+        var len = Math.min(p.html.length, 12);
+        var out = '';
+        for (var k = 0; k < len; k++){
+          out += burnPool[Math.floor(Math.random() * burnPool.length)];
+        }
+        p.el.textContent = out;
+      });
+    }, 110);
+    setTimeout(function(){
+      clearInterval(scramble);
+      picked.forEach(function(p){ p.el.textContent = p.html; });
+      document.body.classList.remove('burning');
+      burning = false;
+      showToast('……放心。重要的事，我都还记得。', false);
+    }, 3200);
+  });
+
+  /* ============ canvas：羽 · 墨尘 · 剑气 ============ */
+  var canvas = document.getElementById('inkCanvas');
+  var ctx = canvas.getContext('2d');
+  var W, H;
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var lifePalettes = {
+    '1': { feather: ['#8fb8ad','#cfd8d3','#5c8a7e'], dust: '#cfd8d3' },
+    '2': { feather: ['#d05a42','#e8d9c0','#9c3a28'], dust: '#e8d9c0' },
+    '3': { feather: ['#c9a86a','#7fa8c9','#9a7c45'], dust: '#c9a86a' },
+  };
+  function palette(){ return lifePalettes[document.body.getAttribute('data-life') || '1']; }
+
+  var P = { W: 0, H: 0 };
+  var resize = ElysiaShared.makeResize(canvas, P);
+  resize();
+  window.addEventListener('resize', function(){
+    resize();
+    for (var j = 0; j < feathers.length; j++){
+      if (feathers[j].x > P.W) feathers[j].x = Math.random() * P.W;
+    }
+  });
+
+  var feathers = [];
+  var featherCount = Math.min(24, Math.floor(window.innerWidth / 55));
+  function createFeather(fromTop){
+    return {
+      x: Math.random() * P.W,
+      y: fromTop ? -16 - Math.random() * 80 : Math.random() * P.H,
+      size: 5 + Math.random() * 8,
+      speedY: 0.18 + Math.random() * 0.38,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.012,
+      swayAmp: 14 + Math.random() * 26,
+      swaySpd: 0.004 + Math.random() * 0.007,
+      swayOff: Math.random() * Math.PI * 2,
+      opacity: 0.12 + Math.random() * 0.28,
+    };
+  }
+  for (var fi = 0; fi < featherCount; fi++) feathers.push(createFeather(false));
+
+  var dusts = [];
+  var dustCount = Math.min(34, Math.floor(window.innerWidth / 36));
+  function createDust(){
+    return {
+      x: Math.random() * P.W,
+      y: Math.random() * P.H,
+      size: 0.3 + Math.random() * 1.5,
+      speedY: -(0.04 + Math.random() * 0.14),
+      baseOpacity: 0.08 + Math.random() * 0.3,
+      twinkleSpd: 0.005 + Math.random() * 0.018,
+      twinkleOff: Math.random() * Math.PI * 2,
+    };
+  }
+  for (fi = 0; fi < dustCount; fi++) dusts.push(createDust());
+
+  var swordStreak = null;
+  var bursts = [];
+  var embers = [];
+  var time = 0;
+  var scrollRatio = 0;
+  window.addEventListener('scroll', function(){
+    var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    scrollRatio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+  });
+
+  function animate(){
+    if (reducedMotion) return;
+    time++;
+    ctx.clearRect(0, 0, P.W, P.H);
+    var fade = 1 - scrollRatio * 0.5;
+    var pal = palette();
+    var i, f, d, tw;
+
+    for (i = 0; i < dusts.length; i++){
+      d = dusts[i];
+      d.y += d.speedY;
+      if (d.y < -8){ d.y = P.H + 8; d.x = Math.random() * P.W; }
+      tw = 0.5 + 0.5 * Math.sin(time * d.twinkleSpd + d.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = d.baseOpacity * tw * fade;
+      ctx.fillStyle = pal.dust;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, Math.max(0.25, d.size), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (i = 0; i < feathers.length; i++){
+      f = feathers[i];
+      f.y += f.speedY;
+      f.x += Math.sin(time * f.swaySpd + f.swayOff) * 0.35;
+      f.rotation += f.rotSpeed;
+      if (f.y > P.H + 24){ feathers[i] = createFeather(true); f = feathers[i]; }
+      ctx.save();
+      ctx.translate(f.x, f.y);
+      ctx.rotate(f.rotation);
+      ctx.globalAlpha = f.opacity * fade;
+      ctx.fillStyle = pal.feather[i % pal.feather.length];
+      ctx.beginPath();
+      ctx.ellipse(0, 0, Math.max(0.7, f.size * 0.26), Math.max(1.4, f.size * 0.75), 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = f.opacity * fade * 0.5;
+      ctx.strokeStyle = pal.feather[0];
+      ctx.lineWidth = 0.7;
+      ctx.beginPath();
+      ctx.moveTo(0, -f.size * 0.7);
+      ctx.lineTo(0, f.size * 0.7);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /* 偶发剑气：一道细长白光掠过 */
+    if (!swordStreak && Math.random() < 0.004){
+      var fromLeft = Math.random() > 0.5;
+      swordStreak = {
+        x: fromLeft ? -120 : P.W + 120,
+        y: P.H * (0.12 + Math.random() * 0.7),
+        vx: (fromLeft ? 1 : -1) * (9 + Math.random() * 7),
+        len: 90 + Math.random() * 120,
+        life: 1,
+      };
+    }
+    if (swordStreak){
+      var st = swordStreak;
+      st.x += st.vx;
+      st.life -= 0.012;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, st.life) * 0.5 * fade;
+      var grad = ctx.createLinearGradient(st.x - st.len * Math.sign(st.vx), st.y, st.x, st.y);
+      grad.addColorStop(0, 'rgba(255,255,255,0)');
+      grad.addColorStop(1, 'rgba(255,255,255,0.85)');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(st.x - st.len * Math.sign(st.vx), st.y + 3);
+      ctx.lineTo(st.x, st.y);
+      ctx.stroke();
+      ctx.restore();
+      if (st.life <= 0 || st.x < -200 || st.x > P.W + 200) swordStreak = null;
+    }
+
+    /* 点击墨点迸溅 */
+    for (i = bursts.length - 1; i >= 0; i--){
+      var b = bursts[i];
+      b.x += b.vx; b.y += b.vy; b.vy += 0.05; b.vx *= 0.985;
+      b.life -= 0.02;
+      if (b.life <= 0){ bursts.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, b.life) * 0.8;
+      ctx.fillStyle = b.color;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    /* 焚烧的余烬羽 */
+    for (i = embers.length - 1; i >= 0; i--){
+      var e = embers[i];
+      e.y += e.vy; e.x += Math.sin(time * 0.05 + e.off) * 0.4;
+      e.life -= 0.008;
+      if (e.life <= 0){ embers.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, e.life) * 0.75;
+      ctx.fillStyle = e.color;
+      ctx.translate(e.x, e.y);
+      ctx.rotate(e.rot);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 1.6, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    requestAnimationFrame(animate);
+  }
+  function inkBurst(cx, cy, count){
+    var pal = palette();
+    for (var k = 0; k < count; k++){
+      var angle = (k / count) * Math.PI * 2 + Math.random() * 0.6;
+      var speed = 1 + Math.random() * 3;
+      bursts.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        r: 1.5 + Math.random() * 2.6,
+        life: 1,
+        color: Math.random() > 0.55 ? pal.dust : pal.feather[Math.floor(Math.random() * pal.feather.length)],
+      });
+    }
+  }
+  function emberBurst(){
+    for (var k = 0; k < 46; k++){
+      embers.push({
+        x: Math.random() * P.W,
+        y: P.H * (0.55 + Math.random() * 0.5),
+        vy: -(0.5 + Math.random() * 1.3),
+        rot: Math.random() * Math.PI,
+        off: Math.random() * Math.PI * 2,
+        life: 1,
+        color: Math.random() > 0.4 ? '#e08a4a' : '#c8402f',
+      });
+    }
+  }
+  animate();
+
+  function blip(freq, dur, type, vol){
+    try{
+      if (!window.__huaAC){
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        window.__huaAC = new AC();
+      }
+      var ac = window.__huaAC;
+      if (ac.state === 'suspended') ac.resume();
+      var t = ac.currentTime;
+      var osc = ac.createOscillator();
+      var gain = ac.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, t);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(60, freq * 0.55), t + dur);
+      gain.gain.setValueAtTime(vol, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      osc.connect(gain);
+      gain.connect(ac.destination);
+      osc.start(t);
+      osc.stop(t + dur + 0.05);
+    } catch(err){}
+  }
+
+  /* ============ 全局点击反馈：墨晕涟漪（点哪里都有） ============ */
+  document.addEventListener('click', function(e){
+    if (e.target.closest && (e.target.closest('#huaGameOverlay') || e.target.closest('#featherFab'))) return;
+    if (!reducedMotion){
+      for (var n = 0; n < 2; n++){
+        var ring = document.createElement('div');
+        ring.className = 'ink-ring';
+        var size = 54 + n * 40 + Math.random() * 18;
+        ring.style.width = size + 'px';
+        ring.style.height = size + 'px';
+        ring.style.left = e.clientX + 'px';
+        ring.style.top = e.clientY + 'px';
+        ring.style.animationDelay = (n * 0.13) + 's';
+        if (n === 1) ring.style.borderColor = 'rgba(201,168,106,.4)';
+        document.body.appendChild(ring);
+        setTimeout(function(el){ el.remove(); }.bind(null, ring), 1200);
+      }
+      inkBurst(e.clientX, e.clientY, 5);
+    }
+    blip(340 + Math.random() * 120, 0.05, 'sine', 0.05);
+  });
+})();
+</script>

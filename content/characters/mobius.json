@@ -3,6 +3,7 @@
   3,
   30
  ],
+ "bodyAttrs": "",
  "chibi": null,
  "endingStars": {
   "colors": {
@@ -214,6 +215,12 @@
  "shortName": "梅比乌斯",
  "signet": "无限",
  "signetImage": "/images/signet/无限-256.webp",
+ "styles": [
+  "page",
+  "signet-mark",
+  "signet-badge-css",
+  "touch-target-fix"
+ ],
  "typewriter": {
   "delay": 150,
   "hintDelay": 1000,

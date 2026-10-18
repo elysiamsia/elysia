@@ -3,6 +3,7 @@
   9,
   31
  ],
+ "bodyAttrs": "",
  "chibi": null,
  "endingStars": {
   "colors": {
@@ -195,5 +196,11 @@
  ],
  "shortName": "伊甸",
  "signet": "黄金",
- "signetImage": "/images/signet/黄金-256.webp"
+ "signetImage": "/images/signet/黄金-256.webp",
+ "styles": [
+  "page",
+  "signet-mark",
+  "signet-badge-css",
+  "touch-target-fix"
+ ]
 }

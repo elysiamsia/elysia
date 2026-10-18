@@ -54,7 +54,15 @@ function renderPage(key) {
   for (const k of THEME_KEYS) if (character[k] !== undefined) theme[k] = character[k];
   const read = (p) => (fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : '');
   const env = nunjucks.configure(TEMPLATES, { autoescape: false, trimBlocks: false, lstripBlocks: false });
-  const signetStyles = env.render('partials/signet.njk', { character: character });
+  // 按每页自己的 style 令牌顺序拼接（不同页的修复块顺序不同，硬编码顺序会产生 diff）
+  const shared = {
+    'signet-mark': env.render('partials/signet-mark.njk', { character: character }),
+    'signet-badge-css': env.render('partials/signet-badge.njk', { character: character }),
+    'touch-target-fix': env.render('partials/touch-target.njk', { character: character }),
+  };
+  const fixMap = {};
+  for (const m of read(path.join(PAGES_DIR, key + '.page-fixes.css')).matchAll(/<style id="([^"]+)">[\s\S]*?<\/style>/g)) fixMap[m[1]] = m[0];
+  const stylesHtml = (character.styles || []).map((tok) => (tok === 'page' ? read(path.join(PAGES_DIR, key + '.page.css')) : (shared[tok] !== undefined ? shared[tok] : (fixMap[tok] || '')))).join(String.fromCharCode(10));
   const html = env.render('base.njk', {
     character: character,
     meta: {
@@ -67,9 +75,9 @@ function renderPage(key) {
     },
     // 主题色整行注入（含换行）—— 没有主题色的页（hua/pardofelis）一个字节都不多
     themeColorTag: character.meta.themeColor ? '<meta name="theme-color" content="' + character.meta.themeColor + '">' + String.fromCharCode(10) : '',
-    pageStyle: read(path.join(PAGES_DIR, key + '.page.css')),
-    pageFixes: read(path.join(PAGES_DIR, key + '.page-fixes.css')),
-    signetStyles: signetStyles,
+
+    stylesHtml: stylesHtml,
+    bodyAttrs: character.bodyAttrs || '',
     pageBody: read(path.join(PAGES_DIR, key + '.page.body.html')).split('/*@THEME@*/').join(JSON.stringify(theme)),
   });
   const rel = key + '/index.html';

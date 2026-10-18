@@ -3,6 +3,7 @@
   1,
   9
  ],
+ "bodyAttrs": " data-life=\"1\"",
  "chibi": null,
  "endingStars": {
   "colors": {
@@ -213,6 +214,13 @@
  "shortName": "华",
  "signet": "浮生",
  "signetImage": "/images/signet/浮生-256.webp",
+ "styles": [
+  "page",
+  "signet-mark",
+  "signet-badge-css",
+  "touch-target-fix",
+  "narrow-320-fix"
+ ],
  "typewriter": {
   "delay": 150,
   "hintDelay": 1200,

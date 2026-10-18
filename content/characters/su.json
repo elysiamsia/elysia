@@ -1,5 +1,6 @@
 {
  "birthday": null,
+ "bodyAttrs": "",
  "chibi": null,
  "endingStars": {
   "colors": {
@@ -194,5 +195,12 @@
  ],
  "shortName": "苏",
  "signet": "天慧",
- "signetImage": "/images/signet/天慧-256.webp"
+ "signetImage": "/images/signet/天慧-256.webp",
+ "styles": [
+  "page",
+  "signet-mark",
+  "signet-badge-css",
+  "touch-target-fix",
+  "threshold-44-fix"
+ ]
 }

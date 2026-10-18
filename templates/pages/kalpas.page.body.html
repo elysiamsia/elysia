@@ -1,0 +1,593 @@
+
+
+<canvas id="emberCanvas"></canvas>
+<div id="rageOverlay"></div>
+
+<!-- SECTION: rage hud -->
+<!-- 呀，这条怒气条看着像个进度条，可它只是个 div——读屏的人完全不知道它在说什么。
+     补上 progressbar 语义，让「怒气 45%」这件事也能被听见♥ -->
+<div id="rageHud" title="怒气" role="progressbar"
+     aria-label="怒气" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+  <span class="rage-label">怒气</span>
+  <div class="rage-bar"><div class="rage-fill" id="rageFill"></div></div>
+</div>
+
+<!-- SECTION: opening -->
+<section class="section-opening" id="opening">
+  <div class="opening-content">
+    <div class="opening-ornament" id="openingOrn">▲ ── ▲ ── ▲</div>
+    <h1 class="opening-title" id="typewriterText"></h1><span class="typing-cursor" id="typingCursor">|</span>
+    <p class="opening-subtitle" id="openingSub">欢迎来到不熄的战场</p>
+    <p class="opening-hint" id="openingHint">……别乱点。他的怒气，可是会攒满的。</p>
+  </div>
+  <div class="scroll-hint" id="scrollHint">
+    <span>踏入战场</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</section>
+
+<!-- SECTION: about -->
+<section class="content-section" id="about">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">▲</span>关于他<span class="section-title-mark">▲</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="profile-card">
+    <div class="profile-card-inner">
+      <div class="profile-head">
+        <div class="mask-wrap" id="maskWrap" role="button" tabindex="0" aria-label="漆黑的面具，点击试试">
+          <svg viewBox="0 0 120 140" width="108" height="126" aria-hidden="true">
+            <path d="M60 8 C95 8 108 38 108 70 C108 108 88 132 60 132 C32 132 12 108 12 70 C12 38 25 8 60 8 Z" fill="#17100c" stroke="#3a2a20" stroke-width="2"/>
+            <path d="M26 50 L54 60" stroke="#c1121f" stroke-width="5" stroke-linecap="round"/>
+            <path d="M94 50 L66 60" stroke="#c1121f" stroke-width="5" stroke-linecap="round"/>
+            <ellipse cx="41" cy="72" rx="10" ry="5" fill="#ff3b30" opacity=".85"/>
+            <ellipse cx="79" cy="72" rx="10" ry="5" fill="#ff3b30" opacity=".85"/>
+            <ellipse cx="41" cy="72" rx="4" ry="2" fill="#ffd9c2"/>
+            <ellipse cx="79" cy="72" rx="4" ry="2" fill="#ffd9c2"/>
+            <path d="M42 102 Q60 114 78 102" stroke="#3a2a20" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <line x1="50" y1="100" x2="50" y2="110" stroke="#3a2a20" stroke-width="3"/>
+            <line x1="60" y1="102" x2="60" y2="113" stroke="#3a2a20" stroke-width="3"/>
+            <line x1="70" y1="100" x2="70" y2="110" stroke="#3a2a20" stroke-width="3"/>
+            <g class="mask-crack c1"><path d="M60 10 L52 38 L64 56 L54 76" stroke="#ffa62b" stroke-width="1.6" fill="none"/></g>
+            <g class="mask-crack c2"><path d="M96 34 L80 46 L86 62 L74 74" stroke="#ffa62b" stroke-width="1.6" fill="none"/></g>
+            <g class="mask-crack c3"><path d="M22 40 L38 52 L30 66 L44 84 L36 98" stroke="#ffa62b" stroke-width="1.6" fill="none"/></g>
+          </svg>
+        </div>
+        <p class="mask-secret" id="maskSecret">
+          面具裂开了——可后面什么也没有。<br>
+          <span class="warm">没有人见过他的真容。只知道面具背后，<br>藏着一颗比火焰更炽热的心。</span>
+        </p>
+        <div class="profile-name" id="profileName" role="button" tabindex="0">千劫</div>
+        <div class="profile-name-en">K A L P A S</div>
+      </div>
+      <div class="profile-divider"></div>
+      <div class="profile-grid">
+        <span class="profile-label">名字来源</span>
+        <span class="profile-value">Kalpas，梵语音译，意为<span class="flamec">「千般劫难」</span></span>
+        <span class="profile-label">出处</span>
+        <span class="profile-value">《崩坏3》第一文明纪元</span>
+        <span class="profile-label">身份</span>
+        <span class="profile-value">逐火之蛾融合战士 · 秘密行动部队「毒蛹」成员</span>
+        <span class="profile-label">位次</span>
+        <span class="profile-value"><span class="highlight">Ⅵ</span>（因其乖戾性情，仅位列第六）</span>
+        <span class="profile-label">刻印</span>
+        <span class="profile-value"><span class="highlight">「鏖灭」</span></span>
+        <span class="profile-label">异名</span>
+        <span class="profile-value">「非天」——非人，非神，非天，非我</span>
+        <span class="profile-label">融合崩坏兽</span>
+        <span class="profile-value">帝王级「非天」，副作用为<span class="flamec">认知异化</span></span>
+        <span class="profile-label">战斗方式</span>
+        <span class="profile-value">鏖灭之火 · 近战狂攻 · 人为崩落后以「破灭廊柱」为兵，怒气满则狂暴</span>
+        <span class="profile-label">配音</span>
+        <span class="profile-value">kinsen / 金船（汉语）· 小林裕介（日语）</span>
+        <span class="profile-label">爱好</span>
+        <span class="profile-value">制作木雕；重复「鏖斗、鏖战、鏖杀、鏖灭」</span>
+        <span class="profile-label">珍视之物</span>
+        <span class="profile-value"><span class="flamec">战友、同伴、一个能回去的家</span></span>
+        <span class="profile-label">讨厌</span>
+        <span class="profile-value">律者、敌人、梅比乌斯、过去，以及面对失去却无能为力的自己</span>
+      </div>
+      <div class="profile-desc">
+        以漆黑的面具遮蔽真容，持有「非天」之异名的男子。自现于世间的第一瞬起，他就与身边的一切格格不入——仇恨与憎恶啮噬着他，却也支撑着他傲然的背影。愤怒使他化为吞噬一切的烈火。然而他无法成为火，只能栖身于逐火的蛾，在阴暗的「蛹」内涌动。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: journey -->
+<section class="content-section" id="journey">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">▲</span>他的千劫<span class="section-title-mark">▲</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="timeline">
+    <div class="timeline-line"></div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>天外坠落</h3>
+        <p>他自天外坠入一个遭受崩坏侵扰的蛮荒村落，为村民击杀崩坏兽，被奉若神明。他把这里当作第一个「家」。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>图腾柱</h3>
+        <p>村民相信他的血能抵御崩坏，将他绑上图腾柱，终日放血折磨。他默默忍受——直到崩坏摧毁了村落。他挣脱束缚，焚尽故乡的一切，戴上亲手刻的木雕面具，转身离开。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>一瞬斩律者</h3>
+        <p>第五次崩坏期间，他以人类之身遭遇冰之律者——仅用「一瞬间」便将其击杀，自己也被临死反扑冻得遍体鳞伤。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>黄昏街</h3>
+        <p>顶着冻伤流浪到黄昏街，被阿波尼亚的疗养院收留。他做搬运工、照顾孩子们，深受喜爱——那是他的第二个「家」。后来樱奉命清理疗养院，他怒不可遏，与之一战成平。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>毒蛹</h3>
+        <p>爱莉希雅与他达成交易——「我会给你，一场永无终止的战争」。他接受阿波尼亚的戒律「不可滥杀无辜」，加入逐火之蛾，成为毒蛹的利刃。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>非天</h3>
+        <p>他与樱再度联手，斩杀帝王级崩坏兽「非天」，以其因子接受超变手术。副作用「认知异化」让他的性情如野兽般暴烈——面具，从此再未摘下。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>伊默尔</h3>
+        <p>多次刺杀他的杀手伊默尔，反而被他任命为副官。伊默尔沦为律者个体被关押，他劫狱相救；伊默尔的核心被制成支配之键，他狂怒之下毁掉上百把，从此被禁止接触神之键。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>樱之死</h3>
+        <p>得知樱的死讯，他杀死了所有相关人员——五十四人，一个不留。约束的惨剧中，苏解开他的戒律唤他重返战场，他破土而出，将沿途崩坏兽屠戮殆尽。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>燃尽</h3>
+        <p>终焉之战，他与战友们一同迎向注定的败局，站立而逝。往世乐土中，他触碰侵蚀、燃烧自己为后来者留下情报——最后将眼前的位面一把扯碎，谢幕得盛大而壮丽。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: quotes -->
+<section class="content-section" id="quotes">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">▲</span>鏖灭之言<span class="section-title-mark">▲</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="quotes-grid" id="quotesGrid" data-primary-action></div>
+</section>
+
+<!-- SECTION: ending -->
+<section class="section-ending" id="ending">
+  <div class="ending-stars" id="endingStars"></div>
+  <p class="ending-quote" id="endingQuote" role="button" tabindex="0">行了。「走」吧。</p>
+  <p class="ending-sub" id="endingSub"></p>
+  <p class="ending-attr" id="endingAttr">致千劫 · elysiad.top/kalpas</p>
+  <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
+  <div class="ending-fade"></div>
+</section>
+
+<div id="kpToast" role="status"></div>
+
+<!-- SECTION: scripts -->
+<script src="/assets/site.js"></script>
+<script src="/assets/explore.js"></script>
+<script src="/assets/bottom.js"></script>
+<script src="/assets/games/kalpas.js"></script>
+<script src="/assets/bday.js"></script>
+<script src="/data/bdays.js"></script>
+<script>
+(function(){
+  /* SECTION: quotes data */
+  var quotes = [
+    '「敌人，杀便好。拦路者，杀便好。存在的隐患，杀便好。所有的异物，杀便好……！」',
+    '「不用在战争中寻找我，我是不息的硝烟，是战争本身。」',
+    '「鏖斗，鏖战，鏖杀，鏖灭。」',
+    '「非人，非神，非天，非我。」',
+    '「只有敌人的哀嚎，才能提醒我们一切仍然存在，自己仍存活于世。」',
+    '「来！让我见证你的决断，让我见证你的怒火！将一切，燃烧殆尽吧！」',
+    '「长久以来，他们不允许我再持有武器。现在，他们应该满意了——我为此成为了武器，最可怕的那一种。」',
+    '「因为逐火之蛾给了我想要的东西：一场永无休止的战争。」',
+    '「将一切，碎尸万段！」',
+    '「行了。「走」吧。」'
+  ];
+
+  /* SECTION: quotes build —— 交给共享层
+     ★ 闭包 O(1) 索引：不再每次点击都重扫一遍 DOM，只为问「我是第几张卡片」。
+     ⚠ ariaLabel 必填，且必须传本页原文案：它是 Lore，不是通用 UI 标签。
+       而快照工具只采计算样式，抹掉了也测不出「✅ 无差异」。见 docs/theme-schema.md §四。 */
+  ElysiaShared.buildQuoteCards({
+    grid: document.getElementById('quotesGrid'),
+    quotes: quotes,
+    ariaLabel: '鏖灭之言，点击切换',
+  });
+
+  /* SECTION: canvas particles (余烬上升 + 灰烬飘落) */
+  var canvas = document.getElementById('emberCanvas');
+  var ctx = canvas.getContext('2d');
+  var W, H;
+  var emberColors = ['#ff6b35','#ff3b30','#ffa62b','#c1121f'];
+  var ashColors = ['#9a8c82','#6f625a','#c4ada0'];
+
+  // ⚠ 只抽「把 canvas 和视口尺寸对上」这三行。下面那个「把越界粒子拉回画布」的
+  //   匿名监听器**故意留着不动**——它碰的数组每页不一样，抽走会改行为。
+  const resize = ElysiaShared.makeResize(canvas, {
+    get W() { return W; }, set W(v) { W = v; },
+    get H() { return H; }, set H(v) { H = v; },
+  });
+  resize();
+  window.addEventListener('resize', resize);
+  var embers = [];
+  var emberCount = Math.min(40, Math.floor(window.innerWidth / 28));
+  function createEmber(fromBottom){
+    return {
+      x: Math.random() * W,
+      y: fromBottom ? H + 12 + Math.random() * 70 : Math.random() * H,
+      size: 0.8 + Math.random() * 2.4,
+      speedY: -(0.25 + Math.random() * 0.6),
+      drift: (Math.random() - 0.5) * 0.3,
+      baseOpacity: 0.18 + Math.random() * 0.5,
+      twinkleSpd: 0.008 + Math.random() * 0.025,
+      twinkleOff: Math.random() * Math.PI * 2,
+      color: emberColors[Math.floor(Math.random() * emberColors.length)]
+    };
+  }
+  for (var i = 0; i < emberCount; i++) embers.push(createEmber(false));
+
+  var ashes = [];
+  var ashCount = Math.min(26, Math.floor(window.innerWidth / 46));
+  function createAsh(fromTop){
+    return {
+      x: Math.random() * W,
+      y: fromTop ? -12 - Math.random() * 60 : Math.random() * H,
+      size: 0.8 + Math.random() * 1.8,
+      speedY: 0.15 + Math.random() * 0.35,
+      swayAmp: 12 + Math.random() * 24,
+      swaySpd: 0.004 + Math.random() * 0.008,
+      swayOff: Math.random() * Math.PI * 2,
+      baseOpacity: 0.08 + Math.random() * 0.18,
+      color: ashColors[Math.floor(Math.random() * ashColors.length)]
+    };
+  }
+  for (i = 0; i < ashCount; i++) ashes.push(createAsh(false));
+
+  var scrollRatio = 0;
+  window.addEventListener('scroll', function(){
+    var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    scrollRatio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+  });
+
+  var time = 0;
+  var rageBoost = 1;
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function animate(){
+    if (reducedMotion) return;
+    time++;
+    ctx.clearRect(0, 0, W, H);
+    var fadeFactor = 1 - scrollRatio * 0.55;
+    var i, e, a, tw;
+
+    for (i = 0; i < ashes.length; i++){
+      a = ashes[i];
+      a.y += a.speedY;
+      a.x += Math.sin(time * a.swaySpd + a.swayOff) * 0.3;
+      if (a.y > H + 15){ ashes[i] = createAsh(true); a = ashes[i]; }
+      ctx.save();
+      ctx.globalAlpha = a.baseOpacity * fadeFactor;
+      ctx.fillStyle = a.color;
+      ctx.beginPath();
+      ctx.arc(a.x, a.y, Math.max(0.3, a.size), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (i = 0; i < embers.length; i++){
+      e = embers[i];
+      e.y += e.speedY * rageBoost;
+      e.x += e.drift + Math.sin(time * 0.012 + e.twinkleOff) * 0.25;
+      if (e.y < -15){ embers[i] = createEmber(true); e = embers[i]; }
+      tw = 0.5 + 0.5 * Math.sin(time * e.twinkleSpd + e.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, e.baseOpacity * tw * fadeFactor * (0.7 + rageBoost * 0.3));
+      ctx.fillStyle = e.color;
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, Math.max(0.3, e.size), 0, Math.PI * 2);
+      ctx.fill();
+      if (e.size > 1.6){
+        ctx.globalAlpha *= 0.35;
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, e.size * 2.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    for (i = bursts.length - 1; i >= 0; i--){
+      var b = bursts[i];
+      b.x += b.vx;
+      b.y += b.vy;
+      b.vy += 0.05;
+      b.vx *= 0.99;
+      b.rotation += b.rotSpeed;
+      b.life -= 0.018;
+      if (b.life <= 0 || b.y < -20 || b.y > H + 20){ bursts.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, b.life);
+      ctx.fillStyle = b.color;
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.rotation);
+      ctx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h);
+      ctx.restore();
+    }
+    requestAnimationFrame(animate);
+  }
+  var bursts = [];
+  function sparkBurst(cx, cy, count, colors){
+    var palette = colors || emberColors;
+    for (var k = 0; k < count; k++){
+      var angle = (k / count) * Math.PI * 2 + Math.random() * 0.6;
+      var speed = 1.5 + Math.random() * 4;
+      bursts.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        w: 2 + Math.random() * 4,
+        h: 2 + Math.random() * 4,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.2,
+        life: 1,
+        color: palette[Math.floor(Math.random() * palette.length)]
+      });
+    }
+  }
+  animate();
+
+  /* SECTION: toast */
+  var toastEl = document.getElementById('kpToast');
+  var toastTimer = null;
+  function showToast(text, roar){
+    clearTimeout(toastTimer);
+    toastEl.textContent = text;
+    toastEl.classList.toggle('roar', !!roar);
+    toastEl.classList.remove('show');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, roar ? 3600 : 2800);
+  }
+
+  /* SECTION: rage system (怒气值 → 人为崩落) */
+  var rage = 0;
+  var raging = false;
+  var rageFill = document.getElementById('rageFill');
+  var rageHud = document.getElementById('rageHud');
+  var rageOverlay = document.getElementById('rageOverlay');
+  var roarLines = [
+    '将一切，碎尸万段！！！',
+    '燃尽一切，至死不休！！！',
+    '尽敌鏖杀，无止无休！！！',
+    '站起来，见证万物鏖灭！！！'
+  ];
+
+  setInterval(function(){
+    if (raging) return;
+    if (rage > 0){
+      rage = Math.max(0, rage - 1.2);
+      updateRage();
+    }
+  }, 400);
+
+  function updateRage(){
+    rageFill.style.width = Math.min(100, rage) + '%';
+    rageHud.classList.toggle('hot', rage > 55);
+    // 视觉条在动，语义值也要跟着动 —— 否则读屏听到的永远停在 0
+    rageHud.setAttribute('aria-valuenow', Math.round(Math.min(100, rage)));
+    rageBoost = 1 + Math.min(1, rage / 100) * 1.6;
+    rageOverlay.style.opacity = (Math.max(0, rage - 40) / 60 * 0.45).toFixed(2);
+    if (rage >= 100 && !raging) startRage();
+  }
+
+  function startRage(){
+    raging = true;
+    // ⚠ 减动偏好下**不加这两个类**：
+    //     body.raging      → rage-quake .09s 的**全页高频抖动**
+    //     #rageOverlay.lit → rage-pulse .5s 的红色脉冲
+    //   共享层的总闸（assets/site.css §9）虽然会把它们压到一帧，但「一帧全页抖动」
+    //   对光敏/前庭敏感的人仍有风险（WCAG 2.3.1），索性连类都不加。
+    //
+    //   演出的其余部分**照常** —— 吼声、粒子迸发、怒气条、结束语都还在，只是不晃。
+    //   （`.lit` 的 `opacity:1` 本来就被 updateRage() 的内联 style 压过，
+    //     它实际只贡献动画，所以跳过它不影响那个红罩的可见性。）
+    if (!reducedMotion) {
+      document.body.classList.add('raging');
+      rageOverlay.classList.add('lit');
+    }
+    showToast(roarLines[Math.floor(Math.random() * roarLines.length)], true);
+    var boomCount = 0;
+    var boomTimer = setInterval(function(){
+      sparkBurst(Math.random() * W, H * (0.3 + Math.random() * 0.6), 16);
+      boomCount++;
+      if (boomCount > 7) clearInterval(boomTimer);
+    }, 260);
+    rageBoost = 3.4;
+    setTimeout(function(){
+      raging = false;
+      document.body.classList.remove('raging');
+      rageOverlay.classList.remove('lit');
+      rage = 0;
+      rageBoost = 1;
+      updateRage();
+      showToast('……哼。怒火暂息。', false);
+    }, reducedMotion ? 1200 : 6500);
+  }
+
+  document.addEventListener('click', function(e){
+    if (!raging){
+      rage = Math.min(100, rage + 6);
+      updateRage();
+    }
+    if (reducedMotion) return;
+    if (e.target.closest && (e.target.closest('#maskWrap') || e.target.closest('#profileName') || e.target.closest('#endingQuote'))) return;
+    sparkBurst(e.clientX, e.clientY, 7);
+  });
+
+  /* SECTION: easter egg - 面具裂纹 */
+  var maskWrap = document.getElementById('maskWrap');
+  var maskSecret = document.getElementById('maskSecret');
+  var maskClicks = 0;
+  var maskLines = [
+    '……你在看什么？',
+    '再碰一下试试。',
+    '这面具，是我自己刻的。',
+    '想知道面具后面是什么？做梦。'
+  ];
+  function maskTap(){
+    maskClicks++;
+    maskWrap.classList.remove('shake');
+    void maskWrap.offsetWidth;
+    maskWrap.classList.add('shake');
+    if (!reducedMotion){
+      var r = maskWrap.getBoundingClientRect();
+      sparkBurst(r.left + r.width / 2, r.top + r.height / 2, 8, ['#ffa62b','#ff6b35','#3a2a20']);
+    }
+    if (maskClicks < 5){
+      maskWrap.classList.add('cracked-' + Math.min(3, Math.ceil(maskClicks / 1.5)));
+      showToast(maskLines[Math.min(maskClicks - 1, maskLines.length - 1)], false);
+    } else if (maskClicks === 5){
+      maskWrap.classList.add('shattered');
+      maskSecret.classList.add('reveal');
+      showToast('……没人见过他的真容。', false);
+      setTimeout(function(){
+        maskWrap.classList.remove('shattered','cracked-1','cracked-2','cracked-3');
+        maskWrap.style.opacity = '1';
+      }, 4200);
+      setTimeout(function(){
+        maskSecret.classList.remove('reveal');
+        maskClicks = 0;
+      }, 9000);
+    }
+  }
+  maskWrap.addEventListener('click', maskTap);
+  maskWrap.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); maskTap(); }
+  });
+
+  /* SECTION: easter egg - 点名字挨骂 */
+  var nameEl = document.getElementById('profileName');
+  var grumps = [
+    '你问什么？',
+    '滚。',
+    '给我闭嘴。',
+    '哼，麻烦死了。',
+    '说人话，要不然就给我闭嘴。',
+    '……你，在找死。'
+  ];
+  var grumpIdx = 0;
+  nameEl.addEventListener('click', function(){
+    showToast(grumps[grumpIdx % grumps.length], false);
+    grumpIdx++;
+  });
+  nameEl.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nameEl.click(); }
+  });
+
+  /* SECTION: easter egg - 结尾的心声 */
+  var endingQuote = document.getElementById('endingQuote');
+  var endingSub = document.getElementById('endingSub');
+  var heartLines = [
+    '「这一次……我有没有，『的确』保护了些什么？」',
+    '「厮杀原本就没有意义。但他们的死，不能没有意义。」',
+    '「我知道我真正想要的。我也知道，自己没有资格拥有。」',
+    '「……别用那种眼神看我。行了，「走」吧。」'
+  ];
+  var heartIdx = 0;
+  endingQuote.addEventListener('click', function(){
+    endingSub.textContent = heartLines[heartIdx % heartLines.length];
+    endingSub.classList.add('visible');
+    heartIdx++;
+    if (!reducedMotion){
+      var r = endingQuote.getBoundingClientRect();
+      sparkBurst(r.left + r.width / 2, r.top + r.height / 2, 12, ['#ffa62b','#ffd9c2','#ff6b35']);
+    }
+  });
+  endingQuote.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); endingQuote.click(); }
+  });
+
+  /* SECTION: typewriter */
+  /* SECTION: opening typewriter —— 交给共享层
+     ⚠ 五个时间数值**逐页不同**，全部照本页原值传入，不要依赖默认值。
+       漏传就会悄悄改变这一页的节奏。对照表见 docs/theme-schema.md §5.1。 */
+  ElysiaShared.makeTypewriter({
+    text: '敌人，杀便好。拦路者，杀便好。所有的异物，杀便好……！',
+    delay: 110, jitter: 80, startDelay: 700, tailDelay: 550, hintDelay: 1000,
+    hintEl: true,
+    preReveal: 'openingOrn',
+  });
+
+  /* SECTION: scroll animations */
+  /* SECTION: scroll animations —— 交给共享层
+     ⚠ 结尾目标改用带判空的写法（Inventory R11）：元素齐全时表现与原先完全一致，
+       缺元素时不再抛异常。属**行为改善**，非纯重构。 */
+  ElysiaShared.observeReveal('.timeline-node');
+  ElysiaShared.observeReveal('#ending', {
+    threshold: 0.3,
+    reveal: ['endingQuote', 'endingAttr', 'backLink'],
+  });
+
+  /* SECTION: ending stars (余烬星空) */
+  var starsContainer = document.getElementById('endingStars');
+  // 呀！星星的区间就是这一页的脾气，交给共享层的时候一个数都不敢动呢♥
+  // ⚠ 区间写法是 [起点, 跨度]，与原来的 `0.1 + Math.random() * 0.3` 一一对应。
+  var THEME = /*@THEME@*/;
+  ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+
+  /* 探索系统（2026-10-15 铺开）：12 个落点 + 解锁 + 陪伴层。 */
+  ElysiaExplore.init(THEME.explore);
+  /* 下方区块：探索度那一槽由 ElysiaExplore 自己放回来，这里只挂游戏槽。 */
+  ElysiaBottom.mount({ game: THEME.game });
+
+  /* 生日胶囊：千劫**没有**生日（页面与档案馆都没有），data/bdays.js 里没有他这一条，胶囊不会出现。
+     ⚠ 组件仍然要挂 —— 别的断言要读它的状态（凯文那一轮的教训）。 */
+  ElysiaBday.mount({});
+  /* SECTION: resize guard */
+  window.addEventListener('resize', function(){
+    for (var j = 0; j < embers.length; j++){
+      if (embers[j].x > W) embers[j].x = Math.random() * W;
+    }
+    for (j = 0; j < ashes.length; j++){
+      if (ashes[j].x > W) ashes[j].x = Math.random() * W;
+      if (ashes[j].y > H) ashes[j].y = Math.random() * H;
+    }
+  });
+})();
+</script>

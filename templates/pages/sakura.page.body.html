@@ -1,0 +1,795 @@
+
+
+<canvas id="sakuraCanvas"></canvas>
+<div id="sakuraVeil"></div>
+
+<!-- SECTION: opening -->
+<section class="section-opening" id="opening">
+  <div class="opening-content">
+    <div class="opening-signet" id="openingSignet" aria-hidden="true">
+      <!-- 刻印「刹那」的意象：一截刀鞘静静搁着，樱自鞘口落下 -->
+      <svg viewBox="0 0 120 120" width="102" height="102">
+        <defs>
+          <linearGradient id="saySaya" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#2b3a5c"/><stop offset="55%" stop-color="#131c33"/>
+            <stop offset="100%" stop-color="#0a1122"/>
+          </linearGradient>
+          <linearGradient id="sayIce" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="rgba(143,220,255,0)"/>
+            <stop offset="50%" stop-color="#8fdcff"/>
+            <stop offset="100%" stop-color="rgba(143,220,255,0)"/>
+          </linearGradient>
+        </defs>
+        <g transform="rotate(-38 60 60)">
+          <rect x="52" y="16" width="16" height="74" rx="8" fill="url(#saySaya)"
+                stroke="rgba(143,220,255,.35)" stroke-width="1"/>
+          <rect x="50" y="30" width="20" height="2.6" rx="1.3" fill="#4fb8e8" opacity=".5"/>
+          <rect x="50" y="76" width="20" height="2.6" rx="1.3" fill="#4fb8e8" opacity=".5"/>
+          <rect x="46" y="88" width="28" height="6" rx="3" fill="#3a4a6e"
+                stroke="rgba(143,220,255,.4)" stroke-width="1"/>
+          <rect x="54" y="93" width="12" height="19" rx="5" fill="#1a2440"
+                stroke="rgba(143,220,255,.25)" stroke-width="1"/>
+        </g>
+        <rect x="16" y="24" width="88" height="1.6" rx="1" fill="url(#sayIce)"
+              opacity=".7" class="signet-glint"/>
+        <path class="signet-petal" d="M97 34 q6 5 0 -11 q-6 6 0 11" fill="#ffb7c5" opacity=".75"/>
+      </svg>
+    </div>
+    <h1 class="opening-title" id="typewriterText"></h1><span class="typing-cursor" id="typingCursor">|</span>
+    <p class="opening-subtitle" id="openingSub">落樱的追忆</p>
+    <p class="opening-hint" id="openingHint">……若你愿意等，花总会落的。</p>
+  </div>
+  <div class="scroll-hint" id="scrollHint">
+    <span>向下 · 落入樱色</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</section>
+
+<!-- SECTION: about -->
+<section class="content-section" id="about">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">☸</span>关于她<span class="section-title-mark">☸</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="profile-card">
+    <div class="profile-card-inner">
+      <div class="profile-name" id="profileName" role="button" tabindex="0">樱</div>
+      <div class="profile-name-en">S A K U R A</div>
+      <div class="profile-divider"></div>
+      <div class="profile-grid">
+        <span class="profile-label">别名</span>
+        <span class="profile-value">『夜叉』 · 代号 <span class="highlight">Setsuna</span> · 「勿忘我」</span>
+        <span class="profile-label">出处</span>
+        <span class="profile-value">《崩坏3》<span class="ice">前文明纪元</span> · 非现文明八重樱</span>
+        <span class="profile-label">身份</span>
+        <span class="profile-value">逐火之蛾 → 秘密行动部队「毒蛹」 → 逐火十三英桀</span>
+        <span class="profile-label">位次</span>
+        <span class="profile-value"><span class="highlight">Ⅷ</span>（第八位）</span>
+        <span class="profile-label">刻印</span>
+        <span class="profile-value"><span class="highlight">「刹那」</span></span>
+        <span class="profile-label">融合战士编号</span>
+        <span class="profile-value">CM-004 —— 第四位接受超变手术者。是<span class="ice">实验编号</span>，不是英桀座次</span>
+        <span class="profile-label">武器</span>
+        <span class="profile-value">超限「<span class="ice">御灵刀 · 寒狱冰天</span>」；另有一柄，从不轻易出鞘</span>
+        <span class="profile-label">象征花</span>
+        <span class="profile-value"><span class="highlight">勿忘我</span></span>
+        <span class="profile-label">配音</span>
+        <span class="profile-value">杜冥鸦（汉语）/ 佐仓绫音（日语）</span>
+        <span class="profile-label">外貌</span>
+        <span class="profile-value">粉发紫瞳；兽耳（超变手术的副作用）；戴耳机，佩双刀</span>
+        <span class="profile-label">生日</span>
+        <span class="profile-value"><span class="highlight">7月22日</span></span>
+        <span class="profile-label">装甲</span>
+        <span class="profile-value"><span class="highlight">御神装 · 勿忘</span></span>
+      </div>
+      <div class="profile-desc">
+        故国崩陷，她与妹妹铃相依为命，而后成为逐火的飞蛾。在「毒蛹」的那些年里，她的生活只剩血与刀，连感情都必须封存——她学会了等待，那是她用以谋生最重要的技巧。可即使快至「刹那」之境，她也还是斩不断那恶徒心中的恶意。这柄刀记得每一条被它斩断的生命，也记得故乡那棵再也回不去的樱树。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: blade (鞘中刀) -->
+<section class="content-section" id="blade">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❀</span>鞘中刀<span class="section-title-mark">❀</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="blade-wrap">
+    <div class="blade-stage" id="bladeStage" role="button" tabindex="0"
+         aria-label="一柄鞘中之刀，点击尝试拔刀" data-primary-action>
+      <div class="blade-glow" id="bladeGlow"></div>
+      <svg viewBox="0 0 300 92" width="290" height="89" aria-hidden="true">
+        <defs>
+          <linearGradient id="saya" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#31405f"/><stop offset="42%" stop-color="#161f36"/>
+            <stop offset="100%" stop-color="#080d1a"/>
+          </linearGradient>
+          <linearGradient id="tsuka" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#243050"/><stop offset="100%" stop-color="#0d1424"/>
+          </linearGradient>
+          <linearGradient id="haE" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="rgba(143,220,255,0)"/>
+            <stop offset="45%" stop-color="#8fdcff"/><stop offset="100%" stop-color="rgba(143,220,255,0)"/>
+          </linearGradient>
+        </defs>
+        <!-- 柄（左） -->
+        <rect x="24" y="36" width="66" height="19" rx="9" fill="url(#tsuka)"
+              stroke="rgba(143,220,255,.28)" stroke-width="1"/>
+        <g stroke="#4fb8e8" stroke-width="1.1" opacity=".45">
+          <path d="M34 38 L42 53"/><path d="M46 38 L54 53"/><path d="M58 38 L66 53"/><path d="M70 38 L78 53"/>
+        </g>
+        <!-- 镡（护手） -->
+        <rect x="88" y="27" width="11" height="37" rx="5" fill="#3c4c70"
+              stroke="rgba(143,220,255,.5)" stroke-width="1"/>
+        <circle cx="93.5" cy="45.5" r="3.4" fill="#0b1020" stroke="rgba(143,220,255,.55)" stroke-width="1"/>
+        <!-- 鞘身（右）：微微上翘的弧 -->
+        <path d="M99 33 Q196 26 276 32 Q280 45 276 58 Q196 64 99 57 Z" fill="url(#saya)"
+              stroke="rgba(143,220,255,.3)" stroke-width="1"/>
+        <g stroke="#4fb8e8" stroke-width="1.6" opacity=".4" fill="none">
+          <path d="M118 32 Q120 45 118 58"/><path d="M150 30 Q152 45 150 59"/>
+        </g>
+        <!-- 鞘口那道蓝：它一直亮着，等着——但今天不出鞘 -->
+        <path d="M99 34 Q101 45 99 56" stroke="#8fdcff" stroke-width="2.4" fill="none"
+              opacity=".85" class="saya-mouth"/>
+        <ellipse cx="278" cy="45" rx="5" ry="13" fill="#0d1424" stroke="rgba(143,220,255,.35)" stroke-width="1"/>
+        <!-- 栗形（鞘尾） -->
+        <circle cx="283" cy="45" r="4.5" fill="#3c4c70" stroke="rgba(143,220,255,.4)" stroke-width="1"/>
+      </svg>
+      <div class="blade-flower" id="bladeFlower" aria-hidden="true">
+        <!-- 呀，这朵就是「勿忘我」——她最终没有拔刀，而是给了这个♥ -->
+        <svg viewBox="0 0 100 100" width="86" height="86">
+          <defs>
+            <radialGradient id="fmCore" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ffeeb0"/><stop offset="100%" stop-color="#e8b931"/>
+            </radialGradient>
+          </defs>
+          <g class="fm-petals" fill="#8fdcff" opacity=".92">
+            <ellipse cx="50" cy="26" rx="11" ry="15"/>
+            <ellipse cx="73" cy="43" rx="11" ry="15" transform="rotate(72 73 43)"/>
+            <ellipse cx="64" cy="70" rx="11" ry="15" transform="rotate(144 64 70)"/>
+            <ellipse cx="36" cy="70" rx="11" ry="15" transform="rotate(216 36 70)"/>
+            <ellipse cx="27" cy="43" rx="11" ry="15" transform="rotate(288 27 43)"/>
+          </g>
+          <circle cx="50" cy="50" r="9" fill="url(#fmCore)"/>
+        </svg>
+      </div>
+    </div>
+    <p class="blade-count" id="bladeCount">已伸手 × 0</p>
+    <p class="blade-hint" id="bladeHint">刀在鞘里。你可以试试。</p>
+  </div>
+</section>
+
+<!-- SECTION: journey -->
+<section class="content-section" id="journey">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❀</span>她的刹那<span class="section-title-mark">❀</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="timeline">
+    <div class="timeline-line"></div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>故国崩陷</h3>
+        <p>东方岛国倾覆于崩坏，她与妹妹铃从此相依为命。那棵故乡的樱树，是她们共有的记忆。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>一场交易</h3>
+        <p>为了守护铃，她与逐火之蛾达成交易，加入秘密行动部队「毒蛹」。从此她的生活只剩血与刀，连感情都必须封存。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>CM-004</h3>
+        <p>她接受了超变手术，成为第四位融合战士——编号 CM-004。代价是那对兽耳，还有不再完全属于人的身体。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>黄昏街</h3>
+        <p>一次任务里，她与千劫相遇。两个都生于杀意阴影中的人，就此结识——这大概是她少有的、称得上「朋友」的关系。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>约束之惨剧</h3>
+        <p>她驰援约束之律者的战场。后来的许多年里，她都希望自己能再早一点赶到——那一次，她没能救下所有人。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>第八位</h3>
+        <p>惨剧之后，逐火之蛾仅存的十三位融合战士结成「逐火十三英桀」。樱列第 Ⅷ 位，刻印「刹那」。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>铃</h3>
+        <p>第十二次崩坏。爱莉希雅告诉她：下一个律者，就是铃。她赶去关押地，却先被自己人当成了入侵者。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>落樱</h3>
+        <p>她为侵蚀律者争取了片刻犹豫，也为此战死。临终前，她把遗体托付给凯文——葬回故乡的樱树下。只是那棵树，早已被核弹波及。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: quotes -->
+<section class="content-section" id="quotes">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❀</span>刹那之言<span class="section-title-mark">❀</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="quotes-grid" id="quotesGrid" data-primary-action></div>
+</section>
+
+<!-- SECTION: ending -->
+<section class="section-ending" id="ending">
+  <div class="ending-stars" id="endingStars"></div>
+  <p class="ending-quote" id="endingQuote" role="button" tabindex="0">就像是一场葬礼……给那些被我斩杀的人……给我自己。</p>
+  <!-- 呀，这朵花开不开，取决于你有没有在那柄刀前面留下来过♥ -->
+  <div class="ending-flower" id="endingFlower" aria-hidden="true">
+    <svg viewBox="0 0 100 100" width="58" height="58">
+      <g fill="#8fdcff" opacity=".92">
+        <ellipse cx="50" cy="26" rx="11" ry="15"/>
+        <ellipse cx="73" cy="43" rx="11" ry="15" transform="rotate(72 73 43)"/>
+        <ellipse cx="64" cy="70" rx="11" ry="15" transform="rotate(144 64 70)"/>
+        <ellipse cx="36" cy="70" rx="11" ry="15" transform="rotate(216 36 70)"/>
+        <ellipse cx="27" cy="43" rx="11" ry="15" transform="rotate(288 27 43)"/>
+      </g>
+      <circle cx="50" cy="50" r="9" fill="#e8b931"/>
+    </svg>
+  </div>
+  <p class="ending-sub" id="endingSub"></p>
+  <p class="ending-attr" id="endingAttr">致樱 · elysiad.top/sakura</p>
+  <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
+  <div class="ending-fade"></div>
+</section>
+
+<div id="skToast" role="status"></div>
+
+<!-- SECTION: scripts -->
+<script src="/assets/site.js"></script>
+<!-- ⚠ 顺序不可调换（全站一致）：site → explore → bottom → bdays → bday
+     `bday.js` 与 `explore.js` / `bottom.js` 是**彼此独立**的 —— 它不依赖另外两个，
+     所以首页（没有探索系统）也用它。
+     ⚠ `games/sakura.js` 等 Task 6 建好再加 —— 现在加就是 404，
+       而 404 在 check_explore.py 里**算失败**（它收了 CDP 的 Log 域）。 -->
+<script src="/assets/explore.js"></script>
+<script src="/assets/bottom.js"></script>
+<script src="/data/bdays.js"></script>
+<script src="/assets/bday.js"></script>
+<!-- 她的小游戏「一瞬」。⚠ 这一行**必须**在 bottom.js 之后 ——
+     `ElysiaBottom.mount` 会用它去建游戏槽（找不到就只 warn，不抛）。 -->
+<script src="/assets/games/sakura.js"></script>
+<script>
+(function(){
+  /* SECTION: quotes data */
+  // 全部逐字摘自官方「圣芙蕾雅档案馆」事件-樱 原文页，未做任何改写。
+  var quotes = [
+    '「因为即使快至『刹那』之境，你也还是无法斩断那恶徒心中的恶意。」',
+    '「等待，曾经那是我用以谋生最重要的技巧，却不再是我现在的目的了。」',
+    '「就像是一场葬礼……给那些被我斩杀的人……给我自己。」',
+    '「存在于此的我们，早已无法像你一样再去改变些什么。一切已成定局。」',
+    '「对绝大多数人来说，朋友是被彼此身上的微光所吸引，进而聚集在一起的人们。但我和千劫……我们在一片满是杀意的阴影中结识。」',
+    '「加入『毒蛹』后，我的生活就只剩下了血与刀，没有丝毫喘息的时间，连感情都必须封存。」',
+    '「逐火者追逐着流火前行，而流火也在逐火者的身后投下了他们的阴影。你要小心……逐火之蛾的『阴影』，她就存在于这里。」',
+    '「因为不管我怎么做，樱花和酒，都不会再是当初的味道了。」',
+    '「只不过我们所要面对的敌人，除了崩坏以外……还有『人类』。」',
+    '「在与乐土中的敌人战斗时，你甚至可能会观察到我们曾经的恐惧……和内心的阴翳。那是远比敌人本身更为可怕的东西，你一定要多加小心。」'
+  ];
+
+  /* SECTION: quotes build —— 交给共享层
+     ★ 闭包 O(1) 索引：不再每次点击都重扫一遍 DOM，只为问「我是第几张卡片」。
+     ⚠ ariaLabel 必填，且必须传本页原文案：它是 Lore，不是通用 UI 标签。
+       而快照工具只采计算样式，抹掉了也测不出「✅ 无差异」。见 docs/theme-schema.md §四。 */
+  ElysiaShared.buildQuoteCards({
+    grid: document.getElementById('quotesGrid'),
+    quotes: quotes,
+    ariaLabel: '刹那之言，点击切换',
+  });
+
+  /* SECTION: canvas particles (落樱 + 冰尘 + 刹那刀光) */
+  var canvas = document.getElementById('sakuraCanvas');
+  var ctx = canvas.getContext('2d');
+  var W, H;
+  // 呀！落樱分四色：两瓣新粉、一瓣将谢的淡紫、一瓣近白——
+  //   像一棵树上不同时候的花，不是同一个颜色刷四遍♥
+  var petalColors = ['#ffb7c5','#ffd6e0','#e8a7c0','#f6e3ee'];
+  var moteColors = ['#8fdcff','#e8f4ff','#4fb8e8'];
+
+  // ⚠ 只抽「把 canvas 和视口尺寸对上」这三行。下面那个「把越界粒子拉回画布」的
+  //   匿名监听器**故意留着不动**——它碰的数组每页不一样，抽走会改行为。
+  const resize = ElysiaShared.makeResize(canvas, {
+    get W() { return W; }, set W(v) { W = v; },
+    get H() { return H; }, set H(v) { H = v; },
+  });
+  resize();
+  window.addEventListener('resize', resize);
+  var petals = [];
+  var petalCount = Math.min(26, Math.floor(window.innerWidth / 48));
+  function createPetal(fromTop){
+    return {
+      x: Math.random() * W,
+      y: fromTop ? -20 - Math.random() * 100 : Math.random() * H,
+      size: 4 + Math.random() * 8,
+      speedY: 0.2 + Math.random() * 0.45,
+      drift: (Math.random() - 0.5) * 0.3,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.012,
+      swayAmp: 16 + Math.random() * 30,
+      swaySpd: 0.004 + Math.random() * 0.008,
+      swayOff: Math.random() * Math.PI * 2,
+      opacity: 0.16 + Math.random() * 0.34,
+      color: petalColors[Math.floor(Math.random() * petalColors.length)]
+    };
+  }
+  for (var i = 0; i < petalCount; i++) petals.push(createPetal(false));
+
+  var motes = [];
+  var moteCount = Math.min(34, Math.floor(window.innerWidth / 34));
+  function createMote(){
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      size: 0.4 + Math.random() * 1.8,
+      speedY: -(0.05 + Math.random() * 0.18),
+      baseOpacity: 0.1 + Math.random() * 0.35,
+      twinkleSpd: 0.006 + Math.random() * 0.02,
+      twinkleOff: Math.random() * Math.PI * 2,
+      color: moteColors[Math.floor(Math.random() * moteColors.length)]
+    };
+  }
+  for (i = 0; i < moteCount; i++) motes.push(createMote());
+
+  var scrollRatio = 0;
+  window.addEventListener('scroll', function(){
+    var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    scrollRatio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+  });
+
+  var time = 0;
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function animate(){
+    if (reducedMotion) return;
+    time++;
+    ctx.clearRect(0, 0, W, H);
+    var fadeFactor = 1 - scrollRatio * 0.55;
+    var i, l, d, tw;
+
+    for (i = 0; i < motes.length; i++){
+      d = motes[i];
+      d.y += d.speedY;
+      if (d.y < -10){ d.y = H + 10; d.x = Math.random() * W; }
+      tw = 0.5 + 0.5 * Math.sin(time * d.twinkleSpd + d.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = d.baseOpacity * tw * fadeFactor;
+      ctx.fillStyle = d.color;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, Math.max(0.25, d.size), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (i = 0; i < petals.length; i++){
+      l = petals[i];
+      l.y += l.speedY;
+      l.x += l.drift + Math.sin(time * l.swaySpd + l.swayOff) * 0.4;
+      l.rotation += l.rotSpeed;
+      if (l.y > H + 25){ petals[i] = createPetal(true); l = petals[i]; }
+      ctx.save();
+      ctx.translate(l.x, l.y);
+      ctx.rotate(l.rotation);
+      ctx.globalAlpha = l.opacity * fadeFactor;
+      ctx.fillStyle = l.color;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, Math.max(0.6, l.size * 0.3), Math.max(0.8, l.size * 0.62), 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (i = bursts.length - 1; i >= 0; i--){
+      var b = bursts[i];
+      b.x += b.vx;
+      b.y += b.vy;
+      b.vy += 0.03;
+      b.vx *= 0.99;
+      b.rotation += b.rotSpeed;
+      b.life -= 0.015;
+      if (b.life <= 0){ bursts.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, b.life * 0.9);
+      ctx.fillStyle = b.color;
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.rotation);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, b.w * 0.4, b.w, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    /* 呀！偶尔，一道极细的刀光斜掠而过 —— 那是「刹那」。
+       不快、不亮、不多，就一瞬。全站只有这一页会这样♥ */
+    if (!reducedMotion){
+      glintTimer++;
+      if (glintTimer > 400 + Math.random() * 520){   // 约 7~15 秒一次
+        glintTimer = 0;
+        glints.push({
+          x: Math.random() < 0.5 ? -0.2 : 1.2,
+          y: 0.12 + Math.random() * 0.76,
+          dir: Math.random() < 0.5 ? 1 : -1,
+          len: 0.42 + Math.random() * 0.42,
+          life: 1
+        });
+      }
+      for (i = glints.length - 1; i >= 0; i--){
+        var g = glints[i];
+        g.x += g.dir * 0.011;
+        g.life -= 0.028;
+        if (g.life <= 0 || g.x < -0.45 || g.x > 1.45){ glints.splice(i, 1); continue; }
+        var gx = g.x * W, gy = g.y * H, half = g.len * W * 0.5, tilt = half * 0.16;
+        var grd = ctx.createLinearGradient(gx - half, gy - tilt, gx + half, gy + tilt);
+        grd.addColorStop(0, 'rgba(143,220,255,0)');
+        grd.addColorStop(0.5, 'rgba(143,220,255,' + (g.life * 0.42).toFixed(3) + ')');
+        grd.addColorStop(1, 'rgba(143,220,255,0)');
+        ctx.save();
+        ctx.strokeStyle = grd;
+        ctx.lineWidth = 1.15;
+        ctx.beginPath();
+        ctx.moveTo(gx - half, gy - tilt);
+        ctx.lineTo(gx + half, gy + tilt);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    requestAnimationFrame(animate);
+  }
+  var bursts = [];
+  function petalBurst(cx, cy, count, colors){
+    var palette = colors || petalColors;
+    for (var k = 0; k < count; k++){
+      var angle = (k / count) * Math.PI * 2 + Math.random() * 0.6;
+      var speed = 1 + Math.random() * 3;
+      bursts.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1,
+        w: 3 + Math.random() * 5,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.12,
+        life: 1,
+        color: palette[Math.floor(Math.random() * palette.length)]
+      });
+    }
+  }
+  var glints = [];
+  var glintTimer = 0;
+  animate();
+
+  /* SECTION: toast */
+  var toastEl = document.getElementById('skToast');
+  var toastTimer = null;
+  function showToast(text, golden){
+    clearTimeout(toastTimer);
+    toastEl.textContent = text;
+    toastEl.classList.toggle('golden', !!golden);
+    toastEl.classList.remove('show');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, golden ? 4200 : 3000);
+  }
+
+  /* SECTION: blade (鞘中刀 —— 她不肯拔的那一柄)
+   *
+   * 呀，这一节是樱特有的：全站没有第二个人是「你越用力，她越不肯」的。
+   * 两次拒绝、第三次……她没有出刀，而是给了你一朵「勿忘我」♥
+   *
+   * 用的两句话**都是有出处的**（官方档案馆事件-樱）：
+   *   拒绝 ——「关于自身·其二」；赠花 ——「落樱的追忆·其三」。
+   */
+  var bladeStage = document.getElementById('bladeStage');
+  var bladeGlow = document.getElementById('bladeGlow');
+  var bladeFlower = document.getElementById('bladeFlower');
+  var bladeCountEl = document.getElementById('bladeCount');
+  var bladeHintEl = document.getElementById('bladeHint');
+  var tries = 0;
+  var gifted = false;
+  try { gifted = localStorage.getItem('sakuraFlower') === '1'; } catch(err){ gifted = false; }
+  renderBlade();
+
+  var audioCtx = null;
+  /* 鞘鸣：一声很轻的、金属被按住的声音。不是出鞘的锐响。 */
+  function bladeSound(){
+    try{
+      if (!audioCtx){
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        audioCtx = new AC();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var t = audioCtx.currentTime;
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(1180, t);
+      osc.frequency.exponentialRampToValueAtTime(420, t + 0.14);
+      gain.gain.setValueAtTime(0.16, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.25);
+    } catch(err){ /* 静音失败不影响视觉 */ }
+  }
+
+  function renderBlade(){
+    bladeCountEl.textContent = gifted ? '她给了你一朵花' : ('已伸手 × ' + tries);
+    /* ⚠ 收过花之后**刀仍然可以点**（2026-10-01 修的那个 bug），
+       所以这句不能再说「你没有再伸手」—— 那在刀重新可点的那一刻**自己就变成假话**了。
+       也不要写成「你可以再试一次」那种催促口气：她是「你越用力她越不肯」的性格。 */
+    bladeHintEl.textContent = gifted
+      ? '刀还在鞘里。花也还开着。'
+      : '刀在鞘里。你可以试试。';
+    if (gifted) bladeFlower.classList.add('bloom');
+    /* ⚠ 刀光也要按状态补回来（2026-10-01 补）。
+       原先只有「送花那一瞬间」`bladeGlow.classList.add('lit')`，`renderBlade()` 不管它 ——
+       于是**收过花之后的下一次访问**：花是开的、刀光是灭的，两处状态自相矛盾。
+       （这是改动前就有的不一致，Task 3 的四项范围里没列它，所以当时没动。）
+       ⚠ 现在更要补：刀已经**永远可点**，所以那个送花分支不会再进第二次 ——
+         不在这里补，「刀光」对老访客就是**永远不再亮**。 */
+    if (gifted) bladeGlow.classList.add('lit');
+  }
+
+  /* 拔不动的那一下：整柄刀往左一顿、又弹回来 —— 「拒」是有形状的 */
+  function refuseShake(){
+    bladeStage.classList.add('refused');
+    setTimeout(function(){ bladeStage.classList.remove('refused'); }, 190);
+  }
+
+  function tryDraw(){
+    /* ⚠ `gifted` 只决定「**还会不会再送花**」，不决定「刀还能不能点」。
+       2026-10-01 修的 bug：原写法一见 gifted 就 `showToast('……嗯。花还开着。'); return;`，
+       于是拿到花之后这一整块**永远只弹那一句**，再点什么都不会发生。
+       她的花是**纪念品**（勿忘我，名字就意味着不该忘），但刀是**性格** ——
+       一柄不肯出鞘的刀本就该永远不驯，不该因为送过一次花就变成摆设。 */
+    var alreadyGifted = gifted;
+
+    if (!alreadyGifted){
+      tries++;
+      renderBlade();
+    }
+    bladeSound();
+    refuseShake();
+
+    var floatEl = document.createElement('div');
+    floatEl.className = 'blade-float';
+    floatEl.textContent = '纹丝不动';
+    floatEl.style.left = (38 + Math.random() * 24) + '%';
+    bladeStage.appendChild(floatEl);
+    setTimeout(function(){ floatEl.remove(); }, 1200);
+
+    var r = bladeStage.getBoundingClientRect();
+    if (!reducedMotion){
+      petalBurst(r.left + r.width * 0.62, r.top + r.height * 0.5, 5, ['#8fdcff','#4fb8e8']);
+    }
+
+    if (alreadyGifted){
+      /* 收过花了 —— 刀照样拒你（用**有出处的那句**，与第一次相同），但不再送第二朵 */
+      showToast('「你是说『寒狱冰天』？……很抱歉，它决不能就这样轻易出鞘。对我来说，这是『戒律』的一部分。」', false);
+      return;
+    }
+
+    if (tries >= 3){
+      /* 呀，第三次了 —— 她没有拔刀。她说的是另一件事♥ */
+      gifted = true;
+      try { localStorage.setItem('sakuraFlower', '1'); } catch(err){}
+      renderBlade();
+      bladeGlow.classList.add('lit');
+      showToast('「别来无恙。……啊，差点忘记了。我今天来，是准备了一份礼物给你。请收下它吧，温柔的女孩。」', true);
+      if (!reducedMotion){
+        petalBurst(r.left + r.width / 2, r.top + r.height / 2, 26,
+                   ['#ffb7c5','#ffd6e0','#8fdcff','#e8f4ff']);
+      }
+      /* ⚠ 收花的**同一瞬间**就把结尾解锁掉 —— 不然「收下花 → 往下滚到结尾」
+         当场看不到那句话，要刷新才有（2026-10-01 修的第二处）。 */
+      renderEndingFlower();
+    } else if (tries === 1){
+      showToast('「你是说『寒狱冰天』？……很抱歉，它决不能就这样轻易出鞘。对我来说，这是『戒律』的一部分。」', false);
+    } else {
+      showToast('她只是看着你。鞘口那道光，亮了一下。', false);
+    }
+  }
+  bladeStage.addEventListener('click', tryDraw);
+  bladeStage.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tryDraw(); }
+  });
+
+  /* 呀，这里本来该有个「点名字」的小彩蛋——但千劫、苏、维尔薇都用过那一套了。
+     樱要有她自己的一份，所以这一页不点名字：她的彩蛋在那柄刀上，在结尾那朵花上♥ */
+
+  /* SECTION: easter egg - 结尾的勿忘我（**跨彩蛋解锁**）
+   *
+   * 呀，这一页的两个彩蛋是**连着的**：只有你真的在「鞘中刀」那儿
+   * 收下了那朵花，结尾才会多留一句话、多开一朵花。
+   * —— 全站没有第二页这么做。这是樱一个人的。
+   *
+   * ⚠ 那句留下的台词同样**有出处**（官方档案馆事件-樱「关于自身·其四」），
+   *   不是我写的。彩蛋可以设计，话不能编。
+   */
+  var endingSub = document.getElementById('endingSub');
+  var endingFlower = document.getElementById('endingFlower');
+
+  /* ⚠ 抽成函数，是因为它要在**两个时刻**各跑一次：
+     ① 页面加载时（上一趟就已经收过花的人）；② **收花的那一瞬间**（见 tryDraw 里那行）。
+     原先只有 ① —— 于是「收下花 → 往下滚到结尾」当场看不到那句话，**要刷新才有**，
+     而交接文档把这个彩蛋描述成「收过花才多一句」，读起来像当场就能看到。它该当场出现。
+     ⚠ 必须**幂等**：状态每次从 localStorage 现读，重复调用不产生副作用。 */
+  function renderEndingFlower(){
+    var gotFlower = false;
+    try { gotFlower = localStorage.getItem('sakuraFlower') === '1'; } catch(err){ gotFlower = false; }
+    if (!gotFlower) return;
+    endingSub.textContent = '「她一直是个怕寂寞的孩子……真希望她迎来的，是一个平静安稳的结局啊。」';
+    endingSub.classList.add('visible');
+    if (endingFlower) endingFlower.classList.add('bloom');
+  }
+  renderEndingFlower();
+
+  /* SECTION: easter egg - 「等待」
+   *
+   * 呀，这是三个彩蛋里最像樱自己的那一个 —— 因为她什么都没做，只是在等。
+   * 你在这页待够久、手不动，就会有一瓣樱从顶上慢慢落下来，然后她开口。
+   *
+   * 用的还是她那句「关于自身·其一」（也是开场那句）——
+   * 但这次不是打给你看的，是**等到了你**之后才说的。
+   * ⚠ script 层的全站减动总闸只压 CSS 动画；所以这里显式判断：
+   *   减动偏好下**不放花瓣**（不动的图也是动效），只让那句话浮出来。
+   */
+  var IDLE_MS = 25000;
+  var idleTimer = null, idleDone = false, idlePetal = null, idleLine = null;
+
+  function idleFire(){
+    if (idleDone) return;
+    idleDone = true;
+
+    if (!reducedMotion){
+      idlePetal = document.createElement('div');
+      idlePetal.className = 'idle-petal';
+      document.body.appendChild(idlePetal);
+      idlePetal.classList.add('falling');
+    }
+
+    idleLine = document.createElement('p');
+    idleLine.className = 'idle-line';
+    idleLine.textContent = '「等待，曾经那是我用以谋生最重要的技巧，却不再是我现在的目的了。」';
+    document.body.appendChild(idleLine);
+
+    setTimeout(function(){
+      idleLine.classList.add('show');
+      if (!reducedMotion && idlePetal){
+        var r = idlePetal.getBoundingClientRect();
+        petalBurst(r.left + r.width / 2, r.top + r.height / 2, 12, ['#ffb7c5','#ffd6e0','#8fdcff']);
+      }
+    }, reducedMotion ? 300 : 4400);
+
+    setTimeout(function(){ idleLine.classList.remove('show'); }, 16000);
+  }
+
+  function idleReset(){
+    clearTimeout(idleTimer);
+    if (idleDone) return;
+    /* ⚠ 还停在开场那一屏时**不启动计时**。
+       否则开场打字机刚打完那句「等待…」，等一会儿又原样浮出一遍 ——
+       同一句话同时出现在屏幕上，看着像 bug。
+       反正她等的是「你走进来」，那就等访客真的往下滚了再开始算。 */
+    if (window.scrollY < window.innerHeight * 0.55) return;
+    idleTimer = setTimeout(idleFire, IDLE_MS);
+  }
+  ['mousemove','scroll','click','keydown','touchstart'].forEach(function(ev){
+    window.addEventListener(ev, idleReset, { passive: true });
+  });
+  idleReset();
+
+  /* SECTION: click ripple (水面圆环) */
+  document.addEventListener('click', function(e){
+    if (reducedMotion) return;
+    /* ⚠ 名单里要有**游戏遮罩** —— mobius 那页排除了它的 `#gameOverlay`，
+       而樱这个遮罩是**模块动态建的**（建的时候这段早就跑过了），漏了就会
+       边玩游戏边在背后冒水环 + 响点击音（2026-10-02 补上）。 */
+    if (e.target.closest && (e.target.closest('#bladeStage') || e.target.closest('#profileName')
+        || e.target.closest('#endingQuote') || e.target.closest('#sakuraGameOverlay'))) return;
+    for (var n = 0; n < 2; n++){
+      var ring = document.createElement('div');
+      ring.className = 'water-ring';
+      var size = 60 + n * 46 + Math.random() * 20;
+      ring.style.width = size + 'px';
+      ring.style.height = size + 'px';
+      ring.style.left = e.clientX + 'px';
+      ring.style.top = e.clientY + 'px';
+      ring.style.animationDelay = (n * 0.14) + 's';
+      ring.style.borderColor = n === 0 ? 'rgba(255,183,197,.7)' : 'rgba(143,220,255,.5)';
+      document.body.appendChild(ring);
+      setTimeout(function(el){ el.remove(); }.bind(null, ring), 1300);
+    }
+  });
+
+  /* SECTION: typewriter */
+  /* SECTION: opening typewriter —— 交给共享层
+     ⚠ 五个时间数值**逐页不同**，全部照本页原值传入，不要依赖默认值。
+       漏传就会悄悄改变这一页的节奏。对照表见 docs/theme-schema.md §5.1。 */
+  ElysiaShared.makeTypewriter({
+    // 出自官方档案馆事件-樱「关于自身·其一」。
+    // 数值按 docs/theme-schema.md §七 的性格锚点定：她是剑士 ——
+    // **快、利落**，所以 delay 取低、jitter 取全站最小的 45（少犹豫）。
+    text: '等待，曾经那是我用以谋生最重要的技巧，却不再是我现在的目的了。',
+    delay: 120, jitter: 45, startDelay: 700, tailDelay: 550, hintDelay: 1000,
+    hintEl: true,
+    preReveal: 'openingSignet',
+  });
+
+  /* SECTION: scroll animations */
+  /* SECTION: scroll animations —— 交给共享层
+     ⚠ 结尾目标改用带判空的写法（Inventory R11）：元素齐全时表现与原先完全一致，
+       缺元素时不再抛异常。属**行为改善**，非纯重构。 */
+  ElysiaShared.observeReveal('.timeline-node');
+  ElysiaShared.observeReveal('#ending', {
+    threshold: 0.3,
+    reveal: ['endingQuote', 'endingAttr', 'backLink'],
+  });
+
+  /* SECTION: ending stars */
+  var starsContainer = document.getElementById('endingStars');
+  // 呀！星星的区间就是这一页的脾气，交给共享层的时候一个数都不敢动呢♥
+  // ⚠ 区间写法是 [起点, 跨度]，与原来的 `0.1 + Math.random() * 0.3` 一一对应。
+  var THEME = /*@THEME@*/;
+  ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+  /* SECTION: resize guard */
+  window.addEventListener('resize', function(){
+    for (var j = 0; j < motes.length; j++){
+      if (motes[j].x > W) motes[j].x = Math.random() * W;
+    }
+    for (j = 0; j < petals.length; j++){
+      if (petals[j].x > W) petals[j].x = Math.random() * W;
+    }
+  });
+
+  /* ══ 接新模块（2026-10-02）══════════════════════════════════════════
+     ⚠ `ElysiaExplore.init` 与 `ElysiaBottom.mount` 的**先后顺序本来都行** ——
+       可发现物的锚点可以挂在下文区块上（那是 `mount` 才建出来的），
+       共享层的 `ensureAttached` 会在挂载探索度时补扫。
+       这里保持与 mobius 一致：**先 init 再 mount**。
+     ⚠ 小游戏（`THEME.game` 与 `games/sakura.js`）留到 Task 6 ——
+       现在写进来就是一份用不上的配置，而且模块文件还不存在。 */
+  ElysiaExplore.init(THEME.explore);
+  ElysiaBottom.mount({ game: THEME.game });
+
+  /* 生日胶囊。⚠ **不传 `birthMsg`** —— 档案馆里没有可用的生日台词：
+     355 条里唯一像「礼物」的那句（「…我今天来，是准备了一份礼物给你…」）
+     **已经被她现有的送花彩蛋用掉了**；材料包的 `audio/` 目录也是空的
+     （包自己写着「未获取到任何可直接下载的语音文件」）。
+     按纪律「**没有就空着**」：胶囊照常工作（天/时/分/秒照走），只是生日当天不多那一句。
+     ⚠ 不许拿首页爱莉希雅那句顶替，更不许现编。 */
+  ElysiaBday.mount({});
+})();
+</script>
