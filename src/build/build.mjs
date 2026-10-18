@@ -30,6 +30,7 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const OUT = path.join(ROOT, 'public');
 const WF = path.join(ROOT, '.github', 'workflows', 'static.yml');
 const VERIFY_ONLY = process.argv.includes('--verify-only');
+const STRICT_TEMPLATES = process.argv.includes('--strict-templates');
 const SINGLE = (() => { const i = process.argv.indexOf('--single'); return i >= 0 ? process.argv[i + 1] : null; })();
 const TEMPLATES = path.join(ROOT, 'templates');
 const PAGES_DIR = path.join(TEMPLATES, 'pages');
@@ -193,6 +194,14 @@ function main() {
 
   if (!VERIFY_ONLY) {
     const pages = renderablePages();
+    // 切换后的护栏：12 个角色页**必须**都有模板零件，否则说明有人漏写、
+    // 而它会静默走「原样拷贝」路径（旧源还在时看不出来，退役后就地雷）。
+    if (STRICT_TEMPLATES) {
+      const keys = fs.readdirSync(CONTENT).filter((f) => f.endsWith('.json')).map((f) => f.replace('.json', ''));
+      const missing = keys.filter((k) => !fs.existsSync(path.join(PAGES_DIR, k + '.page.body.html')));
+      if (missing.length) fail('--strict-templates: 以下页缺模板零件：' + missing.join(' '));
+      console.log('[build] strict-templates：' + keys.length + ' 页模板齐全');
+    }
     for (const key of pages) renderPage(key);
   }
 

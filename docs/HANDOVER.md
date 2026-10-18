@@ -94,6 +94,16 @@
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
 
 
+### 2.3 最近一轮（2026-10-18）：Task 11 切换准备（备而不切）
+
+| 项 | 结果 |
+|---|---|
+| build `--strict-templates` | 已加，**牙齿已验证**：正常 0 / 抽掉 kevin 模板 → 1 并点名 / 还原 → 0 |
+| 切换清单 | `docs/refactor/switchover-checklist.md`（旧源退役、deploy.yml 改造要点、回滚演练、24h 观察项、风险对策） |
+| 生产部署 workflow | 预置为 `deploy/prod.deploy.yml.staged`（**未启用**） |
+| 回滚演练（真跑） | v2：部署 146 文件 → 回滚成功 → 再部署；**生产 /kevin/ 哈希全程未变** ✅；/v2/、/v2/kevin/、/v2/su/ 均 200 |
+
+> 切换本身（删旧源 + 改 deploy.yml + 真上 :80）**尚未执行**，等主人点头。
 ### 2.3 最近一轮（2026-10-18）：重构 M1 完成 —— 12 页全部模板化，diff 全部为 0
 
 | 项 | 结果 |
