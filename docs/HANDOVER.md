@@ -94,6 +94,24 @@
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
 
 
+### 2.3 最近一轮（2026-10-18）：**切换完成** —— 线上 :80 跑的是构建产物
+
+| 步骤 | 结果 |
+|---|---|
+| 严格构建 | 12 页模板齐全，OK 134 files identical |
+| deploy.sh 源头 | 仓库根白名单 → **public/**（build 即装配器） |
+| 上生产 | 146 文件；线上 12 页与本地构建**哈希全部一致** ✅ |
+| 旧源退役 | 12 个手写页目录 git rm（历史保留）；退役后重建 **digest 不变**（44cfe9949cab873f）⇒ 模板是唯一真源 |
+| 生产流水线 | static.yml 改写为「构建 → public/ → 原子替换」（保留 KEEP_* 供 build 读取，构建走 --strict-templates） |
+| preview.yml | 移除已失效的逐页 diff 门禁（手写源已删，无处可比），构建改严格 |
+| 根页自检 | / /armor.html /guestbook/ /404.html /sw.js 全 200 ✅ |
+
+**切换中抓到并修掉的两个问题**（都是守卫帮忙）：
+1. 把 KEEP_* 写进 workflow 的 env 时丢了引号 ⇒ build 白名单解析失败（严格构建 exit 1）；
+2. 兼容 YAML env 写法的 fallback 正则**把引号也当内容** ⇒ 产物从 146 掉到 111，8 个根文件丢失。已加 stripQuotes，并通过「产物文件数 > 100」自检兜底。
+
+> 📌 现在改内容 = 改 `content/characters/*.json` 或模板 → build → 全站生效。
+> 回滚：`./deploy/deploy.sh rollback`（v2 上已演练过，生产备份机制相同）。
 ### 2.3 最近一轮（2026-10-18）：Task 11 切换准备（备而不切）
 
 | 项 | 结果 |
