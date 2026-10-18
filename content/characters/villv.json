@@ -183,6 +183,9 @@
  "meta": {
   "canonical": "https://elysiad.top/villv/",
   "description": "逐火十三英桀 · 刻印「螺旋」。",
+  "ogDescription": "逐火十三英桀 · 刻印「螺旋」。",
+  "ogImage": "https://elysiad.top/images/og-1.jpg",
+  "themeColor": "#0a0612",
   "title": "elysiad.top/villv — 致维尔薇"
  },
  "scripts": [

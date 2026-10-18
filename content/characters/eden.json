@@ -180,6 +180,9 @@
  "meta": {
   "canonical": "https://elysiad.top/eden/",
   "description": "逐火十三英桀 · 刻印「黄金」。",
+  "ogDescription": "逐火十三英桀 · 刻印「黄金」。",
+  "ogImage": "https://elysiad.top/images/og-1.jpg",
+  "themeColor": "#0a0612",
   "title": "elysiad.top/eden — 致伊甸"
  },
  "scripts": [

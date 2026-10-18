@@ -179,6 +179,9 @@
  "meta": {
   "canonical": "https://elysiad.top/kosma/",
   "description": "逐火十三英桀 · 位次 Ⅸ · 刻印「旭光」。",
+  "ogDescription": "逐火十三英桀 · 位次 Ⅸ · 刻印「旭光」。",
+  "ogImage": "https://elysiad.top/images/og-1.jpg",
+  "themeColor": "#070a08",
   "title": "elysiad.top/kosma — 致科斯魔"
  },
  "scripts": [

@@ -182,6 +182,9 @@
  "meta": {
   "canonical": "https://elysiad.top/sakura/",
   "description": "逐火十三英桀 · 位次 Ⅷ · 刻印「刹那」。",
+  "ogDescription": "逐火十三英桀 · 位次 Ⅷ · 刻印「刹那」。",
+  "ogImage": "https://elysiad.top/images/og-1.jpg",
+  "themeColor": "#070a14",
   "title": "elysiad.top/sakura — 致樱"
  },
  "scripts": [

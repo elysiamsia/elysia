@@ -53,12 +53,12 @@ function findVarLiteral(src, name) {
 const at = html.indexOf('var THEME');
 if (at < 0) { console.log(JSON.stringify({ missing: true })); process.exit(0); }
 
-let i = html.indexOf('=', at);
-if (i < 0) { console.log(JSON.stringify({ error: 'no equals after var THEME' })); process.exit(0); }
-i += 1;
-while (i < html.length && /\s/.test(html[i])) i++;
-if (html[i] !== '{') { console.log(JSON.stringify({ error: 'THEME value is not an object literal' })); process.exit(0); }
-
+// ⚠ 定位对象字面量：直接在 var THEME 之后找第一个 `{`。
+//   早期版本用 indexOf('=') 再跳空白 —— 在「JS 字面量」上没事，但在「JSON 形态」上
+//   （构建产物里 var THEME = {"explore":…}）会因中间出现的等号错位，span 少数两个字符，
+//   导致占位符落点不同、diff 假报差异（2026-10-18 实测）。
+let i = html.indexOf('{', at);
+if (i < 0) { console.log(JSON.stringify({ error: 'no object literal after var THEME' })); process.exit(0); }
 const end = scanBalanced(html, i);
 if (end < 0) { console.log(JSON.stringify({ unbalanced: true })); process.exit(0); }
 const literal = html.slice(i, end);

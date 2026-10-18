@@ -79,12 +79,59 @@ def extract(path):
         return None
 
 
+def strip_theme(text):
+    """把 var THEME = {...}; 的对象字面量换成哨兵（**Python 自己扫括号**，不依赖 node 的 span）。
+    为什么要自己扫：JS 字面量与 JSON 形态下，node 侧算出的 span 起点会差 1~2 个字符，
+    导致占位符落点不同 → diff 假报差异（2026-10-18 实测，绕了很久）。
+    """
+    at = text.find('var THEME')
+    if at < 0:
+        return text, None
+    i = text.find('{', at)
+    if i < 0:
+        return text, None
+    depth, quote, esc, j = 0, None, False, i
+    lit_end = -1
+    while j < len(text):
+        c = text[j]
+        if quote:
+            if esc:
+                esc = False
+            elif c == '\\':
+                esc = True
+            elif c == quote:
+                quote = None
+        else:
+            if c in '"\'`':
+                quote = c
+            elif c == '/' and j + 1 < len(text) and text[j + 1] == '/':
+                while j < len(text) and text[j] != chr(10):
+                    j += 1
+            elif c == '/' and j + 1 < len(text) and text[j + 1] == '*':
+                j += 2
+                while j + 1 < len(text) and not (text[j] == '*' and text[j + 1] == '/'):
+                    j += 1
+                j += 1
+            elif c == '{':
+                depth += 1
+            elif c == '}':
+                depth -= 1
+                if depth == 0:
+                    lit_end = j + 1
+                    break
+        j += 1
+    if lit_end < 0:
+        return text, None
+    return text[:i] + 'THEME_SENTINEL' + text[lit_end:], text[i:lit_end]
+
+
 def load(path, allow_theme):
     with open(path, 'rb') as f:
         raw = f.read()
     text = raw.decode('utf-8', 'replace')
     theme_hash = None
     if allow_theme:
+        text, _lit = strip_theme(text)
         info = extract(path)
         if info and 'span' in info:
             a, b = info['span']
@@ -94,6 +141,24 @@ def load(path, allow_theme):
     parser.feed(text)
     parser.close()
     return parser.tokens, theme_hash
+
+
+MARK = '/*__THEME_NORMALIZED__*/'
+
+
+def normalize_theme_tokens(tokens):
+    """把「含 THEME 占位符」的整条 token 归一，并返回去掉占位符后的残余文本（用于防掩盖）。
+    为什么需要：span 边界在 JS 字面量 vs JSON 上可能差几个字符（实测差 2），
+    导致占位符落点不同；但两侧 THEME 的规范化 hash 已证明语义相等。
+    """
+    out, residuals = [], []
+    for t in tokens:
+        if MARK in t:
+            out.append('<THEME-SCRIPT>')
+            residuals.append(t.replace(MARK, ''))
+        else:
+            out.append(t)
+    return out, residuals
 
 
 def main():
@@ -113,6 +178,14 @@ def main():
     new_tokens, new_hash = load(new_path, allow)
 
     exempted = bool(allow and old_hash and new_hash and old_hash == new_hash)
+    if exempted:
+        # 归一化 THEME 所在脚本 token；同时要求「去掉 THEME 后的残余」两侧一致，防止掩盖其他差异
+        a_norm, a_res = normalize_theme_tokens(old_tokens)
+        b_norm, b_res = normalize_theme_tokens(new_tokens)
+        if sorted(a_res) != sorted(b_res):
+            exempted = False
+        else:
+            old_tokens, new_tokens = a_norm, b_norm
     if allow and not exempted:
         old_tokens, _ = load(old_path, False)
         new_tokens, _ = load(new_path, False)

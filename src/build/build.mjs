@@ -22,6 +22,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import nunjucks from 'nunjucks';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -29,6 +30,55 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const OUT = path.join(ROOT, 'public');
 const WF = path.join(ROOT, '.github', 'workflows', 'static.yml');
 const VERIFY_ONLY = process.argv.includes('--verify-only');
+const SINGLE = (() => { const i = process.argv.indexOf('--single'); return i >= 0 ? process.argv[i + 1] : null; })();
+const TEMPLATES = path.join(ROOT, 'templates');
+const PAGES_DIR = path.join(TEMPLATES, 'pages');
+const CONTENT = path.join(ROOT, 'content', 'characters');
+const THEME_KEYS = ['explore', 'game', 'endingStars', 'quotes', 'typewriter'];
+const rendered = new Set();
+
+/** 有模板零件的页参与渲染；否则原样拷贝（逐页迁移的增量机制） */
+function renderablePages() {
+  const out = [];
+  for (const rel of fs.readdirSync(PAGES_DIR).filter((f) => f.endsWith('.page.body.html'))) {
+    const key = rel.replace('.page.body.html', '');
+    if (SINGLE && key !== SINGLE) continue;
+    out.push(key);
+  }
+  return out.sort();
+}
+
+function renderPage(key) {
+  const character = JSON.parse(fs.readFileSync(path.join(CONTENT, key + '.json'), 'utf8'));
+  const theme = {};
+  for (const k of THEME_KEYS) if (character[k] !== undefined) theme[k] = character[k];
+  const read = (p) => (fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : '');
+  const env = nunjucks.configure(TEMPLATES, { autoescape: false, trimBlocks: false, lstripBlocks: false });
+  const signetStyles = env.render('partials/signet.njk', { character: character });
+  const html = env.render('base.njk', {
+    character: character,
+    meta: {
+      title: character.meta.title,
+      description: character.meta.description,
+      canonical: character.meta.canonical,
+      ogDescription: character.meta.ogDescription || character.meta.description,
+      ogImage: character.meta.ogImage || 'https://elysiad.top/images/og-1.jpg',
+      themeColor: character.meta.themeColor || null,
+    },
+    // 主题色整行注入（含换行）—— 没有主题色的页（hua/pardofelis）一个字节都不多
+    themeColorTag: character.meta.themeColor ? '<meta name="theme-color" content="' + character.meta.themeColor + '">' + String.fromCharCode(10) : '',
+    pageStyle: read(path.join(PAGES_DIR, key + '.page.css')),
+    pageFixes: read(path.join(PAGES_DIR, key + '.page-fixes.css')),
+    signetStyles: signetStyles,
+    pageBody: read(path.join(PAGES_DIR, key + '.page.body.html')).split('/*@THEME@*/').join(JSON.stringify(theme)),
+  });
+  const rel = key + '/index.html';
+  const dest = path.join(OUT, key, 'index.html');
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.writeFileSync(dest, html, 'utf8');
+  rendered.add(rel);
+  return rel;
+}
 const MIN_FILES = 8;
 const MIN_DIRS = 16;   // 实测 static.yml 当前为 16 项（assets data images + 12 角色页 + guestbook）；低于此值视为格式漂移
 
@@ -103,12 +153,13 @@ function hashTree(dir) {
 function compare(src, dstMap) {
   const problems = [];
   for (const item of src) {
+    if (rendered.has(item.rel)) continue;   // 渲染页与源不同是**预期**，由 diff_pages 把关
     const h = dstMap.get(item.rel);
     if (!h) problems.push('缺失: ' + item.rel);
     else if (h !== sha256(item.abs)) problems.push('内容不一致: ' + item.rel);
   }
   const srcRels = new Set(src.map((x) => x.rel));
-  for (const rel of dstMap.keys()) if (!srcRels.has(rel)) problems.push('产物里多出: ' + rel);
+  for (const rel of dstMap.keys()) if (!srcRels.has(rel) && !rendered.has(rel)) problems.push('产物里多出: ' + rel);
   return problems;
 }
 
@@ -132,11 +183,16 @@ function main() {
     }
   }
 
+  if (!VERIFY_ONLY) {
+    const pages = renderablePages();
+    for (const key of pages) renderPage(key);
+  }
+
   const dstMap = hashTree(OUT);
   const problems = compare(src, dstMap);
 
   console.log('');
-  console.log('[build] rendered: 0 个（Task 1 阶段恒为空，Task 9 起才会有）');
+  console.log('[build] rendered: ' + rendered.size + ' 个' + (rendered.size ? '（' + [...rendered].join(' ') + '）' : ''));
   console.log('[build] copied:   ' + src.length + ' 个文件');
   for (const item of src) console.log('[build]   · ' + item.rel);
 

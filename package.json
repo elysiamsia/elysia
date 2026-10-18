@@ -6,5 +6,8 @@
   "scripts": {
     "build": "node src/build/build.mjs",
     "verify": "node src/build/build.mjs --verify-only"
+  },
+  "dependencies": {
+    "nunjucks": "^3.2.4"
   }
 }

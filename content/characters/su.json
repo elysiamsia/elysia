@@ -179,6 +179,9 @@
  "meta": {
   "canonical": "https://elysiad.top/su/",
   "description": "逐火十三英桀 · 刻印「天慧」。",
+  "ogDescription": "逐火十三英桀 · 刻印「天慧」。",
+  "ogImage": "https://elysiad.top/images/og-1.jpg",
+  "themeColor": "#0a0612",
   "title": "elysiad.top/su — 致苏"
  },
  "scripts": [

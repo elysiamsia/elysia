@@ -180,6 +180,9 @@
  "meta": {
   "canonical": "https://elysiad.top/aponia/",
   "description": "逐火十三英桀 · 刻印「戒律」。",
+  "ogDescription": "逐火十三英桀 · 刻印「戒律」。",
+  "ogImage": "https://elysiad.top/images/og-1.jpg",
+  "themeColor": "#0a0612",
   "title": "elysiad.top/aponia — 致阿波尼亚"
  },
  "scripts": [

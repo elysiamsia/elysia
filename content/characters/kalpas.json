@@ -179,6 +179,9 @@
  "meta": {
   "canonical": "https://elysiad.top/kalpas/",
   "description": "逐火十三英桀 · 刻印「鏖灭」。",
+  "ogDescription": "逐火十三英桀 · 刻印「鏖灭」。",
+  "ogImage": "https://elysiad.top/images/og-1.jpg",
+  "themeColor": "#0a0612",
   "title": "elysiad.top/kalpas — 致千劫"
  },
  "scripts": [

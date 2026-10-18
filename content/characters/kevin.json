@@ -177,6 +177,9 @@
  "meta": {
   "canonical": "https://elysiad.top/kevin/",
   "description": "逐火十三英桀 · 位次 Ⅰ · 刻印「救世」。",
+  "ogDescription": "逐火十三英桀 · 位次 Ⅰ · 刻印「救世」。",
+  "ogImage": "https://elysiad.top/images/og-1.jpg",
+  "themeColor": "#0a0612",
   "title": "elysiad.top/kevin — 致凯文"
  },
  "scripts": [

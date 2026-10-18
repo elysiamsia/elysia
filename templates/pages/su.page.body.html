@@ -1,0 +1,589 @@
+
+
+<canvas id="bodhiCanvas"></canvas>
+<div id="shaVeil"></div>
+
+<!-- SECTION: opening -->
+<section class="section-opening" id="opening">
+  <div class="opening-content">
+    <div class="opening-moon" id="openingMoon"></div>
+    <h1 class="opening-title" id="typewriterText"></h1><span class="typing-cursor" id="typingCursor">|</span>
+    <p class="opening-subtitle" id="openingSub">欢迎来到须弥芥子</p>
+    <p class="opening-hint" id="openingHint">……心浮气躁的话，就去敲敲木鱼吧。</p>
+  </div>
+  <div class="scroll-hint" id="scrollHint">
+    <span>静心而下</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</section>
+
+<!-- SECTION: about -->
+<section class="content-section" id="about">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">☸</span>关于他<span class="section-title-mark">☸</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="profile-card">
+    <div class="profile-card-inner">
+      <div class="profile-name" id="profileName" role="button" tabindex="0">苏</div>
+      <div class="profile-name-en">S U</div>
+      <div class="profile-divider"></div>
+      <div class="profile-grid">
+        <span class="profile-label">别名</span>
+        <span class="profile-value">先行者 · 「湖中仙女」 · <span class="highlight">觉者</span></span>
+        <span class="profile-label">出处</span>
+        <span class="profile-value">《崩坏3》第一文明纪元 → 现文明纪元</span>
+        <span class="profile-label">身份</span>
+        <span class="profile-value">医者 → 融合战士 → 圣痕计划科研室主任 → 执掌「恒沙计划」的先行者</span>
+        <span class="profile-label">位次</span>
+        <span class="profile-value"><span class="highlight">Ⅶ</span></span>
+        <span class="profile-label">刻印</span>
+        <span class="profile-value"><span class="highlight">「天慧」</span></span>
+        <span class="profile-label">融合崩坏兽</span>
+        <span class="profile-value">帝王级「摩瑜利」（孔雀明王）· 精神感知型</span>
+        <span class="profile-label">神之键</span>
+        <span class="profile-value">第二神之键 <span class="lamp">「千界一乘」</span>——内含世界泡「须弥芥子」</span>
+        <span class="profile-label">领域</span>
+        <span class="profile-value">「因果转轮」——加诸其身的攻击，将返还自身</span>
+        <span class="profile-label">配音</span>
+        <span class="profile-value">杨超然（汉语）/ 樱井孝宏（日语）</span>
+        <span class="profile-label">外貌</span>
+        <span class="profile-value">灰色长发带青之挑染，紫红虹膜、绿色瞳孔；常年闭目，俊美曾被称为「湖中仙女」</span>
+        <span class="profile-label">喜好</span>
+        <span class="profile-value"><span class="lamp">围棋、茶道、冥想、种植绿植</span>；饮食清淡</span>
+      </div>
+      <div class="profile-desc">
+        以医师的身份入世，以仁心为兆始开悟。洞观三千世界，这位始终闭目思量的智者，终将成为一瞬天慧的权化。他相信生命无法用金钱衡量，相信人类的慧才一脉相承——于是他用五万年，看完了恒河沙数的世界生灭，只为找到一个「战胜崩坏」的答案。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: muyu -->
+<section class="content-section" id="merit">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">☸</span>功德箱<span class="section-title-mark">☸</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="muyu-wrap">
+    <div class="muyu-stage" id="muyuStage" role="button" tabindex="0" aria-label="木鱼，点击敲击" data-primary-action>
+      <div class="muyu-glow" id="muyuGlow"></div>
+      <svg viewBox="0 0 170 130" width="168" height="128" aria-hidden="true">
+        <defs>
+          <radialGradient id="wfBody" cx="38%" cy="30%" r="78%">
+            <stop offset="0%" stop-color="#9a6b3f"/>
+            <stop offset="55%" stop-color="#6b4423"/>
+            <stop offset="100%" stop-color="#3a2412"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="80" cy="70" rx="58" ry="43" fill="url(#wfBody)" stroke="#241508" stroke-width="2"/>
+        <path d="M42 80 Q80 102 118 80" stroke="#241508" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <ellipse cx="60" cy="50" rx="15" ry="8" fill="#e8c98a" opacity=".22" transform="rotate(-18 60 50)"/>
+        <path d="M80 27 Q86 18 80 10 Q74 18 80 27" fill="#c9a45c" opacity=".8"/>
+        <circle cx="132" cy="36" r="9" fill="#6b4423" stroke="#241508" stroke-width="2"/>
+        <path d="M138 43 L156 64" stroke="#8b5a2b" stroke-width="6" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <p class="meru-count" id="meruCount">功德 × 0</p>
+    <p class="muyu-hint">敲一敲，心就静了。（觉者没有在看着你。大概。）</p>
+  </div>
+</section>
+
+<!-- SECTION: journey -->
+<section class="content-section" id="journey">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">☸</span>他的天慧<span class="section-title-mark">☸</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="timeline">
+    <div class="timeline-line"></div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>医者仁心</h3>
+        <p>他本是一名医生，为治愈「崩坏病」奔走，坚信生命无法用金钱衡量。医院主任法尔视他为得意门生，临终前将他托付了出去。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>挚友</h3>
+        <p>学生时代他便与凯文相识相知，因凯文而结识了梅。第三次崩坏让挚友分离五年，再重逢时，两人已站在同一条逐火的路上。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>第八次崩坏</h3>
+        <p>他自愿接受改造，融合帝王级崩坏兽「摩瑜利」，成为精神感知型融合战士，以「法身」定位识之律者。导师司帕西为唤醒他而牺牲——这份重量，他记了一生。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>科研室主任</h3>
+        <p>因解决第八次崩坏，他被梅邀请加入圣痕计划的研究，执掌科研室。医者的手，从此同时握着手术刀与文明的图纸。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>约束之战</h3>
+        <p>面对约束之律者，他链接千劫的精神、解开那道「不可滥杀」的戒律，唤回这头狂兽为人类再战一场。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>最后的托付</h3>
+        <p>终焉之战，他作为精神系战士留守地面指挥，陪梅走完最后一程。梅把「恒沙计划」与「监察者计划」托付给了他——观测万界，以及，看着凯文。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>恒沙</h3>
+        <p>他坐在第二神之键「千界一乘」中，观测了五万年。须弥芥子里，每一片树叶的凋零，都是一个世界的终结。他看遍了恒河沙数的失败，只为等一片不枯的叶子。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>封印挚友</h3>
+        <p>公元五世纪末，为阻止圣痕计划，他将凯文引入「须弥芥子」，连同世界泡一起沉入量子之海。封印完成的那一刻他才察觉挚友内心的痛苦——此后千年，都在为此赎罪。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>觉者</h3>
+        <p>2015年，他把千界一乘与使命托付给比安卡·幽兰黛尔。肉体因超限观测而消亡，意识却升入更高的维度——有人说，他与某个未知存在相对而坐，弈着一盘未完的棋。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: quotes -->
+<section class="content-section" id="quotes">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">☸</span>觉者之言<span class="section-title-mark">☸</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="quotes-grid" id="quotesGrid" data-primary-action></div>
+</section>
+
+<!-- SECTION: ending -->
+<section class="section-ending" id="ending">
+  <div class="ending-stars" id="endingStars"></div>
+  <p class="ending-quote" id="endingQuote" role="button" tabindex="0">思考的过程本身，也是其意义所在。</p>
+  <p class="ending-sub" id="endingSub"></p>
+  <p class="ending-attr" id="endingAttr">致苏 · elysiad.top/su</p>
+  <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
+  <div class="ending-fade"></div>
+</section>
+
+<div id="suToast" role="status"></div>
+
+<!-- SECTION: scripts -->
+<script src="/assets/site.js"></script>
+<script src="/assets/explore.js"></script>
+<script src="/assets/bottom.js"></script>
+<script src="/assets/games/su.js"></script>
+<script src="/assets/bday.js"></script>
+<script src="/data/bdays.js"></script>
+<script>
+(function(){
+  /* SECTION: quotes data */
+  var quotes = [
+    '「我只是一介旁观者，前方的路将往何去，你自有答案。」',
+    '「思考的过程本身，也是其意义所在。」',
+    '「勿需太过在意外物，开辟天地的门扉，自在你的心中。」',
+    '「以此『天慧』，授予你踏破试炼之理。」',
+    '「愿往日的枯壤，化作幼芽新生的温床。」',
+    '「执念是欲求，希望也是欲求。若心中没有期许，我便不会存在于这『往世乐土』中。」',
+    '「你的到来，同样证明了地上的火种已被点燃。终有一日，这个时代的人们也会领悟当行的道路。」',
+    '「我相信，人类的慧才定是一脉相承的。祝愿你们……能走得比前人更远。」',
+    '「若你对前路还有迷惘，暂且驻足。答案终会显现，只是需要时间。」',
+    '「诸行无常，刹那生灭，梦幻泡影。」'
+  ];
+
+  /* SECTION: quotes build —— 交给共享层
+     ★ 闭包 O(1) 索引：不再每次点击都重扫一遍 DOM，只为问「我是第几张卡片」。
+     ⚠ ariaLabel 必填，且必须传本页原文案：它是 Lore，不是通用 UI 标签。
+       而快照工具只采计算样式，抹掉了也测不出「✅ 无差异」。见 docs/theme-schema.md §四。 */
+  ElysiaShared.buildQuoteCards({
+    grid: document.getElementById('quotesGrid'),
+    quotes: quotes,
+    ariaLabel: '觉者之言，点击切换',
+  });
+
+  /* SECTION: canvas particles (菩提叶 + 灯尘 + 星) */
+  var canvas = document.getElementById('bodhiCanvas');
+  var ctx = canvas.getContext('2d');
+  var W, H;
+  var leafColors = ['#1a6b5a','#2dd4bf','#c9a45c','#6b8f71'];
+  var dustColors = ['#e8c98a','#fdf6e3','#2dd4bf'];
+
+  // ⚠ 只抽「把 canvas 和视口尺寸对上」这三行。下面那个「把越界粒子拉回画布」的
+  //   匿名监听器**故意留着不动**——它碰的数组每页不一样，抽走会改行为。
+  const resize = ElysiaShared.makeResize(canvas, {
+    get W() { return W; }, set W(v) { W = v; },
+    get H() { return H; }, set H(v) { H = v; },
+  });
+  resize();
+  window.addEventListener('resize', resize);
+  var leaves = [];
+  var leafCount = Math.min(26, Math.floor(window.innerWidth / 48));
+  function createLeaf(fromTop){
+    return {
+      x: Math.random() * W,
+      y: fromTop ? -20 - Math.random() * 100 : Math.random() * H,
+      size: 4 + Math.random() * 8,
+      speedY: 0.2 + Math.random() * 0.45,
+      drift: (Math.random() - 0.5) * 0.3,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.012,
+      swayAmp: 16 + Math.random() * 30,
+      swaySpd: 0.004 + Math.random() * 0.008,
+      swayOff: Math.random() * Math.PI * 2,
+      opacity: 0.16 + Math.random() * 0.34,
+      color: leafColors[Math.floor(Math.random() * leafColors.length)]
+    };
+  }
+  for (var i = 0; i < leafCount; i++) leaves.push(createLeaf(false));
+
+  var dusts = [];
+  var dustCount = Math.min(34, Math.floor(window.innerWidth / 34));
+  function createDust(){
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      size: 0.4 + Math.random() * 1.8,
+      speedY: -(0.05 + Math.random() * 0.18),
+      baseOpacity: 0.1 + Math.random() * 0.35,
+      twinkleSpd: 0.006 + Math.random() * 0.02,
+      twinkleOff: Math.random() * Math.PI * 2,
+      color: dustColors[Math.floor(Math.random() * dustColors.length)]
+    };
+  }
+  for (i = 0; i < dustCount; i++) dusts.push(createDust());
+
+  var scrollRatio = 0;
+  window.addEventListener('scroll', function(){
+    var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    scrollRatio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+  });
+
+  var time = 0;
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function animate(){
+    if (reducedMotion) return;
+    time++;
+    ctx.clearRect(0, 0, W, H);
+    var fadeFactor = 1 - scrollRatio * 0.55;
+    var i, l, d, tw;
+
+    for (i = 0; i < dusts.length; i++){
+      d = dusts[i];
+      d.y += d.speedY;
+      if (d.y < -10){ d.y = H + 10; d.x = Math.random() * W; }
+      tw = 0.5 + 0.5 * Math.sin(time * d.twinkleSpd + d.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = d.baseOpacity * tw * fadeFactor;
+      ctx.fillStyle = d.color;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, Math.max(0.25, d.size), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (i = 0; i < leaves.length; i++){
+      l = leaves[i];
+      l.y += l.speedY;
+      l.x += l.drift + Math.sin(time * l.swaySpd + l.swayOff) * 0.4;
+      l.rotation += l.rotSpeed;
+      if (l.y > H + 25){ leaves[i] = createLeaf(true); l = leaves[i]; }
+      ctx.save();
+      ctx.translate(l.x, l.y);
+      ctx.rotate(l.rotation);
+      ctx.globalAlpha = l.opacity * fadeFactor;
+      ctx.fillStyle = l.color;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, Math.max(0.6, l.size * 0.3), Math.max(0.8, l.size * 0.62), 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (i = bursts.length - 1; i >= 0; i--){
+      var b = bursts[i];
+      b.x += b.vx;
+      b.y += b.vy;
+      b.vy += 0.03;
+      b.vx *= 0.99;
+      b.rotation += b.rotSpeed;
+      b.life -= 0.015;
+      if (b.life <= 0){ bursts.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, b.life * 0.9);
+      ctx.fillStyle = b.color;
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.rotation);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, b.w * 0.4, b.w, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    requestAnimationFrame(animate);
+  }
+  var bursts = [];
+  function leafBurst(cx, cy, count, colors){
+    var palette = colors || leafColors;
+    for (var k = 0; k < count; k++){
+      var angle = (k / count) * Math.PI * 2 + Math.random() * 0.6;
+      var speed = 1 + Math.random() * 3;
+      bursts.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1,
+        w: 3 + Math.random() * 5,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.12,
+        life: 1,
+        color: palette[Math.floor(Math.random() * palette.length)]
+      });
+    }
+  }
+  animate();
+
+  /* SECTION: toast */
+  var toastEl = document.getElementById('suToast');
+  var toastTimer = null;
+  function showToast(text, golden){
+    clearTimeout(toastTimer);
+    toastEl.textContent = text;
+    toastEl.classList.toggle('golden', !!golden);
+    toastEl.classList.remove('show');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, golden ? 4200 : 3000);
+  }
+
+  /* SECTION: muyu (木鱼积功德) */
+  var muyuStage = document.getElementById('muyuStage');
+  var muyuGlow = document.getElementById('muyuGlow');
+  var meruCountEl = document.getElementById('meruCount');
+  var meru = 0;
+  try { meru = parseInt(localStorage.getItem('suMeru') || '0', 10) || 0; } catch(err){ meru = 0; }
+  renderMeru();
+
+  var audioCtx = null;
+  function muyuSound(){
+    try{
+      if (!audioCtx){
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        audioCtx = new AC();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var t = audioCtx.currentTime;
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(760, t);
+      osc.frequency.exponentialRampToValueAtTime(280, t + 0.09);
+      gain.gain.setValueAtTime(0.42, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.25);
+    } catch(err){ /* 静音失败不影响视觉 */ }
+  }
+
+  function renderMeru(){
+    meruCountEl.textContent = '功德 × ' + meru;
+  }
+
+  function strikeMuyu(){
+    meru++;
+    renderMeru();
+    try { localStorage.setItem('suMeru', String(meru)); } catch(err){}
+    muyuSound();
+    muyuStage.classList.remove('struck');
+    void muyuStage.offsetWidth;
+    muyuStage.classList.add('struck');
+    setTimeout(function(){ muyuStage.classList.remove('struck'); }, 110);
+
+    var floatEl = document.createElement('div');
+    floatEl.className = 'meru-float';
+    floatEl.textContent = '功德 +1';
+    floatEl.style.left = (40 + Math.random() * 20) + '%';
+    muyuStage.appendChild(floatEl);
+    setTimeout(function(){ floatEl.remove(); }, 1200);
+
+    if (!reducedMotion){
+      var r = muyuStage.getBoundingClientRect();
+      leafBurst(r.left + r.width / 2, r.top + r.height * 0.4, 6, ['#e8c98a','#c9a45c','#fdf6e3']);
+    }
+
+    if (meru === 100){
+      muyuGlow.classList.add('lit');
+      showToast('敲满一百下……你的心，渐渐静了。', false);
+    } else if (meru === 500){
+      showToast('木鱼声惊动了池底的鱼。它探出头，又潜了回去。', false);
+    } else if (meru === 999){
+      showToast('功德圆满——须弥芥子中，你窥见了三千世界。', true);
+      if (!reducedMotion){
+        var r2 = muyuStage.getBoundingClientRect();
+        leafBurst(r2.left + r2.width / 2, r2.top + r2.height / 2, 30, ['#e8c98a','#ffd166','#fdf6e3','#2dd4bf']);
+      }
+    }
+  }
+  muyuStage.addEventListener('click', strikeMuyu);
+  muyuStage.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); strikeMuyu(); }
+  });
+
+  /* SECTION: easter egg - 点名字得禅语 */
+  var nameEl = document.getElementById('profileName');
+  var zenLines = [
+    '诸行无常。',
+    '刹那生灭，梦幻泡影。',
+    '暂且驻足。答案终会显现。',
+    '轻，如一叶菩提；重，似万千生命。',
+    '一花一世界，一叶一菩提。'
+  ];
+  var zenIdx = 0;
+  var pressTimer = null;
+  var longPressed = false;
+  var shaVeil = document.getElementById('shaVeil');
+
+  function nameTap(){
+    showToast(zenLines[zenIdx % zenLines.length], false);
+    zenIdx++;
+  }
+  nameEl.addEventListener('click', function(){
+    if (longPressed){ longPressed = false; return; }
+    nameTap();
+  });
+  nameEl.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nameTap(); }
+  });
+  /* 长按他的名字 1.6 秒 —— 深海的凝视 */
+  function startPress(){
+    longPressed = false;
+    pressTimer = setTimeout(function(){
+      longPressed = true;
+      shaVeil.classList.add('lit');
+      showToast('……海面上忽然起了涟漪。另一个「自己」，正在深处注视着你。', true);
+      setTimeout(function(){ shaVeil.classList.remove('lit'); }, 2600);
+    }, 1600);
+  }
+  function cancelPress(){ clearTimeout(pressTimer); }
+  nameEl.addEventListener('mousedown', startPress);
+  nameEl.addEventListener('touchstart', startPress, { passive: true });
+  nameEl.addEventListener('mouseup', cancelPress);
+  nameEl.addEventListener('mouseleave', cancelPress);
+  nameEl.addEventListener('touchend', cancelPress);
+
+  /* SECTION: easter egg - 结尾心声 */
+  var endingQuote = document.getElementById('endingQuote');
+  var endingSub = document.getElementById('endingSub');
+  var heartLines = [
+    '「愿往日的枯壤，化作幼芽新生的温床。」',
+    '「勿需太过在意外物，开辟天地的门扉，自在你的心中。」',
+    '「谢谢你帮助了未来的我。至于『过去』……它早已是『未来』的一部分了，不是么？」',
+    '「……这盘棋，还没下完。」'
+  ];
+  var heartIdx = 0;
+  endingQuote.addEventListener('click', function(){
+    endingSub.textContent = heartLines[heartIdx % heartLines.length];
+    endingSub.classList.add('visible');
+    heartIdx++;
+    if (!reducedMotion){
+      var r = endingQuote.getBoundingClientRect();
+      leafBurst(r.left + r.width / 2, r.top + r.height / 2, 10, ['#e8c98a','#2dd4bf','#fdf6e3']);
+    }
+  });
+  endingQuote.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); endingQuote.click(); }
+  });
+
+  /* SECTION: click ripple (水面圆环) */
+  document.addEventListener('click', function(e){
+    if (reducedMotion) return;
+    if (e.target.closest && (e.target.closest('#muyuStage') || e.target.closest('#profileName') || e.target.closest('#endingQuote'))) return;
+    for (var n = 0; n < 2; n++){
+      var ring = document.createElement('div');
+      ring.className = 'water-ring';
+      var size = 60 + n * 46 + Math.random() * 20;
+      ring.style.width = size + 'px';
+      ring.style.height = size + 'px';
+      ring.style.left = e.clientX + 'px';
+      ring.style.top = e.clientY + 'px';
+      ring.style.animationDelay = (n * 0.14) + 's';
+      ring.style.borderColor = n === 0 ? 'rgba(45,212,191,.7)' : 'rgba(232,201,138,.5)';
+      document.body.appendChild(ring);
+      setTimeout(function(el){ el.remove(); }.bind(null, ring), 1300);
+    }
+  });
+
+  /* SECTION: typewriter */
+  /* SECTION: opening typewriter —— 交给共享层
+     ⚠ 五个时间数值**逐页不同**，全部照本页原值传入，不要依赖默认值。
+       漏传就会悄悄改变这一页的节奏。对照表见 docs/theme-schema.md §5.1。 */
+  ElysiaShared.makeTypewriter({
+    text: '我只是一介旁观者，前方的路将往何去，你自有答案。',
+    delay: 150, jitter: 80, startDelay: 800, tailDelay: 600, hintDelay: 1000,
+    hintEl: true,
+    preReveal: 'openingMoon',
+  });
+
+  /* SECTION: scroll animations */
+  /* SECTION: scroll animations —— 交给共享层
+     ⚠ 结尾目标改用带判空的写法（Inventory R11）：元素齐全时表现与原先完全一致，
+       缺元素时不再抛异常。属**行为改善**，非纯重构。 */
+  ElysiaShared.observeReveal('.timeline-node');
+  ElysiaShared.observeReveal('#ending', {
+    threshold: 0.3,
+    reveal: ['endingQuote', 'endingAttr', 'backLink'],
+  });
+
+  /* SECTION: ending stars */
+  var starsContainer = document.getElementById('endingStars');
+  // 呀！星星的区间就是这一页的脾气，交给共享层的时候一个数都不敢动呢♥
+  // ⚠ 区间写法是 [起点, 跨度]，与原来的 `0.1 + Math.random() * 0.3` 一一对应。
+  var THEME = /*@THEME@*/;
+  ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+
+  /* 探索系统（2026-10-15 铺开）：12 个落点 + 解锁 + 陪伴层，配置在 THEME.explore。 */
+  ElysiaExplore.init(THEME.explore);
+
+  /* 生日胶囊（2026-10-15）：苏的生日**查不到**（页面与档案馆都没有），`data/bdays.js` 里没有他这一条，
+     胶囊整个不会出现。⚠ 组件仍然要挂 —— 别的断言要读它的状态（凯文那一轮学到的）。
+     ⚠ 哪天查到生日：① 加进 `data/bdays.js` ② **同时补那 15 个 `--bday-*` 变量**，否则会串页。 */
+  ElysiaBday.mount({});
+
+  /* 下方区块：探索度那一槽由 ElysiaExplore 自己放回来，这里只挂游戏槽。 */
+  ElysiaBottom.mount({ game: THEME.game });
+  /* SECTION: resize guard */
+  window.addEventListener('resize', function(){
+    for (var j = 0; j < dusts.length; j++){
+      if (dusts[j].x > W) dusts[j].x = Math.random() * W;
+    }
+    for (j = 0; j < leaves.length; j++){
+      if (leaves[j].x > W) leaves[j].x = Math.random() * W;
+    }
+  });
+})();
+</script>

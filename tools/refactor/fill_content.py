@@ -51,6 +51,9 @@ def main():
 
         dm = re.search(r'<meta name="description" content="([^"]*)"', html)
         cm = re.search(r'<link rel="canonical" href="([^"]*)"', html)
+        tc = re.search(r'<meta name="theme-color" content="([^"]*)"', html)
+        od = re.search(r'<meta property="og:description" content="([^"]*)"', html)
+        oi = re.search(r'<meta property="og:image" content="([^"]*)"', html)
         scripts = [os.path.basename(x) for x in re.findall(r'<script src="([^"]+)"', html)]
 
         full = None
@@ -67,6 +70,9 @@ def main():
         draft['signetImage'] = ('/images/signet/' + signet + '-256.webp') if signet else None
         draft['birthday'] = bd.get(key + '/index.html')
         draft['meta'] = {'title': raw_title,
+                         'themeColor': (tc.group(1) if tc else None),
+                         'ogDescription': (od.group(1) if od else None),
+                         'ogImage': (oi.group(1) if oi else None),
                          'description': (dm.group(1) if dm else None),
                          'canonical': (cm.group(1) if cm else None)}
         draft['scripts'] = scripts

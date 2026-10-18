@@ -183,6 +183,9 @@
  "meta": {
   "canonical": "https://elysiad.top/mobius/",
   "description": "逐火十三英桀 · 刻印「无限」。",
+  "ogDescription": "逐火十三英桀 · 刻印「无限」。",
+  "ogImage": "https://elysiad.top/images/og-1.jpg",
+  "themeColor": "#04100b",
   "title": "elysiad.top/mobius — 致梅比乌斯"
  },
  "quotes": {

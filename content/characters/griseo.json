@@ -185,6 +185,9 @@
  "meta": {
   "canonical": "https://elysiad.top/griseo/",
   "description": "逐火十三英桀 · 位次 Ⅺ · 刻印「繁星」。",
+  "ogDescription": "逐火十三英桀 · 位次 Ⅺ · 刻印「繁星」。",
+  "ogImage": "https://elysiad.top/images/og-1.jpg",
+  "themeColor": "#100b13",
   "title": "elysiad.top/griseo — 致格蕾修"
  },
  "scripts": [
