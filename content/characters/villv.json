@@ -1,4 +1,9 @@
 {
+ "birthday": [
+  4,
+  5
+ ],
+ "chibi": null,
  "endingStars": {
   "colors": {
    "pool": [
@@ -170,7 +175,25 @@
    "别把我的名字念得太快哦？"
   ]
  },
+ "fullName": "维尔薇",
  "game": {
   "module": "villv"
- }
+ },
+ "key": "villv",
+ "meta": {
+  "canonical": "https://elysiad.top/villv/",
+  "description": "逐火十三英桀 · 刻印「螺旋」。",
+  "title": "elysiad.top/villv — 致维尔薇"
+ },
+ "scripts": [
+  "site.js",
+  "explore.js",
+  "bottom.js",
+  "villv.js",
+  "bday.js",
+  "bdays.js"
+ ],
+ "shortName": "维尔薇",
+ "signet": "螺旋",
+ "signetImage": "/images/signet/螺旋-256.webp"
 }

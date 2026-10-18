@@ -1,4 +1,9 @@
 {
+ "birthday": [
+  1,
+  9
+ ],
+ "chibi": null,
  "endingStars": {
   "colors": {
    "pool": [
@@ -170,8 +175,15 @@
   ],
   "whisperCooldownMs": 12000
  },
+ "fullName": "华",
  "game": {
   "module": "hua"
+ },
+ "key": "hua",
+ "meta": {
+  "canonical": "https://elysiad.top/hua/",
+  "description": "逐火十三英桀 · 位次 Ⅻ · 刻印「浮生」。",
+  "title": "elysiad.top/hua — 致华"
  },
  "quotes": {
   "ariaLabel": "浮生之语，点击切换",
@@ -188,6 +200,16 @@
    "「初次见面，后继者。我的名字是华，「浮生」的刻印……我会帮助你熟悉它的。」"
   ]
  },
+ "scripts": [
+  "site.js",
+  "explore.js",
+  "bottom.js",
+  "bday.js",
+  "bdays.js"
+ ],
+ "shortName": "华",
+ "signet": "浮生",
+ "signetImage": "/images/signet/浮生-256.webp",
  "typewriter": {
   "delay": 150,
   "hintDelay": 1200,

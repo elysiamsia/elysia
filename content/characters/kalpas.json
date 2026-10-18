@@ -1,4 +1,6 @@
 {
+ "birthday": null,
+ "chibi": null,
  "endingStars": {
   "colors": {
    "pool": [
@@ -169,7 +171,25 @@
    "我不需要谁和我并肩作战，我只需要敌人。"
   ]
  },
+ "fullName": "千劫",
  "game": {
   "module": "kalpas"
- }
+ },
+ "key": "kalpas",
+ "meta": {
+  "canonical": "https://elysiad.top/kalpas/",
+  "description": "逐火十三英桀 · 刻印「鏖灭」。",
+  "title": "elysiad.top/kalpas — 致千劫"
+ },
+ "scripts": [
+  "site.js",
+  "explore.js",
+  "bottom.js",
+  "kalpas.js",
+  "bday.js",
+  "bdays.js"
+ ],
+ "shortName": "千劫",
+ "signet": "鏖灭",
+ "signetImage": "/images/signet/鏖灭-256.webp"
 }

@@ -1,4 +1,9 @@
 {
+ "birthday": [
+  9,
+  31
+ ],
+ "chibi": null,
  "endingStars": {
   "colors": {
    "alt": "#ffd166",
@@ -167,7 +172,25 @@
    "如果为你写一首曲子的话，用什么调子会比较好呢？咏叹调怎么样？"
   ]
  },
+ "fullName": "伊甸",
  "game": {
   "module": "eden"
- }
+ },
+ "key": "eden",
+ "meta": {
+  "canonical": "https://elysiad.top/eden/",
+  "description": "逐火十三英桀 · 刻印「黄金」。",
+  "title": "elysiad.top/eden — 致伊甸"
+ },
+ "scripts": [
+  "site.js",
+  "explore.js",
+  "bottom.js",
+  "eden.js",
+  "bday.js",
+  "bdays.js"
+ ],
+ "shortName": "伊甸",
+ "signet": "黄金",
+ "signetImage": "/images/signet/黄金-256.webp"
 }

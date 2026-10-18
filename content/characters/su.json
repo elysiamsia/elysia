@@ -1,4 +1,6 @@
 {
+ "birthday": null,
+ "chibi": null,
  "endingStars": {
   "colors": {
    "pool": [
@@ -169,7 +171,25 @@
    "你无需知晓过去的因果，克莱茵。"
   ]
  },
+ "fullName": "苏",
  "game": {
   "module": "su"
- }
+ },
+ "key": "su",
+ "meta": {
+  "canonical": "https://elysiad.top/su/",
+  "description": "逐火十三英桀 · 刻印「天慧」。",
+  "title": "elysiad.top/su — 致苏"
+ },
+ "scripts": [
+  "site.js",
+  "explore.js",
+  "bottom.js",
+  "su.js",
+  "bday.js",
+  "bdays.js"
+ ],
+ "shortName": "苏",
+ "signet": "天慧",
+ "signetImage": "/images/signet/天慧-256.webp"
 }

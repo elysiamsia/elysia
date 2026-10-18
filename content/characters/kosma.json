@@ -1,4 +1,6 @@
 {
+ "birthday": null,
+ "chibi": null,
  "endingStars": {
   "colors": {
    "pool": [
@@ -169,7 +171,25 @@
   ],
   "whisperCooldownMs": 13000
  },
+ "fullName": "科斯魔",
  "game": {
   "module": "kosma"
- }
+ },
+ "key": "kosma",
+ "meta": {
+  "canonical": "https://elysiad.top/kosma/",
+  "description": "逐火十三英桀 · 位次 Ⅸ · 刻印「旭光」。",
+  "title": "elysiad.top/kosma — 致科斯魔"
+ },
+ "scripts": [
+  "site.js",
+  "explore.js",
+  "bottom.js",
+  "bdays.js",
+  "bday.js",
+  "kosma.js"
+ ],
+ "shortName": "科斯魔",
+ "signet": "旭光",
+ "signetImage": "/images/signet/旭光-256.webp"
 }

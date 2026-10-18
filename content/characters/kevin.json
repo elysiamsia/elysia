@@ -1,4 +1,6 @@
 {
+ "birthday": null,
+ "chibi": null,
  "endingStars": {
   "colors": {
    "alt": "#a8d4f5",
@@ -167,7 +169,25 @@
    "约束之律者······抱歉，与她作战的经验你没办法参考。"
   ]
  },
+ "fullName": "凯文·卡斯兰娜",
  "game": {
   "module": "kevin"
- }
+ },
+ "key": "kevin",
+ "meta": {
+  "canonical": "https://elysiad.top/kevin/",
+  "description": "逐火十三英桀 · 位次 Ⅰ · 刻印「救世」。",
+  "title": "elysiad.top/kevin — 致凯文"
+ },
+ "scripts": [
+  "site.js",
+  "explore.js",
+  "bottom.js",
+  "kevin.js",
+  "bday.js",
+  "bdays.js"
+ ],
+ "shortName": "凯文",
+ "signet": "救世",
+ "signetImage": "/images/signet/救世-256.webp"
 }

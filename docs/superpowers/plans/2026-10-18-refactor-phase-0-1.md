@@ -82,6 +82,16 @@ site.js → explore.js → bottom.js → [<!--@PAGE_INIT@--> 位置：角色模�
 4. **/v2/ 路径语义**（绝对 /assets/ ⇒ 打到生产；sw.js scope=/ ⇒ 不注册）→ 兜底：验证矩阵 + Task 11 切换后跑 SW 断言。
 5. **公共脚本顺序被改乱** → 兜底：base.njk 硬编码单一序列 + 角色模块走槽 + check_explore 的模块加载断言。
 
+## 拍板记录（2026-10-18 · Task 7 盘点后）
+
+| # | 事项 | 决定 |
+|---|---|---|
+| ① | head 里的 style 块 | `signet-mark`/`signet-badge-css`/`touch-target-fix` 进 base（**并补齐缺此块的 kevin/su**）；`narrow-320-fix`/`mobile-ovf-fix`/`threshold-44-fix` 归页面私有 |
+| ② | 脚本顺序两种变体 | **保序**：脚本序列做成**页面级数据数组**，base 不硬编码角色模块位置 |
+| ③ | 每页 meta | **数据驱动**（title/description/canonical 进 character JSON 的 meta 段） |
+| ④ | `quotes` / `typewriter` | 作为**可选键原样保留**（mobius/hua/pardofelis 三页才有） |
+| ⑤ | hua/pardofelis 的游戏 | **已核实：有游戏，且是内联实现**（`ElysiaGames.<key>` 写在页面 `<script>` 里），迁移时随页面私有脚本原样搬运 |
+
 ## 动画素材挂钩（方向已明确：Spine 骨骼动画）
 
 **2026-10-18 盘点发现**（主人正在准备，未提交）：

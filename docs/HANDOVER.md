@@ -94,6 +94,21 @@
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
 
 
+### 2.3 最近一轮（2026-10-18）：重构 M1 起步 —— Task 7/8（盘点 + 12 份数据 + 校验器）
+
+| Task | 产出 | 验收 |
+|---|---|---|
+| 7 盘点 | `inventory_theme.py` → 12 份 JSON 草稿 + `theme-inventory.md` + `art/verb-allowlist.json` | THEME **12/12 提取成功**、finds 各 **12** |
+| 8 数据+校验 | `fill_content.py`（派生字段零手抄）+ `validate_content.py` | **校验全绿 12 页**；牙齿：改坐标→1、改生日（与 bdays 不符）→1、还原→0；**THEME 深度一致 12/12** |
+
+**两个盘点发现（都值得记）**：
+1. **mobius 的 THEME 不是纯字面量**（`quotes: quotes` 引用外部变量）⇒ 给 `theme_extract.mjs` 加了「依赖回退」（同页找 `var X = <字面量>` 求值后重试）✅
+2. **hua/pardofelis 的游戏是内联实现**（`window.ElysiaGames.<key>` 写在页面里，25KB/31KB），不是缺游戏 —— 迁移时随页面私有脚本原样搬运 ✅
+
+**主人拍板**：③ head style 块按「共享进 base / 私有留页」；② 脚本序列**保序**（做页面级数组）；③ meta 数据驱动；④ quotes/typewriter 原样保留。
+
+> 📌 又踩两次老坑：`String.replace` 的替换串里 `$'` 会插入匹配后文本（把 Python 行截断）⇒ 改用整份重写；
+> 以及 `\\Z` 双转义把正则变成字面量 —— 现在 Python 侧**不用 `$` 锚点**，一律 `\Z` 且只写单转义。
 ### 2.3 最近一轮（2026-10-18 凌晨）：重构 M0 完成 —— 管线/预览/验证工具四件套 + 顺手修掉 4 个真 bug
 
 | Task | 产出 | 验收 |

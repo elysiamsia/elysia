@@ -220,6 +220,18 @@
 | hua | 21.7KB | 25.2KB | site.js explore.js bottom.js bday.js bdays.js |
 | pardofelis | 22.3KB | 30.6KB | site.js explore.js bottom.js bday.js bdays.js |
 
+## 三·五、游戏实现形态（人工核对更正，2026-10-18）
+
+⚠ 最初看静态 `<script src>` 时以为 hua / pardofelis 没有游戏 —— **错了**：它们有，只是**内联实现**。
+
+| 形态 | 页 |
+|---|---|
+| 外部模块 `assets/games/<key>.js` | aponia eden griseo kalpas kevin kosma mobius sakura su villv（10 页） |
+| **内联在页面 `<script>` 里**（`window.ElysiaGames.<key> = (function(){…})()`） | **hua、pardofelis** |
+
+⇒ 迁移影响：内联游戏代码归入该页的 `<key>.page.js`（原文搬运），**不需要额外处理**；
+   `THEME.game.module` 保持不变（两页都写着自己的 key）。
+
 ## 四、白名单（已落成文件）
 
 - art：ark, blade, brick, brush, crab, dawn, frame, glint, horn, infinity, moon, mouse, palette, petal, record, scale, shadow, sheath, shed, silhouette, sleeping, spore, throne

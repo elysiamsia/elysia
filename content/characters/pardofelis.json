@@ -1,4 +1,9 @@
 {
+ "birthday": [
+  6,
+  11
+ ],
+ "chibi": null,
  "endingStars": {
   "colors": {
    "pool": [
@@ -170,8 +175,15 @@
   ],
   "whisperCooldownMs": 9000
  },
+ "fullName": "帕朵菲莉丝",
  "game": {
   "module": "pardofelis"
+ },
+ "key": "pardofelis",
+ "meta": {
+  "canonical": "https://elysiad.top/pardofelis/",
+  "description": "逐火十三英桀 · 位次 XIII · 刻印「空梦」。",
+  "title": "elysiad.top/pardofelis — 致帕朵菲莉丝"
  },
  "quotes": {
   "ariaLabel": "空梦之言，点击切换",
@@ -188,6 +200,16 @@
    "「我会把我的好运分给你，你就放心吧！」"
   ]
  },
+ "scripts": [
+  "site.js",
+  "explore.js",
+  "bottom.js",
+  "bday.js",
+  "bdays.js"
+ ],
+ "shortName": "帕朵菲莉丝",
+ "signet": "空梦",
+ "signetImage": "/images/signet/空梦-256.webp",
  "typewriter": {
   "delay": 130,
   "hintDelay": 1200,

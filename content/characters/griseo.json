@@ -1,4 +1,9 @@
 {
+ "birthday": [
+  11,
+  21
+ ],
+ "chibi": null,
  "endingStars": {
   "colors": {
    "pool": [
@@ -172,7 +177,25 @@
   ],
   "whisperCooldownMs": 9000
  },
+ "fullName": "格蕾修",
  "game": {
   "module": "griseo"
- }
+ },
+ "key": "griseo",
+ "meta": {
+  "canonical": "https://elysiad.top/griseo/",
+  "description": "逐火十三英桀 · 位次 Ⅺ · 刻印「繁星」。",
+  "title": "elysiad.top/griseo — 致格蕾修"
+ },
+ "scripts": [
+  "site.js",
+  "explore.js",
+  "bottom.js",
+  "bdays.js",
+  "bday.js",
+  "griseo.js"
+ ],
+ "shortName": "格蕾修",
+ "signet": "繁星",
+ "signetImage": "/images/signet/繁星-256.webp"
 }

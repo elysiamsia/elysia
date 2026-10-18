@@ -1,4 +1,9 @@
 {
+ "birthday": [
+  6,
+  22
+ ],
+ "chibi": null,
  "endingStars": {
   "colors": {
    "pool": [
@@ -169,7 +174,25 @@
   ],
   "whisperCooldownMs": 11000
  },
+ "fullName": "樱",
  "game": {
   "module": "sakura"
- }
+ },
+ "key": "sakura",
+ "meta": {
+  "canonical": "https://elysiad.top/sakura/",
+  "description": "逐火十三英桀 · 位次 Ⅷ · 刻印「刹那」。",
+  "title": "elysiad.top/sakura — 致樱"
+ },
+ "scripts": [
+  "site.js",
+  "explore.js",
+  "bottom.js",
+  "bdays.js",
+  "bday.js",
+  "sakura.js"
+ ],
+ "shortName": "樱",
+ "signet": "刹那",
+ "signetImage": "/images/signet/刹那-256.webp"
 }

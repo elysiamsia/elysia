@@ -1,4 +1,9 @@
 {
+ "birthday": [
+  3,
+  30
+ ],
+ "chibi": null,
  "endingStars": {
   "colors": {
    "pool": [
@@ -170,8 +175,15 @@
   ],
   "whisperCooldownMs": 12000
  },
+ "fullName": "梅比乌斯",
  "game": {
   "module": "mobius"
+ },
+ "key": "mobius",
+ "meta": {
+  "canonical": "https://elysiad.top/mobius/",
+  "description": "逐火十三英桀 · 刻印「无限」。",
+  "title": "elysiad.top/mobius — 致梅比乌斯"
  },
  "quotes": {
   "ariaLabel": "无限之言，点击切换",
@@ -188,6 +200,17 @@
    "「所以……出去之后好好干吧，小白鼠。可别辜负了梅比乌斯的期待。」"
   ]
  },
+ "scripts": [
+  "site.js",
+  "explore.js",
+  "bottom.js",
+  "mobius.js",
+  "bday.js",
+  "bdays.js"
+ ],
+ "shortName": "梅比乌斯",
+ "signet": "无限",
+ "signetImage": "/images/signet/无限-256.webp",
  "typewriter": {
   "delay": 150,
   "hintDelay": 1000,
