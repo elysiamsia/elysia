@@ -7,8 +7,8 @@ name: 预览构建（dev → /v2/）
 #
 # 两道硬门禁：
 #   1) build 必须成功（含白名单解析保护与逐文件哈希自校验）；
-#   2) diff_pages.py 逐页对比「仓库根 vs public」——**白名单必须为空**，
-#      任何差异都让 job 红掉。这是「不许看起来差不多就算过」的机器执行版。
+#   2) 构建用 --strict-templates：12 页缺模板零件直接失败。
+#      （旧的「逐页 diff」门禁已于 2026-10-18 退役：手写源已删，无处可比）
 #
 # 需要的仓库 secret：SSH_KEY（服务器私钥全文）。
 on:
@@ -31,23 +31,7 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: 构建
-        run: npm run build
-
-      - name: 门禁 · 逐页 diff（白名单必须为空）
-        run: |
-          set -euo pipefail
-          fail=0
-          count=0
-          while IFS= read -r f; do
-            rel="${f#./}"
-            count=$((count+1))
-            if ! python3 tools/refactor/diff_pages.py "$rel" "public/$rel" --allow-theme-json --report "/tmp/diff-$(echo "$rel" | tr '/' '_').md" > /dev/null; then
-              echo "::error file=$rel::该页与构建产物有差异（白名单必须为空）"
-              fail=1
-            fi
-          done < <(cd public && find . -name '*.html' | sort)
-          echo "已检查 $count 个 HTML"
-          if [ "$fail" -ne 0 ]; then echo 'diff 门禁未通过'; exit 1; fi
+        run: npm run build -- --strict-templates
 
       - name: 部署到 /v2/
         env:

@@ -100,10 +100,13 @@ function readWhitelist() {
   if (!fs.existsSync(WF)) fail('找不到白名单真源: ' + WF);
   const yml = fs.readFileSync(WF, 'utf8');
   const grab = (name) => {
-    const re = new RegExp(name + '="([^"]*)"');
-    const m = re.exec(yml);
+    // 兼容两种写法：KEEP_FILES="a b"（shell 风格）与 KEEP_FILES: a b（YAML env，无引号）
+    let re = new RegExp(name + '="([^"]*)"');
+    let m = re.exec(yml);
+    if (!m) { re = new RegExp(name + '\\s*[:=]\\s*([^\\n#]+)'); m = re.exec(yml); }
     if (!m) fail('白名单解析失败: 找不到 ' + name + '="…"。拒绝用空名单继续。');
-    return m[1].trim().split(/\s+/).filter(Boolean);
+    const stripQuotes = (x) => x.trim().replace(/^["']/, '').replace(/["']$/, '');
+    return stripQuotes(m[1]).split(/\s+/).filter(Boolean);
   };
   const files = grab('KEEP_FILES');
   const dirs = grab('KEEP_DIRS');

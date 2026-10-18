@@ -38,10 +38,14 @@ if [ "${1:-deploy}" = "rollback" ]; then
   exit 0
 fi
 
-STAGE=$(mktemp -d); trap 'rm -rf "$STAGE"' EXIT
-for f in $KEEP_FILES; do [ -e "$f" ] && cp -r "$f" "$STAGE/"; done
-for d in $KEEP_DIRS; do [ -d "$d" ] && cp -r "$d" "$STAGE/"; done
-echo "→ 待发布：$(find "$STAGE" -type f | wc -l) 个文件，$(du -sh "$STAGE" | cut -f1)"
+# ⚠ 切换后（2026-10-18）：发布源头从「仓库根白名单装配」改为**构建产物 public/**。
+#   为什么：手写页已退役，postgres 白名单装配已无意义；build 自己就是装配器。
+FROM_PUBLIC=1
+[ -d public ] || { echo "public/ 不存在，先 npm run build"; exit 1; }
+STAGE=$(mktemp -d)
+trap 'rm -rf "$STAGE"' EXIT
+cp -a public/. "$STAGE"/
+echo "→ 待发布（public/）：$(find "$STAGE" -type f | wc -l) 个文件，$(du -sh "$STAGE" | cut -f1)"
 
 TARBALL=$(mktemp -u).tgz
 tar czf "$TARBALL" -C "$STAGE" .

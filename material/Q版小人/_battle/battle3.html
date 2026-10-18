@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<title>赛博斗蛐蛐 · 战斗 HUD v3</title>
+<style>
+ html,body{margin:0;height:100%;overflow:hidden;background:#0b0c10;color:#eaeaf0;font:13px/1.5 system-ui,"Microsoft YaHei",sans-serif}
+ #c{position:fixed;inset:0;width:100%;height:100%}
+ .panel{position:fixed;top:14px;width:36%;max-width:420px}
+ #panelL{left:3%} #panelR{right:3%}
+ .nameRow{display:flex;justify-content:space-between;align-items:flex-end;font-size:13px;opacity:.9;margin-bottom:4px}
+ #nameR .nameRow{flex-direction:row-reverse}
+ .name{font-weight:600;letter-spacing:.5px}
+ .hpWrap{position:relative;height:20px;background:#191b22;border:1px solid #343642;border-radius:5px;overflow:hidden}
+ .hpGhost,.hpFill,.hpShield{position:absolute;top:0;bottom:0;left:0}
+ .hpGhost{background:#2196f3;opacity:1;z-index:1;z-index:1}
+ .hpFill{background:linear-gradient(180deg,#7be0a0,#3fbf7f);z-index:2}
+ #panelR .hpFill{background:linear-gradient(180deg,#ff9f8f,#e0604f)}
+ .hpShield{background:linear-gradient(180deg,#ffe07a,#e6b93f);right:0;left:auto;z-index:3}
+ .hpText{position:absolute;inset:0;z-index:4;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;text-shadow:0 1px 2px #000}
+ .sub{display:flex;justify-content:space-between;font-size:12px;margin-top:5px;opacity:.85}
+ #panelR .sub{flex-direction:row-reverse}
+ .dmgDealt{color:#ffd76a}
+ .dmgDealt b{font-size:15px}
+ #dmgLayer{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+ .dmg{position:absolute;font-weight:800;font-size:34px;color:#fff;text-shadow:0 2px 0 #7a1f1f,0 0 12px rgba(255,80,80,.7);pointer-events:none}
+ .dmg.crit{color:#ffd54a;font-size:44px;text-shadow:0 2px 0 #7a4a00,0 0 16px rgba(255,200,60,.8)}
+ @keyframes dmgUp{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}12%{opacity:1;transform:translate(-50%,-60%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-130%) scale(1)}}
+ #bar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:8px}
+ button{background:#23252d;color:#ddd;border:1px solid #3a3d47;border-radius:8px;padding:6px 14px;font:inherit;cursor:pointer}
+ #time{position:fixed;left:50%;bottom:52px;transform:translateX(-50%);opacity:.45;font-size:12px}
+</style></head>
+<body>
+<canvas id="c"></canvas>
+<div id="dmgLayer"></div>
+<div class="panel" id="panelL">
+  <div class="nameRow"><span class="name">维尔薇</span></div>
+  <div class="hpWrap"><div class="hpGhost" style="width:100%"></div><div class="hpFill" style="width:100%"></div><div class="hpShield" style="width:0"></div><div class="hpText">100 / 100</div></div>
+  <div class="sub"><span class="dmgDealt">累计输出 <b>0</b></span><span class="shieldTxt">护盾 0</span></div>
+</div>
+<div class="panel" id="panelR">
+  <div class="nameRow"><span class="name">爱莉希雅</span></div>
+  <div class="hpWrap"><div class="hpGhost" style="width:100%"></div><div class="hpFill" style="width:100%"></div><div class="hpShield" style="width:0"></div><div class="hpText">100 / 100</div></div>
+  <div class="sub"><span class="dmgDealt">累计输出 <b>0</b></span><span class="shieldTxt">护盾 0</span></div>
+</div>
+<div id="time"></div>
+<div id="bar"><button id="play">▶ 播放</button><button id="reset">重来</button></div>
+<script src="spine-webgl.js"></script>
+<script>
+const BASE = location.pathname.replace(/battle3\.html$/, '');
+const canvas = document.getElementById('c');
+const ctx = new spine.ManagedWebGLRenderingContext(canvas, { alpha: false });
+const shader = spine.Shader.newTwoColoredTextured(ctx);
+const batcher = new spine.PolygonBatcher(ctx);
+const mvp = new spine.Matrix4();
+const renderer = new spine.SkeletonRenderer(ctx);
+const VIEW = { x0:-450, x1:450, y0:-40, y1:540 };
+
+function encPath(p){ return p.split('/').map(encodeURIComponent).join('/'); }
+async function loadModel(base, name, isJson, atlasName, texName){
+  atlasName = atlasName || name; texName = texName || atlasName;
+  const atlasText = await (await fetch(base + encPath(atlasName + '.atlas'))).text();
+  const img = new Image();
+  await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = base + encPath(texName + '.png'); });
+  const tex = new spine.GLTexture(ctx, img);
+  const atlas = new spine.TextureAtlas(atlasText);
+  for (const p of atlas.pages) p.setTexture(tex);
+  const loader = new spine.AtlasAttachmentLoader(atlas);
+  let data;
+  if (isJson) data = new spine.SkeletonJson(loader).readSkeletonData(await (await fetch(base + encPath(name + '.json'))).json());
+  else data = new spine.SkeletonBinary(loader).readSkeletonData(new Uint8Array(await (await fetch(base + encPath(name + '.skel'))).arrayBuffer()));
+  const sk = new spine.Skeleton(data);
+  const state = new spine.AnimationState(new spine.AnimationStateData(data));
+  return { sk, state, data, names: new Set(data.animations.map(a => a.name)) };
+}
+
+const CFG = {
+  L: { path: BASE + '../维尔薇/Spine 骨骼动画模型/wierwei/', name:'wiiecei_battle', json:true, atlas:'weierwei', tex:'weierwei',
+       map:{ idle:'battle_idle', attack:'battle_attack', cast:'battle_cast', ko:'battle_ko', win:'battle_win', hit:'battle_hit' } },
+  R: { path: BASE + '../爱莉希雅/Spine 骨骼动画模型/01_爱神使者_主色/', name:'elvisa_1', json:false,
+       map:{ idle:'0_left', attack:'4_wavehands', cast:'5_special_ani', ko:'@ko', win:'3_applaud', hit:'@hit', base:'1_idle' } },
+};
+
+const EVENTS = [
+  { t:0.20, who:'L', do:'idle' }, { t:0.20, who:'R', do:'idle' },
+  { t:0.80, who:'L', do:'attack' },
+  { t:1.05, who:'R', do:'hit', dmg: 26, from:'L' },
+  { t:1.90, who:'R', do:'attack' },
+  { t:2.15, who:'L', do:'hit', dmg: 9, from:'R' },
+  { t:2.90, who:'L', do:'cast' },
+  { t:3.35, who:'R', do:'hit', dmg: 22, from:'L', crit:true },
+  { t:3.95, who:'R', do:'attack' },
+  { t:4.20, who:'L', do:'hit', dmg: 13, from:'R' },
+  { t:4.90, who:'L', do:'attack' },
+  { t:5.15, who:'R', do:'hit', dmg: 18, from:'L' },
+  { t:5.80, who:'L', do:'attack' },
+  { t:6.05, who:'R', do:'hit', dmg: 16, from:'L' },
+  { t:6.70, who:'L', do:'attack' },
+  { t:6.95, who:'R', do:'hit', dmg: 20, from:'L' },
+  { t:7.60, who:'L', do:'attack' },
+  { t:7.85, who:'R', do:'hit', dmg: 18, from:'L' },
+  { t:8.30, who:'L', do:'attack' },
+  { t:8.55, who:'R', do:'hit', dmg: 22, from:'L' },
+  { t:9.20, who:'L', do:'win' },
+];
+const DURATION = 10.2;
+const MAXHP = { L: 100, R: 100 };
+const SHIELD0 = { L: 0, R: 10 };
+
+let fighters = {}, t = 0, playing = false;
+const dom = {
+  L: { panel: document.getElementById('panelL') }, R: { panel: document.getElementById('panelR') },
+};
+
+function animName(f, key){
+  const n = f.cfg.map[key];
+  if (!n || n.startsWith('@')) return null;
+  return f.names.has(n) ? n : null;
+}
+function setAnim(f, key, offset=0, playingNow=true){
+  const name = animName(f, key);
+  if (!name) { f.pending = null; return false; }
+  if (f.cur !== name || !playingNow) { f.state.setAnimation(0, name, key === 'idle'); f.cur = name; }
+  if (offset > 0) { f.state.update(offset); }
+  f.state.apply(f.sk);
+  f.sk.updateWorldTransform();
+  return true;
+}
+function project(x, y){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  return { x: (x - VIEW.x0) / (VIEW.x1 - VIEW.x0) * w, y: (VIEW.y1 - y) / (VIEW.y1 - VIEW.y0) * h };
+}
+function renderDamageAt(time){
+  const layer = document.getElementById('dmgLayer');
+  layer.innerHTML = '';
+  for (const ev of EVENTS) {
+    if (!ev.dmg) continue;
+    const dt = time - ev.t;
+    if (dt < 0 || dt > 0.9) continue;
+    const tgt = fighters[ev.who];
+    const p = project(tgt.base.x, 330);
+    const prog = dt / 0.9;
+    const el = document.createElement('div');
+    el.className = 'dmg' + (ev.crit ? ' crit' : '');
+    el.textContent = (ev.crit ? '会心 ' : '') + '-' + ev.dmg;
+    el.style.left = p.x + 'px';
+    el.style.top = (p.y - 30 - prog * 76) + 'px';
+    el.style.opacity = String(Math.max(0, Math.min(1, (1 - prog) * 1.8)));
+    el.style.transform = 'translate(-50%,-50%) scale(' + (prog < 0.16 ? 0.7 + prog * 3 : 1.18 - prog * 0.18) + ')';
+    layer.appendChild(el);
+  }
+}
+function renderHUD(f){
+  const d = dom[f.side];
+  const pct = Math.max(0, f.hp / MAXHP[f.side] * 100);
+  const ghostPct = Math.max(0, f.ghost / MAXHP[f.side] * 100);
+  const shieldPct = Math.max(0, Math.min(100, f.shield / MAXHP[f.side] * 100));
+  d.panel.querySelector('.hpText').textContent = Math.max(0, Math.round(f.hp)) + ' / ' + MAXHP[f.side];
+  d.panel.querySelector('.hpFill').style.width = pct + '%';
+  d.panel.querySelector('.hpGhost').style.width = Math.max(pct, ghostPct) + '%';
+  d.panel.querySelector('.hpShield').style.width = shieldPct + '%';
+  d.panel.querySelector('.dmgDealt b').textContent = f.dealt;
+  d.panel.querySelector('.shieldTxt').textContent = '护盾 ' + Math.round(f.shield);
+}
+function computeState(time){
+  const st = {};
+  for (const side of ['L','R']) {
+    st[side] = { hp: MAXHP[side], shield: SHIELD0[side], dealt: 0, taken: 0,
+                 prevHp: MAXHP[side], dmgAt: -99, action: 'idle', actionAt: 0.2,
+                 dead: false, deadAt: -1 };
+  }
+  for (const ev of EVENTS) {
+    if (ev.t > time) break;
+    const s = st[ev.who];
+    if (ev.do) { s.action = ev.do; s.actionAt = ev.t; }
+    if (ev.dmg) {
+      let left = ev.dmg;
+      if (s.shield > 0) { const a = Math.min(s.shield, left); s.shield -= a; left -= a; }
+      s.prevHp = s.hp;
+      s.hp = Math.max(0, s.hp - left);
+      s.taken += ev.dmg; s.dmgAt = ev.t;
+      st[ev.from].dealt += ev.dmg;
+      if (s.hp <= 0 && !s.dead) { s.dead = true; s.deadAt = ev.t; s.action = 'ko'; s.actionAt = ev.t; }
+    }
+  }
+  return st;
+}
+function idleName(f){ return animName(f,'idle') || animName(f,'1_idle') || f.data.animations[0].name; }
+function applyFighter(f, s, time){
+  const dead = s.dead;
+  const key = dead ? 'ko' : s.action;
+  const at = dead ? s.deadAt : s.actionAt;
+  const off = Math.max(0, time - at);
+  const dir = f.side === 'L' ? 1 : -1;
+  const name = animName(f, key);
+  if (name) {
+    f.state.setAnimation(0, name, !dead && key === 'idle');
+    f.state.update(off);
+    f.state.apply(f.sk);
+  } else {
+    f.state.setAnimation(0, idleName(f), true);
+    f.state.update(off);
+    f.state.apply(f.sk);
+  }
+  // 程序化位移（世界单位，跨 rig 都可靠）——让普攻/受击/技能一眼能看出来
+  if (!dead) {
+    if (key === 'attack') {
+      const k = off < 0.16 ? off / 0.16 : Math.max(0, 1 - (off - 0.16) / 0.36);
+      f.sk.x = f.base.x + dir * 105 * k;
+      f.sk.y = f.base.y + Math.sin(Math.min(1, k) * Math.PI) * 26;
+      f.sk.bones[0].rotation = f.baseRootRot + dir * 5 * k;
+    } else if (key === 'hit') {
+      const k = Math.sin(Math.min(1, off * 5) * Math.PI) * Math.max(0, 1 - off / 0.5);
+      f.sk.x = f.base.x - dir * 34 * k;
+      f.sk.bones[0].rotation = f.baseRootRot - dir * 4 * k;
+    } else if (key === 'cast') {
+      f.sk.y = f.base.y + Math.sin(Math.min(1, off / 0.55) * Math.PI) * 34;
+    }
+  } else {
+    const k = Math.min(1, off / 0.65);
+    f.sk.x = f.base.x + dir * 30 * k;
+    f.sk.bones[0].rotation = f.baseRootRot + dir * 26 * k;
+    f.sk.y = f.base.y - 46 * k;
+  }
+  // 朝向：正面立绘靠"偏头 + 微转胸"表现看向对手（不用镜像）
+  if (f.side === 'L') {
+    const hb = f.headBone, cb = f.chestBone;
+    if (hb) hb.rotation = f.headBase + 9;
+    if (cb) cb.rotation = f.chestBase + 3.5;
+  }
+  f.sk.updateWorldTransform();
+}
+function seek(time){
+  const prev = t;
+  t = time;
+  const st = computeState(time);
+  for (const side of ['L','R']) {
+    const f = fighters[side], s = st[side];
+    f.sk.setToSetupPose();
+    f.state.clearTracks();
+    f.cur = null;
+    f.sk.x = f.base.x; f.sk.y = f.base.y;
+    f.sk.scaleX = f.baseScaleX; f.sk.scaleY = f.baseScaleY;
+    f.sk.bones[0].rotation = f.baseRootRot;
+    applyFighter(f, s, time);
+    f.hp = s.hp; f.shield = s.shield; f.dealt = s.dealt; f.taken = s.taken;
+    f.ghost = (time - s.dmgAt) < 3 ? Math.max(s.hp, s.prevHp) : s.hp;
+    renderHUD(f);
+  }
+  renderDamageAt(time);
+  document.getElementById('time').textContent = 't=' + time.toFixed(2) + 's';
+}
+function resize(){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+  mvp.ortho2d(VIEW.x0, VIEW.y0, VIEW.x1 - VIEW.x0, VIEW.y1 - VIEW.y0);
+  ctx.gl.viewport(0, 0, canvas.width, canvas.height);
+}
+let lastFrame = performance.now();
+function loop(){
+  requestAnimationFrame(loop);
+  const now = performance.now(); const dt = Math.min(0.05, (now - lastFrame)/1000); lastFrame = now;
+  resize();
+  const gl = ctx.gl; gl.clearColor(0.043,0.047,0.062,1); gl.clear(gl.COLOR_BUFFER_BIT);
+  if (playing) { t += dt; if (t > DURATION) { playing = false; seek(DURATION); } else seek(t); }
+  shader.bind(); shader.setUniformi(spine.Shader.SAMPLER, 0);
+  shader.setUniform4x4f(spine.Shader.MVP_MATRIX, mvp.values);
+  batcher.begin(shader);
+  for (const f of Object.values(fighters)) { f.state.apply(f.sk); f.sk.updateWorldTransform(); renderer.draw(batcher, f.sk); }
+  batcher.end(); shader.unbind();
+}
+async function boot(){
+  fighters.L = await loadModel(CFG.L.path, CFG.L.name, true, CFG.L.atlas, CFG.L.tex); fighters.L.cfg = CFG.L; fighters.L.side = 'L';
+  fighters.R = await loadModel(CFG.R.path, CFG.R.name, false); fighters.R.cfg = CFG.R; fighters.R.side = 'R';
+  for (const f of Object.values(fighters)) {
+    f.sk.setToSetupPose(); f.sk.updateWorldTransform();
+    const off = new spine.Vector2(), size = new spine.Vector2();
+    f.sk.getBounds(off, size, []);
+    const s = 415 / size.y;
+    const x = f.side === 'L' ? -205 : 205;
+    f.baseScaleX = f.side === 'R' ? -s : s; f.baseScaleY = s;
+    f.sk.scaleX = f.baseScaleX; f.sk.scaleY = s;
+    f.sk.x = x - (off.x + size.x/2) * s; f.sk.y = -off.y * s;
+    f.base = { x: f.sk.x, y: f.sk.y };
+    f.baseRootRot = f.sk.bones[0].rotation;
+    f.headBone = f.sk.findBone ? f.sk.findBone('头') : null;
+    f.chestBone = f.sk.findBone ? f.sk.findBone('胸') : null;
+    f.headBase = f.headBone ? f.headBone.rotation : 0;
+    f.chestBase = f.chestBone ? f.chestBone.rotation : 0;
+  }
+  document.getElementById('play').onclick = () => { playing = true; t = 0; seek(0); };
+  document.getElementById('reset').onclick = () => { playing = false; seek(0); };
+  const q = new URLSearchParams(location.search);
+  if (q.get('ui') === '0') document.getElementById('bar').style.display = 'none';
+  if (q.get('play') === '1') playing = true;
+  seek(parseFloat(q.get('t') || '0'));
+  requestAnimationFrame(loop);
+}
+boot().catch(e => {
+  const msg = (e && (e.stack || e.message)) || String(e);
+  document.body.insertAdjacentHTML('beforeend', '<pre style="color:#f88;position:fixed;bottom:0;left:0;right:0;background:#000;padding:8px;white-space:pre-wrap">'+msg+'</pre>');
+});
+</script></body></html>

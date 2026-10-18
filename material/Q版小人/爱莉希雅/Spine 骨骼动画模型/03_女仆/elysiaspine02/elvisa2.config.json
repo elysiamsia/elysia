@@ -1,0 +1,79 @@
+{
+  "conf_ver": 1,
+  "type": 9,
+  "controllers": {
+    "param_hit": {},
+    "param_loop": {},
+    "key_trigger": {},
+    "eye_blink": {
+      "min_interval": 500,
+      "max_interval": 6000
+    },
+    "lip_sync": {
+      "gain": 5.0
+    },
+    "mouse_tracking": {
+      "smooth_time": 0.15
+    },
+    "auto_breath": {},
+    "extra_motion": {},
+    "accelerometer": {},
+    "intimacy_system": {},
+    "slot_opacity": {},
+    "slot_color": {}
+  },
+  "motions": {
+    "idle": [
+      {
+        "file": "1_idle"
+      }
+    ],
+    "leave_5_3_5": [
+      {
+        "file": "2_walking_left",
+        "priority": 5,
+        "weight": 5
+      },
+      {
+        "file": "2_walking_right",
+        "priority": 5,
+        "weight": 5
+      },
+      {
+        "file": "5_special_ani",
+        "priority": 2
+      },
+      {
+        "file": "1_idle_hunmi",
+        "priority": 2
+      }
+    ],
+    "tap": [
+      {
+        "file": "4_wavehands",
+        "weight": 6
+      },
+      {
+        "file": "3_applaud",
+        "weight": 4
+      }
+    ]
+  },
+  "options": {
+    "scale_factor": 0.07243741,
+    "tex_type": 0,
+    "edge_padding": false
+  },
+  "skeleton": "elvisa_2.skel",
+  "atlases": [
+    {
+      "atlas": "elvisa_2.atlas",
+      "tex_names": [
+        "elvisa_2"
+      ],
+      "textures": [
+        "elvisa_2.png"
+      ]
+    }
+  ]
+}
