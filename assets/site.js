@@ -405,3 +405,27 @@
     }).catch(function () {});
   });
 })();
+
+/* ── 站内预取（丝滑专项 v1，2026-10-18）──────────────────────────────
+   为什么用 prefetch 而不是 prerender：prerender 会真的执行目标页脚本（含 canvas 动画），
+   手机流量与内存代价太大；prefetch 只拿文档，点下去时已经躺在缓存里。
+   eagerness=moderate：手指按下的瞬间/prefetch 才开始，不做全站贪心预取。
+   只在支持的浏览器里注入，且尊重省流模式（saveData）与减动偏好。 */
+(function () {
+  if (!HTMLScriptElement.supports || !HTMLScriptElement.supports('speculationrules')) return;
+  try {
+    var c = navigator.connection || {};
+    if (c.saveData) return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var s = document.createElement('script');
+    s.type = 'speculationrules';
+    s.textContent = JSON.stringify({
+      prefetch: [{
+        source: 'document',
+        where: { href_matches: '/*', selector_matches: 'a[href^="/"]' },
+        eagerness: 'moderate'
+      }]
+    });
+    document.head.appendChild(s);
+  } catch (e) {}
+})();

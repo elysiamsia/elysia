@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<title>Spine 预览</title>
+<style>
+ html,body{margin:0;height:100%;background:#1b1c20;color:#ddd;font:13px/1.5 system-ui,"Microsoft YaHei",sans-serif;overflow:hidden}
+ #c{position:fixed;inset:0;width:100%;height:100%}
+ #ui{position:fixed;left:12px;top:12px;background:rgba(20,22,28,.86);border:1px solid #333;border-radius:10px;padding:10px 12px;backdrop-filter:blur(6px);max-width:280px}
+ #ui h1{font-size:13px;margin:0 0 8px;font-weight:600;color:#fff}
+ select,button{background:#24262e;color:#ddd;border:1px solid #3a3d47;border-radius:6px;padding:3px 6px;font:inherit}
+ .row{display:flex;gap:6px;align-items:center;margin:6px 0}
+ #hint{position:fixed;right:12px;bottom:10px;opacity:.5;font-size:12px}
+</style></head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui">
+  <h1>Spine 骨骼动画预览</h1>
+  <div class="row"><select id="model" style="flex:1"></select></div>
+  <div class="row"><button id="prev">◀</button><select id="anim" style="flex:1"></select><button id="next">▶</button></div>
+  <div class="row"><button id="toggle">暂停</button><button id="reset">复位</button><span id="info" style="opacity:.6"></span></div>
+</div>
+<div id="hint">滚轮缩放 · 拖拽平移 · 空格暂停</div>
+<script src="spine-webgl.js"></script>
+<script>
+const BASE = location.pathname.replace(/viewer\.html$/, '');
+const canvas = document.getElementById('c');
+const ctx = new spine.ManagedWebGLRenderingContext(canvas, { alpha: true });
+if (!ctx.gl) document.body.innerHTML = '<p style="padding:20px">WebGL 不可用</p>';
+const shader = spine.Shader.newTwoColoredTextured(ctx);
+const batcher = new spine.PolygonBatcher(ctx);
+const mvp = new spine.Matrix4();
+const renderer = new spine.SkeletonRenderer(ctx);
+let view = { zoom: 1, cx: 0, cy: 0 };
+let cur = null;
+let paused = false, last = Date.now()/1000;
+let models = [];
+const elModel = document.getElementById('model');
+const elAnim = document.getElementById('anim');
+const elInfo = document.getElementById('info');
+
+function encPath(p){ return p.split('/').map(encodeURIComponent).join('/'); }
+
+// 稳健包围盒：收集所有附件顶点，取 3%~97% 分位，避免个别离群附件把镜头拉飞
+function contentBounds(skeleton){
+  skeleton.updateWorldTransform();
+  const xs = [], ys = [];
+  const tmp = [];
+  for (const slot of skeleton.slots){
+    const att = slot.getAttachment();
+    if (!att) continue;
+    let n = 0;
+    if (att.worldVerticesLength) n = att.worldVerticesLength;
+    else if (att.computeWorldVertices) n = 8;
+    if (!n) continue;
+    if (slot.color && slot.color.a === 0) continue;
+    const verts = new Float32Array(n);
+    try { att.computeWorldVertices(slot, 0, n, verts, 0, 2); } catch(e) { continue; }
+    for (let i = 0; i + 1 < n; i += 2){ xs.push(verts[i]); ys.push(verts[i+1]); }
+  }
+  if (!xs.length) return { x: -1, y: -1, w: 2, h: 2 };
+  xs.sort((a,b)=>a-b); ys.sort((a,b)=>a-b);
+  const q = (arr, p) => arr[Math.min(arr.length-1, Math.max(0, Math.floor(arr.length*p)))];
+  const x0 = q(xs, 0.03), x1 = q(xs, 0.97), y0 = q(ys, 0.03), y1 = q(ys, 0.97);
+  return { x: x0, y: y0, w: Math.max(1, x1-x0), h: Math.max(1, y1-y0) };
+}
+function fitView(b){
+  const pad = 1.06;
+  const s = Math.max(b.w / (canvas.clientWidth * 0.82), b.h / (canvas.clientHeight * 0.9)) * pad;
+  view = { zoom: s, cx: b.x + b.w/2, cy: b.y + b.h/2 };
+}
+function resize(){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== w || canvas.height !== h){ canvas.width = w; canvas.height = h; }
+  mvp.ortho2d(view.cx - canvas.width*view.zoom/2, view.cy - canvas.height*view.zoom/2,
+              canvas.width*view.zoom, canvas.height*view.zoom);
+  ctx.gl.viewport(0, 0, canvas.width, canvas.height);
+}
+async function loadModel(entry){
+  const dir = BASE + encPath(entry.dir) + '/';
+  const atlasText = await (await fetch(dir + encPath(entry.atlas))).text();
+  const img = new Image();
+  await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = dir + encPath(entry.texture); });
+  const tex = new spine.GLTexture(ctx, img);
+  const atlas = new spine.TextureAtlas(atlasText);
+  for (const page of atlas.pages) page.setTexture(tex);
+  const pma = atlas.pages.length ? !!atlas.pages[0].pma : false;
+  const atlasLoader = new spine.AtlasAttachmentLoader(atlas);
+  let data;
+  if (/\.json$/i.test(entry.skeleton)) {
+    const js = await (await fetch(dir + encPath(entry.skeleton))).json();
+    data = new spine.SkeletonJson(atlasLoader).readSkeletonData(js);
+  } else {
+    const buf = new Uint8Array(await (await fetch(dir + encPath(entry.skeleton))).arrayBuffer());
+    data = new spine.SkeletonBinary(atlasLoader).readSkeletonData(buf);
+  }
+  if (cur && cur.tex && cur.tex.dispose) { try { cur.tex.dispose(); } catch(e){} }
+  const skeleton = new spine.Skeleton(data);
+  skeleton.setToSetupPose();
+  skeleton.updateWorldTransform();
+  const state = new spine.AnimationState(new spine.AnimationStateData(data));
+  const names = data.animations.map(a => a.name);
+  elAnim.innerHTML = names.map(n => '<option>'+n+'</option>').join('') || '<option>(无动画)</option>';
+  if (names.length){
+    const start = names.find(n => /idle|wait|stand|default|loop/i.test(n)) || names[0];
+    elAnim.value = start;
+    state.setAnimation(0, start, true);
+    state.update(0); state.apply(skeleton);
+  }
+  skeleton.updateWorldTransform();
+  elInfo.textContent = names.length + ' 段动画';
+  cur = { skeleton, state, atlas, tex, pma };
+  fitView(contentBounds(skeleton));
+  document.getElementById('hint').textContent = '滚轮缩放 · 拖拽平移 · 空格暂停';
+  document.title = 'Spine · ' + (entry.name || entry.dir);
+}
+function render(){
+  requestAnimationFrame(render);
+  const now = Date.now()/1000, delta = Math.min(0.05, now - last);
+  last = now;
+  resize();
+  const gl = ctx.gl;
+  gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
+  if (!cur) return;
+  if (!paused) cur.state.update(delta);
+  cur.state.apply(cur.skeleton);
+  cur.skeleton.updateWorldTransform();
+  shader.bind();
+  shader.setUniformi(spine.Shader.SAMPLER, 0);
+  shader.setUniform4x4f(spine.Shader.MVP_MATRIX, mvp.values);
+  batcher.begin(shader);
+  renderer.premultipliedAlpha = cur.pma;
+  renderer.draw(batcher, cur.skeleton);
+  batcher.end();
+  shader.unbind();
+}
+async function boot(){
+  models = await (await fetch(BASE + 'models.json')).json();
+  elModel.innerHTML = models.map((m,i) => '<option value="'+i+'">'+m.name+'</option>').join('');
+  elModel.onchange = () => loadModel(models[+elModel.value]);
+  elAnim.onchange = () => cur && cur.state.setAnimation(0, elAnim.value, true);
+  document.getElementById('prev').onclick = () => { elModel.selectedIndex = (elModel.selectedIndex-1+models.length)%models.length; loadModel(models[+elModel.value]); };
+  document.getElementById('next').onclick = () => { elModel.selectedIndex = (elModel.selectedIndex+1)%models.length; loadModel(models[+elModel.value]); };
+  document.getElementById('toggle').onclick = (e) => { paused = !paused; e.target.textContent = paused ? '继续' : '暂停'; };
+  document.getElementById('reset').onclick = () => cur && fitView(contentBounds(cur.skeleton));
+  document.addEventListener('keydown', e => { if (e.code === 'Space'){ e.preventDefault(); document.getElementById('toggle').click(); } });
+  let drag = null;
+  canvas.addEventListener('pointerdown', e => { drag = { x:e.clientX, y:e.clientY, cx:view.cx, cy:view.cy }; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointermove', e => { if (!drag) return; view.cx = drag.cx - (e.clientX-drag.x)*view.zoom; view.cy = drag.cy + (e.clientY-drag.y)*view.zoom; });
+  canvas.addEventListener('pointerup', () => drag = null);
+  canvas.addEventListener('wheel', e => { e.preventDefault(); view.zoom *= Math.exp(e.deltaY*0.0012); }, { passive:false });
+  const q = new URLSearchParams(location.search).get('m');
+  const i = q ? Math.max(0, Math.min(models.length-1, +q)) : 0;
+  elModel.selectedIndex = i;
+  await loadModel(models[i]);
+  last = Date.now()/1000;
+  requestAnimationFrame(render);
+}
+boot().catch(e => { document.body.insertAdjacentHTML('beforeend', '<pre style="color:#f88;position:fixed;bottom:0;left:0;right:0;background:#000;padding:8px;white-space:pre-wrap">'+e.stack+'</pre>'); });
+</script>
+</body></html>

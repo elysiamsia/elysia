@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<title>赛博斗蛐蛐 · 战斗样板 v2</title>
+<style>
+ html,body{margin:0;height:100%;overflow:hidden;background:#0c0d11;color:#eee;font:13px/1.6 system-ui,"Microsoft YaHei",sans-serif}
+ #c{position:fixed;inset:0;width:100%;height:100%}
+ .hp{position:fixed;top:30px;width:32%;height:14px;background:#22242c;border:1px solid #3a3d47;border-radius:8px;overflow:hidden}
+ .hp i{display:block;height:100%;background:linear-gradient(90deg,#7be0a0,#3fbf7f);transition:width .18s}
+ #hpL{left:5%} #hpR{right:5%}
+ #hpR i{background:linear-gradient(90deg,#ff9f8f,#e0604f);float:right}
+ .nm{position:fixed;top:8px;font-size:12px;opacity:.85}
+ #nmL{left:5%} #nmR{right:5%}
+ #time{position:fixed;left:50%;top:10px;transform:translateX(-50%);opacity:.45;font-size:12px}
+ #bar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:8px}
+ button{background:#24262e;color:#ddd;border:1px solid #3a3d47;border-radius:8px;padding:6px 14px;font:inherit;cursor:pointer}
+ #dmg{position:fixed;pointer-events:none;font-weight:700;font-size:26px;color:#ffd76a;text-shadow:0 2px 6px #000;opacity:0;transition:opacity .1s}
+</style></head>
+<body>
+<canvas id="c"></canvas>
+<div class="nm" id="nmL">维尔薇</div><div class="nm" id="nmR">爱莉希雅</div>
+<div class="hp" id="hpL"><i style="width:100%"></i></div>
+<div class="hp" id="hpR"><i style="width:100%"></i></div>
+<div id="time"></div>
+<div id="dmg"></div>
+<div id="bar"><button id="play">▶ 播放</button><button id="reset">重来</button></div>
+<script src="spine-webgl.js"></script>
+<script>
+const BASE = location.pathname.replace(/battle2\.html$/, '');
+const canvas = document.getElementById('c');
+const ctx = new spine.ManagedWebGLRenderingContext(canvas, { alpha: false });
+const shader = spine.Shader.newTwoColoredTextured(ctx);
+const batcher = new spine.PolygonBatcher(ctx);
+const mvp = new spine.Matrix4();
+const renderer = new spine.SkeletonRenderer(ctx);
+
+function encPath(p){ return p.split('/').map(encodeURIComponent).join('/'); }
+async function loadModel(base, name, isJson, atlasName, texName){
+  atlasName = atlasName || name; texName = texName || atlasName;
+  const atlasText = await (await fetch(base + encPath(atlasName + '.atlas'))).text();
+  const img = new Image();
+  await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = base + encPath(texName + '.png'); });
+  const tex = new spine.GLTexture(ctx, img);
+  const atlas = new spine.TextureAtlas(atlasText);
+  for (const p of atlas.pages) p.setTexture(tex);
+  const loader = new spine.AtlasAttachmentLoader(atlas);
+  let data;
+  if (isJson) {
+    const js = await (await fetch(base + encPath(name + '.json'))).json();
+    data = new spine.SkeletonJson(loader).readSkeletonData(js);
+  } else {
+    const buf = new Uint8Array(await (await fetch(base + encPath(name + '.skel'))).arrayBuffer());
+    data = new spine.SkeletonBinary(loader).readSkeletonData(buf);
+  }
+  const sk = new spine.Skeleton(data);
+  sk.setToSetupPose(); sk.updateWorldTransform();
+  const state = new spine.AnimationState(new spine.AnimationStateData(data));
+  return { sk, state, data, names: new Set(data.animations.map(a => a.name)) };
+}
+
+// 两侧角色：维尔薇=真 rig（带 battle_*），爱莉=现成包（只有桌宠动作，受击/倒地用程序）
+const FIGHTERS = {
+  L: { path: BASE + '../维尔薇/Spine 骨骼动画模型/wierwei/', name: 'wiiecei_battle', json: true, atlas: 'weierwei', tex: 'weierwei',
+       map: { idle:'battle_idle', attack:'battle_attack', hit:'battle_hit', cast:'battle_cast', ko:'battle_ko', win:'battle_win' } },
+  R: { path: BASE + '../爱莉希雅/Spine 骨骼动画模型/01_爱神使者_主色/', name: 'elvisa_1', json: false,
+       map: { idle:'1_idle', attack:'5_special_ani', hit:'@hit', cast:'4_wavehands', ko:'@ko', win:'3_applaud' } },
+};
+const SCRIPT = [
+  { t: 0.00, who: 'L', do: 'idle' }, { t: 0.00, who: 'R', do: 'idle' },
+  { t: 0.80, who: 'L', do: 'attack' },
+  { t: 1.02, who: 'R', do: 'hit', hp: 86, dmg: '-14' },
+  { t: 1.70, who: 'R', do: 'attack' },
+  { t: 1.92, who: 'L', do: 'hit', hp: 91, dmg: '-9' },
+  { t: 2.60, who: 'L', do: 'cast' },
+  { t: 3.30, who: 'R', do: 'hit', hp: 54, dmg: '-32' },
+  { t: 3.90, who: 'R', do: 'attack' },
+  { t: 4.12, who: 'L', do: 'hit', hp: 78, dmg: '-13' },
+  { t: 4.80, who: 'L', do: 'attack' },
+  { t: 5.02, who: 'R', do: 'hit', hp: 18, dmg: '-36' },
+  { t: 5.70, who: 'L', do: 'attack' },
+  { t: 5.92, who: 'R', do: 'ko', hp: 0, dmg: '-18' },
+  { t: 6.80, who: 'L', do: 'win' },
+];
+const T_END = 8.0;
+let L, R, t = 0, playing = false, hpL = 100, hpR = 100;
+
+function play(unit, key, localT){
+  const map = unit.cfg.map;
+  const name = map[key];
+  if (!name) return;
+  if (name.startsWith('@')) { unit.program = { kind: name.slice(1), t: localT }; return; }
+  if (unit.names.has(name)) {
+    unit.state.setAnimation(0, name, key === 'idle');
+    unit.state.update(localT);
+    unit.state.apply(unit.sk);
+  }
+}
+function resetPose(unit){
+  unit.program = null;
+  unit.sk.x = unit.base.x; unit.sk.y = unit.base.y;
+  if (unit.sk.bones.length) unit.sk.bones[0].rotation = 0;
+}
+function seek(time){
+  t = time;
+  for (const u of [L, R]) if (u) resetPose(u);
+  let last = { L: { do:'idle', t: 0 }, R: { do:'idle', t: 0 } };
+  hpL = 100; hpR = 100; let dmg = null, dmgSide = null;
+  for (const ev of SCRIPT) {
+    if (ev.t > time) break;
+    last[ev.who] = { do: ev.do, t: ev.t };
+    if (ev.hp !== undefined) { if (ev.who === 'L') hpL = ev.hp; else hpR = ev.hp; }
+    if (ev.dmg) { dmg = ev.dmg; dmgSide = ev.who; }
+  }
+  if (L) play(L, last.L.do, time - last.L.t);
+  if (R) play(R, last.R.do, time - last.R.t);
+  // 程序化反应（给没有对应动画的角色）
+  for (const u of [L, R]) {
+    if (!u || !u.program) continue;
+    const { kind, t: lt } = u.program;
+    if (kind === 'hit') {
+      u.sk.x = u.base.x - 18 * Math.sin(Math.min(1, lt*6) * Math.PI);
+    } else if (kind === 'ko') {
+      const k = Math.min(1, lt / 0.6);
+      u.sk.bones[0].rotation = -88 * k;
+      u.sk.y = u.base.y - 30 * k;
+    }
+  }
+  document.getElementById('hpL').firstElementChild.style.width = hpL + '%';
+  document.getElementById('hpR').firstElementChild.style.width = hpR + '%';
+  document.getElementById('time').textContent = 't=' + time.toFixed(2) + 's';
+  const el = document.getElementById('dmg');
+  if (dmg && time - (dmgSide === 'R' ? last.R.t : last.L.t) < 0.5) {
+    el.textContent = dmg; el.style.opacity = 1;
+    el.style.left = (dmgSide === 'R' ? 62 : 26) + '%'; el.style.top = (34 + Math.random()*6) + '%';
+  } else { el.style.opacity = 0; }
+}
+function resize(){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+  const scale = 1.0;
+  mvp.ortho2d(-450, -30, 900, 560);
+  ctx.gl.viewport(0, 0, canvas.width, canvas.height);
+}
+let lastT = performance.now();
+function loop(){
+  requestAnimationFrame(loop);
+  const now = performance.now(); const dt = Math.min(0.05, (now - lastT)/1000); lastT = now;
+  resize();
+  const gl = ctx.gl;
+  gl.clearColor(0.047,0.05,0.066,1); gl.clear(gl.COLOR_BUFFER_BIT);
+  if (playing) { t += dt; if (t > T_END) { playing = false; document.getElementById('play').textContent = '▶ 重播'; } seek(t); }
+  shader.bind(); shader.setUniformi(spine.Shader.SAMPLER, 0);
+  shader.setUniform4x4f(spine.Shader.MVP_MATRIX, mvp.values);
+  batcher.begin(shader);
+  for (const u of [L, R]) if (u) { u.state.apply(u.sk); u.sk.updateWorldTransform(); renderer.draw(batcher, u.sk); }
+  batcher.end(); shader.unbind();
+}
+async function boot(){
+  L = await loadModel(FIGHTERS.L.path, FIGHTERS.L.name, true, FIGHTERS.L.atlas, FIGHTERS.L.tex);  L.cfg = FIGHTERS.L;
+  R = await loadModel(FIGHTERS.R.path, FIGHTERS.R.name, false); R.cfg = FIGHTERS.R;
+  const place = (u, x) => {
+    u.sk.setToSetupPose(); u.sk.updateWorldTransform();
+    const off = new spine.Vector2(), size = new spine.Vector2();
+    u.sk.getBounds(off, size, []);
+    const s = 470 / size.y;
+    u.sk.scaleX = s; u.sk.scaleY = s;
+    u.sk.x = x - (off.x + size.x/2) * s;
+    u.sk.y = -off.y * s;
+    u.base = { x: u.sk.x, y: u.sk.y };
+  };
+  place(L, -215); place(R, 215);
+  R.sk.scaleX = -Math.abs(R.sk.scaleX);
+  R.base.x = R.sk.x;
+  document.getElementById('play').onclick = () => { playing = true; t = 0; seek(0); };
+  document.getElementById('reset').onclick = () => { playing = false; seek(0); };
+  const q = new URLSearchParams(location.search);
+  if (q.get('ui') === '0') document.getElementById('bar').style.display = 'none';
+  seek(parseFloat(q.get('t') || '0'));
+  if (q.get('play') === '1') playing = true;
+  requestAnimationFrame(loop);
+}
+boot().catch(e => {
+  const msg = (e && (e.stack || e.message)) || String(e);
+  document.body.insertAdjacentHTML('beforeend', '<pre style="color:#f88;position:fixed;bottom:0;left:0;right:0;background:#000;padding:8px;white-space:pre-wrap">'+msg+'</pre>');
+});
+</script></body></html>

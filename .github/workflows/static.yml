@@ -1,74 +1,58 @@
-# Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
-
+name: 部署到生产（构建版）
+# 2026-10-18 切换：线上 :80 改为「构建 → public/ → 原子替换」。
+#
+# 与旧版的差别：
+#   · 源头从「仓库根按白名单装配」改为 **npm run build 的产物 public/**（手写页已退役）；
+#   · 构建用 --strict-templates：12 个角色页缺模板零件会**直接失败**（防止静默走拷贝路径）；
+#   · 传输量自检 + 三页 200 自检；备份目录 .prev 支持秒回滚。
+#
+# ⚠ KEEP_FILES / KEEP_DIRS 两行**必须保留**：src/build/build.mjs 从本文件读它们作为拷贝白名单。
 on:
-  # Runs on pushes targeting the default branch
   push:
-    branches: ["main"]
-
-  # Allows you to run this workflow manually from the Actions tab
+    branches: [main]
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+env:
+  KEEP_FILES: "index.html sw.js armor.html 404.html robots.txt sitemap.xml favicon.svg CNAME"
+  KEEP_DIRS: "assets data images aponia eden kalpas kevin su villv sakura kosma mobius griseo hua pardofelis guestbook"
 
 jobs:
-  # Single deploy job since we're just deploying
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-      - name: Assemble site (whitelist)
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: 构建（严格模式）
+        run: npm run build -- --strict-templates
+      - name: 产物自检
         run: |
           set -euo pipefail
-          rm -rf _site && mkdir -p _site
-
-          # 站点内容：存在才拷（后续阶段会陆续新增文件，此处不必每次改）
-          KEEP_FILES="index.html sw.js armor.html 404.html robots.txt sitemap.xml favicon.svg CNAME"
-          for f in $KEEP_FILES; do
-            [ -e "$f" ] && cp "$f" _site/
+          for p in index.html kevin/index.html su/index.html hua/index.html; do
+            test -s "public/$p" || { echo "缺产物 $p"; exit 1; }
           done
-
-          KEEP_DIRS="assets data images aponia eden kalpas kevin su villv sakura kosma mobius griseo hua pardofelis guestbook"
-          for d in $KEEP_DIRS; do
-            [ -e "$d" ] && cp -r "$d" _site/
+          n=$(find public -type f | wc -l)
+          echo "产物文件数 $n"
+          [ "$n" -gt 100 ] || { echo "产物太少，可能漏拷"; exit 1; }
+      - name: 上传并原子替换
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          HOST: 1.14.60.153
+          USER: ubuntu
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh && printf "%s\n" "$SSH_KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          tar czf /tmp/site.tgz -C public .
+          scp -i ~/.ssh/id_deploy -o StrictHostKeyChecking=accept-new /tmp/site.tgz "$USER@$HOST:/tmp/site.tgz"
+          ssh -i ~/.ssh/id_deploy "$USER@$HOST" "set -e; WEB=/var/www/elysiad; sudo mkdir -p \$WEB && sudo chown ubuntu:ubuntu \$WEB; sudo rm -rf \$WEB.prev && sudo cp -a \$WEB \$WEB.prev; find \$WEB -mindepth 1 -maxdepth 1 -exec rm -rf {} +; tar xzf /tmp/site.tgz -C \$WEB; rm -f /tmp/site.tgz; echo 已发布 \$(find \$WEB -type f | wc -l) 个文件"
+      - name: 线上自检
+        run: |
+          set -euo pipefail
+          for p in / /kevin/ /su/ /hua/; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "http://1.14.60.153$p?cb=$RANDOM")
+            echo "$p → $code"
+            [ "$code" = "200" ] || exit 1
           done
-
-          # 原始素材不进产物
-          rm -rf _site/images/raw
-
-          # 白名单自检：以下路径一旦出现在产物里就让构建失败
-          fail=0
-          for p in tools docs .github worker screenshots .superpowers "images/raw" node_modules; do
-            if [ -e "_site/$p" ]; then
-              echo "::error::不该被部署的路径进了产物: $p"
-              fail=1
-            fi
-          done
-          [ "$fail" -eq 0 ] || exit 1
-
-          echo "=== 产物清单 ==="
-          find _site -type f | sort
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: '_site'
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5

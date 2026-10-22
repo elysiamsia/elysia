@@ -94,6 +94,141 @@
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
 
 
+### 2.3 最近一轮（2026-10-18）：**切换完成** —— 线上 :80 跑的是构建产物
+
+| 步骤 | 结果 |
+|---|---|
+| 严格构建 | 12 页模板齐全，OK 134 files identical |
+| deploy.sh 源头 | 仓库根白名单 → **public/**（build 即装配器） |
+| 上生产 | 146 文件；线上 12 页与本地构建**哈希全部一致** ✅ |
+| 旧源退役 | 12 个手写页目录 git rm（历史保留）；退役后重建 **digest 不变**（44cfe9949cab873f）⇒ 模板是唯一真源 |
+| 生产流水线 | static.yml 改写为「构建 → public/ → 原子替换」（保留 KEEP_* 供 build 读取，构建走 --strict-templates） |
+| preview.yml | 移除已失效的逐页 diff 门禁（手写源已删，无处可比），构建改严格 |
+| 根页自检 | / /armor.html /guestbook/ /404.html /sw.js 全 200 ✅ |
+
+**切换中抓到并修掉的两个问题**（都是守卫帮忙）：
+1. 把 KEEP_* 写进 workflow 的 env 时丢了引号 ⇒ build 白名单解析失败（严格构建 exit 1）；
+2. 兼容 YAML env 写法的 fallback 正则**把引号也当内容** ⇒ 产物从 146 掉到 111，8 个根文件丢失。已加 stripQuotes，并通过「产物文件数 > 100」自检兜底。
+
+> 📌 现在改内容 = 改 `content/characters/*.json` 或模板 → build → 全站生效。
+> 回滚：`./deploy/deploy.sh rollback`（v2 上已演练过，生产备份机制相同）。
+### 2.3 最近一轮（2026-10-18）：Task 11 切换准备（备而不切）
+
+| 项 | 结果 |
+|---|---|
+| build `--strict-templates` | 已加，**牙齿已验证**：正常 0 / 抽掉 kevin 模板 → 1 并点名 / 还原 → 0 |
+| 切换清单 | `docs/refactor/switchover-checklist.md`（旧源退役、deploy.yml 改造要点、回滚演练、24h 观察项、风险对策） |
+| 生产部署 workflow | 预置为 `deploy/prod.deploy.yml.staged`（**未启用**） |
+| 回滚演练（真跑） | v2：部署 146 文件 → 回滚成功 → 再部署；**生产 /kevin/ 哈希全程未变** ✅；/v2/、/v2/kevin/、/v2/su/ 均 200 |
+
+> 切换本身（删旧源 + 改 deploy.yml + 真上 :80）**尚未执行**，等主人点头。
+### 2.3 最近一轮（2026-10-18）：重构 M1 完成 —— 12 页全部模板化，diff 全部为 0
+
+| 项 | 结果 |
+|---|---|
+| 模板化 | 12/12 页（base.njk + 三个共享 partial + 每页 page.css / page-fixes.css / body.html） |
+| DOM diff | 12 页全部 0（THEME 语义豁免，hash 相等） |
+| 构建产物手机扫 | 12 页 × 320/360/390 = 36 项全绿 |
+| 构建产物断言 | hua 29/29、sakura 39/39 |
+| 增量机制 | 无模板的页仍原样拷贝；--single 支持单页构建 |
+
+## 一、为了让 12 页都 diff=0 解决的四件事
+
+1. style 块顺序：sakura/griseo 的 touch-target-fix 在 mobile-ovf-fix 之后 ⇒ 共享块拆成 3 个 partial，按每页自己的 styles 令牌顺序渲染（顺序不同是历史事实，不能统一）；
+2. body 属性：hua 的 body 带 data-life 属性 ⇒ 做成数据 bodyAttrs；
+3. THEME 注入：node 侧算的 span 在 JSON 形态下差 1~2 字符，会留下多余花括号 ⇒ split_page 也改用 Python 扫括号；
+4. 断言与真源：第 33 条原本只认 JS 字面量 ⇒ 兼容 JSON 形态；樱专属「台词逐字」断言 ⇒ 优先读 content/characters/sakura.json，读不到才回退解析源码。
+
+> 纪律补充：断言读「源码文本」时，必须跟着真源迁移，否则模板化后会静默失真。
+
+**未做**：404 页模板化（结构简单，可单独做）；切换（Task 11，等主人确认）。
+### 2.3 最近一轮（2026-10-18）：方案 B —— **统一 12 页 head**（改版，独立验收）+ 修掉工具串台
+
+主人选 B（现在就收敛）。顺序调整为「**先改版、后模板化**」：这样模板化那一步仍能做到 diff 为零。
+
+## 一、统一了什么
+
+| 项 | 结果 |
+|---|---|
+| head 残余模板 | **12 页收敛为 1 种**（`theme-color` 一行是唯一差异：10 页有、hua/pardofelis 本来没有 ⇒ base 用条件渲染） |
+| 被改写 | 6 页：sakura kosma mobius griseo hua pardofelis（注释/标签顺序 + hua/pardofelis 的结构性统一） |
+| 零变化 | 其余 6 页（kevin aponia eden villv kalpas su） |
+
+**数据保全（逐项比对改前备份）**：title / description / **og:description** / **og:image** / theme-color / canonical / 面包屑短名 —— **12 页全部一致，无丢失** ✅
+
+> ⚠ 过程中被我自己的粗心坑了两次，都记下来：
+> 1. 第一版只替换了 `<title>` 与 meta，漏了 **`og:title` 的另一种格式**（致X — elysiad.top）和 **JSON-LD 的 `"description"`** ⇒ 数据被写回一半；
+> 2. hua/pardofelis 的 **og:description 是长文案、og:image 是专属图（og-hua.jpg / og-pardo.jpg）**，若按统一值覆盖就是**静默降级** ⇒ 三者已全部改成数据。
+
+## 二、验收（B 方案要求）
+
+| 检查 | 结果 |
+|---|---|
+| hua / pardofelis `check_explore` | **各 29/29 全过** ✅ |
+| 6 个改动页 `mobile_sweep` 320/360/390 | **全绿** ✅ |
+| 6 个改动页 `check_page_health` | **无 FAIL** ✅ |
+| head 残余一致性 | **1 种** ✅ |
+| 数据保全 | **12 页全对** ✅ |
+
+## 三、工具修复：`check_explore` 不再硬编码调试端口
+
+`--remote-debugging-port=9322` 是写死的 ⇒ **两个 check_explore 并行会串台**，本次就制造了一批假失败（pardofelis 报 7 条、单独重跑 29/29 全过）。
+改为 `DBG_PORT = 9300 + PID % 300`，并同步改 `/json` 轮询地址（只改启动参数不够，会 StopIteration）。
+
+> 📌 纪律：**并行跑浏览器断言必须确认端口不冲突**；看到「一次挂好几条、单跑全过」，先怀疑测试环境再怀疑代码。
+### 2.3 最近一轮（2026-10-18）：重构 M1 起步 —— Task 7/8（盘点 + 12 份数据 + 校验器）
+
+| Task | 产出 | 验收 |
+|---|---|---|
+| 7 盘点 | `inventory_theme.py` → 12 份 JSON 草稿 + `theme-inventory.md` + `art/verb-allowlist.json` | THEME **12/12 提取成功**、finds 各 **12** |
+| 8 数据+校验 | `fill_content.py`（派生字段零手抄）+ `validate_content.py` | **校验全绿 12 页**；牙齿：改坐标→1、改生日（与 bdays 不符）→1、还原→0；**THEME 深度一致 12/12** |
+
+**两个盘点发现（都值得记）**：
+1. **mobius 的 THEME 不是纯字面量**（`quotes: quotes` 引用外部变量）⇒ 给 `theme_extract.mjs` 加了「依赖回退」（同页找 `var X = <字面量>` 求值后重试）✅
+2. **hua/pardofelis 的游戏是内联实现**（`window.ElysiaGames.<key>` 写在页面里，25KB/31KB），不是缺游戏 —— 迁移时随页面私有脚本原样搬运 ✅
+
+**主人拍板**：③ head style 块按「共享进 base / 私有留页」；② 脚本序列**保序**（做页面级数组）；③ meta 数据驱动；④ quotes/typewriter 原样保留。
+
+> 📌 又踩两次老坑：`String.replace` 的替换串里 `$'` 会插入匹配后文本（把 Python 行截断）⇒ 改用整份重写；
+> 以及 `\\Z` 双转义把正则变成字面量 —— 现在 Python 侧**不用 `$` 锚点**，一律 `\Z` 且只写单转义。
+### 2.3 最近一轮（2026-10-18 凌晨）：重构 M0 完成 —— 管线/预览/验证工具四件套 + 顺手修掉 4 个真 bug
+
+| Task | 产出 | 验收 |
+|---|---|---|
+| 1 空转构建 | `src/build/build.mjs`（拷贝/校验双模式、白名单单一真源+解析保护、可重现） | **146 文件一致**、digest 两次相同、篡改→exit 1；现网抽样 **5/5 逐字节一致** |
+| 2 /v2/ 预览 | `deploy.sh --v2`（备份目录 `elysiad-v2.prev` 与生产隔离）+ nginx `^~ /v2/` | 三页 HTML 哈希与生产**完全相同**；v2 回滚**不影响** :80 |
+| 3 check_explore | `--root/--port` + 探针回退（构建产物无 tools/ 时用目标页自校验） | 默认与 `--root public` 两者同数通过 |
+| 4 DOM diff | `diff_pages.py` + `theme_extract.mjs`（括号配对求值，结构性豁免） | 七例全过：同文件 0 / 改属性 1 / 改写法有旗标 0 / **改坐标有旗标仍 1** |
+| 5 mobile_sweep | 三纪律固化 + 重试 + `--sleep` | **12 页 × 320/360/390 = 36 检查全绿** |
+| 6 CI 预览 | `preview.yml`（构建 → **diff 门禁** → 部署 /v2/ → 自检） | 门禁本地等价验证：16 个 HTML 全无差异；篡改→1、还原→0 |
+
+**顺手修掉的 4 个真 bug**（都是工具抓出来的，不是猜的）：
+1. **回滚脚本漏 sudo**（`mv $WEBROOT $WEBROOT.failed`）—— 生产回滚同样中招，真出事会「静默失败」；
+2. **su 在 390 档结局语录 35px**（带 role=button 却 <44）—— 之前只按 360 档验证，漏了；
+3. **kosma/hua/pardofelis 在 320 档布局视口被撑宽**（331/323px）—— `#harmonicaGlow` 342px 与 `.quote-card` 的 min-width:auto；
+4. **我自己引入的回归**：`区块 *{min-width:0}` 的 ID 优先级压掉了 `.explore-find` 的 44px，把它挤成 22px —— 已改成定点修复。
+
+> 📌 **两条新纪律**：① 手机验收必须 **320/360/390 三档都跑**（360 干净 ≠ 全干净）；
+> ② 别用 `#section *{min-width:0}` 这类通配修复 —— 会压掉组件自己的最小尺寸。
+
+**待办**：GitHub 网络不通，本轮 6 个提交**未推上去**（`ahead 6`）；网络恢复后推送即自动触发首次 CI 预览。
+### 2.3 最近一轮（2026-10-18）：重构阶段 0+1 计划落盘（按主人要求本轮只写计划，未动代码与线上）
+
+| 项 | 内容 |
+|---|---|
+| 输入 | 主人拍板：先做 0+1（清 12 页复制粘贴的债）；Q 版小人要做动画、素材形态未定；网站整体要更丝滑 |
+| 产出 | docs/superpowers/plans/2026-10-18-refactor-phase-0-1.md（两里程碑 · 11 任务 · 每任务带失败先行步骤与提交点） |
+
+**五个关键决策**（都写在计划里）：
+1. **Fastify/SQLite 移出阶段 0** —— 现网 API 是实测过的，现在重写只有风险没有收益；API 迁移归阶段 4 前夜（与总方案的偏离已在计划开头声明）；
+2. **验证标准**：DOM 规范化 diff 的**白名单必须为空**才可提交；THEME 从 JS 字面量转 JSON 有语义豁免（node 深比对相等才算过）；
+3. **丝滑专项排阶段 1.5**（切换之后）—— 同构重构期间任何行为变化都会污染 diff，两者必须分先后；
+4. **预览走 80 端口的 /v2/ 路径前缀** —— 安全组只开了 22/80/443，加路径不用动防火墙；
+5. **Q 版小人只留槽不实现**：content schema 的 chibi 字段 + 模板条件渲染（数据缺省则零字节输出），动画格式给决策矩阵待素材定稿拍板（默认推荐雪碧图 + CSS steps()）。
+
+> ⚠ 计划编写时又踩了一次半角引号截断字符串的坑（JSON 示例里的引号）—— 编译失败发生在写入前，未产生脏数据。
+
+**待主人**：审阅计划 + 选执行方式（本会话直接做 / 子代理逐任务做）。
 ### 2.3 最近一轮（2026-10-16）：**迁到自建服务器**（四川轻量云 · Ubuntu 26.04）+ 后端上线
 
 ## 一、为什么迁

@@ -1,0 +1,65 @@
+[
+ {
+  "name": "维尔薇 · wierwei(原版)",
+  "dir": "/维尔薇/Spine 骨骼动画模型/wierwei",
+  "skeleton": "wiiecei_battle.json",
+  "atlas": "weierwei.atlas",
+  "texture": "weierwei.png"
+ },
+ {
+  "name": "格蕾修 · grseo(原版)",
+  "dir": "/格蕾修/Spine 骨骼动画模型/grseo",
+  "skeleton": "griseo_battle.json",
+  "atlas": "griseo.atlas",
+  "texture": "griseo.png"
+ },
+ {
+  "name": "爱莉希雅 · 01_爱神使者_主色",
+  "dir": "/爱莉希雅/Spine 骨骼动画模型/01_爱神使者_主色",
+  "skeleton": "elvisa_1.skel",
+  "atlas": "elvisa_1.atlas",
+  "texture": "elvisa_1.png"
+ },
+ {
+  "name": "爱莉希雅 · 02_爱神蚀者_暗色",
+  "dir": "/爱莉希雅/Spine 骨骼动画模型/02_爱神蚀者_暗色",
+  "skeleton": "elvisa_1.skel",
+  "atlas": "elvisa_1.atlas",
+  "texture": "elvisa_1.png"
+ },
+ {
+  "name": "爱莉希雅 · 03_女仆",
+  "dir": "/爱莉希雅/Spine 骨骼动画模型/03_女仆",
+  "skeleton": "elysiaspine02/elvisa_2.skel",
+  "atlas": "elysiaspine02/elvisa_2.atlas",
+  "texture": "elysiaspine02/elvisa_2.png"
+ },
+ {
+  "name": "爱莉希雅 · 04_泳装",
+  "dir": "/爱莉希雅/Spine 骨骼动画模型/04_泳装",
+  "skeleton": "elysiaspine03/elvisa_3.skel",
+  "atlas": "elysiaspine03/elvisa_3.atlas",
+  "texture": "elysiaspine03/elvisa_3.png"
+ },
+ {
+  "name": "爱莉希雅 · 05_机车",
+  "dir": "/爱莉希雅/Spine 骨骼动画模型/05_机车",
+  "skeleton": "elysiaspine04/elvisa_4.skel",
+  "atlas": "elysiaspine04/elvisa_4.atlas",
+  "texture": "elysiaspine04/elvisa_4.png"
+ },
+ {
+  "name": "爱莉希雅 · 06_JK",
+  "dir": "/爱莉希雅/Spine 骨骼动画模型/06_JK",
+  "skeleton": "elysiaspine05/elvisa_5.skel",
+  "atlas": "elysiaspine05/elvisa_5.atlas",
+  "texture": "elysiaspine05/elvisa_5.png"
+ },
+ {
+  "name": "爱莉希雅 · 07_功夫",
+  "dir": "/爱莉希雅/Spine 骨骼动画模型/07_功夫",
+  "skeleton": "elysiaspine06/elvisa_6.skel",
+  "atlas": "elysiaspine06/elvisa_6.atlas",
+  "texture": "elysiaspine06/elvisa_6.png"
+ }
+]

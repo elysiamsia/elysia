@@ -1,0 +1,12 @@
+griseo.png
+size: 700,1000
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+body
+  rotate: false
+  xy: 0, 0
+  size: 700, 1000
+  orig: 700, 1000
+  offset: 0, 0
+  index: -1

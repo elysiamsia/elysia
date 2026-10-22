@@ -47,6 +47,8 @@ import websocket  # 与 tools/cdp.py 同源依赖
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PORT = 8501
+# ⚠ 调试端口不能硬编码 9322：两个 check_explore 并行会串台 ⇒ 假失败（2026-10-18 亲历）
+DBG_PORT = 9300 + (os.getpid() % 300)
 EDGE = r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
 
 # 页面 → 该页声明的可发现物数量。
@@ -1918,10 +1920,18 @@ def _theme_explore_strings():
       这几个字段才是「台词必须有出处」这条纪律的射程。
     """
     src = io.open(os.path.join(ROOT_DIR, 'mobius', 'index.html'), encoding='utf-8').read()
+    # ⚠ 两种形态都要认（2026-10-18 模板化后）：
+    #   · 手写页面：`explore: {`（JS 字面量）
+    #   · 构建产物：`"explore":{`（THEME 已由 build 注入为 JSON）
+    #   只认前者会让 `--root public` 的验证集体误报。
     i = src.find('explore: {')
     if i < 0:
+        i = src.find('"explore":')
+        if i >= 0:
+            i = i + len('"explore":')
+    if i < 0:
         return None
-    j = src.index('{', i + len('explore:'))
+    j = src.index('{', i)
     depth, k = 1, j + 1
     while k < len(src) and depth:
         if src[k] == '{':
@@ -3250,11 +3260,24 @@ def check_sakura_finds_match_registry(b, page, expected):
       而 `line` 只有触发时才进气泡，所以 DOM 侧拿不全这 12 条。
     """
     src = io.open(os.path.join(ROOT, page), encoding='utf-8').read()
+    # 两种形态都认：手写页 `explore: {` / 构建产物 `"explore":{`（2026-10-18 模板化）
     i = src.find('explore: {')
     if i < 0:
+        i = src.find('"explore":')
+        if i >= 0:
+            i = i + len('"explore":')
+    if i < 0:
         return ([u'源码里找不到 `explore: {`'], u'—')
-    got = re.findall(
-        r"\{\s*id:'([^']*)',\s*at:'([^']*)',\s*x:[-0-9.]+,\s*y:[-0-9.]+,\s*"
+    # ⚠ 模板化后（2026-10-18）：台词真源是 content/characters/sakura.json；优先读它。
+    #   只有读不到 JSON 时才回退到解析页面源码里的 JS 字面量。
+    jp = os.path.join(ROOT_DIR, 'content', 'characters', 'sakura.json')
+    if os.path.exists(jp):
+        _d = json.load(io.open(jp, encoding='utf-8'))
+        got = [(f['id'], f['at'], f['verb'], f['art'], f['line'], f['src'])
+               for f in _d['explore']['finds']]
+    else:
+        got = re.findall(
+            r"\{\s*id:'([^']*)',\s*at:'([^']*)',\s*x:[-0-9.]+,\s*y:[-0-9.]+,\s*"
         r"verb:'([^']*)',\s*art:'([^']*)',\s*\n\s*line:'([^']*)',\s*\n\s*src:'([^']*)'",
         src[i:])
 
@@ -4930,6 +4953,31 @@ def main():
         print(u'❌ 没有哪条断言的名字里含 %r —— 筛口写错了？' % only)
         return 1
 
+    # ⚠ `--root <目录>` / `--port <端口>`（2026-10-18 加）：
+    #   把断言打在**构建产物**（public/）上，或避开端口冲突。
+    #   默认行为完全不变：ROOT=仓库根、PORT=8501。
+    global ROOT, PORT
+    if '--root' in raw:
+        i = raw.index('--root')
+        if i + 1 >= len(raw):
+            print(u'--root 后面要跟一个目录')
+            return 1
+        ROOT = os.path.abspath(raw[i + 1])
+        if not os.path.isdir(ROOT):
+            print(u'--root 指向的目录不存在：%s' % ROOT)
+            return 1
+        raw = raw[:i] + raw[i + 2:]
+    if '--port' in raw:
+        i = raw.index('--port')
+        if i + 1 >= len(raw):
+            print(u'--port 后面要跟一个端口号')
+            return 1
+        try:
+            PORT = int(raw[i + 1])
+        except ValueError:
+            print(u'--port 需要数字')
+            return 1
+        raw = raw[:i] + raw[i + 2:]
     args = [a for a in raw if not a.startswith('--')]
     page = args[0] if args else 'tools/explore-fixture.html'
     expected = EXPECTED_FINDS.get(page)
@@ -4940,19 +4988,28 @@ def main():
     try:
         httpd = start_server()
     except Exception as e:
-        print(u'\u274c 8501 起不来：%s' % e)
+        print(u'\u274c %d 端口起不来：%s' % (PORT, e))
         return 1
     time.sleep(0.6)
+    # ⚠ `--root public`（构建产物）里没有 tools/ 目录，探针页必然 404 —— 退回用**目标页本身**做内容校验：
+    #   仍然在验证「服务的是对的那份内容」，只是标记换成角色页里必有的 ElysiaExplore。
+    probe_marker = u'探索系统探针页'
+    probe_url = 'http://127.0.0.1:%d/tools/explore-fixture.html' % PORT
     try:
-        probe = urllib.request.urlopen(
-            'http://127.0.0.1:%d/tools/explore-fixture.html' % PORT, timeout=5).read().decode('utf-8')
-    except Exception as e:
+        probe = urllib.request.urlopen(probe_url, timeout=5).read().decode('utf-8')
+    except Exception:
+        probe_marker = u'ElysiaExplore'
+        probe_url = 'http://127.0.0.1:%d/%s' % (PORT, page)
+        try:
+            probe = urllib.request.urlopen(probe_url, timeout=5).read().decode('utf-8')
+        except Exception as e:
+            httpd.shutdown()
+            print(u'\u274c 本地服务器内容取不到（%s）：%s' % (probe_url, e))
+            return 1
+    if probe_marker not in probe:
         httpd.shutdown()
-        print(u'\u274c 本地服务器起不来：%s' % e)
-        return 1
-    if u'探索系统探针页' not in probe:
-        httpd.shutdown()
-        print(u'\u274c 服务器内容不对（探针页里没有预期标记）—— 8501 上是不是有别的东西？')
+        print(u'\u274c 服务器内容不对（%s 里没有预期标记 %s）—— %d 端口上是不是有别的东西？'
+              % (probe_url, probe_marker, PORT))
         return 1
 
     print(u'\U0001f50d 探索系统断言 —— %s%s'
@@ -4967,7 +5024,7 @@ def main():
     #   对这种「加载了没加载」的断言，缓存会让它**假通过**。宁可贵一点。
     profile = tempfile.mkdtemp(prefix='edge_explore_')
     proc = subprocess.Popen([
-        EDGE, '--remote-debugging-port=9322', '--headless=new', '--disable-gpu',
+        EDGE, '--remote-debugging-port=%d' % DBG_PORT, '--headless=new', '--disable-gpu',
         '--no-first-run', '--remote-allow-origins=*',
         '--user-data-dir=' + profile, '--window-size=1280,900',
         'about:blank',
@@ -4979,7 +5036,7 @@ def main():
         targets = []
         for _ in range(20):
             try:
-                targets = json.load(urllib.request.urlopen('http://127.0.0.1:9322/json'))
+                targets = json.load(urllib.request.urlopen('http://127.0.0.1:%d' % DBG_PORT + '/json'))
                 break
             except Exception:
                 time.sleep(0.5)

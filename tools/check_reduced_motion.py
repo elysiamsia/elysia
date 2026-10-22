@@ -27,6 +27,9 @@ import threading, time, urllib.request
 import websocket
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# ⚠ --root：切换后（2026-10-18）手写页已退役，页面只在 public/ 里 —— 不给这个参数本工具就点不到页
+# 用法：python tools/check_reduced_motion.py <page> --root public
 PORT = 8501
 EDGE = r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
 
@@ -131,6 +134,10 @@ def start_server():
 
 
 def main():
+    global ROOT
+    if '--root' in sys.argv:
+        ROOT = os.path.abspath(sys.argv[sys.argv.index('--root') + 1])
+        print(u'  （页面根目录：%s）' % ROOT)
     httpd = start_server()
     time.sleep(0.6)
     try:

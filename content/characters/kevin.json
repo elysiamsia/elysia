@@ -1,0 +1,203 @@
+{
+ "birthday": null,
+ "bodyAttrs": "",
+ "chibi": null,
+ "endingStars": {
+  "colors": {
+   "alt": "#a8d4f5",
+   "altChance": 0.3,
+   "base": "#fff"
+  },
+  "count": [
+   80,
+   12
+  ],
+  "delay": [
+   0,
+   5
+  ],
+  "dur": [
+   2,
+   4
+  ],
+  "maxO": [
+   0.5,
+   0.5
+  ],
+  "minO": [
+   0.1,
+   0.3
+  ],
+  "size": [
+   0.5,
+   2
+  ]
+ },
+ "explore": {
+  "finds": [
+   {
+    "art": "blade",
+    "at": "#opening",
+    "id": "kevin-01",
+    "line": "一把剑之所以能成为我的武器，是因为只有我能亲手折断它。关于力量，我只能言尽于此。",
+    "src": "官方档案馆 · 事件-凯文 · 给予刻印 · 其二",
+    "verb": "click",
+    "x": 0.16,
+    "y": 0.72
+   },
+   {
+    "art": "scale",
+    "at": "#about",
+    "id": "kevin-02",
+    "line": "你已选择了自己的路，那你就必须前往这条路的尽头，无论付出什么代价。",
+    "src": "官方档案馆 · 事件-凯文 · 给予刻印 · 其三",
+    "verb": "hold",
+    "x": 0.1,
+    "y": 0.28
+   },
+   {
+    "art": "glint",
+    "at": "#about",
+    "id": "kevin-03",
+    "line": "「救世」绝非易事，有时我们甚至连拯救一个人都很难做到。但，这绝不是我们轻言放弃的理由。",
+    "src": "官方档案馆 · 事件-凯文 · 给予刻印 · 其十",
+    "verb": "triple_tap",
+    "x": 0.9,
+    "y": 0.74
+   },
+   {
+    "art": "silhouette",
+    "at": "#journey",
+    "id": "kevin-04",
+    "line": "很多人只是在窥见那条小径时就选择了放弃。「救世」之途并非是他们想象中的平原易野，甚至容不下两个人并肩而行。",
+    "src": "官方档案馆 · 事件-凯文 · 给予刻印 · 其十六",
+    "verb": "click",
+    "x": 0.12,
+    "y": 0.22
+   },
+   {
+    "art": "throne",
+    "at": "#journey",
+    "id": "kevin-05",
+    "line": "任何人都有机会看清世界的本貌，并且承担它的重量——这就是我们所说的牺牲。",
+    "src": "官方档案馆 · 事件-凯文 · 给予刻印 · 其十八",
+    "verb": "hold",
+    "x": 0.88,
+    "y": 0.78
+   },
+   {
+    "art": "sheath",
+    "at": "#blade",
+    "id": "kevin-06",
+    "line": "天火圣裁第一次「出鞘」时，我冻结了它残存的火焰。",
+    "src": "官方档案馆 · 事件-凯文 · 英雄的追忆 · 其三",
+    "verb": "drag",
+    "x": 0.12,
+    "y": 0.3
+   },
+   {
+    "art": "silhouette",
+    "at": "#blade",
+    "id": "kevin-07",
+    "line": "「凯文」就是这样的人，从前是，以后也是。",
+    "src": "官方档案馆 · 事件-凯文 · 英雄的追忆 · 其四",
+    "verb": "click",
+    "x": 0.88,
+    "y": 0.72
+   },
+   {
+    "art": "dawn",
+    "at": "#quotes",
+    "id": "kevin-08",
+    "line": "我只是在做自己能做的事，仅此而已。",
+    "src": "官方档案馆 · 事件-凯文 · 英雄的追忆 · 其十",
+    "verb": "slide",
+    "x": 0.1,
+    "y": 0.55
+   },
+   {
+    "art": "shed",
+    "at": "#quotes",
+    "id": "kevin-09",
+    "line": "世界蛇的建立和我无关。",
+    "src": "官方档案馆 · 事件-凯文 · 关于自身 · 其一",
+    "verb": "click",
+    "x": 0.9,
+    "y": 0.65
+   },
+   {
+    "art": "horn",
+    "at": "#journey",
+    "id": "kevin-10",
+    "line": "科斯魔······在我们还未成为融合战士的时候，他曾隶属于我的小队。",
+    "src": "官方档案馆 · 事件-凯文 · 关于科斯魔 · 其一",
+    "verb": "triple_tap",
+    "x": 0.5,
+    "y": 0.6
+   },
+   {
+    "art": "petal",
+    "at": "#ending",
+    "id": "kevin-11",
+    "line": "根本就没有那样的事，爱莉希雅。无聊的谎言就到此为止吧。",
+    "src": "官方档案馆 · 事件-凯文 · 关于过去 · 其一",
+    "verb": "hold",
+    "x": 0.5,
+    "y": 0.92
+   },
+   {
+    "art": "glint",
+    "at": "#bottom",
+    "id": "kevin-12",
+    "line": "你不必向我讲述自己的行程，雷电芽衣。这毫无意义。",
+    "src": "官方档案馆 · 事件-凯文 · 关于背叛者 · 其一",
+    "verb": "click",
+    "x": 0.5,
+    "y": 0.9
+   }
+  ],
+  "pageId": "kevin",
+  "unlock": {
+   "src": "官方档案馆 · 事件-凯文 · 给予刻印",
+   "text": "「既然是「我」让你来到这里，那所有该被说出的，你都已经听过了。」",
+   "title": "「救世」之铭"
+  },
+  "whisper": [
+   "我没必要回到这里。",
+   "就像我说过的，无论是过去还是现在，「凯文」从未变过。",
+   "天火出鞘，它所带来的后果确实非我本意。但我所说的警醒，也不是出于悔恨。",
+   "不，这只是因为你还不够了解他，雷电芽衣。",
+   "约束之律者······抱歉，与她作战的经验你没办法参考。"
+  ]
+ },
+ "fullName": "凯文·卡斯兰娜",
+ "game": {
+  "module": "kevin"
+ },
+ "key": "kevin",
+ "meta": {
+  "canonical": "https://elysiad.top/kevin/",
+  "description": "逐火十三英桀 · 位次 Ⅰ · 刻印「救世」。",
+  "ogDescription": "逐火十三英桀 · 位次 Ⅰ · 刻印「救世」。",
+  "ogImage": "https://elysiad.top/images/og-1.jpg",
+  "themeColor": "#0a0612",
+  "title": "elysiad.top/kevin — 致凯文"
+ },
+ "scripts": [
+  "site.js",
+  "explore.js",
+  "bottom.js",
+  "kevin.js",
+  "bday.js",
+  "bdays.js"
+ ],
+ "shortName": "凯文",
+ "signet": "救世",
+ "signetImage": "/images/signet/救世-256.webp",
+ "styles": [
+  "page",
+  "signet-mark",
+  "signet-badge-css",
+  "touch-target-fix"
+ ]
+}

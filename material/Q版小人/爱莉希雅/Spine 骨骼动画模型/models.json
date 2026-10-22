@@ -1,0 +1,58 @@
+[
+ {
+  "name": "01_爱神使者_主色",
+  "dir": "01_爱神使者_主色",
+  "skeleton": "elvisa_1.skel",
+  "atlas": "elvisa_1.atlas",
+  "texture": "elvisa_1.png",
+  "config": "elvsa1.config.json"
+ },
+ {
+  "name": "02_爱神蚀者_暗色",
+  "dir": "02_爱神蚀者_暗色",
+  "skeleton": "elvisa_1.skel",
+  "atlas": "elvisa_1.atlas",
+  "texture": "elvisa_1.png",
+  "config": "elvsa1x.config.json"
+ },
+ {
+  "name": "03_女仆",
+  "dir": "03_女仆",
+  "skeleton": "elysiaspine02/elvisa_2.skel",
+  "atlas": "elysiaspine02/elvisa_2.atlas",
+  "texture": "elysiaspine02/elvisa_2.png",
+  "config": "elysiaspine02/elvisa2.config.json"
+ },
+ {
+  "name": "04_泳装",
+  "dir": "04_泳装",
+  "skeleton": "elysiaspine03/elvisa_3.skel",
+  "atlas": "elysiaspine03/elvisa_3.atlas",
+  "texture": "elysiaspine03/elvisa_3.png",
+  "config": "elysiaspine03/elvisa3.config.json"
+ },
+ {
+  "name": "05_机车",
+  "dir": "05_机车",
+  "skeleton": "elysiaspine04/elvisa_4.skel",
+  "atlas": "elysiaspine04/elvisa_4.atlas",
+  "texture": "elysiaspine04/elvisa_4.png",
+  "config": "elysiaspine04/elvisa4.config.json"
+ },
+ {
+  "name": "06_JK",
+  "dir": "06_JK",
+  "skeleton": "elysiaspine05/elvisa_5.skel",
+  "atlas": "elysiaspine05/elvisa_5.atlas",
+  "texture": "elysiaspine05/elvisa_5.png",
+  "config": "elysiaspine05/elvisa5.config.json"
+ },
+ {
+  "name": "07_功夫",
+  "dir": "07_功夫",
+  "skeleton": "elysiaspine06/elvisa_6.skel",
+  "atlas": "elysiaspine06/elvisa_6.atlas",
+  "texture": "elysiaspine06/elvisa_6.png",
+  "config": "elysiaspine06/elvisa6.config.json"
+ }
+]

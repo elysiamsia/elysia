@@ -20,3 +20,7 @@ audio/
 
 # og.png 的渲染中间产物
 tools/og-render-*.png
+
+# 构建产物（src/build/build.mjs 生成；CI 同样生成，不进仓库）
+public/
+node_modules/

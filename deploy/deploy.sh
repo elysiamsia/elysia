@@ -15,7 +15,15 @@ set -euo pipefail
 HOST="${HOST:?请给 HOST=服务器IP}"
 DEPLOY_USER="${USER:-ubuntu}"          # 远端用户名（脚本在本地跑，$USER 才是本地变量 —— 别混用）
 KEY="${KEY:-$HOME/Desktop/dah.pem}"
-WEBROOT="${WEBROOT:-/var/www/elysiad}"
+V2_MODE=0
+if [ "${1:-deploy}" = "--v2" ]; then V2_MODE=1; shift; fi
+# v2 预览：目录与备份都与生产完全隔离（审阅意见 #10），互不影响
+if [ "$V2_MODE" = "1" ]; then
+  WEBROOT="${WEBROOT:-/var/www/elysiad-v2}"
+else
+  WEBROOT="${WEBROOT:-/var/www/elysiad}"
+fi
+BACKUP="${WEBROOT}.prev"
 
 SSHOPTS="-o BatchMode=yes -o StrictHostKeyChecking=accept-new"
 SSH="ssh -i \"$KEY\" $SSHOPTS $DEPLOY_USER@$HOST"
@@ -24,16 +32,20 @@ KEEP_FILES="index.html sw.js armor.html 404.html robots.txt sitemap.xml favicon.
 KEEP_DIRS="assets data images aponia eden kalpas kevin su villv sakura kosma mobius griseo hua pardofelis guestbook"
 
 if [ "${1:-deploy}" = "rollback" ]; then
-  eval "$SSH" "'set -e; [ -d $WEBROOT.prev ] || { echo 没有上一版可回滚; exit 1; };
-      sudo rm -rf $WEBROOT.failed; mv $WEBROOT $WEBROOT.failed;
-      sudo mv $WEBROOT.prev $WEBROOT; echo 已回滚（出问题的版本留在 $WEBROOT.failed）'"
+  eval "$SSH" "'set -e; [ -d $BACKUP ] || { echo 没有上一版可回滚; exit 1; };
+      sudo rm -rf $WEBROOT.failed; sudo mv $WEBROOT $WEBROOT.failed;   # ⚠ /var/www 属 root，这里的 mv 也必须 sudo（否则回滚静默失败）
+      sudo mv $BACKUP $WEBROOT; echo 已回滚（出问题的版本留在 $WEBROOT.failed）'"
   exit 0
 fi
 
-STAGE=$(mktemp -d); trap 'rm -rf "$STAGE"' EXIT
-for f in $KEEP_FILES; do [ -e "$f" ] && cp -r "$f" "$STAGE/"; done
-for d in $KEEP_DIRS; do [ -d "$d" ] && cp -r "$d" "$STAGE/"; done
-echo "→ 待发布：$(find "$STAGE" -type f | wc -l) 个文件，$(du -sh "$STAGE" | cut -f1)"
+# ⚠ 切换后（2026-10-18）：发布源头从「仓库根白名单装配」改为**构建产物 public/**。
+#   为什么：手写页已退役，postgres 白名单装配已无意义；build 自己就是装配器。
+FROM_PUBLIC=1
+[ -d public ] || { echo "public/ 不存在，先 npm run build"; exit 1; }
+STAGE=$(mktemp -d)
+trap 'rm -rf "$STAGE"' EXIT
+cp -a public/. "$STAGE"/
+echo "→ 待发布（public/）：$(find "$STAGE" -type f | wc -l) 个文件，$(du -sh "$STAGE" | cut -f1)"
 
 TARBALL=$(mktemp -u).tgz
 tar czf "$TARBALL" -C "$STAGE" .
@@ -43,11 +55,11 @@ scp -i "$KEY" $SSHOPTS "$TARBALL" "$DEPLOY_USER@$HOST:/tmp/elysia-deploy.tgz"
 eval "$SSH" "'set -e
   sudo mkdir -p $WEBROOT && sudo chown $DEPLOY_USER:$DEPLOY_USER $WEBROOT
   # 备份上一版（拷到同级的 .prev；都在 /var/www 下 ⇒ 用 sudo）
-  sudo rm -rf $WEBROOT.prev && sudo cp -a $WEBROOT $WEBROOT.prev
+  sudo rm -rf $BACKUP && sudo cp -a $WEBROOT $BACKUP
   # 清空站点目录内部（ubuntu 对自己这个目录有写权限 ⇒ 不需要 sudo）
   find $WEBROOT -mindepth 1 -maxdepth 1 -exec rm -rf {} +
   tar xzf /tmp/elysia-deploy.tgz -C $WEBROOT
   rm -f /tmp/elysia-deploy.tgz
   echo 已发布：\$(find $WEBROOT -type f | wc -l) 个文件'"
 rm -f "$TARBALL"
-echo "✅ 完成。回滚：./deploy/deploy.sh rollback"
+echo "✅ 完成。回滚：./deploy/deploy.sh$( [ "$V2_MODE" = "1" ] && echo " --v2" ) rollback"

@@ -1,0 +1,255 @@
+<style>
+:root{
+  --bg-abyss:#06080e;--bg-deep:#0a0e18;--bg-ice:#101a2c;--bg-mid:#1a2740;
+  --ice-mist:#dceeff;--ice:#a8d4f5;--ice-deep:#5b9bd4;--steel:#8ba7c4;
+  --flame:#e8935c;--flame-deep:#c96a3c;
+  --text:#e8eef6;--text-dim:#a9bbce;--text-muted:#6f8299;
+  --glass-bg:rgba(168,212,245,.05);--glass-border:rgba(168,212,245,.14);
+  --glass-bg2:rgba(232,147,92,.04);--glass-border2:rgba(232,147,92,.12);
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg-abyss);color:var(--text);overflow-x:hidden;line-height:1.7;
+}
+::-webkit-scrollbar-thumb{background:var(--ice-deep);border-radius:3px}
+
+#frostCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+
+/* SECTION: opening */
+.section-opening{
+  position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;
+  padding:2rem;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,var(--bg-abyss) 0%,var(--bg-deep) 30%,var(--bg-ice) 60%,var(--bg-deep) 100%);
+}
+.opening-ornament{font-size:1.05rem;color:var(--ice-deep);letter-spacing:.6em;opacity:0;transition: opacity var(--motion-quick) ease;margin-bottom:1.2rem}
+.opening-title{
+  font-size:clamp(1.5rem,4.6vw,2.9rem);font-weight:300;letter-spacing:.12em;
+  color:var(--ice-mist);text-shadow:0 0 30px rgba(168,212,245,.35),0 0 60px rgba(168,212,245,.15);
+  min-height:2.8em;max-width:860px;
+}
+.typing-cursor{display:inline-block;font-weight:100;color:var(--ice);animation:blink-cursor .8s step-end infinite}
+.opening-subtitle{
+  font-size:clamp(.9rem,2.5vw,1.25rem);color:var(--text-dim);letter-spacing:.35em;
+  margin-top:1.5rem;opacity:0;transition: opacity var(--motion-base) ease;
+}
+.scroll-hint{
+  position:absolute;bottom:calc(2.5rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  opacity:0;transition: opacity var(--motion-quick) ease .5s;
+}
+.scroll-hint.visible{opacity:.6}
+.scroll-hint span{font-size:.75rem;color:var(--text-muted);letter-spacing:.2em}
+.scroll-chevron{
+  width:20px;height:20px;border-right:2px solid var(--ice);border-bottom:2px solid var(--ice);
+  transform:rotate(45deg);animation:chevron-bounce 2s ease-in-out infinite;
+}
+
+/* SECTION: common section */
+.content-section{
+  position:relative;z-index:2;padding:6rem 1.5rem;
+  background:linear-gradient(180deg,transparent 0%,rgba(6,8,14,.3) 20%,rgba(6,8,14,.3) 80%,transparent 100%);
+}
+.section-title{
+  font-size:clamp(1.5rem,4vw,2.2rem);font-weight:300;letter-spacing:.2em;
+  color:var(--ice);text-shadow:0 0 20px rgba(168,212,245,.25);
+}
+.section-title-line{display:block;width:60px;height:1px;margin:1rem auto 0;background:linear-gradient(90deg,transparent,var(--ice-deep),transparent)}
+.section-title-mark{display:inline-block;font-size:.8em;color:var(--flame);margin:0 .8rem;opacity:.85}
+
+/* SECTION: profile */
+.profile-card{
+  max-width:720px;margin:0 auto;padding:clamp(2rem,5vw,3rem);
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  
+  border:1px solid var(--glass-border);border-radius:24px;
+  box-shadow:0 0 50px rgba(168,212,245,.07),0 0 100px rgba(232,147,92,.04),inset 0 1px 0 rgba(255,255,255,.06);
+  position:relative;overflow:hidden;animation:glow-pulse 7s ease-in-out infinite;
+}
+.profile-card::before{
+  content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+  background:conic-gradient(from 0deg,transparent,rgba(168,212,245,.05),transparent,rgba(232,147,92,.04),transparent);
+  animation:card-rotate 26s linear infinite;
+}
+@keyframes glow-pulse{
+  0%,100%{box-shadow:0 0 50px rgba(168,212,245,.07),0 0 100px rgba(232,147,92,.04)}
+  50%{box-shadow:0 0 60px rgba(168,212,245,.13),0 0 120px rgba(232,147,92,.08)}
+}
+.profile-name{
+  font-size:clamp(1.8rem,5vw,2.8rem);font-weight:200;letter-spacing:.12em;
+  color:var(--ice-mist);text-align:center;margin-bottom:.2em;
+}
+.profile-name-en{
+  font-size:clamp(.85rem,1.9vw,1.05rem);font-weight:300;letter-spacing:.3em;
+  color:var(--steel);text-align:center;margin-bottom:2rem;text-shadow:0 0 15px rgba(139,167,196,.3);
+}
+.profile-grid{display:grid;grid-template-columns:auto 1fr;gap:.6rem 1.5rem;font-size:.92rem}
+.profile-value .highlight{color:var(--ice);font-weight:400}
+.profile-value .flame{color:var(--flame);font-weight:400}
+.profile-desc{
+  margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--glass-border);
+  font-size:.9rem;color:var(--text-dim);line-height:1.9;font-weight:300;
+}
+
+/* SECTION: timeline */
+.timeline{position:relative;max-width:800px;margin:0 auto;padding:2rem 0}
+.timeline-line{
+  position:absolute;left:50%;top:0;bottom:0;width:1px;
+  background:linear-gradient(180deg,transparent,var(--ice-deep) 10%,var(--ice) 50%,var(--ice-deep) 90%,transparent);
+  transform:translateX(-50%);
+}
+.timeline-node{
+  position:relative;display:flex;align-items:flex-start;margin-bottom:3rem;
+  opacity:0;transform:translateY(30px);transition: opacity .7s ease,transform .7s ease;
+}
+.timeline-dot{
+  position:absolute;left:50%;top:.5rem;width:12px;height:12px;border-radius:50%;
+  border:2px solid var(--ice);background:var(--bg-abyss);transform:translateX(-50%);z-index:2;
+  box-shadow:0 0 12px rgba(168,212,245,.45);transition: background .3s;
+}
+.timeline-node.visible .timeline-dot{background:var(--ice)}
+.timeline-card{
+  width:calc(50% - 2.5rem);padding:1.2rem 1.5rem;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  
+  border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 0 20px rgba(168,212,245,.04);
+}
+.timeline-card h3{font-size:1.05rem;font-weight:400;color:var(--ice);margin-bottom:.5rem;letter-spacing:.1em}
+.timeline-card p{font-size:.85rem;color:var(--text-dim);line-height:1.8;font-weight:300}
+
+/* SECTION: quotes */
+.quote-card{
+  padding:1.5rem;min-height:140px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--glass-bg),var(--glass-bg2));
+  
+  border:1px solid var(--glass-border);border-radius:16px;cursor:pointer;
+  box-shadow:0 0 20px rgba(168,212,245,.04);
+  transition: transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;user-select:none;
+}
+.quote-card:hover{transform:translateY(-3px);box-shadow:0 0 30px rgba(168,212,245,.14),0 8px 30px rgba(0,0,0,.2)}
+.quote-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(circle at 30% 30%,rgba(168,212,245,.06),transparent 60%);pointer-events:none;
+}
+.quote-text{font-size:.9rem;color:var(--text);line-height:1.9;font-weight:300;text-align:center;transition: opacity .4s ease}
+.quote-hint{position:absolute;bottom:.6rem;right:.8rem;font-size:.65rem;color:var(--text-muted);opacity:.4}
+
+/* SECTION: ending */
+.ending-quote{
+  font-size:clamp(1.1rem,3vw,1.6rem);font-weight:300;letter-spacing:.12em;
+  color:var(--ice-mist);line-height:2;text-shadow:0 0 25px rgba(168,212,245,.3);
+  max-width:680px;opacity:0;transform:translateY(20px);transition: opacity var(--motion-base) ease,transform var(--motion-base) ease;
+}
+.ending-attr{
+  margin-top:2.5rem;font-size:.85rem;color:var(--text-muted);letter-spacing:.25em;
+  opacity:0;transition: opacity var(--motion-base) ease .8s;
+}
+.back-link{
+  display:inline-flex;align-items:center;gap:.5rem;margin-top:3rem;
+  min-height:44px;padding:.6rem 1.6rem;border-radius:999px;text-decoration:none;
+  color:var(--ice);font-size:.85rem;letter-spacing:.15em;
+  border:1px solid var(--glass-border);background:rgba(168,212,245,.05);
+  transition: background .3s ease,box-shadow .3s ease,transform .3s ease;
+  opacity:0;
+}
+.back-link:hover{background:rgba(168,212,245,.12);box-shadow:0 0 24px rgba(168,212,245,.22);transform:translateY(-2px)}
+
+/* SECTION: blade (他的剑 —— 专属互动) */
+.sw-wrap{max-width:540px;margin:0 auto;text-align:center}
+.sw-stage{position:relative;display:inline-block;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
+.sw-stage svg{display:block;filter:drop-shadow(0 12px 30px rgba(0,0,0,.55))}
+.sw-stage.hit svg{animation:swHit .26s ease}
+@keyframes swHit{0%,100%{transform:translateX(0)}35%{transform:translateX(-4px) rotate(-.6deg)}
+  70%{transform:translateX(3px) rotate(.4deg)}}
+/* 裂痕：点一次多一道，越到后面越密 */
+.sw-crack{opacity:0;transition: opacity .35s ease}
+.sw-crack.on{opacity:1}
+/* 断了以后：上下两截各自错开 */
+.sw-upper,.sw-lower{transition: transform var(--motion-quick) cubic-bezier(.3,.7,.3,1),opacity var(--motion-quick) ease}
+.sw-stage.broken .sw-upper{transform:translate(-26px,-30px) rotate(-16deg)}
+.sw-stage.broken .sw-lower{transform:translate(22px,44px) rotate(11deg)}
+.sw-stage.broken .sw-ice{opacity:0;transition: opacity .9s ease}
+.sw-hint{font-size:.75rem;color:var(--text-muted);letter-spacing:.15em;margin-top:1.1rem;opacity:.8}
+.sw-count{margin-top:.7rem;font-size:.95rem;color:var(--ice);letter-spacing:.2em;
+  font-variant-numeric:tabular-nums;text-shadow:0 0 14px rgba(168,212,245,.5)}
+.sw-float{position:absolute;left:50%;top:-6px;transform:translateX(-50%);pointer-events:none;
+  font-size:.9rem;color:#dceeff;letter-spacing:.1em;text-shadow:0 0 10px rgba(168,212,245,.7);
+  animation:swRise 1.1s ease-out forwards;white-space:nowrap}
+@keyframes swRise{0%{opacity:0;transform:translate(-50%,0) scale(.8)}18%{opacity:1}
+  100%{opacity:0;transform:translate(-50%,-64px) scale(1.05)}}
+
+/* 「鸟儿」：从画面一侧飞到另一侧 */
+.fly-bird{
+  position:fixed;z-index:9994;pointer-events:none;width:34px;height:22px;
+  filter:drop-shadow(0 0 10px rgba(220,238,255,.8));
+  animation:birdFly 5.6s linear forwards;
+}
+@keyframes birdFly{
+  0%{opacity:0;transform:translate(-60px,0) scale(.85)}
+  12%{opacity:1}
+  50%{transform:translate(50vw,-34px) scale(1)}
+  88%{opacity:1}
+  100%{opacity:0;transform:translate(105vw,-10px) scale(.9)}
+}
+.fly-bird path{animation:birdFlap .5s ease-in-out infinite alternate}
+@keyframes birdFlap{from{transform:scaleY(.55)}to{transform:scaleY(1)}}
+
+/* 结尾：冰面上的字 */
+.frost-line{
+  position:absolute;left:50%;top:12%;transform:translateX(-50%);
+  max-width:min(600px,86vw);text-align:center;pointer-events:none;
+  font-size:clamp(.82rem,2.4vw,1rem);line-height:1.9;letter-spacing:.05em;
+  color:#e8f4ff;text-shadow:0 0 22px rgba(168,212,245,.7);
+  opacity:0;transition: opacity 2s ease;
+}
+.frost-line.lit{opacity:.92}
+#frostVeil{
+  position:fixed;inset:0;z-index:9992;pointer-events:none;opacity:0;transition: opacity .8s ease;
+  background:radial-gradient(ellipse at center,transparent 38%,rgba(91,155,212,.34) 100%);
+}
+#frostVeil.lit{opacity:1}
+
+/* 碎冰：点剑时溅出来的 —— 这页没有现成的迸发函数，用他自己的冰晶补一个 */
+.ice-shard{
+  position:fixed;pointer-events:none;z-index:9993;border-radius:1px;
+}
+
+/* SECTION: toast */
+#kvToast{
+  position:fixed;left:50%;bottom:15%;transform:translateX(-50%) translateY(10px);z-index:9995;
+  max-width:88vw;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;letter-spacing:.06em;
+  color:var(--text);background:linear-gradient(135deg,rgba(6,8,14,.94),rgba(26,39,64,.94));
+  border:1px solid var(--glass-border2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 24px rgba(168,212,245,.2);
+  opacity:0;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition: opacity .35s ease,transform .35s ease;text-align:center;
+}
+#kvToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#kvToast.golden{color:#e8f4ff;border-color:rgba(168,212,245,.65);
+  box-shadow:0 6px 30px rgba(0,0,0,.45),0 0 40px rgba(168,212,245,.45)}
+@media(max-width:600px){#kvToast{white-space:normal;line-height:1.6}}
+
+/* SECTION: ripple */
+.ripple-shard{
+  position:fixed;pointer-events:none;z-index:9999;
+  border-radius:2px;opacity:.9;
+  transition: all .85s cubic-bezier(.22,.61,.36,1);
+}
+
+/* SECTION: responsive */
+@media(max-width:768px){
+  .timeline-line{left:1.5rem}
+  .timeline-node,.timeline-node:nth-child(odd),.timeline-node:nth-child(even){flex-direction:row}
+  .timeline-dot{left:1.5rem}
+  .timeline-card,.timeline-node:nth-child(odd) .timeline-card,.timeline-node:nth-child(even) .timeline-card{
+    width:calc(100% - 3.5rem);margin-left:3.5rem;margin-right:0;
+  }
+  .quotes-grid{grid-template-columns:1fr}
+  .profile-grid{grid-template-columns:auto 1fr;gap:.5rem 1rem;font-size:.85rem}
+}
+@media(max-width:480px){
+  .content-section{padding:4rem 1rem}
+  .profile-card{padding:1.5rem}
+  .quote-card{min-height:120px;padding:1.2rem}
+}
+</style>

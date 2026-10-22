@@ -1,0 +1,361 @@
+{
+ "root": "D:\\claude-code\\elysia-main",
+ "port": 8520,
+ "widths": [
+  320,
+  360,
+  390
+ ],
+ "pages": {
+  "kevin/index.html": {
+   "320": {
+    "title": "elysiad.top/kevin — 致凯文",
+    "h1": true,
+    "w": 320,
+    "sw": 320,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "360": {
+    "title": "elysiad.top/kevin — 致凯文",
+    "h1": true,
+    "w": 360,
+    "sw": 360,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "390": {
+    "title": "elysiad.top/kevin — 致凯文",
+    "h1": true,
+    "w": 390,
+    "sw": 390,
+    "small": 0,
+    "outofview": 1,
+    "ok": true
+   }
+  },
+  "aponia/index.html": {
+   "320": {
+    "title": "elysiad.top/aponia — 致阿波尼亚",
+    "h1": true,
+    "w": 320,
+    "sw": 320,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "360": {
+    "title": "elysiad.top/aponia — 致阿波尼亚",
+    "h1": true,
+    "w": 360,
+    "sw": 360,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "390": {
+    "title": "elysiad.top/aponia — 致阿波尼亚",
+    "h1": true,
+    "w": 390,
+    "sw": 390,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   }
+  },
+  "eden/index.html": {
+   "320": {
+    "title": "elysiad.top/eden — 致伊甸",
+    "h1": true,
+    "w": 320,
+    "sw": 320,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "360": {
+    "title": "elysiad.top/eden — 致伊甸",
+    "h1": true,
+    "w": 360,
+    "sw": 360,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "390": {
+    "title": "elysiad.top/eden — 致伊甸",
+    "h1": true,
+    "w": 390,
+    "sw": 390,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   }
+  },
+  "villv/index.html": {
+   "320": {
+    "title": "elysiad.top/villv — 致维尔薇",
+    "h1": true,
+    "w": 320,
+    "sw": 320,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "360": {
+    "title": "elysiad.top/villv — 致维尔薇",
+    "h1": true,
+    "w": 360,
+    "sw": 360,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "390": {
+    "title": "elysiad.top/villv — 致维尔薇",
+    "h1": true,
+    "w": 390,
+    "sw": 390,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   }
+  },
+  "kalpas/index.html": {
+   "320": {
+    "title": "elysiad.top/kalpas — 致千劫",
+    "h1": true,
+    "w": 320,
+    "sw": 320,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "360": {
+    "title": "elysiad.top/kalpas — 致千劫",
+    "h1": true,
+    "w": 360,
+    "sw": 360,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "390": {
+    "title": "elysiad.top/kalpas — 致千劫",
+    "h1": true,
+    "w": 390,
+    "sw": 390,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   }
+  },
+  "su/index.html": {
+   "320": {
+    "title": "elysiad.top/su — 致苏",
+    "h1": true,
+    "w": 320,
+    "sw": 320,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "360": {
+    "title": "elysiad.top/su — 致苏",
+    "h1": true,
+    "w": 360,
+    "sw": 360,
+    "small": 0,
+    "outofview": 1,
+    "ok": true
+   },
+   "390": {
+    "title": "elysiad.top/su — 致苏",
+    "h1": true,
+    "w": 390,
+    "sw": 390,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   }
+  },
+  "sakura/index.html": {
+   "320": {
+    "title": "elysiad.top/sakura — 致樱",
+    "h1": true,
+    "w": 320,
+    "sw": 320,
+    "small": 0,
+    "outofview": 3,
+    "ok": true
+   },
+   "360": {
+    "title": "elysiad.top/sakura — 致樱",
+    "h1": true,
+    "w": 360,
+    "sw": 360,
+    "small": 0,
+    "outofview": 2,
+    "ok": true
+   },
+   "390": {
+    "title": "elysiad.top/sakura — 致樱",
+    "h1": true,
+    "w": 390,
+    "sw": 390,
+    "small": 0,
+    "outofview": 1,
+    "ok": true
+   }
+  },
+  "kosma/index.html": {
+   "320": {
+    "title": "elysiad.top/kosma — 致科斯魔",
+    "h1": true,
+    "w": 320,
+    "sw": 320,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "360": {
+    "title": "elysiad.top/kosma — 致科斯魔",
+    "h1": true,
+    "w": 360,
+    "sw": 360,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "390": {
+    "title": "elysiad.top/kosma — 致科斯魔",
+    "h1": true,
+    "w": 390,
+    "sw": 390,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   }
+  },
+  "mobius/index.html": {
+   "320": {
+    "title": "elysiad.top/mobius — 致梅比乌斯",
+    "h1": true,
+    "w": 320,
+    "sw": 320,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "360": {
+    "title": "elysiad.top/mobius — 致梅比乌斯",
+    "h1": true,
+    "w": 360,
+    "sw": 360,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "390": {
+    "title": "elysiad.top/mobius — 致梅比乌斯",
+    "h1": true,
+    "w": 390,
+    "sw": 390,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   }
+  },
+  "griseo/index.html": {
+   "320": {
+    "title": "elysiad.top/griseo — 致格蕾修",
+    "h1": true,
+    "w": 320,
+    "sw": 320,
+    "small": 0,
+    "outofview": 1,
+    "ok": true
+   },
+   "360": {
+    "title": "elysiad.top/griseo — 致格蕾修",
+    "h1": true,
+    "w": 360,
+    "sw": 360,
+    "small": 0,
+    "outofview": 1,
+    "ok": true
+   },
+   "390": {
+    "title": "elysiad.top/griseo — 致格蕾修",
+    "h1": true,
+    "w": 390,
+    "sw": 390,
+    "small": 0,
+    "outofview": 1,
+    "ok": true
+   }
+  },
+  "hua/index.html": {
+   "320": {
+    "title": "elysiad.top/hua — 致华",
+    "h1": true,
+    "w": 320,
+    "sw": 320,
+    "small": 0,
+    "outofview": 1,
+    "ok": true
+   },
+   "360": {
+    "title": "elysiad.top/hua — 致华",
+    "h1": true,
+    "w": 360,
+    "sw": 360,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "390": {
+    "title": "elysiad.top/hua — 致华",
+    "h1": true,
+    "w": 390,
+    "sw": 390,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   }
+  },
+  "pardofelis/index.html": {
+   "320": {
+    "title": "elysiad.top/pardofelis — 致帕朵菲莉丝",
+    "h1": true,
+    "w": 320,
+    "sw": 320,
+    "small": 0,
+    "outofview": 1,
+    "ok": true
+   },
+   "360": {
+    "title": "elysiad.top/pardofelis — 致帕朵菲莉丝",
+    "h1": true,
+    "w": 360,
+    "sw": 360,
+    "small": 0,
+    "outofview": 2,
+    "ok": true
+   },
+   "390": {
+    "title": "elysiad.top/pardofelis — 致帕朵菲莉丝",
+    "h1": true,
+    "w": 390,
+    "sw": 390,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   }
+  }
+ },
+ "verdict": "pass",
+ "fails": 0
+}

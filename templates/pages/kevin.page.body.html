@@ -1,0 +1,641 @@
+
+
+<canvas id="frostCanvas"></canvas>
+<div id="frostVeil" aria-hidden="true"></div>
+
+<!-- SECTION: opening -->
+<section class="section-opening" id="opening">
+  <div class="opening-content">
+    <div class="opening-ornament" id="openingOrn">❄ ── ❄ ── ❄</div>
+    <h1 class="opening-title" id="typewriterText"></h1><span class="typing-cursor" id="typingCursor">|</span>
+    <p class="opening-subtitle" id="openingSub">欢迎来到永恒的霜土</p>
+  </div>
+  <div class="scroll-hint" id="scrollHint">
+    <span>向下前行</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</section>
+
+<!-- SECTION: about -->
+<section class="content-section" id="about">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❄</span>关于他<span class="section-title-mark">❄</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="profile-card">
+    <div class="profile-card-inner">
+      <div class="profile-name">凯文·卡斯兰娜</div>
+      <div class="profile-name-en">K E V I N · K A S L A N A</div>
+      <div class="profile-divider"></div>
+      <div class="profile-grid">
+        <span class="profile-label">出处</span>
+        <span class="profile-value">《崩坏3》前文明纪元 → 现文明纪元</span>
+        <span class="profile-label">身份</span>
+        <span class="profile-value">逐火之蛾融合战士 · 世界蛇尊主</span>
+        <span class="profile-label">位次</span>
+        <span class="profile-value"><span class="highlight">Ⅰ</span></span>
+        <span class="profile-label">刻印</span>
+        <span class="profile-value"><span class="highlight">「救世」</span></span>
+        <span class="profile-label">武器</span>
+        <span class="profile-value">第七神之键 <span class="flame">「天火圣裁」</span>（双枪 / 天火大剑 / 劫灭）</span>
+        <span class="profile-label">融合崩坏兽</span>
+        <span class="profile-value">帝王级「帕凡提」——冰雪之力</span>
+        <span class="profile-label">所属</span>
+        <span class="profile-value">逐火之蛾 → 世界蛇</span>
+        <span class="profile-label">血脉</span>
+        <span class="profile-value">卡斯兰娜家族的先祖</span>
+        <span class="profile-label">配音</span>
+        <span class="profile-value">秦且歌（汉语）</span>
+        <span class="profile-label">外貌</span>
+        <span class="profile-value">白发短马尾，黑色露指手套</span>
+      </div>
+      <div class="profile-desc">
+        往日的传说无需赘述——他是最接近「逐火之蛾」宏愿的人，被所有人承认的「英雄」。世人坚信，他终将带领人类战胜崩坏。而为了那个承诺，他走过了五万年，从阳光少年走到冰冷孤独，把生命压进枪膛，只为救世。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: journey -->
+<section class="content-section" id="journey">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❄</span>他的救世<span class="section-title-mark">❄</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="timeline">
+    <div class="timeline-line"></div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>千羽学园</h3>
+        <p>那时的他还只是个热爱运动的转校生，会为了喜欢的女孩露出幼稚的一面。梅博士的恋人，苏的挚友——那是他一生中最温暖的时光。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>追随</h3>
+        <p>崩坏爆发，梅被逐火之蛾邀请。他不愿离开她，以普通士兵的身份加入组织——不是为了拯救世界，只是为了跟在她身边。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>融合</h3>
+        <p>第七次崩坏降临，他自愿成为融合战士计划的试验者，融合帝王级崩坏兽「帕凡提」的基因，获得冰雪之力——代价是体温恒定零下，再也无法拥抱所爱之人。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>天火圣裁</h3>
+        <p>以炎之律者核心制成的第七神之键认他为主。天火出鞘，烈焰焚天——他凭借此剑斩杀第七律者，成为人类最强的战士。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>誓言</h3>
+        <p>樱牺牲后，他带着她的遗体回到故乡，只见燃尽的大地。在坟前，他许下那句贯穿五万年的承诺——「无论付出多少代价，人类一定会战胜崩坏。」</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>终焉</h3>
+        <p>终焉之战，他带领英桀与终焉律者死战，全力一击令终焉宕机十二小时，为文明争得最后的布局时间——但前文明终究落幕。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>长眠</h3>
+        <p>依照梅的遗愿，他带着两人的孩子进入休眠舱，沉入五万年的长眠。醒来时，沧海桑田，故人皆逝。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>世界蛇</h3>
+        <p>他是卡斯兰娜家族的先祖，也是世界蛇的尊主。他执行梅留下的圣痕计划，蛰伏于时间的长夜，等待战胜崩坏的唯一时机。</p>
+      </div>
+    </div>
+
+    <div class="timeline-node">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <h3>告别</h3>
+        <p>最终决战，他被琪亚娜一行人击败——而这本就是他计划的一部分。留下「鸟儿为什么会飞」的答案后，救世的战士终于卸下重担，去往有故人的地方。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: blade (他的剑) -->
+<section class="content-section" id="blade">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❄</span>他的剑<span class="section-title-mark">❄</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="sw-wrap">
+    <div class="sw-stage" id="swStage" role="button" tabindex="0"
+         aria-label="一柄封在冰里的剑，点击尝试折断" data-primary-action>
+      <svg viewBox="0 0 180 300" width="170" height="283" aria-hidden="true">
+        <defs>
+          <linearGradient id="swSteel" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#8fb6d8"/><stop offset="42%" stop-color="#e8f4ff"/>
+            <stop offset="58%" stop-color="#c3ddf2"/><stop offset="100%" stop-color="#5b7fa6"/>
+          </linearGradient>
+          <linearGradient id="swIce" x1="0" y1="0" x2="0.4" y2="1">
+            <stop offset="0%" stop-color="rgba(220,238,255,.5)"/>
+            <stop offset="55%" stop-color="rgba(168,212,245,.26)"/>
+            <stop offset="100%" stop-color="rgba(91,155,212,.42)"/>
+          </linearGradient>
+        </defs>
+
+        <!-- 上截（剑身） -->
+        <g class="sw-upper">
+          <path d="M90 22 L104 58 L104 138 L76 138 L76 58 Z" fill="url(#swSteel)"/>
+          <path d="M90 26 L90 136" stroke="rgba(255,255,255,.55)" stroke-width="1.2"/>
+        </g>
+        <!-- 下截（护手 + 柄 + 剑身下段） -->
+        <g class="sw-lower">
+          <path d="M76 138 L104 138 L104 190 L76 190 Z" fill="url(#swSteel)"/>
+          <rect x="46" y="188" width="88" height="12" rx="5" fill="#3f4f66"
+                stroke="rgba(168,212,245,.5)" stroke-width="1"/>
+          <rect x="78" y="200" width="24" height="62" rx="10" fill="#1b2740"
+                stroke="rgba(168,212,245,.35)" stroke-width="1"/>
+          <g stroke="#a8d4f5" stroke-width="1.1" opacity=".45">
+            <path d="M80 206 L100 218"/><path d="M80 220 L100 232"/><path d="M80 234 L100 246"/>
+          </g>
+          <circle cx="90" cy="272" r="8" fill="#3f4f66" stroke="rgba(168,212,245,.5)" stroke-width="1"/>
+        </g>
+
+        <!-- 冰：封着它 -->
+        <g class="sw-ice">
+          <path d="M64 16 L118 26 L120 200 L112 286 L62 282 L56 190 Z" fill="url(#swIce)"
+                stroke="rgba(220,238,255,.6)" stroke-width="1.2"/>
+          <path d="M66 40 L116 34 M62 96 L118 92 M60 152 L118 150 M64 214 L114 212"
+                stroke="rgba(255,255,255,.35)" stroke-width="1" fill="none"/>
+        </g>
+
+        <!-- 裂痕：点一次多一道 -->
+        <g class="sw-crack" id="swCrack0" stroke="#eaf6ff" stroke-width="1.4" fill="none" opacity="0">
+          <path d="M90 60 L78 92 L96 118 L82 150"/>
+        </g>
+        <g class="sw-crack" id="swCrack1" stroke="#eaf6ff" stroke-width="1.4" fill="none" opacity="0">
+          <path d="M112 74 L94 104 L110 132"/>
+        </g>
+        <g class="sw-crack" id="swCrack2" stroke="#eaf6ff" stroke-width="1.5" fill="none" opacity="0">
+          <path d="M70 120 L88 146 L68 174"/>
+        </g>
+        <g class="sw-crack" id="swCrack3" stroke="#eaf6ff" stroke-width="1.6" fill="none" opacity="0">
+          <path d="M100 158 L84 186 L104 208"/>
+        </g>
+      </svg>
+    </div>
+    <p class="sw-count" id="swCount">冰封着</p>
+    <p class="sw-hint">点它。想折的话，得多点几次。</p>
+  </div>
+</section>
+
+<!-- SECTION: quotes -->
+<section class="content-section" id="quotes">
+  <div class="section-title-wrap">
+    <h2 class="section-title"><span class="section-title-mark">❄</span>救世之铭<span class="section-title-mark">❄</span></h2>
+    <span class="section-title-line"></span>
+  </div>
+  <div class="quotes-grid" id="quotesGrid" data-primary-action></div>
+</section>
+
+<!-- SECTION: ending -->
+<section class="section-ending" id="ending">
+  <div class="ending-stars" id="endingStars"></div>
+  <p class="ending-quote" id="endingQuote">在燃尽的大地上，我向她，向所有人许下承诺——<br>无论付出多少代价，人类，一定会战胜崩坏。</p>
+  <p class="ending-attr" id="endingAttr">致凯文 · elysiad.top/kevin</p>
+  <a class="back-link" id="backLink" href="../">← 回到她的乐土</a>
+  <div class="ending-fade"></div>
+</section>
+
+<div id="kvToast" role="status"></div>
+
+<!-- SECTION: scripts -->
+<script src="/assets/site.js"></script>
+<script src="/assets/explore.js"></script>
+<script src="/assets/bottom.js"></script>
+<script src="/assets/games/kevin.js"></script>
+<script src="/assets/bday.js"></script>
+<script src="/data/bdays.js"></script>
+<script>
+(function(){
+  /* SECTION: quotes data */
+  var quotes = [
+    '「我是凯文，持有「救世」之铭的战士。除此之外，再无其它了。」',
+    '「在燃尽的大地上，我向她，向所有人许下承诺——无论付出多少代价，人类，一定会战胜崩坏。」',
+    '「为了不让太阳落下，我飞上天际，将你们的光芒夺去。我将因之融化，坠落于海面。但要想将其夺回，你，你们，必须飞到比我更高的地方。」',
+    '「赫克托耳知道王国终将陷落，阿喀琉斯明白自己正在走向死亡。但他们依然义无反顾地踏上战场——在这个从一开始就注定是悲剧的故事里，没有一个人曾犹豫动摇。他们如此，我们，亦是如此。」',
+    '「一把剑之所以能成为我的武器，是因为只有我能亲手折断它。关于力量，我只能言尽于此。」',
+    '「一个人的命运，就是他的性格。这一次，我将自己的生命压进枪膛，只为拯救一人。」',
+    '「属于我的罪责，都将由我一人背负。」',
+    '「这世界早已无法拯救，但我们还是必须成为英雄。」',
+    '「踏上前来。此即「救世」之铭。」',
+    '「鸟儿为什么会飞？不是因为它必须飞翔，也不是因为它想要飞翔——而是因为它们，都想要飞翔。」'
+  ];
+
+  /* SECTION: quotes build —— 交给共享层
+     ★ 闭包 O(1) 索引：不再每次点击都重扫一遍 DOM，只为问「我是第几张卡片」。
+     ⚠ ariaLabel 必填，且必须传本页原文案：它是 Lore，不是通用 UI 标签。
+       而快照工具只采计算样式，抹掉了也测不出「✅ 无差异」。见 docs/theme-schema.md §四。 */
+  ElysiaShared.buildQuoteCards({
+    grid: document.getElementById('quotesGrid'),
+    quotes: quotes,
+    ariaLabel: '救世铭文，点击切换',
+  });
+
+  /* SECTION: canvas particles */
+  var canvas = document.getElementById('frostCanvas');
+  var ctx = canvas.getContext('2d');
+  var W, H;
+  var iceColors = ['#dceeff','#a8d4f5','#5b9bd4','#ffffff'];
+  var emberColors = ['#e8935c','#c96a3c'];
+
+  // ⚠ 只抽「把 canvas 和视口尺寸对上」这三行。下面那个「把越界粒子拉回画布」的
+  //   匿名监听器**故意留着不动**——它碰的数组每页不一样，抽走会改行为。
+  const resize = ElysiaShared.makeResize(canvas, {
+    get W() { return W; }, set W(v) { W = v; },
+    get H() { return H; }, set H(v) { H = v; },
+  });
+  resize();
+  window.addEventListener('resize', resize);
+  /* 霜雪：自上而下，微微摇摆 */
+  var flakes = [];
+  var flakeCount = Math.min(55, Math.floor(window.innerWidth / 20));
+  function createFlake(fromTop){
+    return {
+      x: Math.random() * W,
+      y: fromTop ? -15 - Math.random() * 80 : Math.random() * H,
+      size: 1 + Math.random() * 2.8,
+      speedY: 0.2 + Math.random() * 0.5,
+      drift: (Math.random() - 0.5) * 0.3,
+      baseOpacity: 0.15 + Math.random() * 0.45,
+      twinkleSpd: 0.006 + Math.random() * 0.02,
+      twinkleOff: Math.random() * Math.PI * 2,
+      swayAmp: 8 + Math.random() * 20,
+      swaySpd: 0.003 + Math.random() * 0.006,
+      color: iceColors[Math.floor(Math.random() * iceColors.length)]
+    };
+  }
+  for (var i = 0; i < flakeCount; i++) flakes.push(createFlake(false));
+
+  /* 余烬：自下而上，如天火的残焰 */
+  var embers = [];
+  var emberCount = Math.min(14, Math.floor(window.innerWidth / 90));
+  function createEmber(fromBottom){
+    return {
+      x: Math.random() * W,
+      y: fromBottom ? H + 10 + Math.random() * 60 : Math.random() * H,
+      size: 0.8 + Math.random() * 1.8,
+      speedY: -(0.15 + Math.random() * 0.35),
+      drift: (Math.random() - 0.5) * 0.2,
+      baseOpacity: 0.12 + Math.random() * 0.35,
+      twinkleSpd: 0.008 + Math.random() * 0.02,
+      twinkleOff: Math.random() * Math.PI * 2,
+      color: emberColors[Math.floor(Math.random() * emberColors.length)]
+    };
+  }
+  for (i = 0; i < emberCount; i++) embers.push(createEmber(false));
+
+  /* 星尘 */
+  var stars = [];
+  var starCount = Math.min(50, Math.floor(window.innerWidth / 24));
+  function createStar(){
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      size: 0.3 + Math.random() * 1.4,
+      baseOpacity: 0.12 + Math.random() * 0.45,
+      twinkleSpd: 0.008 + Math.random() * 0.025,
+      twinkleOff: Math.random() * Math.PI * 2,
+      color: '#ffffff'
+    };
+  }
+  for (i = 0; i < starCount; i++) stars.push(createStar());
+
+  var scrollRatio = 0;
+  window.addEventListener('scroll', function(){
+    var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    scrollRatio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+  });
+
+  var time = 0;
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function animate(){
+    if (reducedMotion) return;
+    time++;
+    ctx.clearRect(0, 0, W, H);
+    var fadeFactor = 1 - scrollRatio * 0.6;
+    var i, s, f, e, tw;
+
+    for (i = 0; i < stars.length; i++){
+      s = stars[i];
+      tw = 0.5 + 0.5 * Math.sin(time * s.twinkleSpd + s.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = s.baseOpacity * tw * fadeFactor;
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, Math.max(0.2, s.size), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (i = 0; i < flakes.length; i++){
+      f = flakes[i];
+      f.y += f.speedY;
+      f.x += f.drift + Math.sin(time * f.swaySpd + f.twinkleOff) * 0.3;
+      if (f.y > H + 20){ flakes[i] = createFlake(true); f = flakes[i]; }
+      tw = 0.5 + 0.5 * Math.sin(time * f.twinkleSpd + f.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = f.baseOpacity * tw * fadeFactor;
+      ctx.fillStyle = f.color;
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, Math.max(0.3, f.size), 0, Math.PI * 2);
+      ctx.fill();
+      if (f.size > 2){
+        ctx.globalAlpha = f.baseOpacity * tw * fadeFactor * 0.3;
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.size * 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    for (i = 0; i < embers.length; i++){
+      e = embers[i];
+      e.y += e.speedY;
+      e.x += e.drift + Math.sin(time * 0.01 + e.twinkleOff) * 0.2;
+      if (e.y < -15){ embers[i] = createEmber(true); e = embers[i]; }
+      tw = 0.5 + 0.5 * Math.sin(time * e.twinkleSpd + e.twinkleOff);
+      ctx.save();
+      ctx.globalAlpha = e.baseOpacity * tw * fadeFactor;
+      ctx.fillStyle = e.color;
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, Math.max(0.3, e.size), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  /* SECTION: typewriter */
+  /* SECTION: opening typewriter —— 交给共享层
+     ⚠ 五个时间数值**逐页不同**，全部照本页原值传入，不要依赖默认值。
+       漏传就会悄悄改变这一页的节奏。对照表见 docs/theme-schema.md §5.1。 */
+  ElysiaShared.makeTypewriter({
+    text: '我是凯文，持有「救世」之铭的战士。除此之外，再无其它了。',
+    delay: 130, jitter: 70, startDelay: 800, tailDelay: 600, hintDelay: 1200,
+    hintEl: false,
+    preReveal: 'openingOrn',
+  });
+
+  /* SECTION: scroll animations */
+  /* SECTION: scroll animations —— 交给共享层
+     ⚠ 结尾目标改用带判空的写法（Inventory R11）：元素齐全时表现与原先完全一致，
+       缺元素时不再抛异常。属**行为改善**，非纯重构。 */
+  ElysiaShared.observeReveal('.timeline-node');
+  ElysiaShared.observeReveal('#ending', {
+    threshold: 0.3,
+    reveal: ['endingQuote', 'endingAttr', 'backLink'],
+  });
+
+  /* SECTION: ending stars */
+  var starsContainer = document.getElementById('endingStars');
+  // 呀！星星的区间就是这一页的脾气，交给共享层的时候一个数都不敢动呢♥
+  // ⚠ 区间写法是 [起点, 跨度]，与原来的 `0.1 + Math.random() * 0.3` 一一对应。
+  var THEME = /*@THEME@*/;
+  ElysiaShared.spawnEndingStars(document.getElementById('endingStars'), THEME.endingStars);
+
+  /* 探索系统（2026-10-15 铺开）：12 个落点 + 解锁 + 陪伴层，配置在 THEME.explore。 */
+  ElysiaExplore.init(THEME.explore);
+  /* 下方区块：探索度那一槽由 ElysiaExplore 自己放回来，这里只挂游戏槽。 */
+  ElysiaBottom.mount({ game: THEME.game });
+
+  /* 生日胶囊（2026-10-15）：凯文的生日**查不到**（页面与档案馆都没有「生日」二字），
+     所以 `data/bdays.js` 里没有他这一条，胶囊**整个不会出现**。
+     ⚠ 组件仍然要挂 —— 别的断言要读它的状态；没生日时它自己安静待着。
+     ⚠ 哪天查到生日：① 加进 `data/bdays.js` ② **同时补那 15 个 `--bday-*` 变量**
+       （不然会吃共享层默认值 = 首页爱莉希雅的粉紫，串页。见 HANDOVER §4.1.2 / §5.2）。 */
+  ElysiaBday.mount({});
+  /* 呀，这一页原本没有「粒子迸发」那个工具函数 —— 从别的页抄名字会直接报错。
+     用他自己的冰晶写一个：点剑时溅出碎冰♥ */
+  function shardBurst(cx, cy, count, colors){
+    var pal = colors || ['#dceeff','#a8d4f5','#5b9bd4'];
+    for (var i = 0; i < count; i++){
+      (function(i){
+        var s = document.createElement('div');
+        s.className = 'ice-shard';
+        s.style.width = (2 + Math.random() * 4) + 'px';
+        s.style.height = (6 + Math.random() * 12) + 'px';
+        s.style.left = cx + 'px';
+        s.style.top = cy + 'px';
+        var col = pal[i % pal.length];
+        s.style.background = col;
+        s.style.boxShadow = '0 0 8px ' + col;
+        var ang = (i / count) * Math.PI * 2 + Math.random() * 0.7;
+        var deg = ang * 180 / Math.PI;
+        s.style.transform = 'translate(-50%,-50%) rotate(' + deg + 'deg)';
+        document.body.appendChild(s);
+        void s.offsetWidth;
+        var dist = 30 + Math.random() * 72;
+        s.style.transition = 'transform .95s cubic-bezier(.2,.6,.35,1), opacity .95s ease';
+        s.style.transform = 'translate(calc(-50% + ' + (Math.cos(ang) * dist) + 'px), calc(-50% + ' + (Math.sin(ang) * dist) + 'px)) rotate(' + (deg + 140 + Math.random() * 90) + 'deg)';
+        s.style.opacity = '0';
+        setTimeout(function(){ s.remove(); }, 1100);
+      })(i);
+    }
+  }
+
+  /* SECTION: toast */
+  var toastEl = document.getElementById('kvToast');
+  var toastTimer = null;
+  function showToast(text, golden){
+    clearTimeout(toastTimer);
+    toastEl.textContent = text;
+    toastEl.classList.toggle('golden', !!golden);
+    toastEl.classList.remove('show');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, golden ? 4600 : 3000);
+  }
+
+  /* ══ 他的专属互动：「他的剑」══
+   * 「一把剑之所以能成为我的武器，是因为只有我能亲手折断它。」
+   * —— 所以它**不会一碰就断**。点一次裂一道，点够五次才真的断开。
+   * 这份执拗是凯文自己的，别的页没有。台词全部有出处。 */
+  var swStage = document.getElementById('swStage');
+  var swCountEl = document.getElementById('swCount');
+  var swHits = 0;
+  try { swHits = parseInt(localStorage.getItem('kevinHits') || '0', 10) || 0; } catch(err){ swHits = 0; }
+  var SW_NEED = 5;
+  renderSw();
+
+  function renderSw(){
+    for (var i = 0; i < 4; i++){
+      var c = document.getElementById('swCrack' + i);
+      if (c) c.classList.toggle('on', swHits > i);
+    }
+    if (swHits >= SW_NEED){
+      swStage.classList.add('broken');
+      swCountEl.textContent = '断了';
+    } else if (swHits === 0){
+      swCountEl.textContent = '冰封着';
+    } else {
+      swCountEl.textContent = '裂了 ' + swHits + ' 道 · 还差 ' + (SW_NEED - swHits) + ' 次';
+    }
+  }
+
+  function strikeSword(){
+    if (swHits >= SW_NEED){
+      showToast('「属于我的罪责，都将由我一人背负。」', false);
+      return;
+    }
+    swHits++;
+    try { localStorage.setItem('kevinHits', String(swHits)); } catch(err){}
+    renderSw();
+
+    swStage.classList.remove('hit');
+    void swStage.offsetWidth;
+    swStage.classList.add('hit');
+
+    var r = swStage.getBoundingClientRect();
+    if (!reducedMotion){
+      shardBurst(r.left + r.width / 2, r.top + r.height * 0.4, 6, ['#dceeff','#a8d4f5','#e8f4ff']);
+    }
+
+    var floatEl = document.createElement('div');
+    floatEl.className = 'sw-float';
+    floatEl.textContent = swHits >= SW_NEED ? '断了' : ('第 ' + swHits + ' 道裂痕');
+    floatEl.style.left = (36 + Math.random() * 28) + '%';
+    swStage.appendChild(floatEl);
+    setTimeout(function(){ floatEl.remove(); }, 1200);
+
+    if (swHits === 1){
+      showToast('「一把剑之所以能成为我的武器，是因为只有我能亲手折断它。关于力量，我只能言尽于此。」', false);
+    } else if (swHits >= SW_NEED){
+      var veil = document.getElementById('frostVeil');
+      veil.classList.add('lit');
+      setTimeout(function(){ veil.classList.remove('lit'); }, 1400);
+      if (!reducedMotion){
+        shardBurst(r.left + r.width / 2, r.top + r.height * 0.45, 30,
+                   ['#dceeff','#a8d4f5','#5b9bd4','#e8f4ff']);
+      }
+      showToast('「属于我的罪责，都将由我一人背负。」', true);
+    }
+  }
+  swStage.addEventListener('click', strikeSword);
+  swStage.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); strikeSword(); }
+  });
+
+  /* ══ 彩蛋 ② 「鸟儿为什么会飞」══
+   * 点开场那枚 ❄ —— 一只冰鸟从画面左侧飞到右侧。
+   * 这是他那句最出名的话，也是他唯一一次谈起「想要」。 */
+  var ornEl = document.getElementById('openingOrn');
+  var birdFlying = false;
+  function releaseBird(){
+    if (birdFlying) return;
+    birdFlying = true;
+    var b = document.createElement('div');
+    b.className = 'fly-bird';
+    b.style.top = (26 + Math.random() * 26) + 'vh';
+    b.innerHTML = '<svg viewBox="0 0 34 22" width="34" height="22" aria-hidden="true">' +
+      '<path d="M2 12 Q10 2 17 11 Q24 2 32 12" stroke="#dceeff" stroke-width="1.6" ' +
+      'fill="none" stroke-linecap="round"/></svg>';
+    b.querySelector('path').style.transformOrigin = 'center';
+    document.body.appendChild(b);
+    setTimeout(function(){
+      showToast('「鸟儿为什么会飞？不是因为它必须飞翔，也不是因为它想要飞翔——而是因为它们，都想要飞翔。」', true);
+    }, 2400);
+    setTimeout(function(){ b.remove(); birdFlying = false; }, 6000);
+  }
+  if (ornEl){
+    ornEl.style.cursor = 'pointer';
+    ornEl.addEventListener('click', releaseBird);
+    ornEl.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); releaseBird(); }
+    });
+  }
+
+  /* ══ 彩蛋 ③ 结尾：冰面上的承诺 ══
+   * 滚到结尾，那句话从冰面下浮出来 —— 他许过的、唯一一次许给所有人的承诺。 */
+  var endingEl = document.getElementById('ending');
+  var frostLine = null;
+  function showVow(){
+    if (frostLine) return;
+    frostLine = document.createElement('p');
+    frostLine.className = 'frost-line';
+    frostLine.textContent = '「在燃尽的大地上，我向她，向所有人许下承诺——无论付出多少代价，人类，一定会战胜崩坏。」';
+    endingEl.appendChild(frostLine);
+    var veil = document.getElementById('frostVeil');
+    veil.classList.add('lit');
+    setTimeout(function(){ veil.classList.remove('lit'); }, 1600);
+    setTimeout(function(){ frostLine.classList.add('lit'); }, 260);
+  }
+  if (endingEl && 'IntersectionObserver' in window){
+    var endingObs = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if (en.isIntersecting) showVow(); });
+    }, { threshold: 0.35 });
+    endingObs.observe(endingEl);
+  }
+
+  /* SECTION: click ripple (冰晶碎片涟漪) */
+  var shardColors = ['#dceeff','#a8d4f5','#5b9bd4','#e8935c'];
+  document.addEventListener('click', function(e){
+    if (reducedMotion) return;
+    /* 呀，剑上已经有它自己的回应了，别再叠一层冰晶 */
+    if (e.target.closest && e.target.closest('#swStage')) return;
+    var count = 7 + Math.floor(Math.random() * 4);
+    for (var k = 0; k < count; k++){
+      var shard = document.createElement('div');
+      shard.className = 'ripple-shard';
+      var angle = (k / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.6;
+      var dist = 26 + Math.random() * 58;
+      var w = 2 + Math.random() * 2.5;
+      var h = 8 + Math.random() * 14;
+      var color = shardColors[Math.floor(Math.random() * shardColors.length)];
+      var startRot = Math.random() * 180;
+      shard.style.background = color;
+      shard.style.boxShadow = '0 0 6px ' + color;
+      shard.style.width = w + 'px';
+      shard.style.height = h + 'px';
+      shard.style.left = e.clientX + 'px';
+      shard.style.top = e.clientY + 'px';
+      shard.style.transform = 'translate(-50%,-50%) rotate(' + startRot + 'deg)';
+      document.body.appendChild(shard);
+      void shard.offsetWidth;
+      var endX = Math.cos(angle) * dist;
+      var endY = Math.sin(angle) * dist;
+      shard.style.transform = 'translate(calc(-50% + ' + endX + 'px), calc(-50% + ' + endY + 'px)) rotate(' + (startRot + 90 + Math.random() * 120) + 'deg)';
+      shard.style.opacity = '0';
+      (function(el){ setTimeout(function(){ el.remove(); }, 900); })(shard);
+    }
+  });
+
+  /* SECTION: resize guard */
+  window.addEventListener('resize', function(){
+    for (var j = 0; j < stars.length; j++){
+      if (stars[j].x > W) stars[j].x = Math.random() * W;
+      if (stars[j].y > H) stars[j].y = Math.random() * H;
+    }
+  });
+})();
+</script>

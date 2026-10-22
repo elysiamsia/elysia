@@ -1,0 +1,7 @@
+<style id="narrow-320-fix">
+/* 2026-10-18 mobile_sweep 在 320 档抓到布局视口被撑宽。二分法定位：同 hua
+   ⚠ 不要用 `区块 *{min-width:0}` —— ID 优先级会压掉 .explore-find 自带的 44px（踩过）。
+   兜底用 html,body 的 overflow-x:clip（griseo/sakura 已验证有效）。 */
+.quote-card{min-width:0}
+html,body{overflow-x:clip}
+</style>

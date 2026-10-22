@@ -1,0 +1,5 @@
+<style id="threshold-44-fix">
+/* 2026-10-18 mobile_sweep 在 390 档抓到：结局语录只占一行时高度 35px，
+   而它带 role=button（点一下重看），必须 ≥44px。360 档因换行本来够高，所以之前漏了。 */
+#endingQuote{min-height:44px;display:flex;align-items:center;justify-content:center}
+</style>

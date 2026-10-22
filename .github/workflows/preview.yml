@@ -1,0 +1,55 @@
+name: 预览构建（dev → /v2/）
+# 2026-10-18 起：推 dev 自动构建并部署到服务器的 /v2/ 预览路径。
+#
+# 与 deploy.yml 的分工：
+#   · deploy.yml  —— 推 main → 生产 :80（切换重构完成后才改它）
+#   · preview.yml —— 推 dev  → 预览 /v2/（本文件，重构期间的主战场）
+#
+# 两道硬门禁：
+#   1) build 必须成功（含白名单解析保护与逐文件哈希自校验）；
+#   2) 构建用 --strict-templates：12 页缺模板零件直接失败。
+#      （旧的「逐页 diff」门禁已于 2026-10-18 退役：手写源已删，无处可比）
+#
+# 需要的仓库 secret：SSH_KEY（服务器私钥全文）。
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 安装依赖
+        # 现在零依赖（npm install 也能跑）；Task 9 起会装 nunjucks
+        run: npm install --no-audit --no-fund
+
+      - name: 构建
+        run: npm run build -- --strict-templates
+
+      - name: 部署到 /v2/
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          HOST: 1.14.60.153
+          USER: ubuntu
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh && printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          SSH="ssh -i $HOME/.ssh/id_deploy -o StrictHostKeyChecking=accept-new $USER@$HOST"
+          tar czf /tmp/site.tgz -C public .
+          scp -i ~/.ssh/id_deploy -o StrictHostKeyChecking=accept-new /tmp/site.tgz "$USER@$HOST:/tmp/site.tgz"
+          $SSH 'set -e; sudo mkdir -p /var/www/elysiad-v2 && sudo chown ubuntu:ubuntu /var/www/elysiad-v2; sudo rm -rf /var/www/elysiad-v2.prev && sudo cp -a /var/www/elysiad-v2 /var/www/elysiad-v2.prev; find /var/www/elysiad-v2 -mindepth 1 -maxdepth 1 -exec rm -rf {} +; tar xzf /tmp/site.tgz -C /var/www/elysiad-v2; rm -f /tmp/site.tgz; echo 已部署: $(find /var/www/elysiad-v2 -type f | wc -l) 个文件'
+
+      - name: 线上自检
+        run: |
+          set -euo pipefail
+          code=$(curl -s -o /dev/null -w '%{http_code}' "http://1.14.60.153/v2/kevin/?cb=$RANDOM")
+          echo "/v2/kevin/ HTTP $code"
+          [ "$code" = "200" ] || { echo '预览不可达'; exit 1; }
