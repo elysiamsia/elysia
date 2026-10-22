@@ -20,11 +20,17 @@ verlt(){ [ "$(printf "%s\n%s\n" "$1" "$2" | sort -V | head -1)" = "$1" ] && [ "$
 
 echo "== 运行时版本 =="
 NGX=$(nginx -v 2>&1 | sed -E "s/.*nginx\/([0-9.]+).*/\1/")
-NODE=$(node -v 2>/dev/null | sed "s/^v//")
+# 服务实际用的 node（2026-10-23 起服务走 /opt 的 22.23.4，而 /usr/bin/node 仍是系统旧版）
+SVC_BIN=$(systemctl show -p ExecStart elysia-api 2>/dev/null | grep -oE "/[^ ;]*(node)[^ ;]*" | head -1)
+if [ -n "${SVC_BIN:-}" ] && [ -x "$SVC_BIN" ]; then
+  NODE=$("$SVC_BIN" -v 2>/dev/null | sed "s/^v//"); NODE_SRC="服务二进制"
+else
+  NODE=$(node -v 2>/dev/null | sed "s/^v//"); NODE_SRC="PATH 里的 node"
+fi
 PHPV=$(php -v 2>/dev/null | head -1 | sed -E "s/^PHP ([0-9.]+).*/\1/")
 GOV=$(go version 2>/dev/null | sed -E "s/.*go([0-9.]+).*/\1/")
 JAVAV=$(command -v java >/dev/null 2>&1 && java -version 2>&1 | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-echo "  nginx=${NGX:-无} node=${NODE:-无} php=${PHPV:-无} go=${GOV:-无} java=${JAVAV:-无}"
+echo "  nginx=${NGX:-无} node=${NODE:-无}(${NODE_SRC:-?}) php=${PHPV:-无} go=${GOV:-无} java=${JAVAV:-无}"
 
 echo
 echo "== Node.js（修复版 22.23.4 / 24.22.1 / 26.12.1）=="
