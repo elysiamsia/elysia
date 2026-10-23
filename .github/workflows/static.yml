@@ -45,9 +45,24 @@ jobs:
           set -euo pipefail
           mkdir -p ~/.ssh && printf "%s\n" "$SSH_KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
           ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
-          tar czf /tmp/site.tgz -C public .
-          scp -i ~/.ssh/id_deploy -o StrictHostKeyChecking=accept-new /tmp/site.tgz "$USER@$HOST:/tmp/site.tgz"
-          ssh -i ~/.ssh/id_deploy "$USER@$HOST" "set -e; WEB=/var/www/elysiad; sudo mkdir -p \$WEB && sudo chown ubuntu:ubuntu \$WEB; sudo rm -rf \$WEB.prev && sudo cp -a \$WEB \$WEB.prev; find \$WEB -mindepth 1 -maxdepth 1 -exec rm -rf {} +; tar xzf /tmp/site.tgz -C \$WEB; rm -f /tmp/site.tgz; echo 已发布 \$(find \$WEB -type f | wc -l) 个文件"
+
+          n=$(find public -type f | wc -l)
+          echo "本地产物 $n 个文件"
+          [ "$n" -ge 100 ] || { echo "产物过少，放弃发布"; exit 1; }
+
+          tar czf /tmp/elysia-deploy.tgz -C public .
+          ls -lh /tmp/elysia-deploy.tgz
+
+          # 先上传，再在服务器上核对包大小（2026-10-23 事故：包没送到就清了线上目录）
+          scp -i ~/.ssh/id_deploy -o StrictHostKeyChecking=accept-new /tmp/elysia-deploy.tgz "$USER@$HOST:/tmp/elysia-deploy.tgz"
+          LOCAL=$(stat -c %s /tmp/elysia-deploy.tgz)
+          REMOTE=$(ssh -i ~/.ssh/id_deploy "$USER@$HOST" 'stat -c %s /tmp/elysia-deploy.tgz 2>/dev/null || echo 0')
+          echo "包大小 本地=${LOCAL} 远端=${REMOTE}"
+          [ "$LOCAL" = "$REMOTE" ] || { echo "❌ 上传不完整或失败 —— 线上未动"; exit 1; }
+
+          # 发布逻辑在仓库里（deploy/remote-release.sh），CI 与本地共用同一份
+          scp -i ~/.ssh/id_deploy deploy/remote-release.sh "$USER@$HOST:/tmp/remote-release.sh"
+          ssh -i ~/.ssh/id_deploy "$USER@$HOST" 'WEBROOT=/var/www/elysiad bash /tmp/remote-release.sh'
       - name: 线上自检
         run: |
           set -euo pipefail

@@ -2,7 +2,7 @@
   "name": "elysiad-top",
   "private": true,
   "version": "0.0.0",
-  "description": "elysiad.top —— 逐火英察同人站与擂台后端",
+  "description": "elysiad.top — 逐火英桀同人站与擂台后端",
   "scripts": {
     "build": "node src/build/build.mjs",
     "verify": "node src/build/build.mjs --verify-only"

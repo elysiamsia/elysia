@@ -38,28 +38,30 @@ if [ "${1:-deploy}" = "rollback" ]; then
   exit 0
 fi
 
-# ⚠ 切换后（2026-10-18）：发布源头从「仓库根白名单装配」改为**构建产物 public/**。
-#   为什么：手写页已退役，postgres 白名单装配已无意义；build 自己就是装配器。
+# ⚠ 切换后（2026-10-18）：发布源头从「仓库根白名单装配」改为**构建产物 public/**（build 即装配器）。
+# ⚠ 2026-10-23：发布动作改由服务器端脚本 deploy/remote-release.sh 执行（本地与 CI 共用一份），
+#   顺序是「暂存 → 校验 → 备份 → 原子切换」，线上目录在新内容验证前**不动**。
 FROM_PUBLIC=1
 [ -d public ] || { echo "public/ 不存在，先 npm run build"; exit 1; }
 STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
 cp -a public/. "$STAGE"/
-echo "→ 待发布（public/）：$(find "$STAGE" -type f | wc -l) 个文件，$(du -sh "$STAGE" | cut -f1)"
+COUNT=$(find "$STAGE" -type f | wc -l)
+[ "$COUNT" -ge 100 ] || { echo "❌ public/ 只有 $COUNT 个文件，先跑 npm run build"; exit 1; }
+echo "→ 待发布（public/）：$COUNT 个文件，$(du -sh "$STAGE" | cut -f1)"
 
 TARBALL=$(mktemp -u).tgz
 tar czf "$TARBALL" -C "$STAGE" .
+ls -lh "$TARBALL" | awk '{print "→ 打包：" $5}'
 echo "→ 上传到 $DEPLOY_USER@$HOST"
 scp -i "$KEY" $SSHOPTS "$TARBALL" "$DEPLOY_USER@$HOST:/tmp/elysia-deploy.tgz"
 
-eval "$SSH" "'set -e
-  sudo mkdir -p $WEBROOT && sudo chown $DEPLOY_USER:$DEPLOY_USER $WEBROOT
-  # 备份上一版（拷到同级的 .prev；都在 /var/www 下 ⇒ 用 sudo）
-  sudo rm -rf $BACKUP && sudo cp -a $WEBROOT $BACKUP
-  # 清空站点目录内部（ubuntu 对自己这个目录有写权限 ⇒ 不需要 sudo）
-  find $WEBROOT -mindepth 1 -maxdepth 1 -exec rm -rf {} +
-  tar xzf /tmp/elysia-deploy.tgz -C $WEBROOT
-  rm -f /tmp/elysia-deploy.tgz
-  echo 已发布：\$(find $WEBROOT -type f | wc -l) 个文件'"
+# 远端发布脚本也一起送过去（不在服务器上常驻，避免两份逻辑不一致）
+REMOTE=$(mktemp)
+cp deploy/remote-release.sh "$REMOTE"
+scp -i "$KEY" $SSHOPTS "$REMOTE" "$DEPLOY_USER@$HOST:/tmp/remote-release.sh"
+rm -f "$REMOTE"
+
+eval "$SSH" "'WEBROOT=$WEBROOT BACKUP=$BACKUP bash /tmp/remote-release.sh'"
 rm -f "$TARBALL"
 echo "✅ 完成。回滚：./deploy/deploy.sh$( [ "$V2_MODE" = "1" ] && echo " --v2" ) rollback"
