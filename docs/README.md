@@ -30,6 +30,12 @@
 | [`ISSUES-AND-FIXES.md`](ISSUES-AND-FIXES.md) | 问题与解法总表（历史 bug 索引） |
 | `../content/characters/*.json` | 12 份角色数据（**唯一真源**） |
 
+### 运维与合规
+
+| 文档 | 内容 |
+|---|---|
+| [`ops/icp-and-https.md`](ops/icp-and-https.md) | **备案号悬挂**（粤ICP备2026047652号）、HTTPS 上线、公安联网备案待办、双 workflow 抢目录根因 |
+
 ### 安全
 
 | 文档 | 内容 |
