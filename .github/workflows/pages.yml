@@ -1,9 +1,14 @@
 name: 部署到 GitHub Pages（main = 全功能版）
 
 # 2026-11-03 分支模型：
-#   main   = 全功能版（含留言簿等交互式服务），只发 GitHub Pages，域名 elysia.biz
-#   server = 线上合规版，发自建服务器（deploy/static.yml 那条链）
+#   main   = 全功能版（含留言簿等交互式服务），域名 elysia.biz
+#   server = 线上合规版，发自建服务器（.github/workflows/static.yml 那条链）
 #   dev    = 开发分支，不直接发布
+#
+# elysia.biz 的出口有两个，喂的是同一份 public/：
+#   ① Cloudflare Pages（项目 elysia，DNS 里 apex/www 两条 CNAME → elysia-eu1.pages.dev）——**主出口**
+#   ② GitHub Pages（设置里 cname=elysia.biz，但 DNS 已交给 Cloudflare，这条现在只是备用）
+# ⚠ Pages 子域必须带区域后缀（earlier 写的 elysia.pages.dev 会触发 CF error 1014）。
 #
 # 这个 workflow 只做一件事：把 npm run build 的产物 public/ 原样交给 Pages。
 # 产物白名单来自 .github/workflows/static.yml 的 KEEP_FILES / KEEP_DIRS（build.mjs 会读它们），
@@ -52,6 +57,13 @@ jobs:
           # 改写必须真的落地：canonical 还指着 elysiad.top 就等于把本站标成重复内容。
           grep -q 'rel="canonical" href="https://elysia.biz/"' public/index.html
           ! grep -rq 'elysiad\.top' public --include='*.html' || { echo "还有页面残留 elysiad.top"; exit 1; }
+      - name: 发布到 Cloudflare Pages（elysia.biz 的真实出口）
+        run: npx --yes wrangler@4 pages deploy public --project-name elysia --branch main --commit-dirty=true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: d8092fc4824aae52b97c157cd1a96be0
+
+      # 下面两段是 GitHub Pages 的备用通道，DNS 已不在那边，失败也不影响 elysia.biz
       - uses: actions/upload-pages-artifact@v3
         with:
           path: public
