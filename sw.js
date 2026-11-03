@@ -1,4 +1,8 @@
-/* sw.js — 站点 Service Worker（2026-11-03，v3）
+/* sw.js — 站点 Service Worker（2026-11-03，v4）
+ *
+ * ── v4（2026-11-03）────────────────────────────────────────────
+ * 献花改为「从 70 起算、此后只记本机」（offline/flowers.local.js 用 localStorage），
+ * 页面脚本变了，版本号跟着换，免得回访者拿旧缓存继续看到旧文案。
  *
  * ── v3（2026-11-03，公安备案审查）──────────────────────────────
  * 线上已移除全部交互式服务（/count /flower /notes /api/*），SW 不再需要
@@ -18,7 +22,7 @@
  *   · 断网 / 超时 ⇒ 回退缓存（抗卡死这条能力保留）
  * 缓存版本号也必须**每次改 SW 时一起换**（v2），否则旧的 cache 不会被清。
  */
-var V = 'elysia-v3';
+var V = 'elysia-v4';
 var SHELL = ['/', '/assets/site.css', '/assets/site.js', '/favicon.svg'];
 var TIMEOUT = 2500;
 
