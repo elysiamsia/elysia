@@ -35,6 +35,10 @@
  *   真正的防线始终是限流与校验——Origin 本来就挡不住脚本伪造。
  */
 const ALLOWED_HOSTS = [
+  // 2026-11-03 起对外主域名是 elysia.biz（全功能版）；elysiad.top 留着，
+  // 将来合规解禁、接口搬回去时不必再改这里。
+  'elysia.biz',
+  'www.elysia.biz',
   'elysiad.top',
   'www.elysiad.top',
   // 本地调试用，上线后可以删掉
@@ -43,7 +47,18 @@ const ALLOWED_HOSTS = [
   '[::1]',
 ];
 
-const DEFAULT_ORIGIN = 'https://elysiad.top';
+const DEFAULT_ORIGIN = 'https://elysia.biz';
+
+/**
+ * 写入总闸。默认关：「只搭管道、先不开放写入」（需求方 2026-11-03 定）。
+ * 值来自 wrangler.toml 的 [vars] WRITES_ENABLED；没配就是关。
+ * 关着时不挡读接口——GET /count 与 GET /notes 照常，页面才不会一片空。
+ */
+function writesEnabled(env) {
+  const v = env && env.WRITES_ENABLED;
+  if (v === undefined || v === null || v === '') return false;
+  return String(v).trim().toLowerCase() === 'true';
+}
 
 /** 判定来源是否可信。空 Origin 放行：同源请求在部分浏览器里不带这个头。 */
 function originAllowed(origin) {
@@ -84,6 +99,15 @@ export default {
     }
 
     try {
+      // ── 写入总闸 ──────────────────────────────
+      // 只挡「产生数据」的两个口子；管理页的审核动作不受影响（审核存量留言是运维，不是开放写入）。
+      const isWrite =
+        (url.pathname === '/flower' && request.method === 'POST') ||
+        (url.pathname === '/notes' && request.method === 'POST');
+      if (isWrite && !writesEnabled(env)) {
+        return json({ ok: false, reason: 'readonly', message: '暂未开放' }, cors, 503);
+      }
+
       // ── 献花 ──────────────────────────────────
       if (url.pathname === '/count' && request.method === 'GET') {
         return json({ count: await getTotal(env) }, cors);
