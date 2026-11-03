@@ -34,6 +34,9 @@ jobs:
       - run: npm install --no-audit --no-fund
       - name: 构建（严格模式）
         run: npm run build -- --strict-templates
+        env:
+          # 全功能版对外域名是 elysia.biz：canonical / og:url / JSON-LD / 页脚署名都跟着改写。
+          SITE_ORIGIN: https://elysia.biz
       - name: 产物自检
         run: |
           set -euo pipefail
@@ -46,6 +49,9 @@ jobs:
           test -f public/guestbook/index.html
           test -f public/CNAME
           echo "CNAME = $(cat public/CNAME)"
+          # 改写必须真的落地：canonical 还指着 elysiad.top 就等于把本站标成重复内容。
+          grep -q 'rel="canonical" href="https://elysia.biz/"' public/index.html
+          ! grep -rq 'elysiad\.top' public --include='*.html' || { echo "还有页面残留 elysiad.top"; exit 1; }
       - uses: actions/upload-pages-artifact@v3
         with:
           path: public
