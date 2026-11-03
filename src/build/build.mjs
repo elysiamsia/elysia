@@ -22,6 +22,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import nunjucks from 'nunjucks';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -130,6 +131,28 @@ function readWhitelist() {
 
 const byName = (a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
 
+/**
+ * 丢掉 .gitignore 命中的文件。
+ *
+ * 为什么要有这一步：collect() 直接walk工作树，看不见 .gitignore。
+ * 于是本地构建会把 images/raw/**（原始素材，15 个文件）也拷进 public/，
+ * 而 CI 是干净 checkout、根本没有这些文件 —— 两边产物不一致，
+ * 2026-11-03 线上就被 /images/raw/signet/真我.png 直接 200 暴露过一次。
+ * 以 git 为准就不会再有第二套规则要同步。
+ */
+function dropIgnored(items) {
+  if (!fs.existsSync(path.join(ROOT, '.git'))) return items;
+  const r = spawnSync('git', ['check-ignore', '--stdin', '-z'], {
+    cwd: ROOT,
+    input: items.map((i) => i.rel).join('\0') + '\0',
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  if (r.error || (r.status !== 0 && r.status !== 1)) return items;
+  const ignored = new Set(String(r.stdout || '').split('\0').filter(Boolean));
+  return ignored.size ? items.filter((i) => !ignored.has(i.rel)) : items;
+}
+
 function collect(list) {
   const out = [];
   const walkDir = (abs, rel) => {
@@ -150,7 +173,7 @@ function collect(list) {
     if (!fs.existsSync(a)) { console.warn('[build] ! 白名单目录缺失: ' + d); continue; }
     walkDir(a, d);
   }
-  return out.sort((x, y) => (x.rel < y.rel ? -1 : x.rel > y.rel ? 1 : 0));
+  return dropIgnored(out).sort((x, y) => (x.rel < y.rel ? -1 : x.rel > y.rel ? 1 : 0));
 }
 
 function sha256(file) {
