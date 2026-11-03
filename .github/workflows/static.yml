@@ -21,6 +21,9 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # 2026-11-03 事故：run 41583003255 卡在 scp 上传 36 分钟（连接静默挂死，OpenSSH 默认永不超时）。
+    # 连接级硬化 + 作业级上限：让「连不上」在几分钟内变成一次明确的 failure，而不是挂满 6 小时。
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -43,6 +46,8 @@ jobs:
           SSH_KEY: ${{ secrets.SSH_KEY }}
           HOST: 1.14.60.153
           USER: ubuntu
+          # 建连 20s 超时；空闲 15s 探不到响应、连探 4 次就断开
+          SSH_OPTS: -o ConnectTimeout=20 -o ServerAliveInterval=15 -o ServerAliveCountMax=4
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh && printf "%s\n" "$SSH_KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
@@ -56,15 +61,15 @@ jobs:
           ls -lh /tmp/elysia-deploy.tgz
 
           # 先上传，再在服务器上核对包大小（2026-10-23 事故：包没送到就清了线上目录）
-          scp -i ~/.ssh/id_deploy -o StrictHostKeyChecking=accept-new /tmp/elysia-deploy.tgz "$USER@$HOST:/tmp/elysia-deploy.tgz"
+          scp $SSH_OPTS -i ~/.ssh/id_deploy -o StrictHostKeyChecking=accept-new /tmp/elysia-deploy.tgz "$USER@$HOST:/tmp/elysia-deploy.tgz"
           LOCAL=$(stat -c %s /tmp/elysia-deploy.tgz)
-          REMOTE=$(ssh -i ~/.ssh/id_deploy "$USER@$HOST" 'stat -c %s /tmp/elysia-deploy.tgz 2>/dev/null || echo 0')
+          REMOTE=$(ssh $SSH_OPTS -i ~/.ssh/id_deploy "$USER@$HOST" 'stat -c %s /tmp/elysia-deploy.tgz 2>/dev/null || echo 0')
           echo "包大小 本地=${LOCAL} 远端=${REMOTE}"
           [ "$LOCAL" = "$REMOTE" ] || { echo "❌ 上传不完整或失败 —— 线上未动"; exit 1; }
 
           # 发布逻辑在仓库里（deploy/remote-release.sh），CI 与本地共用同一份
-          scp -i ~/.ssh/id_deploy deploy/remote-release.sh "$USER@$HOST:/tmp/remote-release.sh"
-          ssh -i ~/.ssh/id_deploy "$USER@$HOST" 'WEBROOT=/var/www/elysiad bash /tmp/remote-release.sh'
+          scp $SSH_OPTS -i ~/.ssh/id_deploy deploy/remote-release.sh "$USER@$HOST:/tmp/remote-release.sh"
+          ssh $SSH_OPTS -i ~/.ssh/id_deploy "$USER@$HOST" 'WEBROOT=/var/www/elysiad bash /tmp/remote-release.sh'
       - name: 线上自检
         run: |
           set -euo pipefail

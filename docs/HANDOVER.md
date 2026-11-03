@@ -764,6 +764,7 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py "https://elysiad.top/sakura/" size 12
 | **新增站点文件必须改进白名单** | `static.yml` 的 `KEEP_FILES` / `KEEP_DIRS`，否则不会上线 |
 | ⚠ **白名单是「静默」的 —— 不报错，只是不出现** | 构建脚本只 `cp -r` 名单里的目录。**不在名单里的连产物都进不去，而且不会失败**——那道自检拦的是「不该进的路径」（`tools` / `docs` / `worker`…），**不拦「该进却没进的」**。<br>2026-10-01 实测：`mobius/index.html` 在 `main` 上躺了 10 天，线上一直是 **404**，没有任何报警。<br>**验法（唯一可靠）**：`curl -s -o /dev/null -w '%{http_code}\n' https://elysiad.top/<新页>/` —— 本地全绿 ≠ 线上存在 |
 | **`elysiad.top` 自建 nginx 直出、无 CDN；`elysia.biz` 走 GitHub Pages（Fastly）**（2026-11-03 起） | 「改动没生效」先查两处：`sw.js` 的版本号（改页面必须换，见 §2.3.9）与手机浏览器缓存。`elysia.biz` 还多一层 Pages 部署（约 1 分钟）与 Fastly 边缘缓存 |
+| **CI 部署卡在「上传并原子替换」**（2026-11-03 run `41583003255` 卡 36 分钟后取消） | OpenSSH **默认永不超时**：连接静默挂死就一直挂着，直到作业级 6 小时上限。已在 `static.yml` 加 `SSH_OPTS`（`ConnectTimeout=20` / `ServerAliveInterval=15` / `ServerAliveCountMax=4`）与 `timeout-minutes: 45`。卡住时的处置：`gh run cancel <id>` —— 原子替换没执行，**线上不动**，`Last-Modified` 不会变 |
 | **上线后要验线上** | 本地全绿 ≠ 线上全绿。见 §4.4 |
 
 ### 6.2 Cloudflare（已退役，仅作恢复参考）
