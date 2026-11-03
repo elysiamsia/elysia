@@ -39,7 +39,9 @@ jobs:
           set -euo pipefail
           files=$(find public -type f | wc -l)
           echo "产物文件数：$files"
-          test "$files" -ge 140 || { echo "产物文件数异常，疑似白名单掉文件"; exit 1; }
+          # main 的构建基线是 131 个文件（2026-11-03 本地实测，与 CI 一致）。
+          # 掉到 111 是历史坑：KEEP_FILES/KEEP_DIRS 的引号没剥掉 ⇒ 白名单按空格切成了碎片。
+          test "$files" -ge 125 || { echo "产物文件数异常，疑似白名单掉文件（111 症状）"; exit 1; }
           test -f public/index.html
           test -f public/guestbook/index.html
           test -f public/CNAME
