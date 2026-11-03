@@ -157,6 +157,7 @@
 | 后端 | `elysia-api` **inactive + disabled**，8787 无监听；数据仍在 `/var/lib/elysia/elysia.db`（花 70、2 条已审留言、擂台账号） |
 | 产物 | **145 文件**（12 角色页 + 首页 + armor + 404 + assets/data/images/根文件） |
 | 部署链 | 本地 `deploy.sh` 或 push `server` → `static.yml`（**唯一入口**，旧的 `deploy.yml` 已删除归档；`main` 不触发生产） |
+| GitHub Pages | 源分支 `main`（**全功能版**，`KEEP_DIRS` 含 `guestbook`），自定域名 **`elysia.biz`**（仓库 `CNAME` + Pages 设置，2026-11-03 从 `elysiad.top` 换出）；DNS 需在阿里云加 `elysia.biz CNAME elysiamsia.github.io`。⚠ `.biz` 不在工信部允许备案的顶级域列表里，只能作海外站 |
 
 #### 2.3.5 合规状态（公安审查，2026-11-03）
 
