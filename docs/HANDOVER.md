@@ -116,6 +116,7 @@
 |---|---|
 | 装依赖（只需一次） | `npm install` |
 | 构建到 `public/` | `npm run build -- --strict-templates` |
+| 换发布域构建 | `SITE_ORIGIN=https://elysia.biz npm run build -- --strict-templates`（自校验后整树改写域；不设 = 默认 `elysiad.top`，行为不变） |
 | 只校验不写 | `npm run verify` |
 | 单页构建 | `node src/build/build.mjs --single <key>` |
 | 本地预览 | `cd public && python -m http.server 8801` |
@@ -157,7 +158,7 @@
 | 后端 | `elysia-api` **inactive + disabled**，8787 无监听；数据仍在 `/var/lib/elysia/elysia.db`（花 70、2 条已审留言、擂台账号） |
 | 产物 | **145 文件**（12 角色页 + 首页 + armor + 404 + assets/data/images/根文件） |
 | 部署链 | 本地 `deploy.sh` 或 push `server` → `static.yml`（**唯一入口**，旧的 `deploy.yml` 已删除归档；`main` 不触发生产） |
-| GitHub Pages | 源分支 `main`（**全功能版**，`KEEP_DIRS` 含 `guestbook`），自定域名 **`elysia.biz`**（仓库 `CNAME` + Pages 设置，2026-11-03 从 `elysiad.top` 换出）；DNS 需在阿里云加 `elysia.biz CNAME elysiamsia.github.io`。⚠ `.biz` 不在工信部允许备案的顶级域列表里，只能作海外站 |
+| GitHub Pages（全功能版） | 源分支 `main`（`KEEP_DIRS` 含 `guestbook`）；`.github/workflows/pages.yml` = checkout → `npm run build -- --strict-templates`（带 `SITE_ORIGIN=https://elysia.biz`）→ 产物自检（≥125 文件 + canonical 断言 + 无 `elysiad.top` 残留）→ `upload-pages-artifact` → `deploy-pages`，一次约 50 秒；自定域名 **`elysia.biz`**（`CNAME` + Pages 设置，2026-11-03 从 `elysiad.top` 换出），HTTPS 已强制、证书到 **2027-02-01**、`www` 301 回主域；DNS 在阿里云（`@` 与 `www` 两条 CNAME → `elysiamsia.github.io`）。⚠ `.biz` 不在工信部允许备案的顶级域列表里，只能作海外站 |
 
 #### 2.3.5 合规状态（公安审查，2026-11-03）
 
@@ -235,7 +236,8 @@
 | 仓库 | `github.com/elysiamsia/elysia`（public） |
 | 默认分支 | `main` |
 | **本地工作副本** | **`D:\claude-code\elysia-main`** |
-| 线上 | **自建腾讯轻量服务器** `1.14.60.153` → `https://elysiad.top`（备案已通过，ICP 号已悬挂；原 GitHub Pages + Cloudflare 已退役） |
+| 线上（合规版） | **自建腾讯轻量服务器** `1.14.60.153` → `https://elysiad.top`（备案已通过，ICP 号已悬挂） |
+| 线上（全功能版） | **GitHub Pages** → `https://elysia.biz`（源 `main`，2026-11-03 起；Cloudflare 那条链仍是退役状态） |
 
 > ⚠ 早期文档里写的工作副本路径是 `D:\claude-code\elysia`，**那个目录已不存在**。
 
@@ -245,7 +247,8 @@
 dev     ← 日常作业分支；push 不触发任何部署（preview.yml 已停用，/v2/ 已删）
 server  ← 线上合规版；push 即自动部署生产（static.yml，唯一入口）
 main    ← 全功能版（含献花 / 留言簿 / 擂台）；GitHub Pages 源分支，域名 elysia.biz；
-          其 static.yml 为仅 workflow_dispatch，推 main 不会上线
+          push main → pages.yml 自动发布（构建时 SITE_ORIGIN=https://elysia.biz，
+          canonical / og:url / JSON-LD / 页脚署名一并改写）；其 static.yml 仅 workflow_dispatch
 ```
 
 **所有改动在 `dev` 上做，验过再把提交合进 `server` 发版。** `main` 是合规解除后恢复全功能
@@ -760,7 +763,7 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py "https://elysiad.top/sakura/" size 12
 | **只有 `main` 会部署** | `dev` 上随便折腾，不影响线上 |
 | **新增站点文件必须改进白名单** | `static.yml` 的 `KEEP_FILES` / `KEEP_DIRS`，否则不会上线 |
 | ⚠ **白名单是「静默」的 —— 不报错，只是不出现** | 构建脚本只 `cp -r` 名单里的目录。**不在名单里的连产物都进不去，而且不会失败**——那道自检拦的是「不该进的路径」（`tools` / `docs` / `worker`…），**不拦「该进却没进的」**。<br>2026-10-01 实测：`mobius/index.html` 在 `main` 上躺了 10 天，线上一直是 **404**，没有任何报警。<br>**验法（唯一可靠）**：`curl -s -o /dev/null -w '%{http_code}\n' https://elysiad.top/<新页>/` —— 本地全绿 ≠ 线上存在 |
-| **现在是自建 nginx 直出、没有 CDN**（2026-11-03 起） | 「改动没生效」先查两处：`sw.js` 的版本号（改页面必须换，见 §2.3.9）与手机浏览器缓存。旧的「GitHub Pages 10 分钟 + Cloudflare 2 分钟」两层缓存已不存在 |
+| **`elysiad.top` 自建 nginx 直出、无 CDN；`elysia.biz` 走 GitHub Pages（Fastly）**（2026-11-03 起） | 「改动没生效」先查两处：`sw.js` 的版本号（改页面必须换，见 §2.3.9）与手机浏览器缓存。`elysia.biz` 还多一层 Pages 部署（约 1 分钟）与 Fastly 边缘缓存 |
 | **上线后要验线上** | 本地全绿 ≠ 线上全绿。见 §4.4 |
 
 ### 6.2 Cloudflare（已退役，仅作恢复参考）

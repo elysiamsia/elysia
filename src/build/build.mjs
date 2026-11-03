@@ -28,6 +28,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const OUT = path.join(ROOT, 'public');
+const DEFAULT_HOST = 'elysiad.top';   // 站点默认域；SITE_ORIGIN 可覆盖（GitHub Pages 那份用 elysia.biz）
 const WF = path.join(ROOT, '.github', 'workflows', 'static.yml');
 const VERIFY_ONLY = process.argv.includes('--verify-only');
 const STRICT_TEMPLATES = process.argv.includes('--strict-templates');
@@ -230,6 +231,31 @@ function main() {
   console.log('');
   console.log('[build] 模式: ' + (VERIFY_ONLY ? 'verify-only（不拷贝）' : 'build（拷贝+自校验）'));
   console.log('[build] OK ' + src.length + ' files identical  digest=' + digest);
+
+  // 自定域发布：SITE_ORIGIN 的 host 与默认域不同时，构建结束后整树改写一次。
+  // 放在自校验之后，是为了不动「src 与 public 哈希一致」这条不变量；
+  // 默认不设 = 行为与改造前完全一样（server 分支就是这条路）。
+  const origin = process.env.SITE_ORIGIN;
+  if (origin) {
+    const host = new URL(origin).host;
+    if (host !== DEFAULT_HOST) {
+      const texts = new Set(['.html', '.xml', '.txt', '.json', '.js', '.css', '.webmanifest']);
+      let n = 0;
+      const walk = (dir) => {
+        for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+          const p = path.join(dir, e.name);
+          if (e.isDirectory()) { walk(p); continue; }
+          if (!texts.has(path.extname(e.name))) continue;
+          const s = fs.readFileSync(p, 'utf8');
+          if (!s.includes(DEFAULT_HOST)) continue;
+          fs.writeFileSync(p, s.split(DEFAULT_HOST).join(host), 'utf8');
+          n++;
+        }
+      };
+      walk(OUT);
+      console.log('[build] origin: ' + DEFAULT_HOST + ' → ' + host + '（改写 ' + n + ' 个文件）');
+    }
+  }
 }
 
 main();
