@@ -156,7 +156,7 @@
 | 404 | `error_page 404 /404.html;`（站内 404 带备案号，`/guestbook/` / `/v2/` / `/count` 都落到这里） |
 | 后端 | `elysia-api` **inactive + disabled**，8787 无监听；数据仍在 `/var/lib/elysia/elysia.db`（花 70、2 条已审留言、擂台账号） |
 | 产物 | **145 文件**（12 角色页 + 首页 + armor + 404 + assets/data/images/根文件） |
-| 部署链 | 本地 `deploy.sh` 或 push `main` → `static.yml`（**唯一入口**，旧的 `deploy.yml` 已删除归档） |
+| 部署链 | 本地 `deploy.sh` 或 push `server` → `static.yml`（**唯一入口**，旧的 `deploy.yml` 已删除归档；`main` 不触发生产） |
 
 #### 2.3.5 合规状态（公安审查，2026-11-03）
 
@@ -241,11 +241,14 @@
 ### 3.2 分支与部署
 
 ```
-dev   ← 日常作业分支，push 不触发部署
-main  ← push 即自动部署（static.yml）
+dev     ← 日常作业分支；push 不触发任何部署（preview.yml 已停用，/v2/ 已删）
+server  ← 线上合规版；push 即自动部署生产（static.yml，唯一入口）
+main    ← 全功能版（含献花 / 留言簿 / 擂台）；GitHub Pages 源分支，域名 elysia.biz；
+          其 static.yml 为仅 workflow_dispatch，推 main 不会上线
 ```
 
-**所有改动在 `dev` 上做，需求方检查后自己合并到 `main`。** 不要替他合并。
+**所有改动在 `dev` 上做，验过再把提交合进 `server` 发版。** `main` 是合规解除后恢复全功能
+服务的基线，冻结不进功能提交（恢复步骤见 `ops/compliance-offline.md`）。**不要替需求方合并任何分支。**
 
 > 💡 需求方有时候会**直接在 `main` 上小改**（例如手改 `index.html`）。
 > 这会让 `dev` 之后的合并产生冲突 —— **解决办法很简单：在 `dev` 上 `git merge origin/main`
@@ -587,7 +590,7 @@ taskkill //F //PID <pid>                               # 杀
 # 站点（推荐：本地构建后发布，能当场验收产物）
 npm run build -- --strict-templates && bash deploy/deploy.sh
 
-# 或者 push 到 main（static.yml 自动构建 → 原子切换，约 20 秒）
+# 或者 push 到 server（static.yml 自动构建 → 原子切换，约 20 秒）
 # Worker：已退役（2026-11-03），恢复花笺时再 `cd worker && wrangler deploy`
 ```
 
