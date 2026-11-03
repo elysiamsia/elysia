@@ -116,7 +116,8 @@
 |---|---|
 | 装依赖（只需一次） | `npm install` |
 | 构建到 `public/` | `npm run build -- --strict-templates` |
-| 换发布域构建 | `SITE_ORIGIN=https://elysia.biz npm run build -- --strict-templates`（自校验后整树改写域；不设 = 默认 `elysiad.top`，行为不变） |
+| 换发布域构建（全功能版） | `SITE_ORIGIN=https://elysia.biz npm run build -- --strict-templates`（改写发生在**自校验之前**，compare 按改写后的字节比；不设 = 默认 `elysiad.top`，行为与改造前一致） |
+| 两个变体由谁决定 | `SITE_ORIGIN` 的 host：默认域 ⇒ 花瓣用 `offline/flowers.local.js`（纯本地、不发请求）+ **不发布** `guestbook/`；换成别的域 ⇒ 花瓣用 `assets/flowers.js`（走 Worker）+ 把 `guestbook/` 补进白名单。**合规由白名单守，不靠分支内容差异** |
 | 只校验不写 | `npm run verify` |
 | 单页构建 | `node src/build/build.mjs --single <key>` |
 | 本地预览 | `cd public && python -m http.server 8801` |
@@ -248,6 +249,7 @@
 dev     ← 日常作业分支；push 不触发任何部署（preview.yml 已停用，/v2/ 已删）
 server  ← 线上合规版；push 即自动部署生产（static.yml，唯一入口）
 main    ← 全功能版（含献花 / 留言簿 / 擂台）；Cloudflare Pages 出口，域名 elysia.biz；
+          `dev` 已是超集 ⇒ 往 `main` 送东西直接 `git merge dev`（快进），不必逐文件抄；
           push main → pages.yml（构建时 SITE_ORIGIN=https://elysia.biz，canonical /
           og:url / JSON-LD / 页脚署名一并改写）→ wrangler pages deploy；
           接口由 Worker elysia-flowers 挂在 elysia.biz/count、/flower、/notes*（写闸关）；
@@ -256,11 +258,11 @@ main    ← 全功能版（含献花 / 留言簿 / 擂台）；Cloudflare Pages 
 
 **所有改动在 `dev` 上做，验过再把提交合进 `server` 发版。** `main` 是全功能版基线（合规解除后要恢复的东西都在上面），2026-11-03 起它自己也对外发布了（elysia.biz，见 §2.3.4）。**不要替需求方合并任何分支。**
 
-> ⚠ **`dev` 与 `main` 已经结构性分叉**（2026-11-03）：`dev` 是合规版（没有 `guestbook/`，
-> `assets/flowers.js` 是纯本地版，`worker/wrangler.toml` 的路由还写着 `elysiad.top`），
-> `main` 是全功能版（有 `guestbook/`、交互版 flowers.js、Worker 路由已换 `elysia.biz` 并带写闸）。
-> ⇒ **把 `dev` 整枝 merge 进 `main` 会把这几样交互功能删掉**。往 `main` 送东西请用
-> `git checkout main -- <文件>` 或 cherry-pick 单个提交；真要整枝合并，先逐文件核对上面那三处。
+> ✅ **`dev` 已是超集**（2026-11-03 合并后）：`main` 的交互内容（`guestbook/`、交互版
+> `assets/flowers.js`、Worker 路由与写闸、`pages.yml`）已整枝并回 `dev`，所以 `dev → main` 是**快进**，
+> 不再有「合并会把交互功能删掉」那个坑。合规版与全功能版的差异改成**构建期**决定（见 §2.3.2 那两行），
+> 不再靠分支内容差异：`dev → server` 之所以仍然安全，是因为 `server` 的 `static.yml` 白名单里**没有**
+> `guestbook/`，而默认域构建也不会把 `offline/flowers.local.js` 换成交互版。
 
 > 💡 需求方有时候会**直接在 `main` 上小改**（例如手改 `index.html`）。
 > 这会让 `dev` 之后的合并产生冲突 —— **解决办法很简单：在 `dev` 上 `git merge origin/main`

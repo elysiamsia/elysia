@@ -29,6 +29,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..', '..');
 const OUT = path.join(ROOT, 'public');
 const DEFAULT_HOST = 'elysiad.top';   // 站点默认域；SITE_ORIGIN 可覆盖（GitHub Pages 那份用 elysia.biz）
+// SITE_ORIGIN 的 host 与默认域不同时，构建末尾会整树改写文本文件里的域名。
+// 自校验必须按「改写后」的字节比，否则 build 之后的 verify-only 会把每条被改写的文件报成不一致。
+const REWRITE_HOST = (() => {
+  const o = process.env.SITE_ORIGIN;
+  if (!o) return null;
+  const h = new URL(o).host;
+  return h === DEFAULT_HOST ? null : h;
+})();
+const TEXT_EXT = new Set(['.html', '.xml', '.txt', '.json', '.js', '.css', '.webmanifest']);
 const WF = path.join(ROOT, '.github', 'workflows', 'static.yml');
 const VERIFY_ONLY = process.argv.includes('--verify-only');
 const STRICT_TEMPLATES = process.argv.includes('--strict-templates');
@@ -148,6 +157,14 @@ function sha256(file) {
   return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 }
 
+// 源文件按「会被改写成的样子」取哈希：与 public/ 里那一份对得上。
+function sha256Source(item) {
+  if (!REWRITE_HOST || !TEXT_EXT.has(path.extname(item.rel))) return sha256(item.abs);
+  const s = fs.readFileSync(item.abs, 'utf8');
+  const out = s.includes(DEFAULT_HOST) ? s.split(DEFAULT_HOST).join(REWRITE_HOST) : s;
+  return crypto.createHash('sha256').update(out).digest('hex');
+}
+
 function hashTree(dir) {
   const map = new Map();
   if (!fs.existsSync(dir)) return map;
@@ -169,7 +186,7 @@ function compare(src, dstMap) {
     if (rendered.has(item.rel)) continue;   // 渲染页与源不同是**预期**，由 diff_pages 把关
     const h = dstMap.get(item.rel);
     if (!h) problems.push('缺失: ' + item.rel);
-    else if (h !== sha256(item.abs)) problems.push('内容不一致: ' + item.rel);
+    else if (h !== sha256Source(item)) problems.push('内容不一致: ' + item.rel);
   }
   const srcRels = new Set(src.map((x) => x.rel));
   for (const rel of dstMap.keys()) if (!srcRels.has(rel) && !rendered.has(rel)) problems.push('产物里多出: ' + rel);
@@ -178,8 +195,28 @@ function compare(src, dstMap) {
 
 function main() {
   const list = readWhitelist();
+
+  // 发布域决定两处变体（一条规则，两个落点）：
+  //   elysiad.top（合规版）：白名单里**没有** guestbook/，花瓣用 offline/flowers.local.js（不发任何请求）
+  //   elysia.biz（全功能版）：白名单补上 guestbook/，花瓣用 assets/flowers.js（走 Worker 的 /count /flower）
+  // 合规由白名单守住：server 分支的 static.yml 里本来就没有 guestbook，这条 push 只影响全功能构建。
+  const siteHost = process.env.SITE_ORIGIN ? new URL(process.env.SITE_ORIGIN).host : DEFAULT_HOST;
+  const fullSite = siteHost !== DEFAULT_HOST;
+  if (fullSite && !list.dirs.includes('guestbook')) list.dirs.push('guestbook');
+
   const src = collect(list);
   if (!src.length) fail('源清单为空，拒绝继续');
+
+  // 花束脚本按发布域选变体。直接改源条目的 abs：
+  // 拷贝、compare、--verify-only 看到的是同一份字节，自校验不受影响。
+  const flowers = src.find((i) => i.rel === 'assets/flowers.js');
+  if (flowers) {
+    const localVariant = path.join(ROOT, 'offline', 'flowers.local.js');
+    if (!fullSite && !fs.existsSync(localVariant)) fail('缺离线变体 offline/flowers.local.js');
+    flowers.abs = fullSite ? path.join(ROOT, 'assets', 'flowers.js') : localVariant;
+    console.log('[build] flowers.js: ' + (fullSite ? '交互版（走 Worker）' : '合规版（纯本地，不发请求）'));
+    console.log('[build] guestbook/: ' + (fullSite ? '随全功能版发布' : '不发布（白名单未含）'));
+  }
 
   if (!VERIFY_ONLY) {
     if (fs.existsSync(OUT)) fs.rmSync(OUT, { recursive: true, force: true });
@@ -207,6 +244,30 @@ function main() {
       console.log('[build] strict-templates：' + keys.length + ' 页模板齐全');
     }
     for (const key of pages) renderPage(key);
+  } else {
+    // --verify-only 不渲染，但「产物里多出」那条判据要知道哪些产物**本来**就会多出来，
+    // 否则每个角色页都会被报成多出的文件（这个模式的判定就废了）。
+    for (const key of renderablePages()) rendered.add(key + '/index.html');
+  }
+
+  // 自定域发布：SITE_ORIGIN 的 host 与默认域不同时，把产物里的域名整树改写一次。
+  // 必须在自校验**之前**做，compare 才能拿「改写后的字节」对「改写后应有的字节」（sha256Source）。
+  // verify-only 不改任何文件，只比对上一次构建留下的产物。
+  if (!VERIFY_ONLY && REWRITE_HOST) {
+    let n = 0;
+    const walk = (dir) => {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const p = path.join(dir, e.name);
+        if (e.isDirectory()) { walk(p); continue; }
+        if (!TEXT_EXT.has(path.extname(e.name))) continue;
+        const s = fs.readFileSync(p, 'utf8');
+        if (!s.includes(DEFAULT_HOST)) continue;
+        fs.writeFileSync(p, s.split(DEFAULT_HOST).join(REWRITE_HOST), 'utf8');
+        n++;
+      }
+    };
+    walk(OUT);
+    console.log('[build] origin: ' + DEFAULT_HOST + ' → ' + REWRITE_HOST + '（改写 ' + n + ' 个文件）');
   }
 
   const dstMap = hashTree(OUT);
@@ -232,30 +293,6 @@ function main() {
   console.log('[build] 模式: ' + (VERIFY_ONLY ? 'verify-only（不拷贝）' : 'build（拷贝+自校验）'));
   console.log('[build] OK ' + src.length + ' files identical  digest=' + digest);
 
-  // 自定域发布：SITE_ORIGIN 的 host 与默认域不同时，构建结束后整树改写一次。
-  // 放在自校验之后，是为了不动「src 与 public 哈希一致」这条不变量；
-  // 默认不设 = 行为与改造前完全一样（server 分支就是这条路）。
-  const origin = process.env.SITE_ORIGIN;
-  if (origin) {
-    const host = new URL(origin).host;
-    if (host !== DEFAULT_HOST) {
-      const texts = new Set(['.html', '.xml', '.txt', '.json', '.js', '.css', '.webmanifest']);
-      let n = 0;
-      const walk = (dir) => {
-        for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-          const p = path.join(dir, e.name);
-          if (e.isDirectory()) { walk(p); continue; }
-          if (!texts.has(path.extname(e.name))) continue;
-          const s = fs.readFileSync(p, 'utf8');
-          if (!s.includes(DEFAULT_HOST)) continue;
-          fs.writeFileSync(p, s.split(DEFAULT_HOST).join(host), 'utf8');
-          n++;
-        }
-      };
-      walk(OUT);
-      console.log('[build] origin: ' + DEFAULT_HOST + ' → ' + host + '（改写 ' + n + ' 个文件）');
-    }
-  }
 }
 
 main();

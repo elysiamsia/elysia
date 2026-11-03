@@ -16,12 +16,20 @@ compatibility_date = "2026-09-15"
 #   而页面看起来完全正常（降级是静默的，设计如此），所以没人发现。
 #   需求方手机实拍：QQ 浏览器「本机累计 3 朵」 vs 桌面浏览器「这里已收到 7 朵花」。
 #   只加这两条就够了，**不要**改成 `elysiad.top/*`——那会把整站静态页面也吞进 Worker。
+# ⚠ 2026-11-03：主域名换成 elysia.biz（全功能版，静态在 Cloudflare Pages 上）。
+#   elysiad.top 的 zone 已不在 Cloudflare（NS 在 DNSPod），旧四条路由全部失效。
+#   仍然**只挂接口路径**，不要写成 elysia.biz/* —— 那会把整站静态页面也吞进 Worker。
 routes = [
-  { pattern = "flowers.elysiad.top", custom_domain = true },
-  { pattern = "elysiad.top/notes*", zone_name = "elysiad.top" },
-  { pattern = "elysiad.top/count", zone_name = "elysiad.top" },
-  { pattern = "elysiad.top/flower", zone_name = "elysiad.top" }
+  { pattern = "elysia.biz/notes*", zone_name = "elysia.biz" },
+  { pattern = "elysia.biz/count", zone_name = "elysia.biz" },
+  { pattern = "elysia.biz/flower", zone_name = "elysia.biz" }
 ]
+
+# 写入总闸。「只搭管道、先不开放写入」（需求方 2026-11-03 定）。
+# 关着时 /flower 与 POST /notes 返回 503 + {ok:false,reason:"readonly"}，前端显示「暂未开放」；
+# GET /count、GET /notes 照常可读。要开放：改成 "true" 再 wrangler deploy，前端一行不用动。
+[vars]
+WRITES_ENABLED = "false"
 
 # 献花计数
 [[kv_namespaces]]

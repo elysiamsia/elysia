@@ -1,0 +1,79 @@
+name: 部署到 GitHub Pages（main = 全功能版）
+
+# 2026-11-03 分支模型：
+#   main   = 全功能版（含留言簿等交互式服务），域名 elysia.biz
+#   server = 线上合规版，发自建服务器（.github/workflows/static.yml 那条链）
+#   dev    = 开发分支，不直接发布
+#
+# elysia.biz 的出口有两个，喂的是同一份 public/：
+#   ① Cloudflare Pages（项目 elysia，DNS 里 apex/www 两条 CNAME → elysia-eu1.pages.dev）——**主出口**
+#   ② GitHub Pages（设置里 cname=elysia.biz，但 DNS 已交给 Cloudflare，这条现在只是备用）
+# ⚠ Pages 子域必须带区域后缀（earlier 写的 elysia.pages.dev 会触发 CF error 1014）。
+#
+# 这个 workflow 只做一件事：把 npm run build 的产物 public/ 原样交给 Pages。
+# 产物白名单来自 .github/workflows/static.yml 的 KEEP_FILES / KEEP_DIRS（build.mjs 会读它们），
+# 所以不要在那边删掉那两行，否则 Pages 这边会掉文件。
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: 构建（严格模式）
+        run: npm run build -- --strict-templates
+        env:
+          # 全功能版对外域名是 elysia.biz：canonical / og:url / JSON-LD / 页脚署名都跟着改写。
+          SITE_ORIGIN: https://elysia.biz
+      - name: 产物自检
+        run: |
+          set -euo pipefail
+          files=$(find public -type f | wc -l)
+          echo "产物文件数：$files"
+          # main 的构建基线是 131 个文件（2026-11-03 本地实测，与 CI 一致）。
+          # 掉到 111 是历史坑：KEEP_FILES/KEEP_DIRS 的引号没剥掉 ⇒ 白名单按空格切成了碎片。
+          test "$files" -ge 125 || { echo "产物文件数异常，疑似白名单掉文件（111 症状）"; exit 1; }
+          test -f public/index.html
+          test -f public/guestbook/index.html
+          test -f public/CNAME
+          echo "CNAME = $(cat public/CNAME)"
+          # 改写必须真的落地：canonical 还指着 elysiad.top 就等于把本站标成重复内容。
+          grep -q 'rel="canonical" href="https://elysia.biz/"' public/index.html
+          ! grep -rq 'elysiad\.top' public --include='*.html' || { echo "还有页面残留 elysiad.top"; exit 1; }
+      - name: 发布到 Cloudflare Pages（elysia.biz 的真实出口）
+        run: npx --yes wrangler@4 pages deploy public --project-name elysia --branch main --commit-dirty=true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: d8092fc4824aae52b97c157cd1a96be0
+
+      # 下面两段是 GitHub Pages 的备用通道，DNS 已不在那边，失败也不影响 elysia.biz
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
