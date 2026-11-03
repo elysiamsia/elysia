@@ -1,0 +1,59 @@
+name: 部署到 GitHub Pages（main = 全功能版）
+
+# 2026-11-03 分支模型：
+#   main   = 全功能版（含留言簿等交互式服务），只发 GitHub Pages，域名 elysia.biz
+#   server = 线上合规版，发自建服务器（deploy/static.yml 那条链）
+#   dev    = 开发分支，不直接发布
+#
+# 这个 workflow 只做一件事：把 npm run build 的产物 public/ 原样交给 Pages。
+# 产物白名单来自 .github/workflows/static.yml 的 KEEP_FILES / KEEP_DIRS（build.mjs 会读它们），
+# 所以不要在那边删掉那两行，否则 Pages 这边会掉文件。
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: 构建（严格模式）
+        run: npm run build -- --strict-templates
+      - name: 产物自检
+        run: |
+          set -euo pipefail
+          files=$(find public -type f | wc -l)
+          echo "产物文件数：$files"
+          test "$files" -ge 140 || { echo "产物文件数异常，疑似白名单掉文件"; exit 1; }
+          test -f public/index.html
+          test -f public/guestbook/index.html
+          test -f public/CNAME
+          echo "CNAME = $(cat public/CNAME)"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
