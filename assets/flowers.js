@@ -74,7 +74,16 @@
     opts.signal = ctrl.signal;
     return fetch(url, opts).then(function (r) {
       clearTimeout(timer);
-      if (!r.ok) throw new Error('HTTP ' + r.status);
+      if (!r.ok) {
+        // 把状态码与响应体一起带出去：503 + {reason:'readonly'} 是「暂未开放」，
+        // 必须和「网络失败」分开说，否则访客会以为是自己没送到。
+        return r.json().catch(function () { return null; }).then(function (d) {
+          var e = new Error('HTTP ' + r.status);
+          e.status = r.status;
+          e.data = d;
+          throw e;
+        });
+      }
       return r.json();
     }).catch(function (err) {
       clearTimeout(timer);
@@ -114,6 +123,15 @@
     // 自己这一朵诚实地括在本机计数里，不谎称它进了全局。
     countEl.innerHTML = '这里已收到 <b>' + knownShared + '</b> 朵花';
     hintEl.textContent = '你的这一朵先留在本机（共 ' + n + ' 朵），等下再来送一次吧';
+  }
+
+  // 写入总闸关着（2026-11-03 起「只搭管道、先不开放写入」）。
+  // 不谎称「已送达」：花没进全局，本机计数也不加。
+  function showClosed() {
+    if (knownShared !== null) {
+      countEl.innerHTML = '这里已收到 <b>' + knownShared + '</b> 朵花';
+    }
+    hintEl.textContent = '献花通道暂未开放，等风来的那天再送来吧';
   }
 
   // ---------- 花瓣动画 ----------
@@ -160,7 +178,8 @@
         if (data && typeof data.count === 'number') showShared(data.count);
         else goLocal();
       })
-      .catch(function () {
+      .catch(function (err) {
+        if (err && err.data && err.data.reason === 'readonly') { showClosed(); return; }
         // 静默降级——绝不让访客看到报错
         goLocal();
       })
@@ -173,8 +192,9 @@
   // ---------- 首次载入 ----------
   req(API + '/count', { method: 'GET' }, TIMEOUT_LOAD_MS)
     .then(function (data) {
-      if (data && typeof data.count === 'number') showShared(data.count);
-      else goLocal();   // 接口在但不认识这个响应 → 走本地，不显示 0
+      if (!data || typeof data.count !== 'number') { goLocal(); return; }  // 不认识这个响应 → 走本地，不显示 0
+      showShared(data.count);
+      if (data.writes === false) showClosed();   // 数字照示，但别让人以为点得响
     })
     .catch(function () {
       // 接口不通：如果本地已经献过花，显示本地数字；否则整块留空

@@ -13,7 +13,7 @@
  *   · 断网 / 超时 ⇒ 回退缓存（抗卡死这条能力保留）
  * 缓存版本号也必须**每次改 SW 时一起换**（v2），否则旧的 cache 不会被清。
  */
-var V = 'elysia-v2';
+var V = 'elysia-v3';
 var SHELL = ['/', '/assets/site.css', '/assets/site.js', '/favicon.svg'];
 var API = /^\/(count|flower|notes)/;
 var TIMEOUT = 2500;

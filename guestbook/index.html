@@ -310,6 +310,21 @@ a.back-link,a.back{min-height:44px;display:inline-flex;align-items:center}
 
     var total = listEl.children.length;
     emptyEl.style.display = total ? 'none' : 'block';
+
+    // 写入总闸关着（2026-11-03 起「只搭管道、先不开放写入」）→ 当场把表单收起来，
+    // 别让人写完 80 字才在提交那一步被 503 拒掉。
+    if (data && data.writes === false) setClosed();
+  }
+
+  var closed = false;
+  function setClosed() {
+    if (closed) return;
+    closed = true;
+    var fields = form.querySelectorAll('input, textarea, button');
+    for (var i = 0; i < fields.length; i++) fields[i].disabled = true;
+    if (statusEl) {
+      statusEl.textContent = '留言通道暂未开放——墙上这些话还看得见，写新的入口先关着。';
+    }
   }
 
   /* ---------- 请求 ---------- */
@@ -372,6 +387,11 @@ a.back-link,a.back{min-height:44px;display:inline-flex;align-items:center}
           // ★ 不能写「发布成功」——它还没上墙。要诚实。
           say('收到啦。这句话会先在这里安静地待一会儿，再出现在墙上。', 'ok');
           load();   // 重新拉一次，自己那条会带「待上墙」标出现在最前面
+          return;
+        }
+        if (!res.ok && res.d && res.d.reason === 'readonly') {
+          setClosed();
+          say('留言通道暂未开放，等它开的时候再把话说给她听吧。', 'err');
           return;
         }
         var code = res.d && res.d.error;

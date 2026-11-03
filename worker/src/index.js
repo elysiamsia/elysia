@@ -110,7 +110,9 @@ export default {
 
       // ── 献花 ──────────────────────────────────
       if (url.pathname === '/count' && request.method === 'GET') {
-        return json({ count: await getTotal(env) }, cors);
+        // writes 一起回：前端据此决定「点得动」还是显示「暂未开放」，
+        // 不必先发一次注定失败的写请求去试探。
+        return json({ count: await getTotal(env), writes: writesEnabled(env) }, cors);
       }
       if (url.pathname === '/flower' && request.method === 'POST') {
         return flower(request, env, cors, origin);
@@ -266,7 +268,8 @@ async function notesList(url, env, cors) {
     .bind(NOTE_LIST_MAX)
     .all();
 
-  return json({ notes: pub.results || [], mine }, cors);
+  // writes:false 时前端把表单收起来、改成一句「暂未开放」，而不是让人写完才被拒。
+  return json({ notes: pub.results || [], mine, writes: writesEnabled(env) }, cors);
 }
 
 /** 管理页的凭证。不匹配返回 false，调用方一律回 404（不暴露这个入口存在）。 */
