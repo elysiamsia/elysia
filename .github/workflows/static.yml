@@ -7,9 +7,9 @@ name: 部署到生产（构建版）
 #   · 传输量自检 + 三页 200 自检；备份目录 .prev 支持秒回滚。
 #
 # ⚠ KEEP_FILES / KEEP_DIRS 两行**必须保留**：src/build/build.mjs 从本文件读它们作为拷贝白名单。
+# 2026-11-03 分支模型：main = 全功能版（GitHub Pages，域名 elysia.biz），server = 线上合规版。
+# main 只保留手动部署：推 main 不再触发自建服务器的生产部署，避免全功能版误上生产。
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 env:
