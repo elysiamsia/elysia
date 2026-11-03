@@ -3,8 +3,9 @@
    路径全部用绝对路径：访客可能是在 /a/b/c/d 上撞的墙，相对路径会让他再撞一次。
    base.njk 已经带了 site.css / explore.css，这里只补这页自己的东西。 */
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{
-  min-height:100vh;display:flex;flex-direction:column;
+  min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;
   align-items:center;justify-content:center;text-align:center;padding:2rem;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
   background:radial-gradient(ellipse at 50% 40%,#1a0e2e 0%,#0a0612 70%);
@@ -44,7 +45,32 @@ body{
 }
 .home:hover,.home:focus-visible{transform:translateY(-2px);box-shadow:0 0 28px rgba(255,143,163,.28);outline:none}
 .foot{margin-top:3rem;font-size:.72rem;color:#7b6f99;letter-spacing:.2em}
-@media(max-width:480px){.doors{gap:.6rem}.door{min-width:88px;padding:.8rem .8rem}}
+/* ── 手机端（≤480px）──
+   原来只是把门压到 88px 并排塞进一行：字全靠 .72/.9rem 这些桌面尺寸，375 上
+   主标题只有 17.6px、门里说明 11.2px，读起来费劲。这里整体上浮一档，
+   三扇门改成整行（标题左、说明右），点触面从 78px 拉到 56px 起步且更宽。 */
+@media(max-width:480px){
+  body{padding:1.25rem;padding-bottom:calc(1.25rem + env(safe-area-inset-bottom));text-align:left}
+  .wrap{max-width:100%}
+  .code{font-size:.8rem;letter-spacing:.5em;margin-bottom:1.1rem;text-align:center}
+  .msg{font-size:clamp(1.3rem,6vw,1.6rem);letter-spacing:.06em;text-align:center}
+  .sub{margin-top:.8rem;font-size:.95rem;text-align:center}
+  .doors{flex-direction:column;gap:.7rem;margin-top:1.7rem}
+  .door{flex-direction:row;align-items:baseline;justify-content:space-between;
+    gap:.8rem;min-width:0;padding:.95rem 1.1rem}
+  .door .t{font-size:1rem}
+  .door .n{font-size:.78rem}
+  .home{display:block;width:fit-content;margin:2rem auto 0;padding:.75rem 1.6rem;font-size:.95rem}
+  .foot{margin-top:1.8rem;font-size:.78rem;text-align:center}
+}
+/* 手机横屏 / 矮视口：竖着排会顶出屏幕，改回一行三扇并收紧上下留白 */
+@media(max-height:520px) and (orientation:landscape){
+  body{justify-content:flex-start;padding:1rem}
+  .doors{flex-direction:row;margin-top:1.2rem}
+  .door{flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .home{margin-top:1.2rem}
+  .foot{margin-top:1.2rem}
+}
 @media(prefers-reduced-motion:reduce){
   .star{animation:none;opacity:.4}
   .door,.home{transition:none}
