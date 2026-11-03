@@ -153,6 +153,20 @@ function dropIgnored(items) {
   return ignored.size ? items.filter((i) => !ignored.has(i.rel)) : items;
 }
 
+/**
+ * 原始素材（`images/raw/**`）一律不进产物。
+ *
+ * 2026-11-03 实测：产物 130 个文件 33.2 MB，其中 **30 MB 是这 25 张原始素材**，
+ * 而全站 html/js/css/njk 对 `images/raw` 的引用数是 **0** —— 页面从没用到它们。
+ * 它们照样被拷进 public/，于是：① 源图被公开下载（线上 /images/raw/signet/真我.png 曾 200）；
+ * ② 每次部署要把 33 MB 的包从 GitHub 传到国内机器，实测 30 分钟量级，还因此卡死过一次。
+ * 素材本身仍留在仓库里（这是需求方的源料），只是**不再发布**。
+ */
+const EXCLUDED_PREFIXES = ['images/raw/'];
+function dropExcluded(items) {
+  return items.filter((i) => !EXCLUDED_PREFIXES.some((p) => i.rel.startsWith(p)));
+}
+
 function collect(list) {
   const out = [];
   const walkDir = (abs, rel) => {
@@ -173,7 +187,7 @@ function collect(list) {
     if (!fs.existsSync(a)) { console.warn('[build] ! 白名单目录缺失: ' + d); continue; }
     walkDir(a, d);
   }
-  return dropIgnored(out).sort((x, y) => (x.rel < y.rel ? -1 : x.rel > y.rel ? 1 : 0));
+  return dropExcluded(dropIgnored(out)).sort((x, y) => (x.rel < y.rel ? -1 : x.rel > y.rel ? 1 : 0));
 }
 
 function sha256(file) {
