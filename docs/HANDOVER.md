@@ -8,7 +8,8 @@
 >
 > §六 是踩过的坑（**动手前务必扫一遍**），§十 是历史案例（出问题时再查）。
 >
-> 最后更新：**2026-10-23**（切换上线 + 丝滑 v1–v3 + 安全加固；现状见 §2.3 快照，历史轮次已归档）
+> 最后更新：**2026-11-03**（合规下线 + 备案号悬挂；现状见 §2.3 快照，历史轮次已归档）
+> （上一版 2026-10-23：切换上线 + 丝滑 v1–v3 + 安全加固）
 
 ---
 
@@ -35,8 +36,8 @@
 > 🎉 **十三页到齐了。** 最后一页（帕朵菲莉丝 ⅩⅢ）2026-10-13 建成并登记收口，见 §2.3 / §10.14。
 > ⚠ 她同样**在 `dev` 上等需求方合并**（不替他合）—— 线上状态要等合并之后才算数。
 > · 格蕾修（Ⅺ）/ 华（Ⅻ）都已合并进 `main`，线上是好的。
-> **接下来没有「建页」类的活了**，只剩 §2.4 的第 3 条（6 位老页按位铺开 + 各配一个小游戏）
-> 与第 6 条（P1 的 index / armor 专项 / 收尾）。
+> **接下来没有「建页」类的活了**（当时只剩「6 位老页按位铺开 + 各配一个小游戏」与「index / armor 专项 / 收尾」两块，旧编号写作 §2.4 第 3、6 条 —— **该节已不存在**，内容并入 §2.3.7）。
+> 📌 **2026-11-03 现状**：按位铺开已全部做完（13 页到齐，见上表）；还剩的计划见 **§2.3.7**。
 
 逐火十三英桀的界面最终要做齐。每位一个独立页，各有自己的性格设计。
 
@@ -53,7 +54,7 @@
 | **Ⅸ** | **旭光** | **科斯魔** | **`kosma/`** | ✅ **按位铺开的第二位，整页做完了**（2026-10-02 · **§2.3 的「上一轮」小节** / §10.10） |
 | **Ⅹ** | **无限** | **梅比乌斯** | **`mobius/`** | ✅ **已上线**（2026-10-01，见 **§2.3 的「上一轮」小节** / §10.9） |
 | **Ⅺ** | **繁星** | **格蕾修** | **`griseo/`** | ✅ **整页 + 小游戏「上色」都做完了**（页面 2026-10-03 · 小游戏 计划 B 2026-10-04 · **§2.3 的「最近一轮」小节** / §10.12）。小游戏计划：`plans/2026-10-03-griseo-game.md`（Task 1–5 全部完成，`assets/games/griseo.js`） |
-| **Ⅻ** | **浮生** | **华** | **`hua/`** | ✅ **整页建成 + 登记收口**（2026-10-08 · **§2.3 的「最近一轮」小节** / §10.13）。⚠ 她那一页的游戏是**全站唯一的 DOM 版**（保留），验收走**她专属的四条断言**，见 §2.3 第 10 步 |
+| **Ⅻ** | **浮生** | **华** | **`hua/`** | ✅ **整页建成 + 登记收口**（2026-10-08 · **§2.3 的「最近一轮」小节** / §10.13）。⚠ 她那一页的游戏是**全站唯一的 DOM 版**（保留），验收走**她专属的四条断言**，见 §4.1.2 的「DOM 版别登记进 `GAMES`」一行与 §10.13 三 |
 | **ⅩⅢ** | **空梦** | **帕朵菲莉丝** | **`pardofelis/`** | ✅ **整页建成 + 登记收口**（2026-10-13 · **§2.3 的「最近一轮」小节** / §10.14）。她的游戏是**画布版**，已正式登记进 `GAMES` 吃通用那四条 |
 
 另有 `armor.html`（她的装甲时间轴，**不是角色页**，异形结构，归 P1 的 Task 11）。
@@ -495,7 +496,7 @@ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8500/assets/site.css  
 
 # 2) 快照 + 比对（参照点见 §4.3.1）
 PYTHONIOENCODING=utf-8 python tools/snapshot.py after-<本步>
-PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py after-postcard after-<本步>; echo "退出码 $?"
+PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py b1-images after-<本步>; echo "退出码 $?"   # 14 页参照点；别用 after-postcard（11 页），见 §4.3.1
 
 # 2.5) 逐页体检（2026-10-15 新增，精修阶段**先跑它**：看数字有没有退化）
 #      console 报错 / 404 / 破图 / 缺 alt / 控件没名字 / h1 数 / 传输量 / 请求数 / DOM 高 / DCL
@@ -536,14 +537,17 @@ taskkill //F //PID <pid>                               # 杀
 
 | 目录 | 是什么 | 用途 |
 |---|---|---|
-| `baseline` | **P1 动手前**（`origin/main` worktree） | P1 最终验收（Task 10/11/12 做完时用）—— **别删** |
-| **`after-postcard`** | **明信片重做做完之后**（2026-10-02，11 页） | **下次改动用这个**<br>实测（对动手前那一版）：**16 处，全在 `index.html`** —— 9 处是高度（三个视口一致 **+284.9px** = 明信片那一节长高了），7 处是结尾区装饰（`.ending-star` / `.hero-card`）被**随机流重洗**；其余 **10 页零差异** |
+| **`b1-images`** | **图片优化那一轮之后**（2026-10-14 19:42，**14 页全**） | **下次改动用这个** —— 现在就是 14 页，对它比才有意义 |
+| **`after-pardo`** | 帕朵菲莉丝登记收口之后（2026-10-14 18:46，14 页） | 同上，可与 `b1-images` 互为对照 |
+| `baseline` | **P1 动手前**（`origin/main` worktree，**8 页**） | P1 最终验收（Task 10/11/12 做完时用）—— **别删** |
+| `after-postcard` | 明信片重做做完之后（2026-10-02，**11 页**） | ⚠ **别再拿它当默认参照点** —— `PAGES` 现在是 14 页，缺的 3 页（格蕾修 / 华 / 帕朵）每次都会报 `[新增快照]` 并让退出码变 1，**那不是你改坏了**<br>实测（对动手前那一版）：**16 处，全在 `index.html`** —— 9 处是高度（三个视口一致 **+284.9px** = 明信片那一节长高了），7 处是结尾区装饰（`.ending-star` / `.hero-card`）被**随机流重洗**；其余 **10 页零差异** |
 | ~~`after-kosma`~~ · ~~`after-sakura`~~ · ~~`after-bday`~~ · ~~`after-postcard-home`~~ | 更早几轮的参照点（樱 / 科斯魔 / 生日组件 / 明信片动手前） | **2026-10-02 已删**（腾出 **145 MB**，`snap/` 207 MB → 62 MB）<br>⚠ **「动手前那一版」这种基线只对本轮有用** —— 本轮过了就该收掉（`after-postcard-home` 就是这么来的、也是这么删的）<br>⚠ 它们都能从 git 重建：`git worktree add` 到对应 commit 再跑一次 `snapshot.py` |
 
 > 🧹 **清过三次**（2026-10-01 两次 + 2026-10-02 一次）：原先堆了 20 个（539 MB）→ 先删到 2 个，
 > 生日组件上线后又收掉 `after-explore`；**2026-10-02 再收掉四个**
 > （`after-postcard-home` / `after-kosma` / `after-sakura` / `after-bday`，腾出 145 MB）。
-> **现在只剩 `after-postcard` 与 `baseline`。**
+> **现存 11 份**（2026-11-03 实测，页数 = `*.json` ÷ 3 视口）：`baseline` 8 · `after-postcard` 11 · `before-griseo` 11 · `after-griseo` 12 · `after-griseo-task5` 12 · `after-griseo-rewrite` 12 · `hua-registration` 13 · `hua-round2` 13 · `pardo-round` 14 · `after-pardo` 14 · `b1-images` 14。
+> ⇒ **改页面跟 14 页那三份比**（`b1-images` / `after-pardo` / `pardo-round`）；跟页数少的比，缺的页会稳定报 `[新增快照]`。
 > ⚠ **每轮结束就换参照点、顺手清掉上一个** —— 攒着只会让「该用哪个」变模糊
 > （有一轮就吃过一次：计划让人用 `baseline-eggs`，而那是 9 页的，多报了 3 处纯噪音）。
 > ⚠ **它们都能从 git 重建**（`git worktree add` 到对应 commit 再跑 `snapshot.py`），
@@ -606,7 +610,7 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py "https://elysiad.top/sakura/" size 12
 | 工具 | 用途 |
 |---|---|
 | `cdp.py` | 无头 Edge 驱动。`eval` / `click` / `size` / `sleep` / `shot` / `text` |
-| `snapshot.py` + `snapshot_diff.py` | **双基线验证**：**11 页** × 3 视口的计算样式 + 整页截图 |
+| `snapshot.py` + `snapshot_diff.py` | **双基线验证**：**14 页**（12 个角色页 + 首页 + armor）× 3 视口（1920×1080 / 768×1024 / 375×812）的计算样式 + 整页截图。页清单在 `tools/snapshot.py:60` 的 `PAGES`（2026-11-03 实测 14 条） |
 | `check_aria_labels.py` | 语录卡 `aria-label` 属性断言（**快照测不到属性**） |
 | `check_reduced_motion.py` | 减动双向断言（**快照不模拟媒体特性**） |
 | `check_explore.py` | **探索系统 / 下方区块断言** —— 走真实用户路径（真滚动 / 真鼠标事件 / 真 reload）。快照测不了「点不到」：被裁掉或被盖住的可发现物，它照样报「✅ 无差异」。⚠ 它**自带探针页** `tools/explore-fixture.html`（在 `tools/` 里，不会上线）。<br>跑法：`[页面路径]` / `--reduced` / **`--only <名字片段>`**（只跑名字含它的断言 —— 给变异测试用，报告里会写明「筛过的」） |
@@ -694,14 +698,14 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py "https://elysiad.top/sakura/" size 12
 - ~~华页的小游戏没并进共享契约~~ ← ✅ **2026-10-08 已按方案 B 收口**：
   需求方看过之后定了「**保留这套 DOM 玩法**」，于是**卡**按共享契约补上、
   **另写四条华专属断言**（能玩 / 减动 / 手机放得下 / 退出键离九宫格 ≥100px），
-  而 `GAMES` 里通用那四条**故意不登记**。详见 §2.3 第 8–11 步与 §10.13 三。
+  而 `GAMES` 里通用那四条**故意不登记**。详见 §4.1.2 的游戏卡那两条与 §10.13 三。
 - ~~`hua-11` 压在结尾台词上~~ ← ✅ **已挪位**（`(0.12, 0.40)` → `(0.10, 0.06)`，两个视口都不压字）。
 
 ### 5.2 已决定不改、另行跟踪
 
 | 问题 | 决定 | 依据 |
 |---|---|---|
-| **华页的小游戏保持 DOM 版**（九宫格木人桩，**不搬 canvas**） | **不改**（需求方 2026-10-08 拍板原话：「小游戏做的挺好」） | `GAMES` 里通用那四条靠**画布签名 + 固有长宽比**，在没画布的页上套不上 ⇒ 已另写**华专属四条**（§2.3 第 10 步）。真要搬画布，canvas 范式照 `docs/superpowers/plans/2026-10-03-griseo-game.md` |
+| **华页的小游戏保持 DOM 版**（九宫格木人桩，**不搬 canvas**） | **不改**（需求方 2026-10-08 拍板原话：「小游戏做的挺好」） | `GAMES` 里通用那四条靠**画布签名 + 固有长宽比**，在没画布的页上套不上 ⇒ 已另写**华专属四条**（§4.1.2 + §10.13 三）。真要搬画布，canvas 范式照 `docs/superpowers/plans/2026-10-03-griseo-game.md` |
 | **`index.html` 的点击涟漪缺 `reducedMotion` 判断** | **不改，另行跟踪**（2026-09-16 需求方拍板） | 首页定义了 `reducedMotion` 却从未使用，其余 6 个子页的涟漪**都有** `if (reducedMotion) return;`。统一会让首页在减弱动效下从「有花瓣迸发」变成「完全没反应」——属**行为变更**，不混进纯重构 |
 
 | ~~`/mobius/` 的遮罩在横屏放不下~~ | ✅ **2026-10-02 已修** | 640×360 下实测：画布 y **-34**、方向键一直伸到 **369** —— 上下都被切，而 fixed 遮罩没有滚动条，切掉的**够不着**。根因是它的内容总高约 **718px**，而横屏只有 360。<br>⚠ 是**泛化后的通用断言**翻出来的（原本只有樱页的断言，横屏那一档没人量 mobius）|
@@ -752,10 +756,12 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py "https://elysiad.top/sakura/" size 12
 | **只有 `main` 会部署** | `dev` 上随便折腾，不影响线上 |
 | **新增站点文件必须改进白名单** | `static.yml` 的 `KEEP_FILES` / `KEEP_DIRS`，否则不会上线 |
 | ⚠ **白名单是「静默」的 —— 不报错，只是不出现** | 构建脚本只 `cp -r` 名单里的目录。**不在名单里的连产物都进不去，而且不会失败**——那道自检拦的是「不该进的路径」（`tools` / `docs` / `worker`…），**不拦「该进却没进的」**。<br>2026-10-01 实测：`mobius/index.html` 在 `main` 上躺了 10 天，线上一直是 **404**，没有任何报警。<br>**验法（唯一可靠）**：`curl -s -o /dev/null -w '%{http_code}\n' https://elysiad.top/<新页>/` —— 本地全绿 ≠ 线上存在 |
-| **有两层缓存** | GitHub Pages（10 分钟）+ Cloudflare（2 分钟）。「改动没生效」先怀疑缓存 |
+| **现在是自建 nginx 直出、没有 CDN**（2026-11-03 起） | 「改动没生效」先查两处：`sw.js` 的版本号（改页面必须换，见 §2.3.9）与手机浏览器缓存。旧的「GitHub Pages 10 分钟 + Cloudflare 2 分钟」两层缓存已不存在 |
 | **上线后要验线上** | 本地全绿 ≠ 线上全绿。见 §4.4 |
 
-### 6.2 Cloudflare
+### 6.2 Cloudflare（已退役，仅作恢复参考）
+
+> ⚠ **2026-11-03 起域名不再走 Cloudflare**（见 §2.3.4）：下表只记当时的额度 / 缓存教训。要恢复任何一条链路，先读 [`ops/compliance-offline.md`](ops/compliance-offline.md)。
 
 | 坑 | 说明 |
 |---|---|
@@ -838,11 +844,12 @@ PYTHONIOENCODING=utf-8 python tools/check_aria_labels.py
 PYTHONIOENCODING=utf-8 python tools/check_reduced_motion.py
 PYTHONIOENCODING=utf-8 python tools/check_explore.py <页面路径>   # 探索系统（改了才需要）
 
-# Worker 测试（93 项断言：献花 38 + 花笺 55）
-cd worker && npm run smoke
-
+# ⚠ 下面三条属已退役的 Cloudflare 链路（2026-11-03 起域名不走 CF）
+#    只在「恢复献花 / 花笺」时才有意义，恢复前先读 docs/ops/compliance-offline.md
+# Worker 测试（93 项断言：献花 38 + 花笺 55，内存版假 D1，不碰线上）
+# cd worker && npm run smoke
 # 部署 Worker
-cd worker && wrangler deploy
+# cd worker && wrangler deploy
 
 # 首页名片档案体检（纯文本，秒级）
 PYTHONIOENCODING=utf-8 python tools/check_timeline_lore.py
@@ -855,12 +862,11 @@ PYTHONIOENCODING=utf-8 python tools/check_postcard.py --only prompt   # 只跑�
 python tools/pick_og.py            # 随机换一张
 python tools/pick_og.py --list     # 看现在生效的是哪张
 
-# 给留言加一条 / 看数据
-cd worker
-wrangler d1 execute elysia-notes --remote --command "SELECT status, COUNT(*) FROM notes GROUP BY status;"
+# 看留言数据（留言簿已下线、D1 已退役；旧数据在服务器 /var/lib/elysia/elysia.db）
+# cd worker && wrangler d1 execute elysia-notes --remote --command "SELECT status, COUNT(*) FROM notes GROUP BY status;"
 
-# 看线上缓存状态
-curl -sI https://elysiad.top/ | grep -i cf-cache-status
+# 看线上是否活着（自建 nginx 直出，已经没 CF 缓存头可看了）
+curl -s -o /dev/null -w '%{http_code}\n' https://elysiad.top/
 ```
 
 ---
@@ -1386,7 +1392,7 @@ https://elysiad.top/mobius/   → 404   ← 文件在 main 上，页面不在
 一次把一位英桀做完整。第一位是樱。设计/计划见
 `specs/2026-10-01-sakura-explore-design.md` 与 `plans/2026-10-01-sakura-explore.md`。
 
-> ✅ **Task 1–10 全部做完，`/sakura/` 整页交付**（提交清单见 §2.4）。
+> ✅ **Task 1–10 全部做完，`/sakura/` 整页交付**（提交清单以 `git log` 为准；旧引用的 §2.4 已并入本文件，编号不再存在）。
 > ⚠ Task 6 是**从一份「一行都没验证过」的草稿接着做的** —— 那一段的偏差与手法见 **§五**。
 
 #### 一、取材方法（**后面每一位都照这个走**）
@@ -1972,7 +1978,7 @@ spec §3.5 白纸黑字：「两套装甲的版本节点（v5.8 繁星·绘世�
 **二、接 `GAMES` 当场翻出两个真问题（这就是那四条断言存在的理由）。**
 
 她的游戏是**画布版**，所以按正道接：补卡 → 登记 `GAMES`（`swipe: True` + `guard: True`）。
-接进去之前我先量了一遍（见 §2.3 第 6 步），两个问题都在**手机**上：
+接进去之前我先量了一遍（量法见 §4.1.2 的游戏卡两条；华那一轮的同款量法见 §10.13 三），两个问题都在**手机**上：
 
 | 问题 | 实测（640×360 横屏） | 修法 |
 |---|---|---|
