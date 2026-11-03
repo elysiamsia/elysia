@@ -158,7 +158,8 @@
 | 后端 | `elysia-api` **inactive + disabled**，8787 无监听；数据仍在 `/var/lib/elysia/elysia.db`（花 70、2 条已审留言、擂台账号） |
 | 产物 | **145 文件**（12 角色页 + 首页 + armor + 404 + assets/data/images/根文件） |
 | 部署链 | 本地 `deploy.sh` 或 push `server` → `static.yml`（**唯一入口**，旧的 `deploy.yml` 已删除归档；`main` 不触发生产） |
-| GitHub Pages（全功能版） | 源分支 `main`（`KEEP_DIRS` 含 `guestbook`）；`.github/workflows/pages.yml` = checkout → `npm run build -- --strict-templates`（带 `SITE_ORIGIN=https://elysia.biz`）→ 产物自检（≥125 文件 + canonical 断言 + 无 `elysiad.top` 残留）→ `upload-pages-artifact` → `deploy-pages`，一次约 50 秒；自定域名 **`elysia.biz`**（`CNAME` + Pages 设置，2026-11-03 从 `elysiad.top` 换出），HTTPS 已强制、证书到 **2027-02-01**、`www` 301 回主域；DNS 在阿里云（`@` 与 `www` 两条 CNAME → `elysiamsia.github.io`）。⚠ `.biz` 不在工信部允许备案的顶级域列表里，只能作海外站 |
+| Cloudflare Pages（全功能版出口） | 源分支 `main`；`.github/workflows/pages.yml` = checkout → `npm run build -- --strict-templates`（带 `SITE_ORIGIN=https://elysia.biz`）→ 产物自检（≥125 文件 + canonical 断言 + 无 `elysiad.top` 残留）→ **`npx wrangler pages deploy public --project-name elysia --branch main`**（主出口，一次约 50 秒）→ 再跑 GitHub Pages 那两段（备用，DNS 已不指那边）。项目名 `elysia`，真实子域 **`elysia-eu1.pages.dev`**，`elysia.biz` 与 `www` 都是它的 alias；DNS 两条 CNAME 均已指向它（proxied，Cloudflare 托管控 DNS）。发布凭据 = 仓库 secret `CLOUDFLARE_API_TOKEN`（本机另有一份在 `C:\Users\dong\.secrets\elysia-cf-dns-token`，**不在仓库里**）。⚠ `.biz` 不在工信部允许备案的顶级域列表里，只能作海外站 |
+| 全功能版接口（Worker） | `elysia-flowers`（`worker/`，KV `FLOWERS` + D1 `elysia-notes` 都是旧数据，没重建），路由 = `elysia.biz/count`、`/flower`、`/notes*`（**同源**，2026-11-03 从 `elysiad.top/*` 换域）。**写闸默认关**：`wrangler.toml` 里 `[vars] WRITES_ENABLED = "false"` ⇒ `POST /flower`、`POST /notes` 返回 `503 {ok:false,reason:"readonly"}`；`GET /count`、`GET /notes` 照常返回并带 `"writes":false`，前端据此把表单收成「暂未开放」。**开放写入 = 改 `"true"` + `npx wrangler deploy`，前端一行不用动** | |
 
 #### 2.3.5 合规状态（公安审查，2026-11-03）
 
@@ -237,7 +238,7 @@
 | 默认分支 | `main` |
 | **本地工作副本** | **`D:\claude-code\elysia-main`** |
 | 线上（合规版） | **自建腾讯轻量服务器** `1.14.60.153` → `https://elysiad.top`（备案已通过，ICP 号已悬挂） |
-| 线上（全功能版） | **GitHub Pages** → `https://elysia.biz`（源 `main`，2026-11-03 起；Cloudflare 那条链仍是退役状态） |
+| 线上（全功能版） | **Cloudflare Pages** → `https://elysia.biz`（源 `main`，DNS 与代理在 Cloudflare，2026-11-03 起）；接口由 Worker 挂在同源 `/count`、`/flower`、`/notes*`，**写闸关着** |
 
 > ⚠ 早期文档里写的工作副本路径是 `D:\claude-code\elysia`，**那个目录已不存在**。
 
@@ -246,13 +247,20 @@
 ```
 dev     ← 日常作业分支；push 不触发任何部署（preview.yml 已停用，/v2/ 已删）
 server  ← 线上合规版；push 即自动部署生产（static.yml，唯一入口）
-main    ← 全功能版（含献花 / 留言簿 / 擂台）；GitHub Pages 源分支，域名 elysia.biz；
-          push main → pages.yml 自动发布（构建时 SITE_ORIGIN=https://elysia.biz，
-          canonical / og:url / JSON-LD / 页脚署名一并改写）；其 static.yml 仅 workflow_dispatch
+main    ← 全功能版（含献花 / 留言簿 / 擂台）；Cloudflare Pages 出口，域名 elysia.biz；
+          push main → pages.yml（构建时 SITE_ORIGIN=https://elysia.biz，canonical /
+          og:url / JSON-LD / 页脚署名一并改写）→ wrangler pages deploy；
+          接口由 Worker elysia-flowers 挂在 elysia.biz/count、/flower、/notes*（写闸关）；
+          其 static.yml 仅 workflow_dispatch
 ```
 
-**所有改动在 `dev` 上做，验过再把提交合进 `server` 发版。** `main` 是合规解除后恢复全功能
-服务的基线，冻结不进功能提交（恢复步骤见 `ops/compliance-offline.md`）。**不要替需求方合并任何分支。**
+**所有改动在 `dev` 上做，验过再把提交合进 `server` 发版。** `main` 是全功能版基线（合规解除后要恢复的东西都在上面），2026-11-03 起它自己也对外发布了（elysia.biz，见 §2.3.4）。**不要替需求方合并任何分支。**
+
+> ⚠ **`dev` 与 `main` 已经结构性分叉**（2026-11-03）：`dev` 是合规版（没有 `guestbook/`，
+> `assets/flowers.js` 是纯本地版，`worker/wrangler.toml` 的路由还写着 `elysiad.top`），
+> `main` 是全功能版（有 `guestbook/`、交互版 flowers.js、Worker 路由已换 `elysia.biz` 并带写闸）。
+> ⇒ **把 `dev` 整枝 merge 进 `main` 会把这几样交互功能删掉**。往 `main` 送东西请用
+> `git checkout main -- <文件>` 或 cherry-pick 单个提交；真要整枝合并，先逐文件核对上面那三处。
 
 > 💡 需求方有时候会**直接在 `main` 上小改**（例如手改 `index.html`）。
 > 这会让 `dev` 之后的合并产生冲突 —— **解决办法很简单：在 `dev` 上 `git merge origin/main`
@@ -763,7 +771,8 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py "https://elysiad.top/sakura/" size 12
 | **只有 `main` 会部署** | `dev` 上随便折腾，不影响线上 |
 | **新增站点文件必须改进白名单** | `static.yml` 的 `KEEP_FILES` / `KEEP_DIRS`，否则不会上线 |
 | ⚠ **白名单是「静默」的 —— 不报错，只是不出现** | 构建脚本只 `cp -r` 名单里的目录。**不在名单里的连产物都进不去，而且不会失败**——那道自检拦的是「不该进的路径」（`tools` / `docs` / `worker`…），**不拦「该进却没进的」**。<br>2026-10-01 实测：`mobius/index.html` 在 `main` 上躺了 10 天，线上一直是 **404**，没有任何报警。<br>**验法（唯一可靠）**：`curl -s -o /dev/null -w '%{http_code}\n' https://elysiad.top/<新页>/` —— 本地全绿 ≠ 线上存在 |
-| **`elysiad.top` 自建 nginx 直出、无 CDN；`elysia.biz` 走 GitHub Pages（Fastly）**（2026-11-03 起） | 「改动没生效」先查两处：`sw.js` 的版本号（改页面必须换，见 §2.3.9）与手机浏览器缓存。`elysia.biz` 还多一层 Pages 部署（约 1 分钟）与 Fastly 边缘缓存 |
+| **`elysiad.top` 自建 nginx 直出、无 CDN；`elysia.biz` 走 Cloudflare Pages + CF 代理**（2026-11-03 起） | 「改动没生效」先查三处：`sw.js` 的版本号（改页面必须换，见 §2.3.9）、手机浏览器缓存、Pages 部署是否成功（`gh run list --branch main`；`npx wrangler pages deployment list --project-name elysia`）。`elysia.biz` 还多一层 Pages 部署（约 1 分钟）与 CF 边缘缓存 |
+| **Pages 自定域名报 `error 1014 CNAME Cross-User Banned`，全站 403/522**（2026-11-03 踩过） | DNS 里把 CNAME 指到了 `elysia.pages.dev`。Pages 项目的真实子域**带区域后缀**（本项目是 `elysia-eu1.pages.dev`），必须原样填；填错会整站挂掉，改成真名立刻 200 |
 | **CI 部署卡在「上传并原子替换」**（2026-11-03 run `41583003255` 卡 36 分钟后取消） | OpenSSH **默认永不超时**：连接静默挂死就一直挂着，直到作业级 6 小时上限。已在 `static.yml` 加 `SSH_OPTS`（`ConnectTimeout=20` / `ServerAliveInterval=15` / `ServerAliveCountMax=4`）与 `timeout-minutes: 45`。卡住时的处置：`gh run cancel <id>` —— 原子替换没执行，**线上不动**，`Last-Modified` 不会变 |
 | **上线后要验线上** | 本地全绿 ≠ 线上全绿。见 §4.4 |
 
