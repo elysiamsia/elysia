@@ -28,6 +28,8 @@
 ## 二、当前状态
 
 > ⚠ **本节是历史描述**（2026-10-15 前后）。当前事实以 §2.3 快照为准；本节保留是为了理解演进过程。
+>
+> 📌 **2026-11-03 补充**：13 页仍在，但**留言簿页已下线**（`/guestbook/` 现在 404，页面存档在 `offline/guestbook/`）；首页献花改为静态 70 朵。原因见 §2.3.5。
 
 ### 2.1 站点全貌：13 页大计，**13 页全部完成** 🎉
 > 🎉 **十三页到齐了。** 最后一页（帕朵菲莉丝 ⅩⅢ）2026-10-13 建成并登记收口，见 §2.3 / §10.14。
@@ -71,12 +73,12 @@
 | 功能 | 位置 | 说明 |
 |---|---|---|
 | 今日之语 | `data/quotes.js` + `assets/daily.js` | 按**访客本地日期**取句，同日一致、次日自动换 |
-| 献花互动 | `assets/flowers.js` | 共享计数（KV），**接口不通时静默降级为本地计数** |
+| 献花互动 | `assets/flowers.js` | **2026-11-03 起为纯本地版**：数字冻结为 70，点击只有花瓣动画，不发任何请求 |
 | 隐藏彩蛋 | `assets/egg.js` | 点开场标题 5 次 → 水晶花雨。**台词池为空，所以现在不触发**（有意为之） |
 | 明信片生成 | `assets/postcard.js` + `data/postcard-prompts.js` | Canvas 出图（2026-10-02 重做）：**左边立绘（八张可选 + 随机）/ 右边她的台词 + 访客写的话（200 字硬上限）/ 右下角二维码**（扫得出 `elysiad.top`）。手机 1080×1440 / 电脑 1200×800，可手动切换。断言见 §4.5 的 `check_postcard.py` |
-| 留言簿入口 | `index.html` 谢幕区 | 「想对她说句话吗 →」指向 `/guestbook/` |
-| giscus 留言簿 | `guestbook/index.html` | 需 GitHub 登录 |
-| 匿名花笺 | 同上 + Worker | 不用账号；**先审后发**；提交者凭 token 能看到自己那条 |
+| ~~留言簿入口~~ | ~~`index.html` 谢幕区~~ | **已下线**（2026-11-03）：入口与页面一并移除 |
+| ~~giscus 留言簿~~ | ~~`guestbook/index.html`~~ | **已下线**，页面存档 `offline/guestbook/index.html` |
+| ~~匿名花笺~~ | ~~同上 + Worker~~ | **已下线**，代码在 `worker/` 与 `server/` |
 | 分享卡片 | `images/og-1\|2\|3.jpg` + `tools/pick_og.py` | 三个立绘变体，随机轮换 |
 | 英桀名片可点进子页 | `index.html` + `data/timeline-data.js` | 见 §10.5 |
 | **探索系统** | `assets/explore.js` + `explore.css` | **每页撒一批藏起来的小东西**（`THEME.explore.finds`），五种互动动词、探索度、找齐解锁、渐进提示。见 §10.9 |
@@ -96,13 +98,16 @@
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
 
 
-### 2.3 现状快照（2026-10-23，以此为准）
+### 2.3 现状快照（2026-11-03，以此为准）
 
 > 更早的 34 轮过程记录已归档：[`docs/archive/handover-rounds.md`](archive/handover-rounds.md)
 
 #### 2.3.1 一句话
 
-站点已从「手写 12 份 HTML + Cloudflare Pages」搬到「**内容 JSON + 模板构建 + 自建服务器**」，线上 `:80` 跑的是构建产物，nginx 反代 Node API。
+站点 = **内容 JSON + Nunjucks 模板 → `public/` 静态产物**，跑在自建腾讯轻量服务器，`https://elysiad.top` 全站 HTTPS，ICP 备案号已悬挂。
+
+**2026-11-03，为通过公安备案审查，线上全部交互式服务（献花计数 / 留言簿 / 擂台竞猜）已经下线。**
+代码一行没删，全在仓库里（`offline/` + `server/` + `worker/`），恢复步骤见 [`ops/compliance-offline.md`](ops/compliance-offline.md)。
 
 #### 2.3.2 常用命令
 
@@ -112,66 +117,92 @@
 | 构建到 `public/` | `npm run build -- --strict-templates` |
 | 只校验不写 | `npm run verify` |
 | 单页构建 | `node src/build/build.mjs --single <key>` |
-| 发到生产 :80 | `bash deploy/deploy.sh` |
-| 发到 /v2/ 预览 | `bash deploy/deploy.sh --v2` |
+| 本地预览 | `cd public && python -m http.server 8801` |
+| **发到生产** | `bash deploy/deploy.sh`（先 `npm run build`） |
 | 回滚 | `bash deploy/deploy.sh rollback` |
+| 线上自检 | `curl -sI https://elysiad.top/` |
+
+> ⚠ `deploy.sh --v2` 参数还在，但**已经没有意义**：`/v2/` 预览目录 2026-11-03 随合规改造一起下线了（它是含留言簿的 dev 完整副本、且没有备案号）。
+> ⚠ 本地预览前**先确认没有别的 http.server 占着 `public/`**：它会把 `public/` 当 CWD 锁住，随后 `npm run build` 报 `EPERM: permission denied, scandir public`。
 
 #### 2.3.3 仓库结构（当前）
 
 | 路径 | 内容 |
 |---|---|
-| `content/characters/*.json` | **12 份角色数据**（唯一真源：探索/游戏/星屑/语录/打字机 + meta + 脚本序列 + style 令牌顺序） |
-| `templates/base.njk` | 一套 head（JSON-LD / og / 条件 theme-color）+ 文档骨架 |
+| `content/characters/*.json` | **12 份角色数据**（唯一真源：探索/游戏/星屑/语录/打字机 + meta + 脚本序列 + style 令牌顺序 + 预留的 `chibi` 槽） |
+| `templates/base.njk` | 一套 head（JSON-LD / og / 条件 theme-color）+ 文档骨架 + 备案页脚 |
 | `templates/partials/` | 刻印水印 / 徽章 / 触控目标（**改一处全站生效**） |
 | `templates/pages/<key>.*` | 每页三件：`page.css`（大块样式）、`page-fixes.css`（私有修复块）、`page.body.html`（body 原文，THEME 留占位） |
-| `src/build/build.mjs` | 拷贝 + 渲染 + 自校验（渲染页跳过源↔产物哈希，由断言把关） |
-| `server/server.js` `server/arena.js` | 生产 API（count / flower / notes / 擂台 / 后台） |
-| `deploy/` | `deploy.sh`（发布/回滚）、`nginx-ip.conf`、`security-watch.sh` |
+| `src/build/build.mjs` | 拷贝 + 渲染 + 自校验（白名单从 `static.yml` 解析，含 `stripQuotes` 兼容两种写法） |
+| `index.html` / `armor.html` / `404.html` | **仍是手写页**（未模板化），各自内联备案页脚 |
+| `assets/` | `site.css`（含 `.site-legal`）/ `site.js` / `explore.js` / `games/*` / **`flowers.js`（2026-11-03 起为纯本地版）** |
+| `offline/` | **已下线的交互功能存档**：`flowers.interactive.js` / `guestbook/index.html` / `README.md`（恢复手册） |
+| `server/` | `server.js`（count/flower/notes + 后台）+ `arena.js`（擂台）。**代码保留，线上未运行** |
+| `worker/` | 旧 Cloudflare Worker（献花/花笺）+ 93 项断言。**已退役**，域名不再走 Cloudflare |
+| `deploy/` | `deploy.sh`（发布/回滚）/ `remote-release.sh`（暂存→校验→原子切换）/ `nginx-elysiad.conf` / `nginx-ip.conf`（IP 时代存档）/ `security-watch.sh` |
 | `tools/` | 验收工具（`check_explore` / `check_reduced_motion` / `mobile_sweep` / `cdp` / `refactor/*`） |
-| `docs/` | 见 §2.3.7 文档地图 |
+| `docs/` | 见 §2.3.8 |
 
-#### 2.3.4 线上事实
+#### 2.3.4 线上事实（2026-11-03 实测）
 
 | 项 | 值 |
 |---|---|
-| 服务器 | 腾讯轻量 **1.14.60.153**（Ubuntu 26.04，2C2G，BBA/fq 已开） |
-| 域名 | ⚠ **备案审核中** ⇒ 现在只有 IP 可访问，**无 HTTPS** |
-| nginx | 1.28.3，`:80` 反代 `/api/` `/count` `/flower` `/notes` → `127.0.0.1:8787` |
-| Node | **22.23.4**（`/opt/node-v22.23.4-linux-x64`，systemd `elysia-api`；系统 `/usr/bin/node` 仍是 22.22.1，服务不用它） |
-| 数据 | `/var/lib/elysia/elysia.db`（SQLite；花 45 朵、2 条已审留言） |
-| 部署链 | 本地 `deploy.sh` 或 GitHub Actions（`static.yml` 已改为构建部署）；`dev` 推 `/v2/` |
+| 服务器 | 腾讯轻量 **1.14.60.153**（Ubuntu 26.04，2C2G，BBR+fq） |
+| 域名 | `elysiad.top` → 1.14.60.153；`www` → 301 主域；`http` → 301 `https` |
+| 证书 | Let’s Encrypt，**到期 2027-01-27**，certbot webroot 自动续期（`--deploy-hook systemctl reload nginx`）；⚠ **未登记邮箱** |
+| 备案 | **ICP：`粤ICP备2026047652号`**（已悬挂，链接工信部）；**公安联网备案数据码 `ceafa2f3776bb0c8cf2ca8d60a2917bd`，开通服务后 30 日内必须办** |
+| nginx | **1.28.3-2ubuntu1.12**；`:80` 只做 ACME + 301；`:443` 主站（HTTP/2 + HSTS 半年 + `ssl_session_tickets off`）；**`proxy_pass` 0 条** |
+| 404 | `error_page 404 /404.html;`（站内 404 带备案号，`/guestbook/` / `/v2/` / `/count` 都落到这里） |
+| 后端 | `elysia-api` **inactive + disabled**，8787 无监听；数据仍在 `/var/lib/elysia/elysia.db`（花 70、2 条已审留言、擂台账号） |
+| 产物 | **145 文件**（12 角色页 + 首页 + armor + 404 + assets/data/images/根文件） |
+| 部署链 | 本地 `deploy.sh` 或 push `main` → `static.yml`（**唯一入口**，旧的 `deploy.yml` 已删除归档） |
 
-#### 2.3.5 安全态势（2026-10-23 处理过）
+#### 2.3.5 合规状态（公安审查，2026-11-03）
+
+| 原来有什么 | 现在 | 代码在哪 |
+|---|---|---|
+| 留言簿 `/guestbook/`（UGC + SQLite） | 线上 **404** | `offline/guestbook/index.html` |
+| 献花计数（GET `/count` / POST `/flower`） | 线上 **404**；计数**冻结为 70**，点击只剩花瓣动画 | `offline/flowers.interactive.js` |
+| 擂台竞猜 `/api/*`（注册/登录/签到/下注/结算） | 线上 **404**；服务已停 | `server/arena.js` |
+| 留言后台 `/notes/manage` | 随服务下线 | `server/server.js` |
+| `/v2/` 预览副本（含留言簿、无备案号） | 目录已删除，nginx 无此 location | 无（dev 分支可重建） |
+
+**保留下来的**：客户端动画、探索小游戏、明信片生成、生日倒计时、今日之语 —— 它们**不写服务器数据、不产生 UGC**，只是浏览器内的计算与绘制，不属于「交互式服务」。
+
+**判断依据**：个人备案网站不得提供用户注册 / 留言评论 / 论坛 / UGC / 竞猜（赌博性质）等交互式服务，这类功能需专项审批，未批先开是备案被注销的常见原因。
+
+#### 2.3.6 安全态势
 
 | 项 | 状态 |
 |---|---|
-| Node CVE（brotli RCE 等 8 个） | ✅ 已升 22.23.4 |
-| SSH 爆破（484 次失败 / 24 条告警） | ✅ **未被入侵**；已关密码登录（只剩密钥）+ `MaxAuthTries 3` + fail2ban + cloud-init `ssh_pwauth:false` |
-| nginx（5 个 CVE） | ⚠ 版本命中 4 个，但**当前配置零可达路径**（无 TLS/无 HTTP3/无 aio-ssi/无 rewrite）；**开 443 前必须先升到 1.31.7+/1.30.6+** |
+| SSH 爆破（484 次失败 / 24 条告警） | ✅ **未被入侵**（无一条 `Accepted password`）；已关密码登录 + `MaxAuthTries 3` + fail2ban + cloud-init `ssh_pwauth:false` |
+| Node | ✅ 22.23.4（`/opt/node-v22.23.4-linux-x64`，systemd 用它；系统 `/usr/bin/node` 仍是 22.22.1） |
+| nginx CVE | ✅ 升到 `1.28.3-2ubuntu1.12`（含 15176/93479/95101/97205/97629 五个补丁）；开 443 后 HSTS + 关票据做纵深防御 |
 | PHP / Go / Tomcat / rustc | ✅ 均未安装（对应 CVE 不适用） |
-| ⚠ 最大隐患 | 站点仍 **HTTP 明文** ⇒ 后台与擂台登录凭据明文过网；备案一通过立刻上 certbot |
+| 明文凭据风险 | ✅ 已消除（全站 HTTPS；后台与擂台的服务本就停了） |
+| 巡检 | `deploy/security-watch.sh`（三档：需处理 / 注意 / 不适用） |
 
-#### 2.3.6 已完成 / 待办
+#### 2.3.7 接下来的计划（按优先级，2026-11-03 整理）
 
-**已完成**：重构阶段 0+1（M0 管线四件套 → M1 12 页模板化 diff 全零）→ **切换上线** → 丝滑专项 v1（跨页过渡+预取+tokens）/ v2（位移过渡+返回链）/ v3（108 处过渡收敛）→ 安全审计与 SSH 加固。
-
-**待办**：
-
-| # | 事项 | 备注 |
+| # | 事项 | 说明 |
 |---|---|---|
-| 1 | 404 页模板化 | 目前原样拷贝，不影响部署 |
-| 2 | `index.html` / `armor.html` / `guestbook/` 纳入模板 | 它们没有复制粘贴债，优先级低 |
-| 3 | **备案通过后的 TLS 套餐** | certbot + **nginx 升级** + `ssl_session_tickets off` + 更新 ca-certificates |
-| 4 | 擂台前端 | 素材 `material/逐火英桀擂台/`，后端已就绪 |
-| 5 | 后台管理界面 | `/notes/manage` 已有雏形 |
-| 6 | Q 版小人 / Spine 接入 | 等主人素材；`spine-webgl` 436KB 只能懒加载在回放页 |
+| 1 | **公安联网备案** | 30 日内，用数据码 `ceafa2f3776bb0c8cf2ca8d60a2917bd`；拿到公安备案号后**也要悬挂**（和 ICP 号并排） |
+| 2 | 备案号复核 | 确认首页 / 12 角色页 / armor / 404 都能看到 ICP 号并可点进工信部；截图存档 |
+| 3 | certbot 登记邮箱 | `certbot update_account --email <邮箱>`，否则到期提醒收不到 |
+| 4 | index / armor / 404 模板化 | 三页仍是手写，改一处处处要改；404 优先级最高（它现在是所有下线路由的落地页） |
+| 5 | 视觉大改（主人已提） | 为审查做的这轮只删功能、没动设计；下一步按主人要求重做观感 |
+| 6 | 丝滑 phase 1.5 | 交互层动效与预取；⚠ 必须先有稳定基线再做 |
+| 7 | Q 版小人 / Spine 接入 | 素材 `material/`；13 角色共 11 固定骨 + 8 动作；`spine-webgl.js` 436KB **只能懒加载在回放页** |
+| 8 | 擂台前端 | 后端已就绪，但**有赌博性质，上线前先想清楚合规**；建议只做纯展示（赛程/榜单） |
 
-#### 2.3.7 文档地图
+#### 2.3.8 文档地图
 
 | 文档 | 用途 |
 |---|---|
 | [`README.md`](README.md) | 文档总索引 |
 | **本文件** | 项目交接（现状快照在上面） |
+| [`ops/compliance-offline.md`](ops/compliance-offline.md) | **交互式服务下线记录 + 恢复手册 + 审查口径** |
+| [`ops/icp-and-https.md`](ops/icp-and-https.md) | 备案信息、证书、双 workflow 事故 |
 | [`REFACTOR-PLAN.md`](REFACTOR-PLAN.md) | 重构总纲（阶段 0–5、红线） |
 | [`superpowers/plans/2026-10-18-refactor-phase-0-1.md`](superpowers/plans/2026-10-18-refactor-phase-0-1.md) | 阶段 0/1 实施计划（11 个 Task，已全部完成） |
 | [`refactor/switchover-checklist.md`](refactor/switchover-checklist.md) | 切换清单（已执行，留作回滚参考） |
@@ -182,16 +213,16 @@
 | [`security/ssh-hardening-2026-10-23.md`](security/ssh-hardening-2026-10-23.md) | SSH 加固记录 |
 | [`archive/handover-rounds.md`](archive/handover-rounds.md) | 历轮过程记录（34 轮） |
 
-#### 2.3.8 五个反复踩到的坑（动手前扫一眼）
+#### 2.3.9 反复踩到的坑（动手前扫一眼）
 
-1. **OpenSSH 是「先取到的值赢」**：`Include` 在 sshd_config 顶部，所以 drop-in 与文件末尾写 `PasswordAuthentication no` 都没用，必须改 `50-cloud-init.conf`。
+1. **OpenSSH 是「先取到的值赢」**：`Include` 在 sshd_config 顶部，在 drop-in 或文件末尾写 `PasswordAuthentication no` 都没用，必须改 `50-cloud-init.conf`。
 2. **`http.server` 把目录当 CWD ⇒ Windows 会锁住它**：验证完先停服务再 `npm run build`，否则 `EPERM public`。
-3. **`check_explore.py` 曾硬编码 CDP 端口 9322** ⇒ 两个实例并行会串台、造成假失败；现已按 PID 派生。看到"一次挂好几条、单跑全过"先怀疑环境。
+3. **`check_explore.py` 的 CDP 端口按 PID 派生**；两个实例串台会造出假失败 —— 「一次挂好几条、单跑全过」先怀疑环境。
 4. **THEME 字面量的 span 不能用 node 计算**（JSON 形态下差 1~2 字符）：剥离散布一律用 Python 扫括号。
-5. **白名单解析要剥引号**：YAML 里 `KEEP_FILES: "a b"` 与 shell 的 `KEEP_FILES="a b"` 两种写法都要认，否则产物会掉到 111 文件。
+5. **白名单解析要剥引号**：YAML `KEEP_FILES: "a b"` 与 shell `KEEP_FILES="a b"` 都要认，否则产物掉到 111 文件。
+6. **改了页面就必须换 `sw.js` 版本号**（现在是 `elysia-v3`），否则老访客一直看到旧缓存。
+7. **下线一个目录 ≠ 下线一个功能**：白名单（`static.yml` 的 `KEEP_DIRS` + `deploy.sh` 的同名变量 + `build.mjs` 的 `MIN_DIRS`）三处必须同步，否则构建守卫会咬或页面复活。
 
-
-> ⚠ **本节是历史描述**（2026-10-15 前后）。当前事实以 §2.3 快照为准；本节保留是为了理解演进过程。
 
 ## 三、仓库与基础设施
 
@@ -202,7 +233,7 @@
 | 仓库 | `github.com/elysiamsia/elysia`（public） |
 | 默认分支 | `main` |
 | **本地工作副本** | **`D:\claude-code\elysia-main`** |
-| 线上 | **自建腾讯轻量服务器** `1.14.60.153`（备案中，暂用 IP；原 GitHub Pages + Cloudflare 已退役） |
+| 线上 | **自建腾讯轻量服务器** `1.14.60.153` → `https://elysiad.top`（备案已通过，ICP 号已悬挂；原 GitHub Pages + Cloudflare 已退役） |
 
 > ⚠ 早期文档里写的工作副本路径是 `D:\claude-code\elysia`，**那个目录已不存在**。
 
@@ -221,7 +252,10 @@ main  ← push 即自动部署（static.yml）
 > **解冲突时别用 `--ours` 了事，要逐段核对**，并用
 > `git diff <合并前的dev> HEAD --stat` 确认结果树符合预期。
 
-### 3.3 Cloudflare
+### 3.3 Cloudflare（已退役，仅作历史与恢复参考）
+
+> ⚠ **2026-11-03 起本节整体退役**：域名已指回自建服务器，Cloudflare 不在请求路径上（`flowers.elysiad.top` 已无解析）。
+> 恢复任何一条 Cloudflare 链路之前，先读 [`ops/compliance-offline.md`](ops/compliance-offline.md) —— 献花与花笺都属于被下线的交互式服务。
 
 | 项目 | 值 |
 |---|---|
@@ -546,9 +580,11 @@ taskkill //F //PID <pid>                               # 杀
 ### 4.4 部署与发布
 
 ```bash
-# 站点：push 到 main 即自动部署（static.yml，约 20 秒）
-# Worker：手动部署
-cd D:\claude-code\elysia-main\worker && wrangler deploy
+# 站点（推荐：本地构建后发布，能当场验收产物）
+npm run build -- --strict-templates && bash deploy/deploy.sh
+
+# 或者 push 到 main（static.yml 自动构建 → 原子切换，约 20 秒）
+# Worker：已退役（2026-11-03），恢复花笺时再 `cd worker && wrangler deploy`
 ```
 
 **上线后建议再验一次「线上真机」**（不只是验本地文件）：

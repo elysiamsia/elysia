@@ -1,4 +1,9 @@
-/* sw.js — 站点 Service Worker（2026-10-15，v2）
+/* sw.js — 站点 Service Worker（2026-11-03，v3）
+ *
+ * ── v3（2026-11-03，公安备案审查）──────────────────────────────
+ * 线上已移除全部交互式服务（/count /flower /notes /api/*），SW 不再需要
+ * 为这几个路径开直连旁路；缓存版本号随之换到 v3，旧 cache 在 activate 时清掉。
+ */
  *
  * ── 它要解决什么 ────────────────────────────────────────────────
  * 实测：顺序访问首页 ~280ms 很快，但**并发**时 6 个请求里会有 1 个挂死 >15 秒
@@ -13,9 +18,8 @@
  *   · 断网 / 超时 ⇒ 回退缓存（抗卡死这条能力保留）
  * 缓存版本号也必须**每次改 SW 时一起换**（v2），否则旧的 cache 不会被清。
  */
-var V = 'elysia-v2';
+var V = 'elysia-v3';
 var SHELL = ['/', '/assets/site.css', '/assets/site.js', '/favicon.svg'];
-var API = /^\/(count|flower|notes)/;
 var TIMEOUT = 2500;
 
 self.addEventListener('install', function (e) {

@@ -44,8 +44,7 @@ PAGES = [
     'kevin/index.html', 'aponia/index.html', 'eden/index.html', 'villv/index.html',
     'kalpas/index.html', 'su/index.html', 'sakura/index.html', 'kosma/index.html',
     'mobius/index.html', 'griseo/index.html', 'hua/index.html', 'pardofelis/index.html',
-    'guestbook/index.html',
-]
+    ]
 
 # 页面里要采集的东西（一次性 evaluate）
 PROBE = r"""(() => {

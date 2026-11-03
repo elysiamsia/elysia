@@ -1,12 +1,12 @@
 # 文档索引
 
-> 47 份文档按用途分组。**只想了解现状** → 直接看 [`HANDOVER.md` §2.3](HANDOVER.md)。
+> 42 份文档按用途分组。**只想了解现状** → 直接看 [`HANDOVER.md` §2.3](HANDOVER.md)。
 
 ## 先读这三份
 
 | 文档 | 什么时候读 |
 |---|---|
-| [`HANDOVER.md`](HANDOVER.md) | **接手第一份**。§2.3 是 2026-10-23 现状快照；§六 是必读的坑 |
+| [`HANDOVER.md`](HANDOVER.md) | **接手第一份**。§2.3 是 **2026-11-03 现状快照**；§六 是必读的坑 |
 | [`REFACTOR-PLAN.md`](REFACTOR-PLAN.md) | 想知道重构为什么这么设计、红线是什么 |
 | [`security/`](security/) | CVE 对账（`2026-10-cve-audit.md`）与 SSH 加固记录 |
 
@@ -34,6 +34,7 @@
 
 | 文档 | 内容 |
 |---|---|
+| [`ops/compliance-offline.md`](ops/compliance-offline.md) | ⚠ **交互式服务已全部下线**（2026-11-03，为过公安审查）：为什么、判定标准、下线清单、恢复手册、复查清单 |
 | [`ops/icp-and-https.md`](ops/icp-and-https.md) | **备案号悬挂**（粤ICP备2026047652号）、HTTPS 上线、公安联网备案待办、双 workflow 抢目录根因 |
 
 ### 安全
@@ -43,9 +44,10 @@
 | [`security/2026-10-cve-audit.md`](security/2026-10-cve-audit.md) | 2026-10 公告逐条对账 + Node 升级记录 |
 | [`security/ssh-hardening-2026-10-23.md`](security/ssh-hardening-2026-10-23.md) | SSH 爆破排查与加固（含 OpenSSH「先到先得」坑） |
 
-### 历史
+### 历史与研究
 
 | 文档 | 内容 |
 |---|---|
 | [`archive/handover-rounds.md`](archive/handover-rounds.md) | 34 轮过程记录（2026-10-15 ~ 10-18） |
+| [`research/arena-activity-research-2026-10.md`](research/arena-activity-research-2026-10.md) | 崩坏3「竞猜擂台」活动考证（9.0 银河梦幻擂台 / 8.5 前身），赛博斗蛐蛐的规则原型 |
 | [`superpowers/plans/`](superpowers/plans/) | 各阶段原始计划（09-15 起） |

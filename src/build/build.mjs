@@ -89,7 +89,7 @@ function renderPage(key) {
   return rel;
 }
 const MIN_FILES = 8;
-const MIN_DIRS = 16;   // 实测 static.yml 当前为 16 项（assets data images + 12 角色页 + guestbook）；低于此值视为格式漂移
+const MIN_DIRS = 15;   // 实测 static.yml 当前为 15 项（assets data images + 12 角色页；guestbook 已于 2026-11-03 下线）；低于此值视为格式漂移
 
 function fail(msg) {
   console.error('[build] ✗ ' + msg);
