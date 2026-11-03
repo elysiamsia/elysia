@@ -46,6 +46,9 @@ const SINGLE = (() => { const i = process.argv.indexOf('--single'); return i >= 
 const TEMPLATES = path.join(ROOT, 'templates');
 const PAGES_DIR = path.join(TEMPLATES, 'pages');
 const CONTENT = path.join(ROOT, 'content', 'characters');
+// 非角色页（404 引路页这种）的数据放在 content/pages/，同样走 base.njk + 自己的 page.css；
+// 靠 outPath 决定落在 public/ 的哪个位置（404 → public/404.html，而不是 404/index.html）。
+const CONTENT_PAGES = path.join(ROOT, 'content', 'pages');
 const THEME_KEYS = ['explore', 'game', 'endingStars', 'quotes', 'typewriter'];
 const rendered = new Set();
 
@@ -60,8 +63,17 @@ function renderablePages() {
   return out.sort();
 }
 
+/** 角色页数据在 content/characters/，其它页在 content/pages/（同 key 优先角色页） */
+function loadPageData(key) {
+  for (const dir of [CONTENT, CONTENT_PAGES]) {
+    const p = path.join(dir, key + '.json');
+    if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
+  }
+  fail('缺页面数据：content/characters/' + key + '.json 或 content/pages/' + key + '.json');
+}
+
 function renderPage(key) {
-  const character = JSON.parse(fs.readFileSync(path.join(CONTENT, key + '.json'), 'utf8'));
+  const character = loadPageData(key);
   const theme = {};
   for (const k of THEME_KEYS) if (character[k] !== undefined) theme[k] = character[k];
   const read = (p) => (fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : '');
@@ -84,6 +96,9 @@ function renderPage(key) {
       ogDescription: character.meta.ogDescription || character.meta.description,
       ogImage: character.meta.ogImage || 'https://elysiad.top/images/og-1.jpg',
       themeColor: character.meta.themeColor || null,
+      // 非角色页（404）：不给 canonical、不排进索引、og:title 自带（base.njk 里按有无回落）
+      ogTitle: character.meta.ogTitle || null,
+      noindex: character.meta.noindex === true,
     },
     // 主题色整行注入（含换行）—— 没有主题色的页（hua/pardofelis）一个字节都不多
     themeColorTag: character.meta.themeColor ? '<meta name="theme-color" content="' + character.meta.themeColor + '">' + String.fromCharCode(10) : '',
@@ -92,14 +107,15 @@ function renderPage(key) {
     bodyAttrs: character.bodyAttrs || '',
     pageBody: read(path.join(PAGES_DIR, key + '.page.body.html')).split('/*@THEME@*/').join(JSON.stringify(theme)),
   });
-  const rel = key + '/index.html';
-  const dest = path.join(OUT, key, 'index.html');
+  // 默认 <key>/index.html；404 这类页在数据里写 outPath 直接落到根下
+  const rel = character.outPath || key + '/index.html';
+  const dest = path.join(OUT, rel);
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   fs.writeFileSync(dest, html, 'utf8');
   rendered.add(rel);
   return rel;
 }
-const MIN_FILES = 8;
+const MIN_FILES = 7;   // 实测 static.yml 当前 7 项（404.html 已改由模板生成，从白名单移除）
 const MIN_DIRS = 15;   // 实测 static.yml 当前为 15 项（assets data images + 12 角色页；guestbook 已于 2026-11-03 下线）；低于此值视为格式漂移
 
 function fail(msg) {
@@ -284,7 +300,7 @@ function main() {
   } else {
     // --verify-only 不渲染，但「产物里多出」那条判据要知道哪些产物**本来**就会多出来，
     // 否则每个角色页都会被报成多出的文件（这个模式的判定就废了）。
-    for (const key of renderablePages()) rendered.add(key + '/index.html');
+    for (const key of renderablePages()) rendered.add(loadPageData(key).outPath || key + '/index.html');
   }
 
   // 自定域发布：SITE_ORIGIN 的 host 与默认域不同时，把产物里的域名整树改写一次。

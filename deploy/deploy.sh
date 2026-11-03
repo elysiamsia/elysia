@@ -28,8 +28,10 @@ BACKUP="${WEBROOT}.prev"
 SSHOPTS="-o BatchMode=yes -o StrictHostKeyChecking=accept-new"
 SSH="ssh -i \"$KEY\" $SSHOPTS $DEPLOY_USER@$HOST"
 
-KEEP_FILES="index.html sw.js armor.html 404.html robots.txt sitemap.xml favicon.svg CNAME"
-KEEP_DIRS="assets data images aponia eden kalpas kevin su villv sakura kosma mobius griseo hua pardofelis"
+# 白名单只在 .github/workflows/static.yml 里维护一份（build.mjs 也读那份）。
+# 本脚本自 2026-10-18 起只发布构建产物 public/，下面这两行是旧路径的遗留，别再当第二份真源用。
+# KEEP_FILES="index.html sw.js armor.html robots.txt sitemap.xml favicon.svg CNAME"
+# KEEP_DIRS="assets data images aponia eden kalpas kevin su villv sakura kosma mobius griseo hua pardofelis"
 
 if [ "${1:-deploy}" = "rollback" ]; then
   eval "$SSH" "'set -e; [ -d $BACKUP ] || { echo 没有上一版可回滚; exit 1; };

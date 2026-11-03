@@ -133,15 +133,17 @@
 | 路径 | 内容 |
 |---|---|
 | `content/characters/*.json` | **12 份角色数据**（唯一真源：探索/游戏/星屑/语录/打字机 + meta + 脚本序列 + style 令牌顺序 + 预留的 `chibi` 槽） |
+| `content/pages/*.json` | **非角色页数据**（2026-11-03 起）：`404.json` 用 `outPath: '404.html'` 决定落地成单文件页；`meta.noindex` 才吐 robots、`meta.canonical` 为空就不吐 canonical / JSON-LD |
 | `templates/base.njk` | 一套 head（JSON-LD / og / 条件 theme-color）+ 文档骨架 + 备案页脚 |
 | `templates/partials/` | 刻印水印 / 徽章 / 触控目标（**改一处全站生效**） |
 | `templates/pages/<key>.*` | 每页三件：`page.css`（大块样式）、`page-fixes.css`（私有修复块）、`page.body.html`（body 原文，THEME 留占位） |
 | `src/build/build.mjs` | 拷贝 + 渲染 + 自校验（白名单从 `static.yml` 解析，含 `stripQuotes` 兼容两种写法） |
-| `index.html` / `armor.html` / `404.html` | **仍是手写页**（未模板化），各自内联备案页脚 |
+| `index.html` / `armor.html` | **仍是手写页**（未模板化，在收编队列里）；404.html 已于 2026-11-03 收进模板 |
+| `templates/pages/404.*` | 已收编的 404：`404.page.css`（**必须自包 `<style>`**，与角色页同构）/ `404.page.body.html`（stars + 三扇门 + 星点脚本，不含页脚，页脚由 base.njk 统一给） |
 | `assets/` | `site.css`（含 `.site-legal`）/ `site.js` / `explore.js` / `games/*` / **`flowers.js`（2026-11-03 起为纯本地版）** |
 | `offline/` | **已下线的交互功能存档**：`flowers.interactive.js` / `guestbook/index.html` / `README.md`（恢复手册） |
 | `server/` | `server.js`（count/flower/notes + 后台）+ `arena.js`（擂台）。**代码保留，线上未运行** |
-| `worker/` | 旧 Cloudflare Worker（献花/花笺）+ 93 项断言。**已退役**，域名不再走 Cloudflare |
+| `worker/` | Cloudflare Worker（献花 KV + 花笺 D1）。2026-11-03 重新部署到 **elysia.biz**（同源 `/count` `/flower` `/notes*`），**写开关 `WRITES_ENABLED=false`，写接口返回 503 readonly** |
 | `deploy/` | `deploy.sh`（发布/回滚）/ `remote-release.sh`（暂存→校验→原子切换）/ `nginx-elysiad.conf` / `nginx-ip.conf`（IP 时代存档）/ `security-watch.sh` |
 | `tools/` | 验收工具（`check_explore` / `check_reduced_motion` / `mobile_sweep` / `cdp` / `refactor/*`） |
 | `docs/` | 见 §2.3.8 |
