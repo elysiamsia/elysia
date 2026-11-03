@@ -73,8 +73,17 @@ jobs:
       - name: 线上自检
         run: |
           set -euo pipefail
+          # ⚠ 2026-11-03 修正：原来打 http://1.14.60.153（Host 是 IP），nginx 对非 elysiad.top 的
+          # Host 一律 301 到 https，于是这条自检**永远是 301 ≠ 200**、发布明明成功也报红。
+          # 改成直接打正式域名（顺带把 https 也验了）。
           for p in / /kevin/ /su/ /hua/; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" "http://1.14.60.153$p?cb=$RANDOM")
+            code=$(curl -s -m 20 -o /dev/null -w "%{http_code}" "https://elysiad.top$p?cb=$RANDOM")
             echo "$p → $code"
             [ "$code" = "200" ] || exit 1
+          done
+          # 备案下线的东西必须真的不在线上
+          for p in /guestbook/ /count; do
+            code=$(curl -s -m 20 -o /dev/null -w "%{http_code}" "https://elysiad.top$p?cb=$RANDOM")
+            echo "$p → $code（应为 404）"
+            [ "$code" = "404" ] || exit 1
           done
