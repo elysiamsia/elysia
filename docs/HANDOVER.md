@@ -88,6 +88,7 @@
 | **陪伴层低语** | 同上 | 任意点击 → 冷却结束后的**第 3 次**说一句，台词**按顺序**推进。⚠ **不做概率**（需求方明确不要抽卡） |
 | **下方区块** | `assets/bottom.js` | 页面最下方一块：探索度 / 生日倒计时 / 游戏槽。见 §10.9 |
 | **生日倒计时** | `assets/bday.js` + `data/bdays.js`（**全站唯一数据源**） | 右下角悬浮胶囊 → 点击展开面板（🎂 / 日期 / 天·时·分·秒 / 一句话）。**首页与英桀页共用同一个组件**。有确定生日的才渲染；查不到就**整个不出现** |
+| **11.11 生日开场** | `assets/bday-intro.js` + `templates/pages/index.page-fixes.css` 的 `<style id="bday-intro">` | 一次性全屏开场（2026-11-04 定案，11.5 秒）：星空 → 花瓣 → 她的立绘与光 → `11.11` → 名字 → 一句 → `HAPPY BIRTHDAY` → 淡出露回首页。**只在 11 月 11 日当天、且这台设备没看过时播一次**（`localStorage['elysia.bday.2026.seen']`）；`?bday=1` 强制预览、再加 `&t=9.9` 定格某一帧。首页 `<script>` 里那 6 行守卫负责「别的日子一个字节都不下载」。系统开「减少动态效果」时只画 9.9 秒那帧静帧，3.2 秒后自动退场。见 §10.15 |
 | **每页小游戏** | `assets/games/<角色>.js` | 每位一个**互不干涉**的独立游戏，契约见 spec §4.5 |
 | `canonical` + JSON-LD | **14 页** `<head>`（12 角色页 + `armor.html` + 首页，**全部由模板生成**；404 是 `noindex` 引路页，不吐 canonical） | 首页 `WebSite`（在 `templates/home.njk` 里），其余 `WebPage` + `BreadcrumbList` |
 | favicon / 404 / robots / sitemap | 根目录 | 404 是引路版（一句话 + 三扇门） |
@@ -141,7 +142,7 @@
 | `templates/pages/<key>.*` | 每页三件：`page.css`（大块样式）、`page-fixes.css`（私有修复块）、`page.body.html`（body 原文，THEME 留占位） |
 | `src/build/build.mjs` | 拷贝 + 渲染 + 自校验（白名单从 `static.yml` 解析，含 `stripQuotes` 兼容两种写法） |
 | `templates/home.njk` | **首页专属骨架**（2026-11-04 起）：`<head>` 原样留在这里（`WebSite` JSON-LD / og:image 1200×630 / 无面包屑），只有两个槽 —— `{{ stylesHtml }}` 与 `{{ pageBody }}`；`</body>` 之后那两行 `bday.js` 也在骨架里（它们本来就在 `</body>` 外）。数据 `content/pages/index.json` 里 `kind: "home"` 决定选它而不是 `base.njk` |
-| `templates/pages/index.*` | 已收编的首页（2026-11-04）：`index.page.css`（主样式块，**自包 `<style>`**）/ `index.page-fixes.css`（`#mobile-postcard-fix` 那个私有修复块）/ `index.page.body.html`（`<canvas>` 到 `</footer>`，含 15 个 script 与末尾那段内联 `daily.js` 配置）。⚠ `styles` 令牌顺序是 `["page","mobile-postcard-fix"]`，构建按这个顺序用 `\n` 拼 —— 顺序错了产物就多一个换行 |
+| `templates/pages/index.*` | 已收编的首页（2026-11-04）：`index.page.css`（主样式块，**自包 `<style>`**）/ `index.page-fixes.css`（`#mobile-postcard-fix` 那个私有修复块）/ `index.page.body.html`（`<canvas>` 到 `</footer>`，含 15 个 script 与末尾那段内联 `daily.js` 配置）。⚠ `styles` 令牌顺序是 `["page","mobile-postcard-fix","bday-intro"]`，构建按这个顺序用 `\n` 拼 —— 顺序错了产物就多一个换行 |
 | `templates/pages/armor.*` | 已收编的 armor（2026-11-04）：`armor.page.css`（**三个 `<style>` 块原文照搬**：主样式 + 触控目标 + 备案号）/ `armor.page.body.html`。⚠ 它 `meta.standalone: true` —— base.njk 因此**不吐 site.css / explore.css**（Inventory R12/R13 的刻意结论：armor 的 `.timeline` / `.back-link` 是另一套结构，吃 7 页版本会整页错位） |
 | `templates/pages/404.*` | 已收编的 404：`404.page.css`（**必须自包 `<style>`**，与角色页同构）/ `404.page.body.html`（stars + 三扇门 + 星点脚本，不含页脚，页脚由 base.njk 统一给） |
 | `assets/` | `site.css`（含 `.site-legal`）/ `site.js` / `explore.js` / `games/*` / **`flowers.js`（2026-11-03 起为纯本地版）** |
@@ -2071,6 +2072,49 @@ t=1004ms 10914  ← 第一件货这时才入画
    要么别让它挡住内容，要么像 `catDodge()` 那样在压住可点内容时让开。
 3. **断言的采样窗口是有长度的**（0.9 秒）。任何「开局先静一会儿」的设计都会被它抓到 ——
    那不是断言太严，是**第一秒真的没反馈**。
+
+### 10.15 11.11 生日开场（2026-11-04，✅ **接进首页；预热 / 换装 / 留档未做**）
+
+需求方 2026-11-04 的原话是「11 月 11 日爱莉希雅生日的时候，整个网站要有很惊艳的效果，还没想好怎么弄」。
+定下的形态是三层：**预热（11-04→11-10）→ 当天 00:00 全站换装 + 首页开场 → 11-12 起留档可回看**。
+目前落地的是第二层里的开场。
+
+**为什么是 canvas 而不是 CSS 动画**：花瓣要有三层景深、大的还要压在她的立绘**前面**，
+再加胶片颗粒压渐变的色带 —— 这些逐帧合成，CSS 做不到。所以是**一条 rAF 时间轴 + 三张预烘图层**
+（星空 / 她的光 / 颗粒）；线条、模糊、亮度全按秒数插值，改一帧的节奏只要改一个数字。
+
+**性能这一关是重写的，不是调优的**（原型 v11）。第一版每帧用 `ctx.filter = 'blur()'` 做全屏辉光、
+每片花瓣各 blur 一次、颗粒也逐帧画 —— 无头软件渲染实测 **66.60 ms/帧（375×812）、899.24 ms/帧（1280×800）**，
+也就是手机上 15 fps、桌面上 1 fps。改成「预烘 + 只合成」之后是 **0.25 ms/帧 / 5.05 ms/帧**。
+四条改法：①星空与星云 `bakeSky()` 烘一次；②她的 halo 与脚下光 `bakeLight()` 烘一次，运行时只 `drawImage` + `globalAlpha`；
+③花瓣贴图初始化时预渲染（soft 那层用一次 `filter` 烘模糊）；④暗角与颗粒交给 CSS 合成层（`mix-blend-mode: soft-light` + 128px 噪声 dataURL）。
+
+**时间轴（11.5 秒）**：星空 0–2.0 · 花瓣 0.3–6.4 起飘（之后一直在飘）· 立绘 3.4–6.3 ·
+`11.11` 5.9–7.1 · 名字 7.0–8.0 · 那句话 7.8–8.9 · `HAPPY BIRTHDAY` 8.9–9.8 · 整体淡出 10.2–11.5。
+需求方看过原型后定「缩到 10–12 秒」，所以 DUR 是 11.5；**别随手改长**。
+
+**四条踩过的坑**：
+
+1. **每帧写内联 `opacity` 之后，样式表里的 `.is-done{opacity:0}` 不再生效** —— 内联优先。
+   退场淡出必须写 `root.style.transition` + `root.style.opacity = '0'`，否则「减少动态效果」那条静帧路径会硬切。
+2. **静帧要挑「四行都在」那一帧**：一开始取 7.4 秒，那时名字刚显影、句子还没出来，
+   静帧看着像渲染坏了。改成 9.9 秒（10.2 秒才开始暗下去，之前是这条轴上唯一全亮的构图）。
+3. **跨版本用字符串替换改 `var` 声明会静默失败**：原型 v7 把 `grain` 那组变量塞进了一行长声明里，
+   v8 按短声明去替换没匹配上，于是 `grainW` 从未声明，strict mode 下直接
+   `Uncaught ReferenceError: grainW is not defined` ⇒ build() 早退、canvas 整片白。
+   改声明之前先 `grep` 一眼原文。
+4. **无头 Edge 的 `Emulation.setDeviceMetricsOverride` 不一定派发 `window.resize`**：
+   实测 `innerWidth` 已是 375 而 canvas 还停在 1256×808。所以除了 `resize` 还挂了 `ResizeObserver`。
+
+**它怎么只在那天出现**：首页 `<script>` 里有 6 行守卫 —— 11 月 11 日或 `?bday=1` 才
+`document.write` 把那支脚本 parser 阻塞地写进文档（所以遮罩仍在首次绘制前盖上，不会先闪一下首页），
+其余日子**一个字节都不下载**。播过就写 `localStorage['elysia.bday.2026.seen']`，同一台设备当天不再打扰；
+跨年不用改代码，把 `SEEN_KEY` 里的年份换掉即可。
+
+**顺带修掉的工具缺陷**：`tools/check_page_health.py` 自己起静态服务器时根目录是仓库根，
+而 2026-11 起 `index.html` / `armor.html` 都只存在于 `public/` —— 于是它把 python 的 404 页当页面体检，
+15 页齐声报「没有 meta description / canonical / og:image」。改成 `directory=public` 后全绿。
+（以前能过，是因为恰好有一个根目录在 `public/` 的常驻 8500 服务器在跑，脚本复用了它。）
 
 ---
 

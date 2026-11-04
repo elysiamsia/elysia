@@ -495,6 +495,8 @@
 
   function animate() {
     if (reducedMotion) return;
+    // 11.11 开场期间让位：遮罩层自己在跑一条 rAF，这里只续帧不重绘（否则两套粒子抢 CPU）
+    if (window.__bdayIntro) { requestAnimationFrame(animate); return; }
     time++;
     ctx.clearRect(0, 0, W, H);
 
@@ -806,6 +808,19 @@
     }
     showToast('「' + name + '」的乐土尚在建设中，敬请期待…');
   }, true);
+})();
+</script>
+
+<!-- 11.11 生日开场（2026）：只在当天第一次进站时播放，详见 assets/bday-intro.js。
+     这里是一层 20 行的守卫，为的是**别的日子一个字节都不下载**：满足条件才把脚本 parser 阻塞地写进文档，
+     所以遮罩仍在首页首次绘制前盖上，不会先闪一下正文；不满足条件就只有这 300 字节。 -->
+<script>
+(function () {
+  var d = new Date();
+  var onDay = d.getMonth() === 10 && d.getDate() === 11;      // 11 月 11 日
+  var forced = /[?&]bday(=|&|$)/.test(location.search);        // ?bday=1 预览（可再加 &t=N 定格）
+  if (!onDay && !forced) return;
+  document.write('<scr' + 'ipt src="/assets/bday-intro.js"><' + '/scr' + 'ipt>');
 })();
 </script>
 
