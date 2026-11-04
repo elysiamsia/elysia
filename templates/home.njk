@@ -40,6 +40,8 @@
      ⚠ 这一页的 :root **不定义 --bday-\***：让它吃默认值，
        而默认值就是从这一页原来写死的那套粉紫抄下来的 → **逐像素不变**。 -->
 <link rel="stylesheet" href="/assets/explore.css">
+<!-- 11.11 预热条（2026）：与英桀页同一条，样式/脚本都是共享的那一份。 -->
+<link rel="stylesheet" href="/assets/preheat.css">
 <title>elysiad.top — 致爱莉希雅</title>
 {{ stylesHtml | safe }}
 </head>
@@ -62,5 +64,7 @@ ElysiaBday.mount({
   birthMsg: '「嗨，想我了吗？」<br>今天是属于爱莉希雅的日子——<br><span class="pink">愿每一份祝福，都如飞花般绚丽♪</span>',
 });
 </script>
+<script src="/data/preheat.js" defer></script>
+<script src="/assets/preheat.js" defer></script>
 
 </html>
