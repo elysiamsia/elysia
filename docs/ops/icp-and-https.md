@@ -27,9 +27,10 @@
 |---|---|
 | `templates/base.njk`（`{{ pageBody }}` 之后） | 12 个角色页（构建时注入，改模板即全站生效） |
 | `index.html` | 首页 |
-| `armor.html` / `404.html` / `guestbook/index.html` | 尚未模板化的独立页 |
+| `armor.html` / `404.html` | 已模板化（2026-11-04 / 2026-11-03），页脚由 `base.njk` 统一注入 |
+| `index.html` / `guestbook/index.html` | 手写页（首页；留言簿在 `offline/` 存档里） |
 
-样式：`assets/site.css` 里的 `.site-legal`（首页与 12 角色页共用）；`armor.html` / `404.html` / `guestbook/index.html` 不加载 `site.css`，各自内联同一份规则。
+样式：`assets/site.css` 里的 `.site-legal`（首页与 12 角色页共用）；`armor.html` / `404.html` **不加载 `site.css`**（armor 是 `meta.standalone`，404 的整套样式在自己的 `404.page.css`），各自内联同一份规则，改页脚要两边一起改。
 
 - 字号 `.72rem`、颜色 `#7b6f99`、`opacity:.75`（不抢视觉）
 - `min-height:44px` —— 备案号也是链接，移动端同样按 44px 触控标准做
@@ -98,4 +99,4 @@ https://www.elysiad.top/        301 → https://elysiad.top/
 - [ ] 公安联网备案（30 天内）→ 拿到号后补进 footer
 - [ ] certbot 登记邮箱
 - [ ] `/v2/` 预览目录还挂在线上（`alias` 到 `/var/www/elysiad-v2`），是 dev 构建的旧副本；要么加 `noindex`，要么下线
-- [ ] `armor.html` / `404.html` / `guestbook/` 仍是手写页（未模板化），改页脚需单独改
+- [x] `armor.html`（2026-11-04）/ `404.html`（2026-11-03）已模板化，页脚由 `base.njk` 注入；只剩首页 `index.html` 与 `offline/guestbook/` 要单独改

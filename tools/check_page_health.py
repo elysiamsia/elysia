@@ -219,7 +219,8 @@ def main():
                 problems.append('h1 数量 = %d（该恰好 1 个）' % d['h1'])
             if not d['desc']:
                 problems.append('没有 meta description')
-            if not d['canonical']:
+            # 404 是 noindex 的引路页：canonical / og:image 都不该有（base.njk 按 meta 决定吐不吐）
+            if page != '404.html' and not d['canonical']:
                 problems.append('没有 canonical')
             if not d['lang']:
                 problems.append('html 没有 lang')

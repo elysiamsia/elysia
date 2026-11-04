@@ -53,10 +53,10 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 {{ themeColorTag | safe }}<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
+{% if not meta.standalone %}<!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
 <link rel="stylesheet" href="/assets/site.css">
 <link rel="stylesheet" href="/assets/explore.css">
-<meta name="referrer" content="same-origin">
+{% endif %}<meta name="referrer" content="same-origin">
 <title>{{ meta.title }}</title>
 
 <!-- SECTION: styles -->

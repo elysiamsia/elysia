@@ -57,7 +57,7 @@
 | **Ⅻ** | **浮生** | **华** | **`hua/`** | ✅ **整页建成 + 登记收口**（2026-10-08 · **§2.3 的「最近一轮」小节** / §10.13）。⚠ 她那一页的游戏是**全站唯一的 DOM 版**（保留），验收走**她专属的四条断言**，见 §4.1.2 的「DOM 版别登记进 `GAMES`」一行与 §10.13 三 |
 | **ⅩⅢ** | **空梦** | **帕朵菲莉丝** | **`pardofelis/`** | ✅ **整页建成 + 登记收口**（2026-10-13 · **§2.3 的「最近一轮」小节** / §10.14）。她的游戏是**画布版**，已正式登记进 `GAMES` 吃通用那四条 |
 
-另有 `armor.html`（她的装甲时间轴，**不是角色页**，异形结构，归 P1 的 Task 11）。
+另有 `armor.html`（她的装甲时间轴，**不是角色页**，异形结构）。**2026-11-04 已收进模板体系**：源在 `content/pages/armor.json` + `templates/pages/armor.*`，落地仍是 `public/armor.html`（`outPath`）；它 `meta.standalone: true`，不吃 `site.css`（见 §七 结构与 `assets/site.css` 文件头）。
 
 > 📦 **素材已备齐**：`D:\claude-code\materials\<角色名>\`
 > （README + `text_materials.md` 台词 + `visual_assets.md` / `audio_assets.md` 清单）
@@ -87,7 +87,7 @@
 | **下方区块** | `assets/bottom.js` | 页面最下方一块：探索度 / 生日倒计时 / 游戏槽。见 §10.9 |
 | **生日倒计时** | `assets/bday.js` + `data/bdays.js`（**全站唯一数据源**） | 右下角悬浮胶囊 → 点击展开面板（🎂 / 日期 / 天·时·分·秒 / 一句话）。**首页与英桀页共用同一个组件**。有确定生日的才渲染；查不到就**整个不出现** |
 | **每页小游戏** | `assets/games/<角色>.js` | 每位一个**互不干涉**的独立游戏，契约见 spec §4.5 |
-| `canonical` + JSON-LD | **12 页** `<head>`（含 `armor.html`） | 首页 `WebSite`，其余 `WebPage` + `BreadcrumbList` |
+| `canonical` + JSON-LD | **13 页** `<head>`（12 角色页 + `armor.html`，全部经 `templates/base.njk`；首页仍是手写页） | 首页 `WebSite`，其余 `WebPage` + `BreadcrumbList` |
 | favicon / 404 / robots / sitemap | 根目录 | 404 是引路版（一句话 + 三扇门） |
 | 图片优化 | `images/*.webp` | **在用 1.12 MB**（2026-10-15 实测）。⚠ 但 `images/` 里另有 **6.47 MB 从来没被引用**（webp 的 PNG 原图）—— 见「精修计划」4.3 节 |
 
@@ -138,7 +138,8 @@
 | `templates/partials/` | 刻印水印 / 徽章 / 触控目标（**改一处全站生效**） |
 | `templates/pages/<key>.*` | 每页三件：`page.css`（大块样式）、`page-fixes.css`（私有修复块）、`page.body.html`（body 原文，THEME 留占位） |
 | `src/build/build.mjs` | 拷贝 + 渲染 + 自校验（白名单从 `static.yml` 解析，含 `stripQuotes` 兼容两种写法） |
-| `index.html` / `armor.html` | **仍是手写页**（未模板化，在收编队列里）；404.html 已于 2026-11-03 收进模板 |
+| `index.html` | 唯一剩下的**手写页**（未模板化，收编队列第一位）；`armor.html` 已于 2026-11-04 收进模板，404.html 于 2026-11-03 |
+| `templates/pages/armor.*` | 已收编的 armor（2026-11-04）：`armor.page.css`（**三个 `<style>` 块原文照搬**：主样式 + 触控目标 + 备案号）/ `armor.page.body.html`。⚠ 它 `meta.standalone: true` —— base.njk 因此**不吐 site.css / explore.css**（Inventory R12/R13 的刻意结论：armor 的 `.timeline` / `.back-link` 是另一套结构，吃 7 页版本会整页错位） |
 | `templates/pages/404.*` | 已收编的 404：`404.page.css`（**必须自包 `<style>`**，与角色页同构）/ `404.page.body.html`（stars + 三扇门 + 星点脚本，不含页脚，页脚由 base.njk 统一给） |
 | `assets/` | `site.css`（含 `.site-legal`）/ `site.js` / `explore.js` / `games/*` / **`flowers.js`（2026-11-03 起为纯本地版）** |
 | `offline/` | **已下线的交互功能存档**：`flowers.interactive.js` / `guestbook/index.html` / `README.md`（恢复手册） |

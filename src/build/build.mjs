@@ -99,6 +99,8 @@ function renderPage(key) {
       // 非角色页（404）：不给 canonical、不排进索引、og:title 自带（base.njk 里按有无回落）
       ogTitle: character.meta.ogTitle || null,
       noindex: character.meta.noindex === true,
+      // 独立主题页（armor）：不吃 site.css / explore.css，全套样式都在自己的 page.css 里
+      standalone: character.meta.standalone === true,
     },
     // 主题色整行注入（含换行）—— 没有主题色的页（hua/pardofelis）一个字节都不多
     themeColorTag: character.meta.themeColor ? '<meta name="theme-color" content="' + character.meta.themeColor + '">' + String.fromCharCode(10) : '',
@@ -115,7 +117,7 @@ function renderPage(key) {
   rendered.add(rel);
   return rel;
 }
-const MIN_FILES = 7;   // 实测 static.yml 当前 7 项（404.html 已改由模板生成，从白名单移除）
+const MIN_FILES = 6;   // 实测 static.yml 当前 6 项（404.html / armor.html 已改由模板生成，从白名单移除）
 const MIN_DIRS = 15;   // 实测 static.yml 当前为 15 项（assets data images + 12 角色页；guestbook 已于 2026-11-03 下线）；低于此值视为格式漂移
 
 function fail(msg) {
