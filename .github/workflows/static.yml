@@ -16,7 +16,7 @@ on:
 
 env:
   # 404.html / armor.html 已由模板生成（content/pages/<key>.json + templates/pages/<key>.page.*），不再从这里拷
-  KEEP_FILES: "index.html sw.js robots.txt sitemap.xml favicon.svg CNAME"
+  KEEP_FILES: "sw.js robots.txt sitemap.xml favicon.svg CNAME"
   KEEP_DIRS: "assets data images aponia eden kalpas kevin su villv sakura kosma mobius griseo hua pardofelis"
 
 jobs:

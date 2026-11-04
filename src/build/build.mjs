@@ -48,6 +48,8 @@ const PAGES_DIR = path.join(TEMPLATES, 'pages');
 const CONTENT = path.join(ROOT, 'content', 'characters');
 // 非角色页（404 引路页这种）的数据放在 content/pages/，同样走 base.njk + 自己的 page.css；
 // 靠 outPath 决定落在 public/ 的哪个位置（404 → public/404.html，而不是 404/index.html）。
+// 首页是唯一例外：它有自己的骨架 templates/home.njk（WebSite 型 JSON-LD、无面包屑、
+// head 里那张 1200x630 的 og:image 都是首页独有的），不走 base.njk —— 靠数据里的 kind: "home" 选模板。
 const CONTENT_PAGES = path.join(ROOT, 'content', 'pages');
 const THEME_KEYS = ['explore', 'game', 'endingStars', 'quotes', 'typewriter'];
 const rendered = new Set();
@@ -87,7 +89,8 @@ function renderPage(key) {
   const fixMap = {};
   for (const m of read(path.join(PAGES_DIR, key + '.page-fixes.css')).matchAll(/<style id="([^"]+)">[\s\S]*?<\/style>/g)) fixMap[m[1]] = m[0];
   const stylesHtml = (character.styles || []).map((tok) => (tok === 'page' ? read(path.join(PAGES_DIR, key + '.page.css')) : (shared[tok] !== undefined ? shared[tok] : (fixMap[tok] || '')))).join(String.fromCharCode(10));
-  const html = env.render('base.njk', {
+  const shell = character.kind === 'home' ? 'home.njk' : 'base.njk';
+  const html = env.render(shell, {
     character: character,
     meta: {
       title: character.meta.title,
@@ -117,7 +120,7 @@ function renderPage(key) {
   rendered.add(rel);
   return rel;
 }
-const MIN_FILES = 6;   // 实测 static.yml 当前 6 项（404.html / armor.html 已改由模板生成，从白名单移除）
+const MIN_FILES = 5;   // 实测 static.yml 当前 5 项（404.html / armor.html / index.html 已改由模板生成，从白名单移除）
 const MIN_DIRS = 15;   // 实测 static.yml 当前为 15 项（assets data images + 12 角色页；guestbook 已于 2026-11-03 下线）；低于此值视为格式漂移
 
 function fail(msg) {

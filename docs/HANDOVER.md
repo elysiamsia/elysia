@@ -59,6 +59,8 @@
 
 另有 `armor.html`（她的装甲时间轴，**不是角色页**，异形结构）。**2026-11-04 已收进模板体系**：源在 `content/pages/armor.json` + `templates/pages/armor.*`，落地仍是 `public/armor.html`（`outPath`）；它 `meta.standalone: true`，不吃 `site.css`（见 §七 结构与 `assets/site.css` 文件头）。
 
+首页 `index.html` **同日也收进去了**（2026-11-04）：它是唯一走 `templates/home.njk` 的页（`kind: "home"`）—— 首页的 head 有自己的一套（`WebSite` 型 JSON-LD、没有面包屑、那张 1200×630 的 og:image），不适合塞进 `base.njk` 的条件分支，所以骨架单独一份、head 原样留在骨架里，body 与两段样式进 `templates/pages/index.*`。**产物与手写那版逐字节相同**（72955 字节，`cmp` 验过）。至此站上**没有手写页**了。
+
 > 📦 **素材已备齐**：`D:\claude-code\materials\<角色名>\`
 > （README + `text_materials.md` 台词 + `visual_assets.md` / `audio_assets.md` 清单）
 > **建页前先读那份 `text_materials.md`** —— 有出处的台词已经整理好了，还标了「待考/待核」。
@@ -87,7 +89,7 @@
 | **下方区块** | `assets/bottom.js` | 页面最下方一块：探索度 / 生日倒计时 / 游戏槽。见 §10.9 |
 | **生日倒计时** | `assets/bday.js` + `data/bdays.js`（**全站唯一数据源**） | 右下角悬浮胶囊 → 点击展开面板（🎂 / 日期 / 天·时·分·秒 / 一句话）。**首页与英桀页共用同一个组件**。有确定生日的才渲染；查不到就**整个不出现** |
 | **每页小游戏** | `assets/games/<角色>.js` | 每位一个**互不干涉**的独立游戏，契约见 spec §4.5 |
-| `canonical` + JSON-LD | **13 页** `<head>`（12 角色页 + `armor.html`，全部经 `templates/base.njk`；首页仍是手写页） | 首页 `WebSite`，其余 `WebPage` + `BreadcrumbList` |
+| `canonical` + JSON-LD | **14 页** `<head>`（12 角色页 + `armor.html` + 首页，**全部由模板生成**；404 是 `noindex` 引路页，不吐 canonical） | 首页 `WebSite`（在 `templates/home.njk` 里），其余 `WebPage` + `BreadcrumbList` |
 | favicon / 404 / robots / sitemap | 根目录 | 404 是引路版（一句话 + 三扇门） |
 | 图片优化 | `images/*.webp` | **在用 1.12 MB**（2026-10-15 实测）。⚠ 但 `images/` 里另有 **6.47 MB 从来没被引用**（webp 的 PNG 原图）—— 见「精修计划」4.3 节 |
 
@@ -138,7 +140,8 @@
 | `templates/partials/` | 刻印水印 / 徽章 / 触控目标（**改一处全站生效**） |
 | `templates/pages/<key>.*` | 每页三件：`page.css`（大块样式）、`page-fixes.css`（私有修复块）、`page.body.html`（body 原文，THEME 留占位） |
 | `src/build/build.mjs` | 拷贝 + 渲染 + 自校验（白名单从 `static.yml` 解析，含 `stripQuotes` 兼容两种写法） |
-| `index.html` | 唯一剩下的**手写页**（未模板化，收编队列第一位）；`armor.html` 已于 2026-11-04 收进模板，404.html 于 2026-11-03 |
+| `templates/home.njk` | **首页专属骨架**（2026-11-04 起）：`<head>` 原样留在这里（`WebSite` JSON-LD / og:image 1200×630 / 无面包屑），只有两个槽 —— `{{ stylesHtml }}` 与 `{{ pageBody }}`；`</body>` 之后那两行 `bday.js` 也在骨架里（它们本来就在 `</body>` 外）。数据 `content/pages/index.json` 里 `kind: "home"` 决定选它而不是 `base.njk` |
+| `templates/pages/index.*` | 已收编的首页（2026-11-04）：`index.page.css`（主样式块，**自包 `<style>`**）/ `index.page-fixes.css`（`#mobile-postcard-fix` 那个私有修复块）/ `index.page.body.html`（`<canvas>` 到 `</footer>`，含 15 个 script 与末尾那段内联 `daily.js` 配置）。⚠ `styles` 令牌顺序是 `["page","mobile-postcard-fix"]`，构建按这个顺序用 `\n` 拼 —— 顺序错了产物就多一个换行 |
 | `templates/pages/armor.*` | 已收编的 armor（2026-11-04）：`armor.page.css`（**三个 `<style>` 块原文照搬**：主样式 + 触控目标 + 备案号）/ `armor.page.body.html`。⚠ 它 `meta.standalone: true` —— base.njk 因此**不吐 site.css / explore.css**（Inventory R12/R13 的刻意结论：armor 的 `.timeline` / `.back-link` 是另一套结构，吃 7 页版本会整页错位） |
 | `templates/pages/404.*` | 已收编的 404：`404.page.css`（**必须自包 `<style>`**，与角色页同构）/ `404.page.body.html`（stars + 三扇门 + 星点脚本，不含页脚，页脚由 base.njk 统一给） |
 | `assets/` | `site.css`（含 `.site-legal`）/ `site.js` / `explore.js` / `games/*` / **`flowers.js`（2026-11-03 起为纯本地版）** |
@@ -197,7 +200,7 @@
 | 1 | **公安联网备案** | 30 日内，用数据码 `ceafa2f3776bb0c8cf2ca8d60a2917bd`；拿到公安备案号后**也要悬挂**（和 ICP 号并排） |
 | 2 | 备案号复核 | 确认首页 / 12 角色页 / armor / 404 都能看到 ICP 号并可点进工信部；截图存档 |
 | 3 | certbot 登记邮箱 | `certbot update_account --email <邮箱>`，否则到期提醒收不到 |
-| 4 | index / armor / 404 模板化 | 三页仍是手写，改一处处处要改；404 优先级最高（它现在是所有下线路由的落地页） |
+| 4 | ~~index / armor / 404 模板化~~ | **已完成**：404 于 2026-11-03，armor 与 index 于 2026-11-04。**站上已无手写页**，`KEEP_FILES` 从 6 项降到 5 项（`sw.js robots.txt sitemap.xml favicon.svg CNAME`） |
 | 5 | 视觉大改（主人已提） | 为审查做的这轮只删功能、没动设计；下一步按主人要求重做观感 |
 | 6 | 丝滑 phase 1.5 | 交互层动效与预取；⚠ 必须先有稳定基线再做 |
 | 7 | Q 版小人 / Spine 接入 | 素材 `material/`；13 角色共 11 固定骨 + 8 动作；`spine-webgl.js` 436KB **只能懒加载在回放页** |
