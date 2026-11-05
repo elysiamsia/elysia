@@ -116,3 +116,11 @@
 @media (prefers-reduced-motion: reduce) {
   .preheat-bloom.is-today { animation: none; }
 }
+
+/* 预热窗口里让老胶囊躲开（由 preheat.js 给 <html> 加 preheat-window）：
+   胶囊按「还剩几个整天」算、预热条按日常说法算，两个数同屏会差一天。
+   只对生日就是 11-11 的那几页生效，别的英桀生日不受影响。 */
+html.preheat-window #bdayEgg,
+html.preheat-window #bdayPanel {
+  display: none !important;
+}

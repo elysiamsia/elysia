@@ -29,6 +29,22 @@
   if (onDay) text = D.onDay;
   if (!text && !forced) return;          // 不在窗口里：什么都不做
 
+  // 同一屏不许有两个「还有几天」。站着的老胶囊按「还剩几个整天」算（11-10 会说「还有 0 天」），
+  // 预热条按日常说法算（11-10 = 明天），两个数永远差一天 —— 实测线上同屏一个说「六天」、
+  // 一个说「还有 5 天」。窗口里让老胶囊躲开，但**只躲生日就是 11-11 的那几页**：
+  // 别的英桀（比如阿波尼亚 5 月 25 日）的胶囊照常显示，它们的窗口不在这时候。
+  var B = window.ELYSIA_BDAYS || null;
+  var pk = (function () {
+    var q = location.pathname.replace(/^\/+/, '');
+    if (q === '') return 'index.html';
+    if (/\/$/.test(q)) q += 'index.html';
+    return q;
+  })();
+  var bd = B ? B[pk] : null;
+  if (!bd || (bd[0] === D.month - 1 && bd[1] === D.day)) {
+    document.documentElement.classList.add('preheat-window');
+  }
+
   var TOTAL = 7;
   var lit = onDay ? TOTAL : TOTAL - daysLeft + 1;   // 11-04 → 1 朵
   if (!(lit >= 1)) lit = 1;
