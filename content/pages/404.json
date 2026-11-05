@@ -1,0 +1,15 @@
+{
+  "key": "404",
+  "kind": "plain",
+  "outPath": "404.html",
+  "styles": ["page"],
+  "bodyAttrs": "",
+  "meta": {
+    "title": "这里还没有被乐土记录哦…… — elysiad.top",
+    "description": "这一页还没有被乐土记录。顺着三扇门回去：她的旅途、她的装甲、飞花寄语。",
+    "canonical": "",
+    "ogTitle": "这里还没有被乐土记录哦…… — elysiad.top",
+    "ogDescription": "这一页还没有被乐土记录。顺着三扇门回去吧。",
+    "noindex": true
+  }
+}

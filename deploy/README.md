@@ -2,12 +2,16 @@
 
 > 2026-10-16 起草。目标：治好**跨境慢**（实测线上单页 4~49 秒，连 Cloudflare 缓存命中都慢 ⇒ 瓶颈在链路，不在代码）。
 
+> ⚠ **2026-11-03 状态更新**：服务器早已就位并在稳定运行，本文是施工期草稿。
+> **四个接口（`/count` `/flower` `/notes` `/notes/manage`）已按公安审查要求全部下线**，后端 systemd 单元 `disabled`、数据保留。
+> 仍有效的只有：`deploy.sh` 的一键发布与 `rollback`、白名单装配、nginx 配置结构。接口相关段落仅作历史与恢复参考，恢复前先读 [`../docs/ops/compliance-offline.md`](../docs/ops/compliance-offline.md)。
+
 ## 一、已完成（不需要服务器）
 
 | 文件 | 作用 |
 |---|---|
-| `deploy/nginx-elysiad.conf` | 站点配置：HTTP/3 + brotli/gzip + 长缓存 + 干净 URL + 4 个接口反代 |
-| `deploy/elysia-api.service` | 那 4 个接口（`/count` `/flower` `/notes` `/notes/manage`）的小后端 systemd 单元 |
+| `deploy/nginx-elysiad.conf` | 站点配置：HTTP/2 + HSTS + 长缓存 + 干净 URL + 站内 404 页（**4 个接口反代已于 2026-11-03 删除**） |
+| `deploy/elysia-api.service` | 那 4 个接口的小后端 systemd 单元（**现为 disabled**，unit 与 `/var/lib/elysia/elysia.db` 都保留，可随时恢复） |
 | `deploy/deploy.sh` | 一键发布（沿用线上白名单装配）+ `rollback` 秒回滚 |
 
 ## 二、还缺什么
@@ -62,4 +66,5 @@ systemctl stop elysia-api            # 接口停了也不影响静态页（页�
 ## 五、⚠ 两个必须记住的坑（来自 wrangler.toml 的历史记载）
 
 1. `*.workers.dev` 在大陆**连不上**（HTTP 000）⇒ 这也是为什么接口当初要挂同源。搬到自建服务器后**天然同源**，这个问题自然消失 ✅
-2. 页面与接口**必须同一条命**：`/count`、`/flower`、`/notes` 三个都要代理（历史上漏过 `/flower`，QQ 浏览器上点献花永远是本地数字，而且**静默降级、看起来完全正常**）。
+2. ~~页面与接口**必须同一条命**~~（历史坑）：`/count`、`/flower`、`/notes` 三个都要代理，漏一个就静默降级（QQ 浏览器上点献花永远只是本地数字，**看起来完全正常**）。
+   2026-11-03 起这套接口整体下线，前端已改纯本地版，本坑暂时不适用；**恢复接口时必须重新遵守它**。

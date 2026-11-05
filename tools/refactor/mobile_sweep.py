@@ -129,7 +129,7 @@ def main():
         with open(out_path, 'w', encoding='utf-8') as f:
             json.dump(report, f, ensure_ascii=False, indent=1)
         print('报告已写入 ' + out_path)
-    print(('✅ 全绿' if fails == 0 else '❌ %d 项失败' % fails))
+    print('PASS all green' if fails == 0 else 'FAIL %d checks' % fails)
     return 0 if fails == 0 else 1
 
 

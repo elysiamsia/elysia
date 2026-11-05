@@ -44,8 +44,7 @@ PAGES = [
     'kevin/index.html', 'aponia/index.html', 'eden/index.html', 'villv/index.html',
     'kalpas/index.html', 'su/index.html', 'sakura/index.html', 'kosma/index.html',
     'mobius/index.html', 'griseo/index.html', 'hua/index.html', 'pardofelis/index.html',
-    'guestbook/index.html',
-]
+    ]
 
 # 页面里要采集的东西（一次性 evaluate）
 PROBE = r"""(() => {
@@ -144,7 +143,9 @@ def main():
     try:
         urllib.request.urlopen('http://127.0.0.1:%d/assets/site.js' % PORT, timeout=3).read()
     except Exception:
-        handler = partial(Quiet, directory=ROOT)
+        # 站点根是 public/（2026-11 起 index.html/armor.html 都由模板生成，仓库根已经没有 html 了）；
+        # 以前这里是 ROOT，自己起服务器时会把 python 的 404 页当页面体检，15 页全报「没有 meta description」。
+        handler = partial(Quiet, directory=os.path.join(ROOT, 'public'))
         httpd = socketserver.TCPServer(('127.0.0.1', PORT), handler)
         threading.Thread(target=httpd.serve_forever, daemon=True).start()
         own = httpd
@@ -220,7 +221,8 @@ def main():
                 problems.append('h1 数量 = %d（该恰好 1 个）' % d['h1'])
             if not d['desc']:
                 problems.append('没有 meta description')
-            if not d['canonical']:
+            # 404 是 noindex 的引路页：canonical / og:image 都不该有（base.njk 按 meta 决定吐不吐）
+            if page != '404.html' and not d['canonical']:
                 problems.append('没有 canonical')
             if not d['lang']:
                 problems.append('html 没有 lang')

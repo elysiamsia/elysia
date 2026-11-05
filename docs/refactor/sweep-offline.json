@@ -1,0 +1,187 @@
+{
+ "root": "D:\\claude-code\\elysia-main\\public",
+ "port": 8801,
+ "widths": [
+  320,
+  360,
+  390
+ ],
+ "pages": {
+  "kevin/index.html": {
+   "320": {
+    "title": "elysiad.top/kevin �� �¿���",
+    "h1": true,
+    "w": 320,
+    "sw": 320,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "360": {
+    "title": "elysiad.top/kevin �� �¿���",
+    "h1": true,
+    "w": 360,
+    "sw": 360,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "390": {
+    "title": "elysiad.top/kevin �� �¿���",
+    "h1": true,
+    "w": 390,
+    "sw": 390,
+    "small": 0,
+    "outofview": 1,
+    "ok": true
+   }
+  },
+  "su/index.html": {
+   "320": {
+    "title": "elysiad.top/su �� ����",
+    "h1": true,
+    "w": 320,
+    "sw": 320,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "360": {
+    "title": "elysiad.top/su �� ����",
+    "h1": true,
+    "w": 360,
+    "sw": 360,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "390": {
+    "title": "elysiad.top/su �� ����",
+    "h1": true,
+    "w": 390,
+    "sw": 390,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   }
+  },
+  "hua/index.html": {
+   "320": {
+    "title": "elysiad.top/hua �� �»�",
+    "h1": true,
+    "w": 320,
+    "sw": 320,
+    "small": 0,
+    "outofview": 1,
+    "ok": true
+   },
+   "360": {
+    "title": "elysiad.top/hua �� �»�",
+    "h1": true,
+    "w": 360,
+    "sw": 360,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "390": {
+    "title": "elysiad.top/hua �� �»�",
+    "h1": true,
+    "w": 390,
+    "sw": 390,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   }
+  },
+  "index.html": {
+   "320": {
+    "title": "elysiad.top �� �°���ϣ��",
+    "h1": true,
+    "w": 320,
+    "sw": 320,
+    "small": 0,
+    "outofview": 8,
+    "ok": true
+   },
+   "360": {
+    "title": "elysiad.top �� �°���ϣ��",
+    "h1": true,
+    "w": 360,
+    "sw": 360,
+    "small": 0,
+    "outofview": 7,
+    "ok": true
+   },
+   "390": {
+    "title": "elysiad.top �� �°���ϣ��",
+    "h1": true,
+    "w": 390,
+    "sw": 390,
+    "small": 0,
+    "outofview": 5,
+    "ok": true
+   }
+  },
+  "armor.html": {
+   "320": {
+    "title": "����װ�� �� ����ʱ���� �� elysiad.top",
+    "h1": true,
+    "w": 320,
+    "sw": 320,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "360": {
+    "title": "����װ�� �� ����ʱ���� �� elysiad.top",
+    "h1": true,
+    "w": 360,
+    "sw": 360,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "390": {
+    "title": "����װ�� �� ����ʱ���� �� elysiad.top",
+    "h1": true,
+    "w": 390,
+    "sw": 390,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   }
+  },
+  "404.html": {
+   "320": {
+    "title": "���ﻹû�б�������¼Ŷ���� �� elysiad.top",
+    "h1": true,
+    "w": 320,
+    "sw": 320,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "360": {
+    "title": "���ﻹû�б�������¼Ŷ���� �� elysiad.top",
+    "h1": true,
+    "w": 360,
+    "sw": 360,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   },
+   "390": {
+    "title": "���ﻹû�б�������¼Ŷ���� �� elysiad.top",
+    "h1": true,
+    "w": 390,
+    "sw": 390,
+    "small": 0,
+    "outofview": 0,
+    "ok": true
+   }
+  }
+ },
+ "verdict": "pass",
+ "fails": 0
+}

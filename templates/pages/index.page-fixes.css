@@ -1,0 +1,53 @@
+<style id="mobile-postcard-fix">
+/* 手机端修复（2026-10-15 实测）：明信片那节把布局视口撑到 571px（别的页 360）⇒ 整页缩小 + 43 处小字。
+   二分法定位到 section#postcard。这里用**内联样式 + 直接约束宽度**（不赌 min-width 机制、也不怕 site.css 被缓存）。
+   注意：.postcard-art 的横向滚动是设计（spec 原文「手机可横滑」），所以只是**把它压到视口内**，滚动保留。 */
+#postcard,#postcard *{min-width:0}
+#postcard .postcard-art{max-width:calc(100vw - 2rem)}
+.postcard-btn{min-height:44px}
+#bdayEgg{min-height:44px}
+</style>
+
+<style id="bday-intro">
+/* 11.11 生日开场（2026-11-04 定案）：由 assets/bday-intro.js 在当天第一次进站时自建节点并播放。
+   这里只管遮罩层本身和四行文案的排版；动画强度、位移、模糊全部由 JS 按时间轴驱动。
+   z-index 10050：首页自己的浮层最高到 9999（index.page.css 有 4 处），要压在它们上面一格。 */
+html.bday-lock{overflow:hidden}
+#bdayIntro{position:fixed;inset:0;z-index:10050;overflow:hidden;background:#08040f;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  will-change:opacity;opacity:1}
+#bdayIntro.is-done{opacity:0;transition:opacity .48s ease}
+#bdayIntro .bday-canvas{position:absolute;inset:0;display:block;width:100%;height:100%}
+#bdayIntro .bday-vig{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 78% 62% at 50% 46%,rgba(0,0,0,0) 34%,rgba(4,2,8,.5) 72%,rgba(3,1,6,.9) 100%)}
+#bdayIntro .bday-grain{position:absolute;inset:0;pointer-events:none;opacity:.55;
+  mix-blend-mode:soft-light;background-repeat:repeat;background-size:128px 128px}
+#bdayIntro .bday-copy{position:absolute;left:0;right:0;top:0;padding:0 1.2rem;text-align:center;pointer-events:none}
+#bdayIntro .bday-date{font-size:clamp(2.9rem,16.5vw,5.4rem);font-weight:200;line-height:.98;
+  color:#fff;letter-spacing:.32em;text-indent:.32em;font-variant-numeric:tabular-nums;
+  text-shadow:0 0 26px rgba(255,190,220,.45),0 0 70px rgba(255,140,190,.28)}
+#bdayIntro .bday-name{font-size:clamp(.95rem,4.2vw,1.15rem);font-weight:300;letter-spacing:.44em;text-indent:.44em;
+  color:#ffe3ef;margin-top:clamp(.9rem,3.2vw,1.35rem);text-shadow:0 0 18px rgba(255,160,205,.4)}
+#bdayIntro .bday-say{font-size:clamp(.86rem,3.5vw,.98rem);line-height:1.9;letter-spacing:.06em;
+  color:rgba(255,232,244,.8);margin-top:clamp(.6rem,2.4vw,.9rem)}
+#bdayIntro .bday-sig{font-size:.58rem;letter-spacing:.5em;text-indent:.5em;text-transform:uppercase;
+  color:rgba(255,214,236,.62);margin-top:clamp(1.1rem,4vw,1.6rem)}
+#bdayIntro .bday-skip{position:absolute;right:1rem;top:max(1rem,env(safe-area-inset-top));z-index:2;
+  min-height:40px;padding:.5rem 1.05rem;border:1px solid rgba(255,214,235,.28);border-radius:999px;
+  background:rgba(12,6,22,.42);color:rgba(255,232,244,.74);font-size:.8rem;letter-spacing:.1em;
+  font-family:inherit;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  transition:border-color .2s,color .2s}
+#bdayIntro .bday-skip:hover,#bdayIntro .bday-skip:focus-visible{border-color:rgba(255,206,232,.6);color:#fff}
+@media (min-width:900px){
+  #bdayIntro .bday-date{font-size:7.4rem}
+  #bdayIntro .bday-name{font-size:1.25rem}
+  #bdayIntro .bday-say{font-size:1.05rem}
+}
+@media (max-height:430px) and (orientation:landscape){
+  #bdayIntro .bday-date{font-size:clamp(2rem,9vh,3rem)}
+  #bdayIntro .bday-name{margin-top:.5rem}
+  #bdayIntro .bday-say{margin-top:.35rem;line-height:1.6}
+  #bdayIntro .bday-sig{margin-top:.5rem}
+  #bdayIntro .bday-skip{min-height:34px;padding:.35rem .8rem;font-size:.74rem}
+}
+</style>

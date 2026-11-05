@@ -47,9 +47,10 @@ jobs:
           set -euo pipefail
           files=$(find public -type f | wc -l)
           echo "产物文件数：$files"
-          # main 的构建基线是 131 个文件（2026-11-03 本地实测，与 CI 一致）。
-          # 掉到 111 是历史坑：KEEP_FILES/KEEP_DIRS 的引号没剥掉 ⇒ 白名单按空格切成了碎片。
-          test "$files" -ge 125 || { echo "产物文件数异常，疑似白名单掉文件（111 症状）"; exit 1; }
+          # 基线 105 个文件（2026-11-03 起 images/raw 的 25 张原始素材不再发布：页面零引用、
+          # 却占 30 MB 且被公开下载）。掉到 111 是历史坑：KEEP_FILES/KEEP_DIRS 的引号没剥掉
+          # ⇒ 白名单按空格切成了碎片；现在正常值本来就低于 111，所以阈值取 100。
+          test "$files" -ge 100 || { echo "产物文件数异常，疑似白名单掉文件（111 症状）"; exit 1; }
           test -f public/index.html
           test -f public/guestbook/index.html
           test -f public/CNAME
