@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+
+
+<!-- 同站请求保留Referer，跨站请求不发送 -->
+<meta name="referrer" content="same-origin">
+<meta charset="UTF-8">
+<!-- 呀！标签页上也要有一枚小花呀，不然浏览器给的是个空白方块呢♥ -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<!-- 呀！分享出去的时候，要带着她的样子，而不是一行光秃秃的链接♥ -->
+<meta name="description" content="往世乐土 · 她的旅途 · 十三英桀 · 飞花寄语。一位如飞花般绚丽的少女，和她的十三位同伴。">
+<link rel="canonical" href="https://elysiad.top/">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "elysiad.top — 致爱莉希雅",
+  "url": "https://elysiad.top/",
+  "description": "往世乐土 · 她的旅途 · 十三英桀 · 飞花寄语。一位如飞花般绚丽的少女，和她的十三位同伴。",
+  "inLanguage": "zh-CN"
+}
+</script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="elysiad.top">
+<meta property="og:title" content="elysiad.top — 致爱莉希雅">
+<meta property="og:description" content="往世乐土 · 她的旅途 · 十三英桀 · 飞花寄语。一位如飞花般绚丽的少女，和她的十三位同伴。">
+<meta property="og:url" content="https://elysiad.top/">
+<meta property="og:image" content="https://elysiad.top/images/og-1.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0a0612">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
+<link rel="stylesheet" href="/assets/site.css">
+<!-- 生日倒计时胶囊的样式住在共享层（2026-10-01 起）。
+     ⚠ **必须在页面 <style> 之前** —— 页面自己的规则要能覆盖共享层，
+       这是全站一致的加载顺序（spec §3.2）。
+     ⚠ 这一页的 :root **不定义 --bday-\***：让它吃默认值，
+       而默认值就是从这一页原来写死的那套粉紫抄下来的 → **逐像素不变**。 -->
+<link rel="stylesheet" href="/assets/explore.css">
+<!-- 11.11 预热条（2026）：与英桀页同一条，样式/脚本都是共享的那一份。 -->
+<link rel="stylesheet" href="/assets/preheat.css">
+<title>elysiad.top — 致爱莉希雅</title>
+{{ stylesHtml | safe }}
+</head>
+<body>
+{{ pageBody | safe }}
+</body>
+<!-- ===== 生日倒计时彩蛋 =====
+     ⚠ 2026-10-01 起它是**共享组件**（assets/bday.js），不再是这一页自己的一份 ——
+       别的英桀页用的是**同一个**。「形式一样」最硬的保证，就是「本来就是同一个组件」。
+       （只给英桀页写一份、首页留着内联那份的话，站上就有两份同一个界面，
+         正是项目最忌的「同一件事两处维护」。）
+     ⚠ 月份日期也从**写死的 10/11** 改成读 data/bdays.js（全站唯一数据源）。 -->
+<script src="/data/bdays.js"></script>
+<script src="/assets/bday.js"></script>
+<script>
+ElysiaBday.mount({
+  // ⚠ 这两句**逐字**保持原来内联那版的内容，一个字没动。
+  //    首页**不传** `src`：它原来就没有出处标注，传了会凭空多出一个节点。
+  msg: '「今天是我的生日哦。要一起庆祝吗？<br>就我们两个人。」',
+  birthMsg: '「嗨，想我了吗？」<br>今天是属于爱莉希雅的日子——<br><span class="pink">愿每一份祝福，都如飞花般绚丽♪</span>',
+});
+</script>
+<script src="/data/preheat.js" defer></script>
+<script src="/assets/preheat.js" defer></script>
+
+</html>

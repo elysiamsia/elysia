@@ -1,0 +1,78 @@
+<style>
+/* 404 · 引路页
+   路径全部用绝对路径：访客可能是在 /a/b/c/d 上撞的墙，相对路径会让他再撞一次。
+   base.njk 已经带了 site.css / explore.css，这里只补这页自己的东西。 */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{
+  min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:2rem;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:radial-gradient(ellipse at 50% 40%,#1a0e2e 0%,#0a0612 70%);
+  color:#f0e6ff;line-height:1.8;overflow-x:hidden;
+}
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0}
+.star{position:absolute;border-radius:50%;background:#fff;
+  animation:twinkle var(--dur) ease-in-out var(--delay) infinite}
+@keyframes twinkle{0%,100%{opacity:.15}50%{opacity:.85}}
+.wrap{position:relative;z-index:1;max-width:560px}
+.code{font-size:.72rem;letter-spacing:.4em;color:#7b6f99;margin-bottom:1.4rem}
+.msg{
+  font-size:clamp(1.1rem,3.6vw,1.5rem);font-weight:300;letter-spacing:.1em;
+  color:#ffc8dd;text-shadow:0 0 25px rgba(255,200,221,.3);
+}
+.sub{margin-top:.9rem;font-size:.9rem;color:#a89cc8;font-weight:300;letter-spacing:.08em}
+.doors{display:flex;gap:.9rem;justify-content:center;flex-wrap:wrap;margin-top:2.6rem}
+.door{
+  display:flex;flex-direction:column;gap:.25rem;min-width:104px;
+  padding:.9rem 1.1rem;border-radius:14px;text-decoration:none;
+  background:linear-gradient(135deg,rgba(255,200,221,.06),rgba(155,93,229,.06));
+  border:1px solid rgba(255,200,221,.12);
+  transition:transform .3s,box-shadow .3s,border-color .3s;
+}
+.door:hover,.door:focus-visible{
+  transform:translateY(-3px);border-color:rgba(255,200,221,.35);
+  box-shadow:0 0 28px rgba(255,143,163,.16);outline:none;
+}
+.door .t{font-size:.9rem;color:#ffc8dd;letter-spacing:.08em}
+.door .n{font-size:.7rem;color:#7b6f99;letter-spacing:.06em}
+.home{
+  display:inline-block;margin-top:2.4rem;padding:.6rem 1.5rem;border-radius:999px;
+  text-decoration:none;font-size:.85rem;letter-spacing:.15em;color:#ffc8dd;
+  background:linear-gradient(135deg,rgba(255,143,163,.18),rgba(155,93,229,.2));
+  border:1px solid rgba(255,200,221,.3);
+  transition:transform .3s,box-shadow .3s;
+}
+.home:hover,.home:focus-visible{transform:translateY(-2px);box-shadow:0 0 28px rgba(255,143,163,.28);outline:none}
+.foot{margin-top:3rem;font-size:.72rem;color:#7b6f99;letter-spacing:.2em}
+/* ── 手机端（≤480px）──
+   原来只是把门压到 88px 并排塞进一行：字全靠 .72/.9rem 这些桌面尺寸，375 上
+   主标题只有 17.6px、门里说明 11.2px，读起来费劲。这里整体上浮一档，
+   三扇门改成整行（标题左、说明右），点触面从 78px 拉到 56px 起步且更宽。 */
+@media(max-width:480px){
+  body{padding:1.25rem;padding-bottom:calc(1.25rem + env(safe-area-inset-bottom));text-align:left}
+  .wrap{max-width:100%}
+  .code{font-size:.8rem;letter-spacing:.5em;margin-bottom:1.1rem;text-align:center}
+  .msg{font-size:clamp(1.3rem,6vw,1.6rem);letter-spacing:.06em;text-align:center}
+  .sub{margin-top:.8rem;font-size:.95rem;text-align:center}
+  .doors{flex-direction:column;gap:.7rem;margin-top:1.7rem}
+  .door{flex-direction:row;align-items:baseline;justify-content:space-between;
+    gap:.8rem;min-width:0;padding:.95rem 1.1rem}
+  .door .t{font-size:1rem}
+  .door .n{font-size:.78rem}
+  .home{display:block;width:fit-content;margin:2rem auto 0;padding:.75rem 1.6rem;font-size:.95rem}
+  .foot{margin-top:1.8rem;font-size:.78rem;text-align:center}
+}
+/* 手机横屏 / 矮视口：竖着排会顶出屏幕，改回一行三扇并收紧上下留白 */
+@media(max-height:520px) and (orientation:landscape){
+  body{justify-content:flex-start;padding:1rem}
+  .doors{flex-direction:row;margin-top:1.2rem}
+  .door{flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .home{margin-top:1.2rem}
+  .foot{margin-top:1.2rem}
+}
+@media(prefers-reduced-motion:reduce){
+  .star{animation:none;opacity:.4}
+  .door,.home{transition:none}
+}
+</style>

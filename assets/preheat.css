@@ -1,0 +1,126 @@
+/* assets/preheat.css — 11.11 预热条（2026）
+ * 页脚上方一条：左边花环（点亮 = 日子近了），右边今天那一句。
+ * 颜色全部取自共享层的既有 token，不新增一套配色。
+ */
+.preheat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  flex-wrap: wrap;
+  max-width: 62rem;
+  margin: 2.6rem auto 0;
+  padding: 1.35rem 1.25rem 1.15rem;
+  border-top: 1px solid rgba(255, 255, 255, .07);
+  color: var(--text-muted, rgba(232, 226, 245, .72));
+  font-size: .87rem;
+  letter-spacing: .04em;
+  line-height: 1.9;
+  text-wrap: pretty;
+}
+
+.preheat-garland {
+  display: flex;
+  align-items: center;
+  gap: .42rem;
+  position: relative;
+}
+
+/* 花环之间那根细线，只当作「串起来」的暗示 */
+.preheat-garland::before {
+  content: '';
+  position: absolute;
+  left: .9rem;
+  right: .9rem;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(90deg,
+      rgba(255, 178, 216, .34), rgba(255, 214, 236, .18) 55%, rgba(255, 255, 255, .06));
+  z-index: 0;
+}
+
+.preheat-bloom {
+  position: relative;
+  z-index: 1;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+  /* 深色底垫在花后面：串线从花瓣中间穿过去时不会把未点亮的花切成两半 */
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, rgba(8, 5, 14, .92) 46%, rgba(8, 5, 14, 0) 74%);
+}
+
+.preheat-petal,
+.preheat-core {
+  fill: rgba(255, 255, 255, .06);
+  stroke: rgba(255, 255, 255, .18);
+  stroke-width: .55;
+  transition: fill var(--motion-base, 1.5s) var(--ease-soft, ease),
+    stroke var(--motion-base, 1.5s) var(--ease-soft, ease);
+}
+
+.preheat-bloom.is-lit .preheat-petal {
+  fill: rgba(255, 190, 222, .78);
+  stroke: rgba(255, 226, 240, .55);
+}
+
+.preheat-bloom.is-lit .preheat-core {
+  fill: rgba(255, 231, 178, .9);
+  stroke: rgba(255, 236, 200, .6);
+}
+
+.preheat-bloom.is-lit {
+  filter: drop-shadow(0 0 .34rem rgba(255, 170, 214, .45));
+}
+
+/* 今天那一朵：亮得比别的久一点（呼吸），但不抢字 */
+.preheat-bloom.is-today {
+  animation: preheat-breathe 3.8s var(--ease-soft, ease-in-out) infinite;
+}
+
+@keyframes preheat-breathe {
+  0%, 100% { filter: drop-shadow(0 0 .3rem rgba(255, 170, 214, .45)); }
+  50%      { filter: drop-shadow(0 0 .8rem rgba(255, 190, 226, .85)); }
+}
+
+.preheat-copy {
+  margin: 0;
+  color: var(--text-muted, rgba(232, 226, 245, .78));
+  text-wrap: pretty;
+}
+
+.preheat-mark {
+  margin-left: .7rem;
+  font-size: .7rem;
+  letter-spacing: .22em;
+  color: rgba(255, 214, 236, .5);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .preheat {
+    flex-direction: column;
+    gap: .75rem;
+    margin-top: 2.4rem;
+    padding: 1.25rem 1.15rem;
+    font-size: .82rem;
+    text-align: center;
+  }
+  .preheat-mark {
+    display: block;
+    margin: .2rem 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preheat-bloom.is-today { animation: none; }
+}
+
+/* 预热窗口里让老胶囊躲开（由 preheat.js 给 <html> 加 preheat-window）：
+   胶囊按「还剩几个整天」算、预热条按日常说法算，两个数同屏会差一天。
+   只对生日就是 11-11 的那几页生效，别的英桀生日不受影响。 */
+html.preheat-window #bdayEgg,
+html.preheat-window #bdayPanel {
+  display: none !important;
+}
