@@ -124,3 +124,33 @@ a.back-link,a.back{min-height:44px;display:inline-flex;align-items:center}
 .site-legal a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 .25rem;color:inherit;text-decoration:none;border-bottom:1px solid rgba(123,111,153,.4);transition:opacity var(--motion-quick,1.2s) var(--ease-soft,ease),border-color var(--motion-quick,1.2s) var(--ease-soft,ease)}
 .site-legal a:hover,.site-legal a:focus-visible{opacity:1;border-bottom-color:#7b6f99}
 </style>
+
+<style id="page-polish">
+/* ===== 视觉精修（2026-11-09）=====
+   与首页 / 角色页同一套尺度：卡片正文抬到 .9rem、行高放到 1.82；
+   手机上把时间轴往左收 10px、卡片内边距收紧，正文能宽出近 20px；
+   筛选条那排按钮以前只有 33px 高（低于 44px 的触控下限），手机上放大到 44。 */
+.card-title{line-height:1.45}
+.card-desc{font-size:.9rem;line-height:1.82}
+.card-detail{font-size:.86rem;line-height:1.8}
+.card-meta{font-size:.82rem}
+.card-sub{font-size:.8rem}
+.type-badge{font-size:.7rem}
+.filter-chip{font-size:.82rem;padding:.4rem .95rem;min-height:40px}
+.filter-toggle,.clear-btn{font-size:.78rem;min-height:40px;display:inline-flex;align-items:center}
+
+@media(max-width:480px){
+  .page-head{padding:3rem 1rem .6rem}
+  .filter-bar{padding:.9rem 1rem;gap:.7rem .9rem}
+  .filter-chip{min-height:44px;padding:.45rem 1rem}
+  .filter-toggle,.clear-btn{min-height:44px}
+  .timeline{padding:1rem 1rem 3.2rem}
+  .timeline-line{left:1.2rem}
+  .timeline-dot{left:1.2rem}
+  .timeline-card,
+  .timeline-node:nth-child(odd) .timeline-card,
+  .timeline-node:nth-child(even) .timeline-card{
+    width:calc(100% - 3.2rem);margin-left:3.2rem;padding:1.15rem 1.2rem;
+  }
+}
+</style>

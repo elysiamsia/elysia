@@ -2168,6 +2168,7 @@ t=1004ms 10914  ← 第一件货这时才入画
 |---|---|---|
 | 全站通用 | `assets/site.css` 末尾「全站通用层」 | `text-size-adjust`、`scroll-padding-top:4.5rem`、标题 `text-wrap:balance` / 正文 `pretty`、统一键盘焦点圈 |
 | 角色页共用 | `assets/site.css` 末尾「角色页共用层」 | `body .timeline-card p` 抬到 `.9rem` / 行高 1.85；≤480px 把时间轴的线从 1.5rem 收到 1.2rem、资料表标签列定宽 4.8rem |
+| `armor.html` | `templates/pages/armor.page.css` 末尾 `<style id="page-polish">` | 卡片正文 `.82rem`→`.9rem`；筛选条那排按钮 33px→40px（手机上 44px，补上触控下限）；≤480px 时间轴内收 10px、卡片内边距收紧 |
 | 首页专属 | `templates/pages/index.page.css` 末尾「视觉精修」段 | `.section-opening{min-height:100svh}`、`.section-title{line-height:1.45}`、时间轴紫线**贯穿整段旅程**（`top:-2rem;bottom:-6rem`，渐隐收窄到 6%/94%） |
 
 **为什么共用层要写 `body` 前缀**：14 个页面的 `*.page.css` 里各有一条 `@media(max-width:768px)` 的
