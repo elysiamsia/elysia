@@ -555,10 +555,17 @@ body{
 .timeline-card h3{line-height:1.45}
 .timeline-card p{font-size:.9rem;line-height:1.85}
 
+/* 紫线贯穿整段旅程：上端接进标题下的余白，下端走到这一节的底边（.content-section 的 6rem 内边距里），
+   渐隐段收窄到 6% / 94%，免得线变长之后两头看起来像断的。 */
+.timeline-line{
+  top:-2rem;bottom:-6rem;
+  background:linear-gradient(180deg,transparent,var(--purple-deep) 6%,var(--purple) 50%,var(--purple-deep) 94%,transparent);
+}
+
 @media(max-width:480px){
   /* 时间轴那条线原来贴 1.5rem，卡片再吃掉 3.5rem + 左右各 1.5rem 内边距，
      正文只剩 230px 宽 —— 线挪到 1.2rem，卡片内边距收到 1.2rem，正文能宽出一截。 */
-  .timeline-line{left:1.2rem}
+  .timeline-line{left:1.2rem;top:-1.2rem;bottom:-4rem}
   .timeline-dot{left:1.2rem}
   .timeline-node .timeline-index{left:1.2rem}
   .timeline-card,
