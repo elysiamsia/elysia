@@ -1,0 +1,19 @@
+{
+  "key": "armor",
+  "kind": "plain",
+  "outPath": "armor.html",
+  "shortName": "她的装甲",
+  "styles": [
+    "page"
+  ],
+  "bodyAttrs": "",
+  "meta": {
+    "title": "她的装甲 · 完整时间轴 — elysiad.top",
+    "description": "爱莉希雅的装甲与皮肤完整时间轴：现实时间 · 游戏时间 · 游戏版本三轴对照。",
+    "canonical": "https://elysiad.top/armor.html",
+    "ogTitle": "她的装甲 · 完整时间轴 — elysiad.top",
+    "ogDescription": "爱莉希雅的装甲与皮肤完整时间轴：现实时间 · 游戏时间 · 游戏版本三轴对照。",
+    "themeColor": "#0a0612",
+    "standalone": true
+  }
+}

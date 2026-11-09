@@ -1,0 +1,78 @@
+/* assets/bday-theme.css — 11.11 当天换装（2026）
+ * 由 assets/bday-theme.js 决定哪一天生效：它只往 <html> 上挂一个 data-bday="on"。
+ * 不动任何页面结构，只做三件事：
+ *   ① 覆盖共享的底色令牌 —— 各页原有的渐变与 body 底色自己变暖
+ *   ② body 上叠两层很淡的光：顶上偏玫瑰、脚下偏烛黄
+ *   ③ 顶部一道金粉细线（fixed，滚到哪儿都在），页脚与预热条的接缝转暖
+ * ⚠ 角色页各自的中间层色（--bg-violet / --bg-ink / --bg-lab / --bg-stage …）**一律不动**：
+ *   换装是「今天给全站加一层光」，不是把十四个人的页面刷成同一个颜色。
+ */
+html[data-bday="on"]{
+  --bg-abyss:#160a12;
+  --bg-deep:#22101b;
+  --bg-purple:#2c1426;   /* 这个令牌只有首页与 armor 用 */
+  --gold:#ffd28f;
+  --gold-warm:#eeb96a;
+  --gold-soft:#ffe8c2;
+}
+
+/* ② 两层光写成 body 的 background-image，压在页面自己的底色之上 ——
+   不用 position:fixed 的覆盖层，免得和那些 z-index:2 的 section 打架。 */
+html[data-bday="on"] body{
+  background-color:var(--bg-abyss);
+  background-image:
+    radial-gradient(125% 58% at 50% -14%, rgba(255,150,178,.20), rgba(255,150,178,0) 62%),
+    radial-gradient(105% 40% at 50% 114%, rgba(255,206,124,.13), rgba(255,206,124,0) 60%);
+  background-attachment:fixed;
+  background-repeat:no-repeat;
+}
+
+/* ③ 顶部一道细线：粉 → 金 → 粉，两端淡出 */
+html[data-bday="on"] body::after{
+  content:"";position:fixed;top:0;left:0;right:0;height:2px;z-index:9990;pointer-events:none;
+  background:linear-gradient(90deg,
+    rgba(255,143,163,0) 0%,
+    rgba(255,143,163,.55) 15%,
+    rgba(255,214,150,.95) 50%,
+    rgba(255,143,163,.55) 85%,
+    rgba(255,143,163,0) 100%);
+}
+
+/* 页脚与预热条那两条细缝：冷白 → 暖白 */
+html[data-bday="on"] .site-legal,
+html[data-bday="on"] .preheat{border-top-color:rgba(255,206,150,.22)}
+
+/* 选中色也跟着那天走 */
+html[data-bday="on"] ::selection{background:rgba(255,143,163,.35)}
+
+/* 11-12 之后：这一年的那天收进 /birthday/2026/，首页留一个小小的入口。
+   入口的标记只在首页 body 里，别的页不会有；这里靠 data-bday="after" 才显形。 */
+.bday-archive{display:none}
+html[data-bday="after"] .bday-archive{
+  display:flex;
+  justify-content:center;
+  margin:0 auto 2.2rem;
+  padding:0 1.2rem;
+}
+.bday-archive a{
+  display:inline-flex;
+  align-items:center;
+  gap:.5rem;
+  min-height:44px;
+  padding:.5rem 1.15rem;
+  border:1px solid rgba(255,206,150,.26);
+  border-radius:999px;
+  font-size:.82rem;
+  letter-spacing:.16em;
+  color:rgba(255,226,238,.82);
+  text-decoration:none;
+  background:rgba(255,150,178,.05);
+}
+.bday-archive a:hover,
+.bday-archive a:focus-visible{
+  border-color:rgba(255,206,150,.5);
+  color:#ffe9f2;
+  background:rgba(255,150,178,.11);
+}
+.bday-archive .h{color:rgba(255,143,163,.9);font-size:.9em}
+

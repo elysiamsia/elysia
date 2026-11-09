@@ -1,0 +1,47 @@
+<!-- 呀！这是走错路时迎接你的那一页——不吓人，不催促，
+     只是轻轻说一句「这里还没有被乐土记录」，然后给你三扇门♥ -->
+<div class="stars" id="stars" aria-hidden="true"></div>
+
+<div class="wrap">
+  <p class="code">4 0 4</p>
+  <h1 class="msg">这里还没有被乐土记录哦……</h1>
+  <p class="sub">不过，来都来了——</p>
+
+  <nav class="doors" aria-label="推荐去处">
+    <a class="door" href="/#journey">
+      <span class="t">她的旅途</span><span class="n">9 段</span>
+    </a>
+    <a class="door" href="/armor.html">
+      <span class="t">她的装甲</span><span class="n">时间轴</span>
+    </a>
+    <a class="door" href="/#quotes">
+      <span class="t">飞花寄语</span><span class="n">10 句</span>
+    </a>
+  </nav>
+
+  <a class="home" href="/">← 回到她的乐土</a>
+  <p class="foot">elysiad.top</p>
+</div>
+
+<script>
+// 呀！星星是这一页唯一的动效——而且减动偏好下它们会乖乖静下来呢
+(function(){
+  var box = document.getElementById('stars');
+  if (!box) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var n = Math.min(60, Math.floor(window.innerWidth / 14));
+  var html = '';
+  for (var i = 0; i < n; i++) {
+    var size = (0.5 + Math.random() * 1.8).toFixed(1);
+    html += '<div class="star" style="' +
+      'width:' + size + 'px;height:' + size + 'px;' +
+      'left:' + (Math.random() * 100).toFixed(1) + '%;' +
+      'top:' + (Math.random() * 100).toFixed(1) + '%;' +
+      '--dur:' + (2 + Math.random() * 4).toFixed(1) + 's;' +
+      '--delay:' + (Math.random() * 5).toFixed(1) + 's;' +
+      (Math.random() > 0.3 ? '' : 'background:#c77dff;') +
+      '"></div>';
+  }
+  box.innerHTML = html;
+})();
+</script>

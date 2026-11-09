@@ -1,0 +1,180 @@
+<style>
+/* 2026.11.11 · 那天（留档页 /birthday/2026/）
+   这一页不复用任何角色页的色卡：打一开始就是那天的暖色。 */
+:root {
+  --bg-abyss: #120a11;
+  --gold: #ffd7a3;
+}
+
+html { background: #120a11; }
+
+body {
+  margin: 0;
+  background-color: var(--bg-abyss);
+  background-image:
+    radial-gradient(120% 55% at 50% -10%, rgba(255, 150, 178, .17), transparent 60%),
+    radial-gradient(90% 40% at 50% 112%, rgba(255, 206, 124, .11), transparent 60%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  color: #efe6f2;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+.day-wrap {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: clamp(3.2rem, 9vw, 6rem) 1.25rem 3rem;
+  text-align: center;
+}
+
+.day-year {
+  margin: 0;
+  font-size: .72rem;
+  letter-spacing: .5em;
+  text-indent: .5em;
+  color: rgba(255, 214, 236, .55);
+}
+
+.day-date {
+  margin: .55rem 0 0;
+  font-size: clamp(2.9rem, 15vw, 5rem);
+  font-weight: 200;
+  line-height: 1.05;
+  letter-spacing: .22em;
+  text-indent: .22em;
+  color: #ffe3ef;
+  text-shadow: 0 0 30px rgba(255, 140, 180, .3);
+  font-variant-numeric: tabular-nums;
+}
+
+.day-name {
+  margin: .85rem 0 0;
+  font-size: clamp(.95rem, 3.6vw, 1.08rem);
+  letter-spacing: .42em;
+  text-indent: .42em;
+  color: rgba(255, 227, 239, .82);
+}
+
+.day-quote {
+  margin: 1.4rem auto 0;
+  max-width: 22rem;
+  font-size: clamp(.88rem, 3.4vw, .98rem);
+  line-height: 1.95;
+  color: rgba(255, 240, 246, .7);
+}
+
+/* 花环：七朵全亮，中间一根串线；花自己垫一圈底色，线不从花瓣里穿过去 */
+.day-garland {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  gap: .55rem;
+  margin: 2.2rem auto 0;
+}
+
+.day-garland::before {
+  content: "";
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    rgba(255, 160, 190, 0),
+    rgba(255, 160, 190, .34) 18%,
+    rgba(255, 206, 150, .6) 50%,
+    rgba(255, 160, 190, .34) 82%,
+    rgba(255, 160, 190, 0));
+}
+
+.bloom {
+  width: 1.45rem;
+  height: 1.45rem;
+  display: block;
+  position: relative;
+  filter: drop-shadow(0 0 7px rgba(255, 150, 185, .5));
+  background: radial-gradient(circle at 50% 50%, rgba(18, 10, 17, .95) 46%, rgba(18, 10, 17, 0) 72%);
+}
+
+/* 八行：日期一列对齐，句子一列 */
+.day-lines {
+  list-style: none;
+  max-width: 36rem;
+  margin: 2.6rem auto 0;
+  padding: 0;
+  text-align: left;
+}
+
+.day-lines li {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding: .72rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, .055);
+}
+
+.day-lines li:last-child { border-bottom: 0; }
+
+.day-lines .d {
+  flex: 0 0 3.1rem;
+  font-size: .74rem;
+  letter-spacing: .1em;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 206, 150, .55);
+}
+
+.day-lines .t {
+  font-size: clamp(.9rem, 3.6vw, .98rem);
+  line-height: 1.85;
+  color: rgba(240, 226, 240, .8);
+  text-wrap: pretty;
+}
+
+.day-lines li.on .d { color: #ffd7a3; }
+.day-lines li.on .t { color: #ffe9f2; }
+
+.day-after {
+  margin: 2.6rem auto 0;
+  max-width: 30rem;
+  font-size: .8rem;
+  line-height: 1.95;
+  color: rgba(240, 226, 240, .5);
+}
+
+.day-back {
+  display: flex;
+  justify-content: center;
+  gap: .8rem;
+  flex-wrap: wrap;
+  margin: 2.4rem auto 0;
+}
+
+.day-back a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: .5rem 1.15rem;
+  border: 1px solid rgba(255, 206, 150, .24);
+  border-radius: 999px;
+  font-size: .82rem;
+  letter-spacing: .14em;
+  color: rgba(255, 226, 238, .82);
+  text-decoration: none;
+  background: rgba(255, 150, 178, .05);
+}
+
+.day-back a:hover,
+.day-back a:focus-visible {
+  border-color: rgba(255, 206, 150, .5);
+  color: #ffe9f2;
+  background: rgba(255, 150, 178, .1);
+}
+
+@media (max-width: 480px) {
+  .day-wrap { padding: 2.8rem 1.15rem 2.4rem; }
+  .day-lines li { gap: .7rem; }
+  .day-lines .d { flex-basis: 2.9rem; font-size: .7rem; }
+  .day-after { font-size: .76rem; }
+}
+</style>

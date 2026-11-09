@@ -8,7 +8,8 @@
 >
 > §六 是踩过的坑（**动手前务必扫一遍**），§十 是历史案例（出问题时再查）。
 >
-> 最后更新：**2026-10-23**（切换上线 + 丝滑 v1–v3 + 安全加固；现状见 §2.3 快照，历史轮次已归档）
+> 最后更新：**2026-11-03**（合规下线 + 备案号悬挂；现状见 §2.3 快照，历史轮次已归档）
+> （上一版 2026-10-23：切换上线 + 丝滑 v1–v3 + 安全加固）
 
 ---
 
@@ -28,13 +29,15 @@
 ## 二、当前状态
 
 > ⚠ **本节是历史描述**（2026-10-15 前后）。当前事实以 §2.3 快照为准；本节保留是为了理解演进过程。
+>
+> 📌 **2026-11-03 补充**：13 页仍在，但**留言簿页已下线**（`/guestbook/` 现在 404，页面存档在 `offline/guestbook/`）；首页献花改为**从 70 朵起算、此后只记本机**（`localStorage`，服务器一瓣不收，不发任何请求）。原因见 §2.3.5。
 
 ### 2.1 站点全貌：13 页大计，**13 页全部完成** 🎉
 > 🎉 **十三页到齐了。** 最后一页（帕朵菲莉丝 ⅩⅢ）2026-10-13 建成并登记收口，见 §2.3 / §10.14。
 > ⚠ 她同样**在 `dev` 上等需求方合并**（不替他合）—— 线上状态要等合并之后才算数。
 > · 格蕾修（Ⅺ）/ 华（Ⅻ）都已合并进 `main`，线上是好的。
-> **接下来没有「建页」类的活了**，只剩 §2.4 的第 3 条（6 位老页按位铺开 + 各配一个小游戏）
-> 与第 6 条（P1 的 index / armor 专项 / 收尾）。
+> **接下来没有「建页」类的活了**（当时只剩「6 位老页按位铺开 + 各配一个小游戏」与「index / armor 专项 / 收尾」两块，旧编号写作 §2.4 第 3、6 条 —— **该节已不存在**，内容并入 §2.3.7）。
+> 📌 **2026-11-03 现状**：按位铺开已全部做完（13 页到齐，见上表）；还剩的计划见 **§2.3.7**。
 
 逐火十三英桀的界面最终要做齐。每位一个独立页，各有自己的性格设计。
 
@@ -51,10 +54,12 @@
 | **Ⅸ** | **旭光** | **科斯魔** | **`kosma/`** | ✅ **按位铺开的第二位，整页做完了**（2026-10-02 · **§2.3 的「上一轮」小节** / §10.10） |
 | **Ⅹ** | **无限** | **梅比乌斯** | **`mobius/`** | ✅ **已上线**（2026-10-01，见 **§2.3 的「上一轮」小节** / §10.9） |
 | **Ⅺ** | **繁星** | **格蕾修** | **`griseo/`** | ✅ **整页 + 小游戏「上色」都做完了**（页面 2026-10-03 · 小游戏 计划 B 2026-10-04 · **§2.3 的「最近一轮」小节** / §10.12）。小游戏计划：`plans/2026-10-03-griseo-game.md`（Task 1–5 全部完成，`assets/games/griseo.js`） |
-| **Ⅻ** | **浮生** | **华** | **`hua/`** | ✅ **整页建成 + 登记收口**（2026-10-08 · **§2.3 的「最近一轮」小节** / §10.13）。⚠ 她那一页的游戏是**全站唯一的 DOM 版**（保留），验收走**她专属的四条断言**，见 §2.3 第 10 步 |
+| **Ⅻ** | **浮生** | **华** | **`hua/`** | ✅ **整页建成 + 登记收口**（2026-10-08 · **§2.3 的「最近一轮」小节** / §10.13）。⚠ 她那一页的游戏是**全站唯一的 DOM 版**（保留），验收走**她专属的四条断言**，见 §4.1.2 的「DOM 版别登记进 `GAMES`」一行与 §10.13 三 |
 | **ⅩⅢ** | **空梦** | **帕朵菲莉丝** | **`pardofelis/`** | ✅ **整页建成 + 登记收口**（2026-10-13 · **§2.3 的「最近一轮」小节** / §10.14）。她的游戏是**画布版**，已正式登记进 `GAMES` 吃通用那四条 |
 
-另有 `armor.html`（她的装甲时间轴，**不是角色页**，异形结构，归 P1 的 Task 11）。
+另有 `armor.html`（她的装甲时间轴，**不是角色页**，异形结构）。**2026-11-04 已收进模板体系**：源在 `content/pages/armor.json` + `templates/pages/armor.*`，落地仍是 `public/armor.html`（`outPath`）；它 `meta.standalone: true`，不吃 `site.css`（见 §七 结构与 `assets/site.css` 文件头）。
+
+首页 `index.html` **同日也收进去了**（2026-11-04）：它是唯一走 `templates/home.njk` 的页（`kind: "home"`）—— 首页的 head 有自己的一套（`WebSite` 型 JSON-LD、没有面包屑、那张 1200×630 的 og:image），不适合塞进 `base.njk` 的条件分支，所以骨架单独一份、head 原样留在骨架里，body 与两段样式进 `templates/pages/index.*`。**产物与手写那版逐字节相同**（72955 字节，`cmp` 验过）。至此站上**没有手写页**了。
 
 > 📦 **素材已备齐**：`D:\claude-code\materials\<角色名>\`
 > （README + `text_materials.md` 台词 + `visual_assets.md` / `audio_assets.md` 清单）
@@ -71,20 +76,24 @@
 | 功能 | 位置 | 说明 |
 |---|---|---|
 | 今日之语 | `data/quotes.js` + `assets/daily.js` | 按**访客本地日期**取句，同日一致、次日自动换 |
-| 献花互动 | `assets/flowers.js` | 共享计数（KV），**接口不通时静默降级为本地计数** |
+| 献花互动 | `assets/flowers.js` | **2026-11-03 起为纯本地版**：总数从 **70** 起算（下线前的历史真数，不再变动）；点击只做花瓣动画 + 用 `localStorage`（`elysia.flowers.local`）记本机送了几朵，**不发任何请求** |
 | 隐藏彩蛋 | `assets/egg.js` | 点开场标题 5 次 → 水晶花雨。**台词池为空，所以现在不触发**（有意为之） |
 | 明信片生成 | `assets/postcard.js` + `data/postcard-prompts.js` | Canvas 出图（2026-10-02 重做）：**左边立绘（八张可选 + 随机）/ 右边她的台词 + 访客写的话（200 字硬上限）/ 右下角二维码**（扫得出 `elysiad.top`）。手机 1080×1440 / 电脑 1200×800，可手动切换。断言见 §4.5 的 `check_postcard.py` |
-| 留言簿入口 | `index.html` 谢幕区 | 「想对她说句话吗 →」指向 `/guestbook/` |
-| giscus 留言簿 | `guestbook/index.html` | 需 GitHub 登录 |
-| 匿名花笺 | 同上 + Worker | 不用账号；**先审后发**；提交者凭 token 能看到自己那条 |
+| ~~留言簿入口~~ | ~~`index.html` 谢幕区~~ | **已下线**（2026-11-03）：入口与页面一并移除 |
+| ~~giscus 留言簿~~ | ~~`guestbook/index.html`~~ | **已下线**，页面存档 `offline/guestbook/index.html` |
+| ~~匿名花笺~~ | ~~同上 + Worker~~ | **已下线**，代码在 `worker/` 与 `server/` |
 | 分享卡片 | `images/og-1\|2\|3.jpg` + `tools/pick_og.py` | 三个立绘变体，随机轮换 |
 | 英桀名片可点进子页 | `index.html` + `data/timeline-data.js` | 见 §10.5 |
 | **探索系统** | `assets/explore.js` + `explore.css` | **每页撒一批藏起来的小东西**（`THEME.explore.finds`），五种互动动词、探索度、找齐解锁、渐进提示。见 §10.9 |
 | **陪伴层低语** | 同上 | 任意点击 → 冷却结束后的**第 3 次**说一句，台词**按顺序**推进。⚠ **不做概率**（需求方明确不要抽卡） |
 | **下方区块** | `assets/bottom.js` | 页面最下方一块：探索度 / 生日倒计时 / 游戏槽。见 §10.9 |
 | **生日倒计时** | `assets/bday.js` + `data/bdays.js`（**全站唯一数据源**） | 右下角悬浮胶囊 → 点击展开面板（🎂 / 日期 / 天·时·分·秒 / 一句话）。**首页与英桀页共用同一个组件**。有确定生日的才渲染；查不到就**整个不出现** |
+| **11.11 预热条** | `data/preheat.js` + `assets/preheat.js` + `assets/preheat.css` | 全站页脚上方一条（2026-11-04 定案）：左边七朵花环**一天点一朵**，右边今天那一句。只在 11-04 ~ 11-11 建 DOM，别的时候脚本直接 return。`?preheat=11-06` 预览某一天。见 §10.15 |
+| **11.11 生日开场** | `assets/bday-intro.js` + `templates/pages/index.page-fixes.css` 的 `<style id="bday-intro">` | 一次性全屏开场（2026-11-04 定案，11.5 秒）：星空 → 花瓣 → 她的立绘与光 → `11.11` → 名字 → 一句 → `HAPPY BIRTHDAY` → 淡出露回首页。**只在 11 月 11 日当天、且这台设备没看过时播一次**（`localStorage['elysia.bday.2026.seen']`）；`?bday=1` 强制预览、再加 `&t=9.9` 定格某一帧。首页 `<script>` 里那 6 行守卫负责「别的日子一个字节都不下载」。系统开「减少动态效果」时只画 9.9 秒那帧静帧，3.2 秒后自动退场。见 §10.15 |
+| **11.11 当天换装** | `assets/bday-theme.js` + `assets/bday-theme.css` | 11-11 那天给 `<html>` 挂 `data-bday="on"`：全站底色与细缝转暖，角色页各自的强调色不动（2026-11-09）。`?bday=1` 强制穿上、`?bday=0` 强制脱掉。见 §10.15 |
+| **11.11 留档页** | `content/pages/birthday.json` + `templates/pages/birthday.page.{css,body.html}` | `/birthday/2026/`：11-04 到 11-11 那八句原话按日期列出（2026-11-09）。11-12 之后首页脚前出现「11.11 · 那天」入口，开关是 `assets/bday-theme.js` 挂的 `data-bday="after"`。见 §10.15 |
 | **每页小游戏** | `assets/games/<角色>.js` | 每位一个**互不干涉**的独立游戏，契约见 spec §4.5 |
-| `canonical` + JSON-LD | **12 页** `<head>`（含 `armor.html`） | 首页 `WebSite`，其余 `WebPage` + `BreadcrumbList` |
+| `canonical` + JSON-LD | **14 页** `<head>`（12 角色页 + `armor.html` + 首页，**全部由模板生成**；404 是 `noindex` 引路页，不吐 canonical） | 首页 `WebSite`（在 `templates/home.njk` 里），其余 `WebPage` + `BreadcrumbList` |
 | favicon / 404 / robots / sitemap | 根目录 | 404 是引路版（一句话 + 三扇门） |
 | 图片优化 | `images/*.webp` | **在用 1.12 MB**（2026-10-15 实测）。⚠ 但 `images/` 里另有 **6.47 MB 从来没被引用**（webp 的 PNG 原图）—— 见「精修计划」4.3 节 |
 
@@ -96,13 +105,16 @@
 - **`worker/test/`**：93 项断言（献花 38 + 花笺 55），用内存版假 D1，`npm run smoke`
 
 
-### 2.3 现状快照（2026-10-23，以此为准）
+### 2.3 现状快照（2026-11-03，以此为准）
 
 > 更早的 34 轮过程记录已归档：[`docs/archive/handover-rounds.md`](archive/handover-rounds.md)
 
 #### 2.3.1 一句话
 
-站点已从「手写 12 份 HTML + Cloudflare Pages」搬到「**内容 JSON + 模板构建 + 自建服务器**」，线上 `:80` 跑的是构建产物，nginx 反代 Node API。
+站点 = **内容 JSON + Nunjucks 模板 → `public/` 静态产物**，跑在自建腾讯轻量服务器，`https://elysiad.top` 全站 HTTPS，ICP 备案号已悬挂。
+
+**2026-11-03，为通过公安备案审查，线上全部交互式服务（献花计数 / 留言簿 / 擂台竞猜）已经下线。**
+代码一行没删，全在仓库里（`offline/` + `server/` + `worker/`），恢复步骤见 [`ops/compliance-offline.md`](ops/compliance-offline.md)。
 
 #### 2.3.2 常用命令
 
@@ -110,68 +122,102 @@
 |---|---|
 | 装依赖（只需一次） | `npm install` |
 | 构建到 `public/` | `npm run build -- --strict-templates` |
+| 换发布域构建（全功能版） | `SITE_ORIGIN=https://elysia.biz npm run build -- --strict-templates`（改写发生在**自校验之前**，compare 按改写后的字节比；不设 = 默认 `elysiad.top`，行为与改造前一致） |
+| 两个变体由谁决定 | `SITE_ORIGIN` 的 host：默认域 ⇒ 花瓣用 `offline/flowers.local.js`（纯本地、不发请求）+ **不发布** `guestbook/`；换成别的域 ⇒ 花瓣用 `assets/flowers.js`（走 Worker）+ 把 `guestbook/` 补进白名单。**合规由白名单守，不靠分支内容差异** |
 | 只校验不写 | `npm run verify` |
 | 单页构建 | `node src/build/build.mjs --single <key>` |
-| 发到生产 :80 | `bash deploy/deploy.sh` |
-| 发到 /v2/ 预览 | `bash deploy/deploy.sh --v2` |
+| 本地预览 | `cd public && python -m http.server 8801` |
+| **发到生产** | `bash deploy/deploy.sh`（先 `npm run build`） |
 | 回滚 | `bash deploy/deploy.sh rollback` |
+| 线上自检 | `curl -sI https://elysiad.top/` |
+
+> ⚠ `deploy.sh --v2` 参数还在，但**已经没有意义**：`/v2/` 预览目录 2026-11-03 随合规改造一起下线了（它是含留言簿的 dev 完整副本、且没有备案号）。
+> ⚠ 本地预览前**先确认没有别的 http.server 占着 `public/`**：它会把 `public/` 当 CWD 锁住，随后 `npm run build` 报 `EPERM: permission denied, scandir public`。
 
 #### 2.3.3 仓库结构（当前）
 
 | 路径 | 内容 |
 |---|---|
-| `content/characters/*.json` | **12 份角色数据**（唯一真源：探索/游戏/星屑/语录/打字机 + meta + 脚本序列 + style 令牌顺序） |
-| `templates/base.njk` | 一套 head（JSON-LD / og / 条件 theme-color）+ 文档骨架 |
+| `content/characters/*.json` | **12 份角色数据**（唯一真源：探索/游戏/星屑/语录/打字机 + meta + 脚本序列 + style 令牌顺序 + 预留的 `chibi` 槽） |
+| `content/pages/*.json` | **非角色页数据**（2026-11-03 起）：`404.json` 用 `outPath: '404.html'` 决定落地成单文件页；`meta.noindex` 才吐 robots、`meta.canonical` 为空就不吐 canonical / JSON-LD |
+| `templates/base.njk` | 一套 head（JSON-LD / og / 条件 theme-color）+ 文档骨架 + 备案页脚 |
 | `templates/partials/` | 刻印水印 / 徽章 / 触控目标（**改一处全站生效**） |
 | `templates/pages/<key>.*` | 每页三件：`page.css`（大块样式）、`page-fixes.css`（私有修复块）、`page.body.html`（body 原文，THEME 留占位） |
-| `src/build/build.mjs` | 拷贝 + 渲染 + 自校验（渲染页跳过源↔产物哈希，由断言把关） |
-| `server/server.js` `server/arena.js` | 生产 API（count / flower / notes / 擂台 / 后台） |
-| `deploy/` | `deploy.sh`（发布/回滚）、`nginx-ip.conf`、`security-watch.sh` |
+| `src/build/build.mjs` | 拷贝 + 渲染 + 自校验（白名单从 `static.yml` 解析，含 `stripQuotes` 兼容两种写法） |
+| `templates/home.njk` | **首页专属骨架**（2026-11-04 起）：`<head>` 原样留在这里（`WebSite` JSON-LD / og:image 1200×630 / 无面包屑），只有两个槽 —— `{{ stylesHtml }}` 与 `{{ pageBody }}`；`</body>` 之后那两行 `bday.js` 也在骨架里（它们本来就在 `</body>` 外）。数据 `content/pages/index.json` 里 `kind: "home"` 决定选它而不是 `base.njk` |
+| `templates/pages/index.*` | 已收编的首页（2026-11-04）：`index.page.css`（主样式块，**自包 `<style>`**）/ `index.page-fixes.css`（`#mobile-postcard-fix` 那个私有修复块）/ `index.page.body.html`（`<canvas>` 到 `</footer>`，含 15 个 script 与末尾那段内联 `daily.js` 配置）。⚠ `styles` 令牌顺序是 `["page","mobile-postcard-fix","bday-intro"]`，构建按这个顺序用 `\n` 拼 —— 顺序错了产物就多一个换行 |
+| `templates/pages/armor.*` | 已收编的 armor（2026-11-04）：`armor.page.css`（**三个 `<style>` 块原文照搬**：主样式 + 触控目标 + 备案号）/ `armor.page.body.html`。⚠ 它 `meta.standalone: true` —— base.njk 因此**不吐 site.css / explore.css**（Inventory R12/R13 的刻意结论：armor 的 `.timeline` / `.back-link` 是另一套结构，吃 7 页版本会整页错位） |
+| `templates/pages/404.*` | 已收编的 404：`404.page.css`（**必须自包 `<style>`**，与角色页同构）/ `404.page.body.html`（stars + 三扇门 + 星点脚本，不含页脚，页脚由 base.njk 统一给） |
+| `assets/` | `site.css`（含 `.site-legal`）/ `site.js` / `explore.js` / `games/*` / **`flowers.js`（2026-11-03 起为纯本地版）** |
+| `offline/` | **已下线的交互功能存档**：`flowers.interactive.js` / `guestbook/index.html` / `README.md`（恢复手册） |
+| `server/` | `server.js`（count/flower/notes + 后台）+ `arena.js`（擂台）。**代码保留，线上未运行** |
+| `worker/` | Cloudflare Worker（献花 KV + 花笺 D1）。2026-11-03 重新部署到 **elysia.biz**（同源 `/count` `/flower` `/notes*`），**写开关 `WRITES_ENABLED=false`，写接口返回 503 readonly** |
+| `deploy/` | `deploy.sh`（发布/回滚）/ `remote-release.sh`（暂存→校验→原子切换）/ `nginx-elysiad.conf` / `nginx-ip.conf`（IP 时代存档）/ `security-watch.sh` |
 | `tools/` | 验收工具（`check_explore` / `check_reduced_motion` / `mobile_sweep` / `cdp` / `refactor/*`） |
-| `docs/` | 见 §2.3.7 文档地图 |
+| `docs/` | 见 §2.3.8 |
 
-#### 2.3.4 线上事实
+#### 2.3.4 线上事实（2026-11-03 实测）
 
 | 项 | 值 |
 |---|---|
-| 服务器 | 腾讯轻量 **1.14.60.153**（Ubuntu 26.04，2C2G，BBA/fq 已开） |
-| 域名 | ⚠ **备案审核中** ⇒ 现在只有 IP 可访问，**无 HTTPS** |
-| nginx | 1.28.3，`:80` 反代 `/api/` `/count` `/flower` `/notes` → `127.0.0.1:8787` |
-| Node | **22.23.4**（`/opt/node-v22.23.4-linux-x64`，systemd `elysia-api`；系统 `/usr/bin/node` 仍是 22.22.1，服务不用它） |
-| 数据 | `/var/lib/elysia/elysia.db`（SQLite；花 45 朵、2 条已审留言） |
-| 部署链 | 本地 `deploy.sh` 或 GitHub Actions（`static.yml` 已改为构建部署）；`dev` 推 `/v2/` |
+| 服务器 | 腾讯轻量 **1.14.60.153**（Ubuntu 26.04，2C2G，BBR+fq） |
+| 域名 | `elysiad.top` → 1.14.60.153；`www` → 301 主域；`http` → 301 `https` |
+| 证书 | Let’s Encrypt，**到期 2027-01-27**，certbot webroot 自动续期（`--deploy-hook systemctl reload nginx`）；⚠ **未登记邮箱** |
+| 备案 | **ICP：`粤ICP备2026047652号`**（已悬挂，链接工信部）；**公安联网备案数据码 `ceafa2f3776bb0c8cf2ca8d60a2917bd`，开通服务后 30 日内必须办** |
+| nginx | **1.28.3-2ubuntu1.12**；`:80` 只做 ACME + 301；`:443` 主站（HTTP/2 + HSTS 半年 + `ssl_session_tickets off`）；**`proxy_pass` 0 条** |
+| 404 | `error_page 404 /404.html;`（站内 404 带备案号，`/guestbook/` / `/v2/` / `/count` 都落到这里） |
+| 后端 | `elysia-api` **inactive + disabled**，8787 无监听；数据仍在 `/var/lib/elysia/elysia.db`（花 70、2 条已审留言、擂台账号） |
+| 产物 | **145 文件**（12 角色页 + 首页 + armor + 404 + assets/data/images/根文件） |
+| 部署链 | 本地 `deploy.sh` 或 push `server` → `static.yml`（**唯一入口**，旧的 `deploy.yml` 已删除归档；`main` 不触发生产） |
+| Cloudflare Pages（全功能版出口） | 源分支 `main`；`.github/workflows/pages.yml` = checkout → `npm run build -- --strict-templates`（带 `SITE_ORIGIN=https://elysia.biz`）→ 产物自检（≥125 文件 + canonical 断言 + 无 `elysiad.top` 残留）→ **`npx wrangler pages deploy public --project-name elysia --branch main`**（主出口，一次约 50 秒）→ 再跑 GitHub Pages 那两段（备用，DNS 已不指那边）。项目名 `elysia`，真实子域 **`elysia-eu1.pages.dev`**，`elysia.biz` 与 `www` 都是它的 alias；DNS 两条 CNAME 均已指向它（proxied，Cloudflare 托管控 DNS）。发布凭据 = 仓库 secret `CLOUDFLARE_API_TOKEN`（本机另有一份在 `C:\Users\dong\.secrets\elysia-cf-dns-token`，**不在仓库里**）。⚠ `.biz` 不在工信部允许备案的顶级域列表里，只能作海外站 |
+| 全功能版接口（Worker） | `elysia-flowers`（`worker/`，KV `FLOWERS` + D1 `elysia-notes` 都是旧数据，没重建），路由 = `elysia.biz/count`、`/flower`、`/notes*`（**同源**，2026-11-03 从 `elysiad.top/*` 换域）。**写闸默认关**：`wrangler.toml` 里 `[vars] WRITES_ENABLED = "false"` ⇒ `POST /flower`、`POST /notes` 返回 `503 {ok:false,reason:"readonly"}`；`GET /count`、`GET /notes` 照常返回并带 `"writes":false`，前端据此把表单收成「暂未开放」。**开放写入 = 改 `"true"` + `npx wrangler deploy`，前端一行不用动** | |
 
-#### 2.3.5 安全态势（2026-10-23 处理过）
+#### 2.3.5 合规状态（公安审查，2026-11-03）
+
+| 原来有什么 | 现在 | 代码在哪 |
+|---|---|---|
+| 留言簿 `/guestbook/`（UGC + SQLite） | 线上 **404** | `offline/guestbook/index.html` |
+| 献花计数（GET `/count` / POST `/flower`） | 线上 **404**；页面上的总数**从 70 起算并不再增长**，本机送的花只记在自己的浏览器里 | `offline/flowers.interactive.js` |
+| 擂台竞猜 `/api/*`（注册/登录/签到/下注/结算） | 线上 **404**；服务已停 | `server/arena.js` |
+| 留言后台 `/notes/manage` | 随服务下线 | `server/server.js` |
+| `/v2/` 预览副本（含留言簿、无备案号） | 目录已删除，nginx 无此 location | 无（dev 分支可重建） |
+
+**保留下来的**：客户端动画、探索小游戏、明信片生成、生日倒计时、今日之语 —— 它们**不写服务器数据、不产生 UGC**，只是浏览器内的计算与绘制，不属于「交互式服务」。
+
+**判断依据**：个人备案网站不得提供用户注册 / 留言评论 / 论坛 / UGC / 竞猜（赌博性质）等交互式服务，这类功能需专项审批，未批先开是备案被注销的常见原因。
+
+#### 2.3.6 安全态势
 
 | 项 | 状态 |
 |---|---|
-| Node CVE（brotli RCE 等 8 个） | ✅ 已升 22.23.4 |
-| SSH 爆破（484 次失败 / 24 条告警） | ✅ **未被入侵**；已关密码登录（只剩密钥）+ `MaxAuthTries 3` + fail2ban + cloud-init `ssh_pwauth:false` |
-| nginx（5 个 CVE） | ⚠ 版本命中 4 个，但**当前配置零可达路径**（无 TLS/无 HTTP3/无 aio-ssi/无 rewrite）；**开 443 前必须先升到 1.31.7+/1.30.6+** |
+| SSH 爆破（484 次失败 / 24 条告警） | ✅ **未被入侵**（无一条 `Accepted password`）；已关密码登录 + `MaxAuthTries 3` + fail2ban + cloud-init `ssh_pwauth:false` |
+| Node | ✅ 22.23.4（`/opt/node-v22.23.4-linux-x64`，systemd 用它；系统 `/usr/bin/node` 仍是 22.22.1） |
+| nginx CVE | ✅ 升到 `1.28.3-2ubuntu1.12`（含 15176/93479/95101/97205/97629 五个补丁）；开 443 后 HSTS + 关票据做纵深防御 |
 | PHP / Go / Tomcat / rustc | ✅ 均未安装（对应 CVE 不适用） |
-| ⚠ 最大隐患 | 站点仍 **HTTP 明文** ⇒ 后台与擂台登录凭据明文过网；备案一通过立刻上 certbot |
+| 明文凭据风险 | ✅ 已消除（全站 HTTPS；后台与擂台的服务本就停了） |
+| 巡检 | `deploy/security-watch.sh`（三档：需处理 / 注意 / 不适用） |
 
-#### 2.3.6 已完成 / 待办
+#### 2.3.7 接下来的计划（按优先级，2026-11-03 整理）
 
-**已完成**：重构阶段 0+1（M0 管线四件套 → M1 12 页模板化 diff 全零）→ **切换上线** → 丝滑专项 v1（跨页过渡+预取+tokens）/ v2（位移过渡+返回链）/ v3（108 处过渡收敛）→ 安全审计与 SSH 加固。
-
-**待办**：
-
-| # | 事项 | 备注 |
+| # | 事项 | 说明 |
 |---|---|---|
-| 1 | 404 页模板化 | 目前原样拷贝，不影响部署 |
-| 2 | `index.html` / `armor.html` / `guestbook/` 纳入模板 | 它们没有复制粘贴债，优先级低 |
-| 3 | **备案通过后的 TLS 套餐** | certbot + **nginx 升级** + `ssl_session_tickets off` + 更新 ca-certificates |
-| 4 | 擂台前端 | 素材 `material/逐火英桀擂台/`，后端已就绪 |
-| 5 | 后台管理界面 | `/notes/manage` 已有雏形 |
-| 6 | Q 版小人 / Spine 接入 | 等主人素材；`spine-webgl` 436KB 只能懒加载在回放页 |
+| 1 | **公安联网备案** | 30 日内，用数据码 `ceafa2f3776bb0c8cf2ca8d60a2917bd`；拿到公安备案号后**也要悬挂**（和 ICP 号并排） |
+| 2 | 备案号复核 | 确认首页 / 12 角色页 / armor / 404 都能看到 ICP 号并可点进工信部；截图存档 |
+| 3 | certbot 登记邮箱 | `certbot update_account --email <邮箱>`，否则到期提醒收不到 |
+| 4 | ~~index / armor / 404 模板化~~ | **已完成**：404 于 2026-11-03，armor 与 index 于 2026-11-04。**站上已无手写页**，`KEEP_FILES` 从 6 项降到 5 项（`sw.js robots.txt sitemap.xml favicon.svg CNAME`） |
+| 5 | 视觉大改（主人已提） | 为审查做的这轮只删功能、没动设计；下一步按主人要求重做观感 |
+| 6 | 丝滑 phase 1.5 | 交互层动效与预取；⚠ 必须先有稳定基线再做 |
+| 7 | Q 版小人 / Spine 接入 | 素材 `material/`；13 角色共 11 固定骨 + 8 动作；`spine-webgl.js` 436KB **只能懒加载在回放页** |
+| 8 | 擂台前端 | 后端已就绪，但**有赌博性质，上线前先想清楚合规**；建议只做纯展示（赛程/榜单） |
 
-#### 2.3.7 文档地图
+#### 2.3.8 文档地图
 
 | 文档 | 用途 |
 |---|---|
 | [`README.md`](README.md) | 文档总索引 |
 | **本文件** | 项目交接（现状快照在上面） |
+| [`ops/compliance-offline.md`](ops/compliance-offline.md) | **交互式服务下线记录 + 恢复手册 + 审查口径** |
+| [`ops/icp-and-https.md`](ops/icp-and-https.md) | 备案信息、证书、双 workflow 事故 |
 | [`REFACTOR-PLAN.md`](REFACTOR-PLAN.md) | 重构总纲（阶段 0–5、红线） |
 | [`superpowers/plans/2026-10-18-refactor-phase-0-1.md`](superpowers/plans/2026-10-18-refactor-phase-0-1.md) | 阶段 0/1 实施计划（11 个 Task，已全部完成） |
 | [`refactor/switchover-checklist.md`](refactor/switchover-checklist.md) | 切换清单（已执行，留作回滚参考） |
@@ -182,16 +228,16 @@
 | [`security/ssh-hardening-2026-10-23.md`](security/ssh-hardening-2026-10-23.md) | SSH 加固记录 |
 | [`archive/handover-rounds.md`](archive/handover-rounds.md) | 历轮过程记录（34 轮） |
 
-#### 2.3.8 五个反复踩到的坑（动手前扫一眼）
+#### 2.3.9 反复踩到的坑（动手前扫一眼）
 
-1. **OpenSSH 是「先取到的值赢」**：`Include` 在 sshd_config 顶部，所以 drop-in 与文件末尾写 `PasswordAuthentication no` 都没用，必须改 `50-cloud-init.conf`。
+1. **OpenSSH 是「先取到的值赢」**：`Include` 在 sshd_config 顶部，在 drop-in 或文件末尾写 `PasswordAuthentication no` 都没用，必须改 `50-cloud-init.conf`。
 2. **`http.server` 把目录当 CWD ⇒ Windows 会锁住它**：验证完先停服务再 `npm run build`，否则 `EPERM public`。
-3. **`check_explore.py` 曾硬编码 CDP 端口 9322** ⇒ 两个实例并行会串台、造成假失败；现已按 PID 派生。看到"一次挂好几条、单跑全过"先怀疑环境。
+3. **`check_explore.py` 的 CDP 端口按 PID 派生**；两个实例串台会造出假失败 —— 「一次挂好几条、单跑全过」先怀疑环境。
 4. **THEME 字面量的 span 不能用 node 计算**（JSON 形态下差 1~2 字符）：剥离散布一律用 Python 扫括号。
-5. **白名单解析要剥引号**：YAML 里 `KEEP_FILES: "a b"` 与 shell 的 `KEEP_FILES="a b"` 两种写法都要认，否则产物会掉到 111 文件。
+5. **白名单解析要剥引号**：YAML `KEEP_FILES: "a b"` 与 shell `KEEP_FILES="a b"` 都要认，否则产物掉到 111 文件。
+6. **改了页面就必须换 `sw.js` 版本号**（现在是 `elysia-v5`），否则老访客一直看到旧缓存；**改完必须跑 `node --check sw.js`** —— 2026-11-03 的 v3 那次在注释中间多写了一个注释结束符，把注释提前闭合，`sw.js` 从此是语法错误、SW **从未注册上**（静默、无任何报错），缓存层一直是空的。肉眼看着像注释不等于它是注释。
+7. **下线一个目录 ≠ 下线一个功能**：白名单（`static.yml` 的 `KEEP_DIRS` + `deploy.sh` 的同名变量 + `build.mjs` 的 `MIN_DIRS`）三处必须同步，否则构建守卫会咬或页面复活。
 
-
-> ⚠ **本节是历史描述**（2026-10-15 前后）。当前事实以 §2.3 快照为准；本节保留是为了理解演进过程。
 
 ## 三、仓库与基础设施
 
@@ -202,18 +248,31 @@
 | 仓库 | `github.com/elysiamsia/elysia`（public） |
 | 默认分支 | `main` |
 | **本地工作副本** | **`D:\claude-code\elysia-main`** |
-| 线上 | **自建腾讯轻量服务器** `1.14.60.153`（备案中，暂用 IP；原 GitHub Pages + Cloudflare 已退役） |
+| 线上（合规版） | **自建腾讯轻量服务器** `1.14.60.153` → `https://elysiad.top`（备案已通过，ICP 号已悬挂） |
+| 线上（全功能版） | **Cloudflare Pages** → `https://elysia.biz`（源 `main`，DNS 与代理在 Cloudflare，2026-11-03 起）；接口由 Worker 挂在同源 `/count`、`/flower`、`/notes*`，**写闸关着** |
 
 > ⚠ 早期文档里写的工作副本路径是 `D:\claude-code\elysia`，**那个目录已不存在**。
 
 ### 3.2 分支与部署
 
 ```
-dev   ← 日常作业分支，push 不触发部署
-main  ← push 即自动部署（static.yml）
+dev     ← 日常作业分支；push 不触发任何部署（preview.yml 已停用，/v2/ 已删）
+server  ← 线上合规版；push 即自动部署生产（static.yml，唯一入口）
+main    ← 全功能版（含献花 / 留言簿 / 擂台）；Cloudflare Pages 出口，域名 elysia.biz；
+          `dev` 已是超集 ⇒ 往 `main` 送东西直接 `git merge dev`（快进），不必逐文件抄；
+          push main → pages.yml（构建时 SITE_ORIGIN=https://elysia.biz，canonical /
+          og:url / JSON-LD / 页脚署名一并改写）→ wrangler pages deploy；
+          接口由 Worker elysia-flowers 挂在 elysia.biz/count、/flower、/notes*（写闸关）；
+          其 static.yml 仅 workflow_dispatch
 ```
 
-**所有改动在 `dev` 上做，需求方检查后自己合并到 `main`。** 不要替他合并。
+**所有改动在 `dev` 上做，验过再把提交合进 `server` 发版。** `main` 是全功能版基线（合规解除后要恢复的东西都在上面），2026-11-03 起它自己也对外发布了（elysia.biz，见 §2.3.4）。**不要替需求方合并任何分支。**
+
+> ✅ **`dev` 已是超集**（2026-11-03 合并后）：`main` 的交互内容（`guestbook/`、交互版
+> `assets/flowers.js`、Worker 路由与写闸、`pages.yml`）已整枝并回 `dev`，所以 `dev → main` 是**快进**，
+> 不再有「合并会把交互功能删掉」那个坑。合规版与全功能版的差异改成**构建期**决定（见 §2.3.2 那两行），
+> 不再靠分支内容差异：`dev → server` 之所以仍然安全，是因为 `server` 的 `static.yml` 白名单里**没有**
+> `guestbook/`，而默认域构建也不会把 `offline/flowers.local.js` 换成交互版。
 
 > 💡 需求方有时候会**直接在 `main` 上小改**（例如手改 `index.html`）。
 > 这会让 `dev` 之后的合并产生冲突 —— **解决办法很简单：在 `dev` 上 `git merge origin/main`
@@ -221,7 +280,10 @@ main  ← push 即自动部署（static.yml）
 > **解冲突时别用 `--ours` 了事，要逐段核对**，并用
 > `git diff <合并前的dev> HEAD --stat` 确认结果树符合预期。
 
-### 3.3 Cloudflare
+### 3.3 Cloudflare（已退役，仅作历史与恢复参考）
+
+> ⚠ **2026-11-03 起本节整体退役**：域名已指回自建服务器，Cloudflare 不在请求路径上（`flowers.elysiad.top` 已无解析）。
+> 恢复任何一条 Cloudflare 链路之前，先读 [`ops/compliance-offline.md`](ops/compliance-offline.md) —— 献花与花笺都属于被下线的交互式服务。
 
 | 项目 | 值 |
 |---|---|
@@ -461,7 +523,7 @@ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8500/assets/site.css  
 
 # 2) 快照 + 比对（参照点见 §4.3.1）
 PYTHONIOENCODING=utf-8 python tools/snapshot.py after-<本步>
-PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py after-postcard after-<本步>; echo "退出码 $?"
+PYTHONIOENCODING=utf-8 python tools/snapshot_diff.py b1-images after-<本步>; echo "退出码 $?"   # 14 页参照点；别用 after-postcard（11 页），见 §4.3.1
 
 # 2.5) 逐页体检（2026-10-15 新增，精修阶段**先跑它**：看数字有没有退化）
 #      console 报错 / 404 / 破图 / 缺 alt / 控件没名字 / h1 数 / 传输量 / 请求数 / DOM 高 / DCL
@@ -502,14 +564,17 @@ taskkill //F //PID <pid>                               # 杀
 
 | 目录 | 是什么 | 用途 |
 |---|---|---|
-| `baseline` | **P1 动手前**（`origin/main` worktree） | P1 最终验收（Task 10/11/12 做完时用）—— **别删** |
-| **`after-postcard`** | **明信片重做做完之后**（2026-10-02，11 页） | **下次改动用这个**<br>实测（对动手前那一版）：**16 处，全在 `index.html`** —— 9 处是高度（三个视口一致 **+284.9px** = 明信片那一节长高了），7 处是结尾区装饰（`.ending-star` / `.hero-card`）被**随机流重洗**；其余 **10 页零差异** |
+| **`b1-images`** | **图片优化那一轮之后**（2026-10-14 19:42，**14 页全**） | **下次改动用这个** —— 现在就是 14 页，对它比才有意义 |
+| **`after-pardo`** | 帕朵菲莉丝登记收口之后（2026-10-14 18:46，14 页） | 同上，可与 `b1-images` 互为对照 |
+| `baseline` | **P1 动手前**（`origin/main` worktree，**8 页**） | P1 最终验收（Task 10/11/12 做完时用）—— **别删** |
+| `after-postcard` | 明信片重做做完之后（2026-10-02，**11 页**） | ⚠ **别再拿它当默认参照点** —— `PAGES` 现在是 14 页，缺的 3 页（格蕾修 / 华 / 帕朵）每次都会报 `[新增快照]` 并让退出码变 1，**那不是你改坏了**<br>实测（对动手前那一版）：**16 处，全在 `index.html`** —— 9 处是高度（三个视口一致 **+284.9px** = 明信片那一节长高了），7 处是结尾区装饰（`.ending-star` / `.hero-card`）被**随机流重洗**；其余 **10 页零差异** |
 | ~~`after-kosma`~~ · ~~`after-sakura`~~ · ~~`after-bday`~~ · ~~`after-postcard-home`~~ | 更早几轮的参照点（樱 / 科斯魔 / 生日组件 / 明信片动手前） | **2026-10-02 已删**（腾出 **145 MB**，`snap/` 207 MB → 62 MB）<br>⚠ **「动手前那一版」这种基线只对本轮有用** —— 本轮过了就该收掉（`after-postcard-home` 就是这么来的、也是这么删的）<br>⚠ 它们都能从 git 重建：`git worktree add` 到对应 commit 再跑一次 `snapshot.py` |
 
 > 🧹 **清过三次**（2026-10-01 两次 + 2026-10-02 一次）：原先堆了 20 个（539 MB）→ 先删到 2 个，
 > 生日组件上线后又收掉 `after-explore`；**2026-10-02 再收掉四个**
 > （`after-postcard-home` / `after-kosma` / `after-sakura` / `after-bday`，腾出 145 MB）。
-> **现在只剩 `after-postcard` 与 `baseline`。**
+> **现存 11 份**（2026-11-03 实测，页数 = `*.json` ÷ 3 视口）：`baseline` 8 · `after-postcard` 11 · `before-griseo` 11 · `after-griseo` 12 · `after-griseo-task5` 12 · `after-griseo-rewrite` 12 · `hua-registration` 13 · `hua-round2` 13 · `pardo-round` 14 · `after-pardo` 14 · `b1-images` 14。
+> ⇒ **改页面跟 14 页那三份比**（`b1-images` / `after-pardo` / `pardo-round`）；跟页数少的比，缺的页会稳定报 `[新增快照]`。
 > ⚠ **每轮结束就换参照点、顺手清掉上一个** —— 攒着只会让「该用哪个」变模糊
 > （有一轮就吃过一次：计划让人用 `baseline-eggs`，而那是 9 页的，多报了 3 处纯噪音）。
 > ⚠ **它们都能从 git 重建**（`git worktree add` 到对应 commit 再跑 `snapshot.py`），
@@ -546,9 +611,11 @@ taskkill //F //PID <pid>                               # 杀
 ### 4.4 部署与发布
 
 ```bash
-# 站点：push 到 main 即自动部署（static.yml，约 20 秒）
-# Worker：手动部署
-cd D:\claude-code\elysia-main\worker && wrangler deploy
+# 站点（推荐：本地构建后发布，能当场验收产物）
+npm run build -- --strict-templates && bash deploy/deploy.sh
+
+# 或者 push 到 server（static.yml 自动构建 → 原子切换，约 20 秒）
+# Worker：已退役（2026-11-03），恢复花笺时再 `cd worker && wrangler deploy`
 ```
 
 **上线后建议再验一次「线上真机」**（不只是验本地文件）：
@@ -570,7 +637,7 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py "https://elysiad.top/sakura/" size 12
 | 工具 | 用途 |
 |---|---|
 | `cdp.py` | 无头 Edge 驱动。`eval` / `click` / `size` / `sleep` / `shot` / `text` |
-| `snapshot.py` + `snapshot_diff.py` | **双基线验证**：**11 页** × 3 视口的计算样式 + 整页截图 |
+| `snapshot.py` + `snapshot_diff.py` | **双基线验证**：**14 页**（12 个角色页 + 首页 + armor）× 3 视口（1920×1080 / 768×1024 / 375×812）的计算样式 + 整页截图。页清单在 `tools/snapshot.py:60` 的 `PAGES`（2026-11-03 实测 14 条） |
 | `check_aria_labels.py` | 语录卡 `aria-label` 属性断言（**快照测不到属性**） |
 | `check_reduced_motion.py` | 减动双向断言（**快照不模拟媒体特性**） |
 | `check_explore.py` | **探索系统 / 下方区块断言** —— 走真实用户路径（真滚动 / 真鼠标事件 / 真 reload）。快照测不了「点不到」：被裁掉或被盖住的可发现物，它照样报「✅ 无差异」。⚠ 它**自带探针页** `tools/explore-fixture.html`（在 `tools/` 里，不会上线）。<br>跑法：`[页面路径]` / `--reduced` / **`--only <名字片段>`**（只跑名字含它的断言 —— 给变异测试用，报告里会写明「筛过的」） |
@@ -658,14 +725,14 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py "https://elysiad.top/sakura/" size 12
 - ~~华页的小游戏没并进共享契约~~ ← ✅ **2026-10-08 已按方案 B 收口**：
   需求方看过之后定了「**保留这套 DOM 玩法**」，于是**卡**按共享契约补上、
   **另写四条华专属断言**（能玩 / 减动 / 手机放得下 / 退出键离九宫格 ≥100px），
-  而 `GAMES` 里通用那四条**故意不登记**。详见 §2.3 第 8–11 步与 §10.13 三。
+  而 `GAMES` 里通用那四条**故意不登记**。详见 §4.1.2 的游戏卡那两条与 §10.13 三。
 - ~~`hua-11` 压在结尾台词上~~ ← ✅ **已挪位**（`(0.12, 0.40)` → `(0.10, 0.06)`，两个视口都不压字）。
 
 ### 5.2 已决定不改、另行跟踪
 
 | 问题 | 决定 | 依据 |
 |---|---|---|
-| **华页的小游戏保持 DOM 版**（九宫格木人桩，**不搬 canvas**） | **不改**（需求方 2026-10-08 拍板原话：「小游戏做的挺好」） | `GAMES` 里通用那四条靠**画布签名 + 固有长宽比**，在没画布的页上套不上 ⇒ 已另写**华专属四条**（§2.3 第 10 步）。真要搬画布，canvas 范式照 `docs/superpowers/plans/2026-10-03-griseo-game.md` |
+| **华页的小游戏保持 DOM 版**（九宫格木人桩，**不搬 canvas**） | **不改**（需求方 2026-10-08 拍板原话：「小游戏做的挺好」） | `GAMES` 里通用那四条靠**画布签名 + 固有长宽比**，在没画布的页上套不上 ⇒ 已另写**华专属四条**（§4.1.2 + §10.13 三）。真要搬画布，canvas 范式照 `docs/superpowers/plans/2026-10-03-griseo-game.md` |
 | **`index.html` 的点击涟漪缺 `reducedMotion` 判断** | **不改，另行跟踪**（2026-09-16 需求方拍板） | 首页定义了 `reducedMotion` 却从未使用，其余 6 个子页的涟漪**都有** `if (reducedMotion) return;`。统一会让首页在减弱动效下从「有花瓣迸发」变成「完全没反应」——属**行为变更**，不混进纯重构 |
 
 | ~~`/mobius/` 的遮罩在横屏放不下~~ | ✅ **2026-10-02 已修** | 640×360 下实测：画布 y **-34**、方向键一直伸到 **369** —— 上下都被切，而 fixed 遮罩没有滚动条，切掉的**够不着**。根因是它的内容总高约 **718px**，而横屏只有 360。<br>⚠ 是**泛化后的通用断言**翻出来的（原本只有樱页的断言，横屏那一档没人量 mobius）|
@@ -716,10 +783,14 @@ PYTHONIOENCODING=utf-8 python tools/cdp.py "https://elysiad.top/sakura/" size 12
 | **只有 `main` 会部署** | `dev` 上随便折腾，不影响线上 |
 | **新增站点文件必须改进白名单** | `static.yml` 的 `KEEP_FILES` / `KEEP_DIRS`，否则不会上线 |
 | ⚠ **白名单是「静默」的 —— 不报错，只是不出现** | 构建脚本只 `cp -r` 名单里的目录。**不在名单里的连产物都进不去，而且不会失败**——那道自检拦的是「不该进的路径」（`tools` / `docs` / `worker`…），**不拦「该进却没进的」**。<br>2026-10-01 实测：`mobius/index.html` 在 `main` 上躺了 10 天，线上一直是 **404**，没有任何报警。<br>**验法（唯一可靠）**：`curl -s -o /dev/null -w '%{http_code}\n' https://elysiad.top/<新页>/` —— 本地全绿 ≠ 线上存在 |
-| **有两层缓存** | GitHub Pages（10 分钟）+ Cloudflare（2 分钟）。「改动没生效」先怀疑缓存 |
+| **`elysiad.top` 自建 nginx 直出、无 CDN；`elysia.biz` 走 Cloudflare Pages + CF 代理**（2026-11-03 起） | 「改动没生效」先查三处：`sw.js` 的版本号（改页面必须换，见 §2.3.9）、手机浏览器缓存、Pages 部署是否成功（`gh run list --branch main`；`npx wrangler pages deployment list --project-name elysia`）。`elysia.biz` 还多一层 Pages 部署（约 1 分钟）与 CF 边缘缓存 |
+| **Pages 自定域名报 `error 1014 CNAME Cross-User Banned`，全站 403/522**（2026-11-03 踩过） | DNS 里把 CNAME 指到了 `elysia.pages.dev`。Pages 项目的真实子域**带区域后缀**（本项目是 `elysia-eu1.pages.dev`），必须原样填；填错会整站挂掉，改成真名立刻 200 |
+| **CI 部署卡在「上传并原子替换」**（2026-11-03 run `41583003255` 卡 36 分钟后取消） | OpenSSH **默认永不超时**：连接静默挂死就一直挂着，直到作业级 6 小时上限。已在 `static.yml` 加 `SSH_OPTS`（`ConnectTimeout=20` / `ServerAliveInterval=15` / `ServerAliveCountMax=4`）与 `timeout-minutes: 45`。卡住时的处置：`gh run cancel <id>` —— 原子替换没执行，**线上不动**，`Last-Modified` 不会变 |
 | **上线后要验线上** | 本地全绿 ≠ 线上全绿。见 §4.4 |
 
-### 6.2 Cloudflare
+### 6.2 Cloudflare（已退役，仅作恢复参考）
+
+> ⚠ **2026-11-03 起域名不再走 Cloudflare**（见 §2.3.4）：下表只记当时的额度 / 缓存教训。要恢复任何一条链路，先读 [`ops/compliance-offline.md`](ops/compliance-offline.md)。
 
 | 坑 | 说明 |
 |---|---|
@@ -802,11 +873,12 @@ PYTHONIOENCODING=utf-8 python tools/check_aria_labels.py
 PYTHONIOENCODING=utf-8 python tools/check_reduced_motion.py
 PYTHONIOENCODING=utf-8 python tools/check_explore.py <页面路径>   # 探索系统（改了才需要）
 
-# Worker 测试（93 项断言：献花 38 + 花笺 55）
-cd worker && npm run smoke
-
+# ⚠ 下面三条属已退役的 Cloudflare 链路（2026-11-03 起域名不走 CF）
+#    只在「恢复献花 / 花笺」时才有意义，恢复前先读 docs/ops/compliance-offline.md
+# Worker 测试（93 项断言：献花 38 + 花笺 55，内存版假 D1，不碰线上）
+# cd worker && npm run smoke
 # 部署 Worker
-cd worker && wrangler deploy
+# cd worker && wrangler deploy
 
 # 首页名片档案体检（纯文本，秒级）
 PYTHONIOENCODING=utf-8 python tools/check_timeline_lore.py
@@ -819,12 +891,11 @@ PYTHONIOENCODING=utf-8 python tools/check_postcard.py --only prompt   # 只跑�
 python tools/pick_og.py            # 随机换一张
 python tools/pick_og.py --list     # 看现在生效的是哪张
 
-# 给留言加一条 / 看数据
-cd worker
-wrangler d1 execute elysia-notes --remote --command "SELECT status, COUNT(*) FROM notes GROUP BY status;"
+# 看留言数据（留言簿已下线、D1 已退役；旧数据在服务器 /var/lib/elysia/elysia.db）
+# cd worker && wrangler d1 execute elysia-notes --remote --command "SELECT status, COUNT(*) FROM notes GROUP BY status;"
 
-# 看线上缓存状态
-curl -sI https://elysiad.top/ | grep -i cf-cache-status
+# 看线上是否活着（自建 nginx 直出，已经没 CF 缓存头可看了）
+curl -s -o /dev/null -w '%{http_code}\n' https://elysiad.top/
 ```
 
 ---
@@ -1350,7 +1421,7 @@ https://elysiad.top/mobius/   → 404   ← 文件在 main 上，页面不在
 一次把一位英桀做完整。第一位是樱。设计/计划见
 `specs/2026-10-01-sakura-explore-design.md` 与 `plans/2026-10-01-sakura-explore.md`。
 
-> ✅ **Task 1–10 全部做完，`/sakura/` 整页交付**（提交清单见 §2.4）。
+> ✅ **Task 1–10 全部做完，`/sakura/` 整页交付**（提交清单以 `git log` 为准；旧引用的 §2.4 已并入本文件，编号不再存在）。
 > ⚠ Task 6 是**从一份「一行都没验证过」的草稿接着做的** —— 那一段的偏差与手法见 **§五**。
 
 #### 一、取材方法（**后面每一位都照这个走**）
@@ -1936,7 +2007,7 @@ spec §3.5 白纸黑字：「两套装甲的版本节点（v5.8 繁星·绘世�
 **二、接 `GAMES` 当场翻出两个真问题（这就是那四条断言存在的理由）。**
 
 她的游戏是**画布版**，所以按正道接：补卡 → 登记 `GAMES`（`swipe: True` + `guard: True`）。
-接进去之前我先量了一遍（见 §2.3 第 6 步），两个问题都在**手机**上：
+接进去之前我先量了一遍（量法见 §4.1.2 的游戏卡两条；华那一轮的同款量法见 §10.13 三），两个问题都在**手机**上：
 
 | 问题 | 实测（640×360 横屏） | 修法 |
 |---|---|---|
@@ -2004,6 +2075,91 @@ t=1004ms 10914  ← 第一件货这时才入画
    要么别让它挡住内容，要么像 `catDodge()` 那样在压住可点内容时让开。
 3. **断言的采样窗口是有长度的**（0.9 秒）。任何「开局先静一会儿」的设计都会被它抓到 ——
    那不是断言太严，是**第一秒真的没反馈**。
+
+### 10.15 11.11 生日（2026-11-04，✅ **三层全上：预热条 + 首页开场 + 当天换装 + 留档**）
+
+需求方 2026-11-04 的原话是「11 月 11 日爱莉希雅生日的时候，整个网站要有很惊艳的效果，还没想好怎么弄」。
+定下的形态是三层：**预热（11-04→11-10）→ 当天 00:00 全站换装 + 首页开场 → 11-12 起留档可回看**。
+三层都已落地，见下面四段；留档页 `/birthday/2026/` 从 11-12 起由首页露出入口。
+
+**预热条（全站，页脚上方）**：`data/preheat.js`（纯文案表：`month` / `day` / `start` / `end` / `onDay` / `lines`）
++ `assets/preheat.js`（建 DOM、插在 `body > footer` 之前）+ `assets/preheat.css`。
+左边七朵花环，**一天点一朵**（当天那朵呼吸；11-04 → 1 朵，11-10 → 7 朵，11-11 全亮 + 「今天。她生日。」）；
+右边是今天那一句 + 一个小小的 `11.11`。**只在 11-04 ~ 11-11 之间出现，别的时候连 DOM 都不建**
+（脚本读 `new Date()` 就 return，零请求、零网络）。
+两个骨架都要挂：`templates/base.njk`（12 角色页 + armor + 404）与 `templates/home.njk`（首页只有 3 个 `<script>` 的位置）。
+⚠ 预览用 `?preheat=11-06`：**强制日期要同时驱动文案和花环**（第一版只换了文案，
+于是「11-06 的句子配着 11-04 的一朵花」，看着像 bug）。
+⚠ **同一屏不许有两个「还有几天」**：老胶囊（`assets/bday.js`）按「还剩几个整天」算，
+11-10 会说「还有 0 天」；预热条按日常说法算，11-10 = 明天 —— 两个数永远差一天
+（线上实测同屏一个「六天」、一个「还有 5 天」）。所以窗口里 `preheat.js` 给 `<html>` 加
+`preheat-window`，CSS 把 `#bdayEgg` / `#bdayPanel` 藏起来；**只藏生日就是 11-11 的那几页**
+（读 `window.ELYSIA_BDAYS` 按 `pageKey()` 查），阿波尼亚 5-25 的胶囊照常显示。
+
+⚠ 花环之间那根串线是一条 `::before` 的 1px 线，未点亮的花是描边透明填充 ⇒ 线会从花瓣中间穿过去，
+所以每朵花底下垫了一层深色径向渐变把它挡住。
+
+**当天换装（全站，11-11 当天）**：`assets/bday-theme.js`（一个 IIFE，只判断日期）+`assets/bday-theme.css`。
+脚本那天给 `<html>` 挂 `data-bday="on"`，样式只做三件事：① 覆盖共享的底色令牌（`--bg-abyss` / `--bg-deep` /
+`--bg-purple` / `--gold*`）⇒ 各页原有的渐变与 body 底色自己变暖；② `body` 上叠两层很淡的光（顶上玫瑰、脚下烛黄，
+写成 `background-image` + `background-attachment:fixed`）；③ 顶部一道粉→金的 2px 细线（`body::after`，fixed），
+页脚与预热条的接缝转暖。
+⚠ **角色页各自的中间层色（`--bg-violet` / `--bg-ink` / `--bg-lab` / `--bg-stage` …）一律不动** ——
+换装是「今天给全站加一层光」，不是把十四个人的页面刷成同一个颜色（伊甸的金、梅比乌斯的绿都还在）。
+⚠ 光不用 `position:fixed` 覆盖层：那些页面里大量 section 是 `z-index:2`，覆盖层会跟它们打架，所以光写在 `body` 的
+`background-image` 上。
+预览：`?bday=1` 穿上、`?bday=0` 脱掉（同一时刻做前后对照截图）。⚠ `?bday=0` **不会**关掉首页开场 ——
+开场认的是「有没有 bday 这个参数」（`qs.has('bday')`），两件事各管一段。
+挂载与预热条同两处：`templates/base.njk` 与 `templates/home.njk`。
+
+⚠ 同一个脚本还管第三层的入口：**11-12 之后**给 `<html>` 挂 `data-bday="after"`（当天是 `"on"`，其余无属性），
+首页 body 里那个默认 `display:none` 的 `.bday-archive` 才会显形 —— 所以换装与留档入口共用一个日期判断，不必再写第二个脚本。
+预览：`?bday=after`。
+
+**留档（11-12 起可回看）**：`/birthday/2026/` —— `content/pages/birthday.json`（`outPath` 写 `birthday/2026/index.html`）
++ `templates/pages/birthday.page.css` + `templates/pages/birthday.page.body.html`，走的还是「加一页 = 放三件」那条既有流水线。
+页面把 11-04 到 11-11 那**八句原话**按日期列出来（七句取自 `data/preheat.js` 的 `lines`，最后一句是 `onDay`「今天。她生日。」），
+上面是 2026 / 11.11 / 爱与那句开场里的问句，中间一排七朵全亮的花。
+⚠ 页面的 `.page.css` **必须自带 `<style>` … `</style>` 外壳**（`src/build/build.mjs` 第 91 行原样拼进 `{{ stylesHtml }}`）——
+第一版漏了外壳，CSS 以纯文本躺在页面顶上，等于整页没样式。
+⚠ 这一页没有 `noindex`，`content/pages/birthday.json` 里的 `shortName` 会被 base.njk 的 BreadcrumbList 用掉，别省。
+
+**为什么是 canvas 而不是 CSS 动画**：花瓣要有三层景深、大的还要压在她的立绘**前面**，
+再加胶片颗粒压渐变的色带 —— 这些逐帧合成，CSS 做不到。所以是**一条 rAF 时间轴 + 三张预烘图层**
+（星空 / 她的光 / 颗粒）；线条、模糊、亮度全按秒数插值，改一帧的节奏只要改一个数字。
+
+**性能这一关是重写的，不是调优的**（原型 v11）。第一版每帧用 `ctx.filter = 'blur()'` 做全屏辉光、
+每片花瓣各 blur 一次、颗粒也逐帧画 —— 无头软件渲染实测 **66.60 ms/帧（375×812）、899.24 ms/帧（1280×800）**，
+也就是手机上 15 fps、桌面上 1 fps。改成「预烘 + 只合成」之后是 **0.25 ms/帧 / 5.05 ms/帧**。
+四条改法：①星空与星云 `bakeSky()` 烘一次；②她的 halo 与脚下光 `bakeLight()` 烘一次，运行时只 `drawImage` + `globalAlpha`；
+③花瓣贴图初始化时预渲染（soft 那层用一次 `filter` 烘模糊）；④暗角与颗粒交给 CSS 合成层（`mix-blend-mode: soft-light` + 128px 噪声 dataURL）。
+
+**时间轴（11.5 秒）**：星空 0–2.0 · 花瓣 0.3–6.4 起飘（之后一直在飘）· 立绘 3.4–6.3 ·
+`11.11` 5.9–7.1 · 名字 7.0–8.0 · 那句话 7.8–8.9 · `HAPPY BIRTHDAY` 8.9–9.8 · 整体淡出 10.2–11.5。
+需求方看过原型后定「缩到 10–12 秒」，所以 DUR 是 11.5；**别随手改长**。
+
+**四条踩过的坑**：
+
+1. **每帧写内联 `opacity` 之后，样式表里的 `.is-done{opacity:0}` 不再生效** —— 内联优先。
+   退场淡出必须写 `root.style.transition` + `root.style.opacity = '0'`，否则「减少动态效果」那条静帧路径会硬切。
+2. **静帧要挑「四行都在」那一帧**：一开始取 7.4 秒，那时名字刚显影、句子还没出来，
+   静帧看着像渲染坏了。改成 9.9 秒（10.2 秒才开始暗下去，之前是这条轴上唯一全亮的构图）。
+3. **跨版本用字符串替换改 `var` 声明会静默失败**：原型 v7 把 `grain` 那组变量塞进了一行长声明里，
+   v8 按短声明去替换没匹配上，于是 `grainW` 从未声明，strict mode 下直接
+   `Uncaught ReferenceError: grainW is not defined` ⇒ build() 早退、canvas 整片白。
+   改声明之前先 `grep` 一眼原文。
+4. **无头 Edge 的 `Emulation.setDeviceMetricsOverride` 不一定派发 `window.resize`**：
+   实测 `innerWidth` 已是 375 而 canvas 还停在 1256×808。所以除了 `resize` 还挂了 `ResizeObserver`。
+
+**它怎么只在那天出现**：首页 `<script>` 里有 6 行守卫 —— 11 月 11 日或 `?bday=1` 才
+`document.write` 把那支脚本 parser 阻塞地写进文档（所以遮罩仍在首次绘制前盖上，不会先闪一下首页），
+其余日子**一个字节都不下载**。播过就写 `localStorage['elysia.bday.2026.seen']`，同一台设备当天不再打扰；
+跨年不用改代码，把 `SEEN_KEY` 里的年份换掉即可。
+
+**顺带修掉的工具缺陷**：`tools/check_page_health.py` 自己起静态服务器时根目录是仓库根，
+而 2026-11 起 `index.html` / `armor.html` 都只存在于 `public/` —— 于是它把 python 的 404 页当页面体检，
+15 页齐声报「没有 meta description / canonical / og:image」。改成 `directory=public` 后全绿。
+（以前能过，是因为恰好有一个根目录在 `public/` 的常驻 8500 服务器在跑，脚本复用了它。）
 
 ---
 

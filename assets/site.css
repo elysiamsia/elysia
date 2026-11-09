@@ -4,7 +4,9 @@
    颜色/主题差异一律通过 var(--*) 注入，由各页 <style> 的 :root 覆盖块提供。
    不要在此文件内联任何具体色值（除极少数与主题无关的 neutral，见 §3 风险）。
 
-   ⚠ armor.html **不接本文件**，这不是遗漏，是刻意的（Inventory R12 / R13）：
+   ⚠ armor.html **不接本文件**，这不是遗漏，是刻意的（Inventory R12 / R13）；
+     实现方式：2026-11-04 起 armor 也走 templates/base.njk，但数据里 meta.standalone: true，
+     base.njk 据此**不吐**下面这两个 <link>（其余 head 与页脚照旧统一）。
      · armor 的 .timeline 系列是**另一套结构** —— max-width:900px（7 页是 800px）、
        卡片 calc(50% - 2.4rem)（7 页 2.5rem）、768px 断点 1.3rem（7 页 1.5rem）、
        且没有 480px 断点。绝不能让它继承 7 页版本，否则整页布局错位。
@@ -329,3 +331,8 @@ a.signet-grid-item:hover img{opacity:1}
   ::view-transition-old(*),
   ::view-transition-new(*) { animation: none !important; }
 }
+
+/* ---- 备案号（合规，极其克制）---- */
+.site-legal{margin:2.4rem auto 1.6rem;padding:0 1rem;text-align:center;font-size:.72rem;line-height:1.5;letter-spacing:.05em;color:#7b6f99;opacity:.75}
+.site-legal a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 .25rem;color:inherit;text-decoration:none;border-bottom:1px solid rgba(123,111,153,.4);transition:opacity var(--motion-quick,1.2s) var(--ease-soft,ease),border-color var(--motion-quick,1.2s) var(--ease-soft,ease)}
+.site-legal a:hover,.site-legal a:focus-visible{opacity:1;border-bottom-color:#7b6f99}

@@ -1,0 +1,18 @@
+{
+  "key": "birthday",
+  "kind": "plain",
+  "outPath": "birthday/2026/index.html",
+  "shortName": "11.11 · 那天",
+  "styles": [
+    "page"
+  ],
+  "bodyAttrs": "",
+  "meta": {
+    "title": "11.11 · 那天 — 爱莉希雅的生日 — elysiad.top",
+    "description": "2026 年 11 月 11 日，她生日那天。11 月 4 日起，每天清晨写在花环旁边的那一句，原样留在这里。",
+    "canonical": "https://elysiad.top/birthday/2026/",
+    "ogTitle": "11.11 · 那天 — 爱莉希雅的生日",
+    "ogDescription": "那八天里，每天清晨写在花环旁边的那一句。",
+    "ogImage": "https://elysiad.top/images/og-1.jpg"
+  }
+}

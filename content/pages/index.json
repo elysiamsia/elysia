@@ -1,0 +1,17 @@
+{
+  "key": "index",
+  "kind": "home",
+  "outPath": "index.html",
+  "shortName": "首页",
+  "styles": ["page", "mobile-postcard-fix", "bday-intro"],
+  "meta": {
+    "title": "elysiad.top — 致爱莉希雅",
+    "description": "往世乐土 · 她的旅途 · 十三英桀 · 飞花寄语。一位如飞花般绚丽的少女，和她的十三位同伴。",
+    "canonical": "https://elysiad.top/",
+    "ogTitle": "elysiad.top — 致爱莉希雅",
+    "ogDescription": "往世乐土 · 她的旅途 · 十三英桀 · 飞花寄语。一位如飞花般绚丽的少女，和她的十三位同伴。",
+    "ogImage": "https://elysiad.top/images/og-1.jpg",
+    "themeColor": "#0a0612",
+    "home": true
+  }
+}

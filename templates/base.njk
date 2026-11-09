@@ -6,8 +6,9 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <!-- 呀！分享出去的时候，要带着她的样子，而不是一行光秃秃的链接♥ -->
 <meta name="description" content="{{ meta.description }}">
-<link rel="canonical" href="{{ meta.canonical }}">
-<script type="application/ld+json">
+{% if meta.noindex %}<meta name="robots" content="noindex">
+{% endif %}{% if meta.canonical %}<link rel="canonical" href="{{ meta.canonical }}">
+{% endif %}{% if meta.canonical %}<script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "WebPage",
@@ -42,24 +43,34 @@
   ]
 }
 </script>
-<meta property="og:type" content="website">
+{% endif %}<meta property="og:type" content="website">
 <meta property="og:site_name" content="elysiad.top">
-<meta property="og:title" content="致{{ character.shortName }} — elysiad.top">
+<meta property="og:title" content="{{ meta.ogTitle or ('致' + character.shortName + ' — elysiad.top') }}">
 <meta property="og:description" content="{{ meta.ogDescription }}">
-<meta property="og:url" content="{{ meta.canonical }}">
-<meta property="og:image" content="{{ meta.ogImage }}">
+{% if meta.canonical %}<meta property="og:url" content="{{ meta.canonical }}">
+{% endif %}<meta property="og:image" content="{{ meta.ogImage }}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 {{ themeColorTag | safe }}<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
+{% if not meta.standalone %}<!-- 呀！8 个页面共用的那一层，终于收进一个文件里啦♥ -->
 <link rel="stylesheet" href="/assets/site.css">
 <link rel="stylesheet" href="/assets/explore.css">
-<meta name="referrer" content="same-origin">
+{% endif %}<meta name="referrer" content="same-origin">
+<!-- 11.11 预热条（2026）：页脚上方那一朵朵点亮的花环 + 今天那句。别的时候脚本自己什么都不建。 -->
+<link rel="stylesheet" href="/assets/preheat.css">
+<!-- 11.11 当天换装（2026）：assets/bday-theme.js 只在 11-11 挂上 data-bday，样式见这份 CSS。 -->
+<link rel="stylesheet" href="/assets/bday-theme.css">
 <title>{{ meta.title }}</title>
 
 <!-- SECTION: styles -->
 {{ stylesHtml | safe }}
 </head>
-<body{{ bodyAttrs | safe }}>{{ pageBody | safe }}</body>
+<body{{ bodyAttrs | safe }}>{{ pageBody | safe }}<footer class="site-legal">
+  <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">粤ICP备2026047652号</a>
+</footer>
+<script src="/data/preheat.js" defer></script>
+<script src="/assets/preheat.js" defer></script>
+<script src="/assets/bday-theme.js" defer></script>
+</body>
 </html>
