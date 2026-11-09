@@ -1,4 +1,9 @@
-/* sw.js — 站点 Service Worker（2026-11-09，v9）
+/* sw.js — 站点 Service Worker（2026-11-09，v10）
+ *
+ * ── v10（2026-11-09）───────────────────────────────────────────
+ * 第三层留档：新增页面 /birthday/2026/（那八天的话原样留在这里），
+ * 首页多一个默认隐藏的「11.11 · 那天」入口，由 assets/bday-theme.js 在 11-12 之后放出来。
+ * 首页 HTML 与 bday-theme 的 js/css 都变了 ⇒ 版本号跟着换。
  *
  * ── v9（2026-11-09）────────────────────────────────────────────
  * 新增 11.11 当天换装（assets/bday-theme.css + assets/bday-theme.js，两个骨架都挂了）。
@@ -37,7 +42,7 @@
  *   · 断网 / 超时 ⇒ 回退缓存（抗卡死这条能力保留）
  * 缓存版本号也必须**每次改 SW 时一起换**（v2），否则旧的 cache 不会被清。
  */
-var V = 'elysia-v9';
+var V = 'elysia-v10';
 var SHELL = ['/', '/assets/site.css', '/assets/site.js', '/favicon.svg'];
 var TIMEOUT = 2500;
 

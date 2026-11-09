@@ -44,3 +44,35 @@ html[data-bday="on"] .preheat{border-top-color:rgba(255,206,150,.22)}
 
 /* 选中色也跟着那天走 */
 html[data-bday="on"] ::selection{background:rgba(255,143,163,.35)}
+
+/* 11-12 之后：这一年的那天收进 /birthday/2026/，首页留一个小小的入口。
+   入口的标记只在首页 body 里，别的页不会有；这里靠 data-bday="after" 才显形。 */
+.bday-archive{display:none}
+html[data-bday="after"] .bday-archive{
+  display:flex;
+  justify-content:center;
+  margin:0 auto 2.2rem;
+  padding:0 1.2rem;
+}
+.bday-archive a{
+  display:inline-flex;
+  align-items:center;
+  gap:.5rem;
+  min-height:44px;
+  padding:.5rem 1.15rem;
+  border:1px solid rgba(255,206,150,.26);
+  border-radius:999px;
+  font-size:.82rem;
+  letter-spacing:.16em;
+  color:rgba(255,226,238,.82);
+  text-decoration:none;
+  background:rgba(255,150,178,.05);
+}
+.bday-archive a:hover,
+.bday-archive a:focus-visible{
+  border-color:rgba(255,206,150,.5);
+  color:#ffe9f2;
+  background:rgba(255,150,178,.11);
+}
+.bday-archive .h{color:rgba(255,143,163,.9);font-size:.9em}
+

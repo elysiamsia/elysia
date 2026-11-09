@@ -91,6 +91,7 @@
 | **11.11 预热条** | `data/preheat.js` + `assets/preheat.js` + `assets/preheat.css` | 全站页脚上方一条（2026-11-04 定案）：左边七朵花环**一天点一朵**，右边今天那一句。只在 11-04 ~ 11-11 建 DOM，别的时候脚本直接 return。`?preheat=11-06` 预览某一天。见 §10.15 |
 | **11.11 生日开场** | `assets/bday-intro.js` + `templates/pages/index.page-fixes.css` 的 `<style id="bday-intro">` | 一次性全屏开场（2026-11-04 定案，11.5 秒）：星空 → 花瓣 → 她的立绘与光 → `11.11` → 名字 → 一句 → `HAPPY BIRTHDAY` → 淡出露回首页。**只在 11 月 11 日当天、且这台设备没看过时播一次**（`localStorage['elysia.bday.2026.seen']`）；`?bday=1` 强制预览、再加 `&t=9.9` 定格某一帧。首页 `<script>` 里那 6 行守卫负责「别的日子一个字节都不下载」。系统开「减少动态效果」时只画 9.9 秒那帧静帧，3.2 秒后自动退场。见 §10.15 |
 | **11.11 当天换装** | `assets/bday-theme.js` + `assets/bday-theme.css` | 11-11 那天给 `<html>` 挂 `data-bday="on"`：全站底色与细缝转暖，角色页各自的强调色不动（2026-11-09）。`?bday=1` 强制穿上、`?bday=0` 强制脱掉。见 §10.15 |
+| **11.11 留档页** | `content/pages/birthday.json` + `templates/pages/birthday.page.{css,body.html}` | `/birthday/2026/`：11-04 到 11-11 那八句原话按日期列出（2026-11-09）。11-12 之后首页脚前出现「11.11 · 那天」入口，开关是 `assets/bday-theme.js` 挂的 `data-bday="after"`。见 §10.15 |
 | **每页小游戏** | `assets/games/<角色>.js` | 每位一个**互不干涉**的独立游戏，契约见 spec §4.5 |
 | `canonical` + JSON-LD | **14 页** `<head>`（12 角色页 + `armor.html` + 首页，**全部由模板生成**；404 是 `noindex` 引路页，不吐 canonical） | 首页 `WebSite`（在 `templates/home.njk` 里），其余 `WebPage` + `BreadcrumbList` |
 | favicon / 404 / robots / sitemap | 根目录 | 404 是引路版（一句话 + 三扇门） |
@@ -2075,11 +2076,11 @@ t=1004ms 10914  ← 第一件货这时才入画
 3. **断言的采样窗口是有长度的**（0.9 秒）。任何「开局先静一会儿」的设计都会被它抓到 ——
    那不是断言太严，是**第一秒真的没反馈**。
 
-### 10.15 11.11 生日（2026-11-04，✅ **预热条 + 首页开场 + 当天换装已上；留档未做**）
+### 10.15 11.11 生日（2026-11-04，✅ **三层全上：预热条 + 首页开场 + 当天换装 + 留档**）
 
 需求方 2026-11-04 的原话是「11 月 11 日爱莉希雅生日的时候，整个网站要有很惊艳的效果，还没想好怎么弄」。
 定下的形态是三层：**预热（11-04→11-10）→ 当天 00:00 全站换装 + 首页开场 → 11-12 起留档可回看**。
-一、二层里的开场、预热条与当天换装已落地，见下面三段；三层里的留档还没做。
+三层都已落地，见下面四段；留档页 `/birthday/2026/` 从 11-12 起由首页露出入口。
 
 **预热条（全站，页脚上方）**：`data/preheat.js`（纯文案表：`month` / `day` / `start` / `end` / `onDay` / `lines`）
 + `assets/preheat.js`（建 DOM、插在 `body > footer` 之前）+ `assets/preheat.css`。
@@ -2110,6 +2111,18 @@ t=1004ms 10914  ← 第一件货这时才入画
 预览：`?bday=1` 穿上、`?bday=0` 脱掉（同一时刻做前后对照截图）。⚠ `?bday=0` **不会**关掉首页开场 ——
 开场认的是「有没有 bday 这个参数」（`qs.has('bday')`），两件事各管一段。
 挂载与预热条同两处：`templates/base.njk` 与 `templates/home.njk`。
+
+⚠ 同一个脚本还管第三层的入口：**11-12 之后**给 `<html>` 挂 `data-bday="after"`（当天是 `"on"`，其余无属性），
+首页 body 里那个默认 `display:none` 的 `.bday-archive` 才会显形 —— 所以换装与留档入口共用一个日期判断，不必再写第二个脚本。
+预览：`?bday=after`。
+
+**留档（11-12 起可回看）**：`/birthday/2026/` —— `content/pages/birthday.json`（`outPath` 写 `birthday/2026/index.html`）
++ `templates/pages/birthday.page.css` + `templates/pages/birthday.page.body.html`，走的还是「加一页 = 放三件」那条既有流水线。
+页面把 11-04 到 11-11 那**八句原话**按日期列出来（七句取自 `data/preheat.js` 的 `lines`，最后一句是 `onDay`「今天。她生日。」），
+上面是 2026 / 11.11 / 爱与那句开场里的问句，中间一排七朵全亮的花。
+⚠ 页面的 `.page.css` **必须自带 `<style>` … `</style>` 外壳**（`src/build/build.mjs` 第 91 行原样拼进 `{{ stylesHtml }}`）——
+第一版漏了外壳，CSS 以纯文本躺在页面顶上，等于整页没样式。
+⚠ 这一页没有 `noindex`，`content/pages/birthday.json` 里的 `shortName` 会被 base.njk 的 BreadcrumbList 用掉，别省。
 
 **为什么是 canvas 而不是 CSS 动画**：花瓣要有三层景深、大的还要压在她的立绘**前面**，
 再加胶片颗粒压渐变的色带 —— 这些逐帧合成，CSS 做不到。所以是**一条 rAF 时间轴 + 三张预烘图层**
