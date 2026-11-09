@@ -336,3 +336,23 @@ a.signet-grid-item:hover img{opacity:1}
 .site-legal{margin:2.4rem auto 1.6rem;padding:0 1rem;text-align:center;font-size:.72rem;line-height:1.5;letter-spacing:.05em;color:#7b6f99;opacity:.75}
 .site-legal a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 .25rem;color:inherit;text-decoration:none;border-bottom:1px solid rgba(123,111,153,.4);transition:opacity var(--motion-quick,1.2s) var(--ease-soft,ease),border-color var(--motion-quick,1.2s) var(--ease-soft,ease)}
 .site-legal a:hover,.site-legal a:focus-visible{opacity:1;border-bottom-color:#7b6f99}
+/* ---- 视觉精修：全站通用层（2026-11-09）----
+   这一层只补「所有页面都该有、但以前没写」的东西，不动任何一页的设计语言；
+   具体的间距与字号仍然写在各自的 *.page.css 里。 ---- */
+html{
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+  /* 站内锚点（/#journey、/#quotes）落下来时别顶着屏幕边 */
+  scroll-padding-top:4.5rem;
+}
+
+/* 标题断行求均衡、正文断行求顺眼：中文长句在两行之间的落点会明显好看一点 */
+h1,h2,h3{text-wrap:balance}
+p,li,figcaption,blockquote{text-wrap:pretty}
+
+/* 键盘走位时的焦点圈：全站统一一圈，不跟着各页的粉色跑 */
+:focus-visible{
+  outline:2px solid rgba(255,200,221,.72);
+  outline-offset:3px;
+}
+

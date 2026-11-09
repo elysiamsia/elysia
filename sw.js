@@ -1,4 +1,8 @@
-/* sw.js — 站点 Service Worker（2026-11-09，v10）
+/* sw.js — 站点 Service Worker（2026-11-09，v11）
+ *
+ * ── v11（2026-11-09）───────────────────────────────────────────
+ * 视觉精修第一批：assets/site.css 补全站通用层（text-wrap / 焦点圈 / scroll-padding），
+ * 首页 templates/pages/index.page.css 调段间距、卡片正文与资料表。样式变了 ⇒ 版本号跟着换。
  *
  * ── v10（2026-11-09）───────────────────────────────────────────
  * 第三层留档：新增页面 /birthday/2026/（那八天的话原样留在这里），
@@ -42,7 +46,7 @@
  *   · 断网 / 超时 ⇒ 回退缓存（抗卡死这条能力保留）
  * 缓存版本号也必须**每次改 SW 时一起换**（v2），否则旧的 cache 不会被清。
  */
-var V = 'elysia-v10';
+var V = 'elysia-v11';
 var SHELL = ['/', '/assets/site.css', '/assets/site.js', '/favicon.svg'];
 var TIMEOUT = 2500;
 
