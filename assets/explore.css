@@ -502,4 +502,23 @@
     animation: none;
   }
 }
+/* ---- 窄屏：胶囊不再压住备案号（2026-11-09）
+   #bdayEgg 是 fixed 右下角，备案号是页脚最后一行；375 宽时两者落在同一块地方，
+   「粤ICP备2026047652号」会被压掉半边。窄屏把胶囊收小一号，页脚往上让出那条带状区域。
+   （胶囊靠下 0.9rem + 高约 33px + 浮动 4px ⇒ 顶边约离底 51px；页脚底边抬到 4.2rem = 67px，两者不再相交。） ---- */
+@media (max-width: 560px) {
+  #bdayEgg {
+    right: .9rem;
+    bottom: .9rem;
+    padding: .45rem .85rem;
+    font-size: .74rem;
+  }
+
+  /* ⚠ 用 padding 不用 margin：footer 是最后一个块，margin-bottom 会塌进 body/html，
+     滚到底时那一截不会真的把字顶上去（实测无效）。 */
+  .site-legal {
+    padding-bottom: 3rem;
+  }
+}
+
 

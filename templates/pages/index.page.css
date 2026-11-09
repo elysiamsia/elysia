@@ -545,4 +545,35 @@ body{
 @media(prefers-reduced-motion:reduce){
   .postcard-btn{transition:none}
 }
+
+/* ===== 视觉精修（2026-11-09）=====
+   只动四类东西：手机浏览器地址栏吃掉的 hero 高度、标题与卡片里偏松的行高、
+   小屏上被压窄的卡片正文、资料表里长短不齐的标签列。设计语言一项没动。 */
+.section-opening{min-height:100svh}
+
+.section-title{line-height:1.45}
+.timeline-card h3{line-height:1.45}
+.timeline-card p{font-size:.9rem;line-height:1.85}
+
+/* 紫线贯穿整段旅程：上端接进标题下的余白，下端走到这一节的底边（.content-section 的 6rem 内边距里），
+   渐隐段收窄到 6% / 94%，免得线变长之后两头看起来像断的。 */
+.timeline-line{
+  top:-2rem;bottom:-6rem;
+  background:linear-gradient(180deg,transparent,var(--purple-deep) 6%,var(--purple) 50%,var(--purple-deep) 94%,transparent);
+}
+
+@media(max-width:480px){
+  /* 时间轴那条线原来贴 1.5rem，卡片再吃掉 3.5rem + 左右各 1.5rem 内边距，
+     正文只剩 230px 宽 —— 线挪到 1.2rem，卡片内边距收到 1.2rem，正文能宽出一截。 */
+  .timeline-line{left:1.2rem;top:-1.2rem;bottom:-4rem}
+  .timeline-dot{left:1.2rem}
+  .timeline-node .timeline-index{left:1.2rem}
+  .timeline-card,
+  .timeline-node:nth-child(odd) .timeline-card,
+  .timeline-node:nth-child(even) .timeline-card{
+    width:calc(100% - 3.2rem);margin-left:3.2rem;padding:1.15rem 1.2rem;
+  }
+  /* 资料表：标签列定死宽度，长短不再带着右边值一起跳 */
+  .profile-grid{grid-template-columns:4.8rem 1fr;column-gap:.8rem}
+}
 </style>
