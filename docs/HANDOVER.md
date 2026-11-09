@@ -2156,6 +2156,33 @@ t=1004ms 10914  ← 第一件货这时才入画
 其余日子**一个字节都不下载**。播过就写 `localStorage['elysia.bday.2026.seen']`，同一台设备当天不再打扰；
 跨年不用改代码，把 `SEEN_KEY` 里的年份换掉即可。
 
+### 10.16 视觉精修（2026-11-09，🚧 第一批已上线：首页 + 12 角色页共用层）
+
+**尺度是「精修」，不是重设计**（2026-11-04 需求方定）：设计语言、配色、版式全留着，只动四类东西 ——
+段间距的呼吸、中文标题偏松的行高、手机上被压窄的卡片正文、被浏览器地址栏吃掉的 hero 高度。
+起手页是首页，给需求方看过比例尺之后才铺到其余页面。
+
+**分两层落地**：
+
+| 层 | 文件 | 管什么 |
+|---|---|---|
+| 全站通用 | `assets/site.css` 末尾「全站通用层」 | `text-size-adjust`、`scroll-padding-top:4.5rem`、标题 `text-wrap:balance` / 正文 `pretty`、统一键盘焦点圈 |
+| 角色页共用 | `assets/site.css` 末尾「角色页共用层」 | `body .timeline-card p` 抬到 `.9rem` / 行高 1.85；≤480px 把时间轴的线从 1.5rem 收到 1.2rem、资料表标签列定宽 4.8rem |
+| 首页专属 | `templates/pages/index.page.css` 末尾「视觉精修」段 | `.section-opening{min-height:100svh}`、`.section-title{line-height:1.45}`、时间轴紫线**贯穿整段旅程**（`top:-2rem;bottom:-6rem`，渐隐收窄到 6%/94%） |
+
+**为什么共用层要写 `body` 前缀**：14 个页面的 `*.page.css` 里各有一条 `@media(max-width:768px)` 的
+`.timeline-card{width:calc(100% - 3.5rem);margin-left:3.5rem}`。页面 CSS 是内联在 `base.njk` 里的、排在
+`site.css` **之后**，同特异度只能靠 `body` 前缀（0,1,1 > 0,1,0）越过它 —— 否则改了半天不生效，
+而浏览器不会报任何错。
+
+**实测数字（375×812）**：时间轴卡片正文 `.85rem`→`.9rem`（13.6→14.4px）、正文可用宽 230→251px、
+`scrollWidth` 仍是 375（无横向溢出）；资料表标签列由 `auto` 改定宽 4.8rem，右边的值不再跟着标签长短跳。
+**任何一个页面改完都要重新量这两条**：正文宽度和 `scrollWidth`。
+
+**踩过的坑**：本地 CDP 用持久 profile（`C:/tmp/edge_cdp`）验线上时，浏览器 **HTTP 缓存**会把旧 CSS/JS
+喂回来（清 Service Worker 的 `caches` 不管用）⇒ 每次都 `sed` 一份 `_cdp_xxx.py` 换新 profile 目录。
+另外 `html{scroll-behavior:smooth}` 下 `scrollTo` 之后立刻读 `scrollY` 是 0，截图前要先把它设成 `auto`。
+
 **顺带修掉的工具缺陷**：`tools/check_page_health.py` 自己起静态服务器时根目录是仓库根，
 而 2026-11 起 `index.html` / `armor.html` 都只存在于 `public/` —— 于是它把 python 的 404 页当页面体检，
 15 页齐声报「没有 meta description / canonical / og:image」。改成 `directory=public` 后全绿。

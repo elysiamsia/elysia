@@ -356,3 +356,23 @@ p,li,figcaption,blockquote{text-wrap:pretty}
   outline-offset:3px;
 }
 
+/* ---- 视觉精修：角色页共用层（2026-11-09）----
+   14 个页面共用同一批组件类（timeline-* / profile-* / content-section …），
+   以前每页各写各的，于是手机上正文一直停在 .85rem（13.6px）。
+   这一层统一抬到 .9rem / 行高 1.85，并把窄屏时间轴的线往左收一点，正文多出 20px 宽。
+   ⚠ 选择器带 body 前缀是为了越过后面的各页 *.page.css（同类的 768px 规则会赢）。
+   各页自己的配色、小游戏、专属组件一律不碰。 ---- */
+body .timeline-card p{font-size:.9rem;line-height:1.85}
+body .timeline-card h3{line-height:1.45}
+
+@media(max-width:480px){
+  body .timeline-line{left:1.2rem;top:-1.2rem;bottom:-4rem}
+  body .timeline-dot{left:1.2rem}
+  body .timeline-node .timeline-index{left:1.2rem}
+  body .timeline-card,
+  body .timeline-node:nth-child(odd) .timeline-card,
+  body .timeline-node:nth-child(even) .timeline-card{
+    width:calc(100% - 3.2rem);margin-left:3.2rem;padding:1.15rem 1.2rem;
+  }
+  body .profile-grid{grid-template-columns:4.8rem 1fr;column-gap:.8rem}
+}
